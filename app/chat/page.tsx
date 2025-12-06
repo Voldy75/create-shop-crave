@@ -1,0 +1,190 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useChat } from "ai/react";
+import { useUser } from "../context/UserContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Send, User, Bot, Sparkles } from "lucide-react";
+import { RecipeView } from "@/components/RecipeView";
+import { RestaurantView } from "@/components/RestaurantView";
+import { motion, AnimatePresence } from "framer-motion";
+
+export default function ChatPage() {
+    const { userName, location } = useUser();
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Custom body for the API call to include user context
+    const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+        api: "/api/chat",
+        body: {
+            userContext: {
+                userName,
+                location,
+            },
+        },
+    });
+
+    // Auto-scroll to bottom
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [messages]);
+
+    // Helper to parse structured content from AI response
+    const parseContent = (content: string) => {
+        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
+        if (jsonMatch) {
+            try {
+                const data = JSON.parse(jsonMatch[1]);
+                const text = content.replace(/```json\n[\s\S]*?\n```/, "").trim();
+                return { data, text };
+            } catch (e) {
+                console.error("Failed to parse JSON", e);
+                return { data: null, text: content };
+            }
+        }
+        return { data: null, text: content };
+    };
+
+    return (
+        <div className="flex flex-col h-screen bg-white">
+            {/* Minimal Header */}
+            <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+                <div className="flex items-center gap-2">
+                    <div className="bg-indigo-600 p-1.5 rounded-lg text-white">
+                        <Sparkles className="w-4 h-4" />
+                    </div>
+                    <h1 className="font-bold text-lg tracking-tight text-gray-900">
+                        Crave & Create
+                    </h1>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium">
+                        {userName ? userName[0].toUpperCase() : "G"}
+                    </div>
+                </div>
+            </header>
+
+            {/* Chat Area */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 pb-32">
+                {messages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-6">
+                        <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-2">
+                            <Bot className="w-8 h-8" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900">What are you craving?</h2>
+                        <p className="text-gray-500 max-w-md text-lg">
+                            I can help you find the perfect restaurant or guide you through a delicious recipe.
+                        </p>
+                        <div className="flex gap-2 flex-wrap justify-center">
+                            {["Italian dinner", "Spicy tacos", "Healthy salad", "Sushi nearby"].map((suggestion) => (
+                                <button
+                                    key={suggestion}
+                                    onClick={() => handleInputChange({ target: { value: suggestion } } as any)}
+                                    className="px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-full text-sm font-medium text-gray-600 transition-colors"
+                                >
+                                    {suggestion}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <AnimatePresence>
+                    {messages.map((m) => {
+                        const isUser = m.role === "user";
+                        const { data, text } = !isUser ? parseContent(m.content) : { data: null, text: m.content };
+
+                        return (
+                            <motion.div
+                                key={m.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                            >
+                                <div className={`flex gap-4 max-w-[90%] md:max-w-[80%] ${isUser ? "flex-row-reverse" : ""}`}>
+                                    {/* Avatar */}
+                                    {!isUser && (
+                                        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shrink-0 mt-1">
+                                            <Bot className="w-5 h-5" />
+                                        </div>
+                                    )}
+
+                                    {/* Message Content */}
+                                    <div className="space-y-4 w-full">
+                                        {text && (
+                                            <div className={`p-5 rounded-2xl leading-relaxed text-[15px] ${isUser
+                                                ? "bg-gray-900 text-white rounded-tr-sm"
+                                                : "bg-gray-50 text-gray-900 rounded-tl-sm"
+                                                }`}>
+                                                <p className="whitespace-pre-wrap">{text}</p>
+                                            </div>
+                                        )}
+
+                                        {/* Dynamic Cards */}
+                                        {data && (
+                                            <div className="space-y-6 mt-2">
+                                                {data.type === "recipe" && data.recipe && (
+                                                    <RecipeView data={data.recipe} />
+                                                )}
+                                                {data.type === "restaurant" && data.restaurantSuggestion && (
+                                                    <RestaurantView data={data.restaurantSuggestion} />
+                                                )}
+                                                {data.type === "both" && (
+                                                    <>
+                                                        {data.recipe && <RecipeView data={data.recipe} />}
+                                                        <div className="flex items-center justify-center">
+                                                            <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-bold text-gray-500 uppercase tracking-wider">OR</span>
+                                                        </div>
+                                                        {data.restaurantSuggestion && <RestaurantView data={data.restaurantSuggestion} />}
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
+
+                {isLoading && (
+                    <div className="flex justify-start ml-12">
+                        <div className="flex gap-1">
+                            <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" />
+                            <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce delay-75" />
+                            <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce delay-150" />
+                        </div>
+                    </div>
+                )}
+                <div ref={scrollRef} />
+            </div>
+
+            {/* Floating Input Area */}
+            <div className="fixed bottom-6 left-0 right-0 px-4 flex justify-center pointer-events-none">
+                <div className="w-full max-w-3xl pointer-events-auto">
+                    <form onSubmit={handleSubmit} className="relative flex items-center shadow-2xl rounded-full bg-white border border-gray-100 p-2">
+                        <Input
+                            value={input}
+                            onChange={handleInputChange}
+                            placeholder="Ask anything about food..."
+                            className="flex-1 border-0 bg-transparent text-lg px-6 py-4 focus-visible:ring-0 placeholder:text-gray-400"
+                            disabled={isLoading}
+                        />
+                        <Button
+                            type="submit"
+                            size="icon"
+                            className="rounded-full bg-indigo-600 hover:bg-indigo-700 text-white w-12 h-12 shrink-0 transition-transform hover:scale-105"
+                            disabled={isLoading || !input.trim()}
+                        >
+                            <Send className="w-5 h-5" />
+                        </Button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+}
