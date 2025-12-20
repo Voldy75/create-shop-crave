@@ -63,8 +63,9 @@ export async function POST(req: Request) {
   `;
 
     console.log("Calling Google AI model...");
+    // Switch to stable 'gemini-1.5-flash' model
     const result = await streamText({
-      model: google("models/gemini-2.0-flash"),
+      model: google("gemini-2.5-flash"),
       system: systemPrompt,
       messages,
     });
@@ -72,7 +73,12 @@ export async function POST(req: Request) {
     console.log("Stream created successfully.");
     return result.toDataStreamResponse();
   } catch (error) {
+    // Enhanced error logging
     console.error("Error in chat API:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     return new Response(JSON.stringify({ error: "Failed to process request" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

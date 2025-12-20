@@ -34,19 +34,32 @@ export default function ChatPage() {
     }, [messages]);
 
     // Helper to parse structured content from AI response
-    const parseContent = (content: string) => {
+    // Also handles hiding incomplete JSON during streaming
+    const parseContent = (content: string, isStreaming: boolean = false) => {
+        // Check if we have a complete JSON block
         const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
+
+        // Check if there's an incomplete JSON block (started but not closed)
+        const hasIncompleteJson = content.includes('```json') && !content.includes('\n```', content.indexOf('```json') + 7);
+
         if (jsonMatch) {
             try {
                 const data = JSON.parse(jsonMatch[1]);
                 const text = content.replace(/```json\n[\s\S]*?\n```/, "").trim();
-                return { data, text };
+                return { data, text, isIncomplete: false };
             } catch (e) {
                 console.error("Failed to parse JSON", e);
-                return { data: null, text: content };
+                // If parsing fails, it might be incomplete
+                return { data: null, text: isStreaming ? "" : content, isIncomplete: true };
             }
         }
-        return { data: null, text: content };
+
+        // If JSON is incomplete (still streaming), hide the raw text
+        if (hasIncompleteJson && isStreaming) {
+            return { data: null, text: "", isIncomplete: true };
+        }
+
+        return { data: null, text: content, isIncomplete: false };
     };
 
     return (
@@ -69,7 +82,7 @@ export default function ChatPage() {
             </header>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 pb-32">
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 pb-44">
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-6">
                         <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-2">
@@ -94,9 +107,13 @@ export default function ChatPage() {
                 )}
 
                 <AnimatePresence>
-                    {messages.map((m) => {
+                    {messages.map((m, index) => {
                         const isUser = m.role === "user";
-                        const { data, text } = !isUser ? parseContent(m.content) : { data: null, text: m.content };
+                        // Detect if this message is currently streaming (last AI message while loading)
+                        const isStreamingMessage = !isUser && isLoading && index === messages.length - 1;
+                        const { data, text, isIncomplete } = !isUser
+                            ? parseContent(m.content, isStreamingMessage)
+                            : { data: null, text: m.content, isIncomplete: false };
 
                         return (
                             <motion.div
@@ -121,6 +138,20 @@ export default function ChatPage() {
                                                 : "bg-gray-50 text-gray-900 rounded-tl-sm"
                                                 }`}>
                                                 <p className="whitespace-pre-wrap">{text}</p>
+                                            </div>
+                                        )}
+
+                                        {/* Show loading indicator when JSON is streaming */}
+                                        {isIncomplete && isStreamingMessage && (
+                                            <div className="p-5 rounded-2xl bg-gray-50 text-gray-900 rounded-tl-sm">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex gap-1">
+                                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
+                                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-75" />
+                                                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-150" />
+                                                    </div>
+                                                    <span className="text-gray-500 text-sm">Preparing your personalized suggestions...</span>
+                                                </div>
                                             </div>
                                         )}
 

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from "@react-google-maps/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { MapPin, Navigation, Star, Utensils, ExternalLink } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 
@@ -108,68 +107,81 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                 <p className="text-gray-500 mt-1">{data.reason}</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 h-[600px]">
-                {/* List Section - Airbnb Style */}
-                <ScrollArea className="h-full pr-4">
-                    <div className="space-y-6">
-                        {data.restaurants && data.restaurants.length > 0 ? (
-                            data.restaurants.map((restaurant, index) => (
-                                <div
-                                    key={index}
-                                    className="group cursor-pointer"
-                                >
-                                    {/* Image Placeholder */}
-                                    <div className="aspect-[4/3] bg-gray-100 rounded-xl mb-3 relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-gray-200 animate-pulse" />
-                                        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1 shadow-sm">
-                                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                            {restaurant.rating}
-                                        </div>
-                                    </div>
-
-                                    {/* Content */}
-                                    <div>
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="font-bold text-gray-900 text-lg group-hover:text-indigo-600 transition-colors">
-                                                {restaurant.name}
-                                            </h3>
-                                            <span className="text-gray-900 font-medium text-sm">{restaurant.priceRange}</span>
-                                        </div>
-                                        <p className="text-gray-500 text-sm mt-1">{restaurant.area}</p>
-
-                                        <div className="flex gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {restaurant.zomatoUrl && (
-                                                <a
-                                                    href={restaurant.zomatoUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-xs font-bold text-red-500 hover:underline"
-                                                >
-                                                    Order on Zomato
-                                                </a>
-                                            )}
-                                            {restaurant.swiggyUrl && (
-                                                <a
-                                                    href={restaurant.swiggyUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-xs font-bold text-orange-500 hover:underline ml-2"
-                                                >
-                                                    Order on Swiggy
-                                                </a>
-                                            )}
-                                        </div>
+            <div className="grid md:grid-cols-2 gap-6">
+                {/* List Section */}
+                <div className="space-y-6">
+                    {data.restaurants && data.restaurants.length > 0 ? (
+                        data.restaurants.map((restaurant, index) => (
+                            <div
+                                key={index}
+                                className="group cursor-pointer"
+                            >
+                                {/* Restaurant Thumbnail */}
+                                <div className="aspect-[4/3] bg-gray-100 rounded-xl mb-3 relative overflow-hidden">
+                                    <img
+                                        src={`https://images.unsplash.com/photo-${[
+                                            '1517248135467-4c7edcad34c4',
+                                            '1552566626-52f8b828add9',
+                                            '1555396273-367ea4eb4db5',
+                                            '1414235077428-338989a2e8c0',
+                                            '1600891964092-4316c288032e'
+                                        ][index % 5]}?w=400&h=300&fit=crop&auto=format`}
+                                        alt={restaurant.name}
+                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop&auto=format';
+                                        }}
+                                    />
+                                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1 shadow-sm">
+                                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                        {restaurant.rating}
                                     </div>
                                 </div>
-                            ))
-                        ) : (
-                            <p className="text-sm text-gray-500">No specific restaurants found. Check the map!</p>
-                        )}
-                    </div>
-                </ScrollArea>
 
-                {/* Map Section - Sticky */}
-                <div className="relative h-full w-full rounded-2xl overflow-hidden bg-gray-100">
+                                {/* Content */}
+                                <div>
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="font-bold text-gray-900 text-lg group-hover:text-indigo-600 transition-colors">
+                                            {restaurant.name}
+                                        </h3>
+                                        <span className="text-gray-900 font-medium text-sm">{restaurant.priceRange}</span>
+                                    </div>
+                                    <p className="text-gray-500 text-sm mt-1">{restaurant.area}</p>
+
+                                    <div className="flex gap-3 mt-3">
+                                        {restaurant.zomatoUrl && (
+                                            <a
+                                                href={restaurant.zomatoUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-full transition-colors"
+                                            >
+                                                Zomato
+                                                <ExternalLink className="w-3 h-3" />
+                                            </a>
+                                        )}
+                                        {restaurant.swiggyUrl && (
+                                            <a
+                                                href={restaurant.swiggyUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-full transition-colors"
+                                            >
+                                                Swiggy
+                                                <ExternalLink className="w-3 h-3" />
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-sm text-gray-500">No specific restaurants found. Check the map!</p>
+                    )}
+                </div>
+
+                {/* Map Section */}
+                <div className="relative min-h-[400px] w-full rounded-2xl overflow-hidden bg-gray-100">
                     {isLoaded ? (
                         <GoogleMap
                             mapContainerStyle={containerStyle}
@@ -178,6 +190,9 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                             options={{
                                 disableDefaultUI: true,
                                 zoomControl: true,
+                                tilt: 45,
+                                heading: 0,
+                                mapTypeId: 'hybrid',
                                 styles: [
                                     {
                                         featureType: "poi",
