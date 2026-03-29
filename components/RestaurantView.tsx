@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from "@react-google-maps/api";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Navigation, Star, Utensils, ExternalLink } from "lucide-react";
+import { Star, Utensils, ExternalLink } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 
 interface Restaurant {
@@ -46,6 +46,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
     const { location } = useUser();
     const [mapPlace, setMapPlace] = useState<Place | null>(null);
     const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+    const [directionsError, setDirectionsError] = useState<string | null>(null);
 
     const { isLoaded } = useJsApiLoader({
         id: "google-map-script",
@@ -86,8 +87,9 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                 (result, status) => {
                     if (status === google.maps.DirectionsStatus.OK) {
                         setDirections(result);
+                        setDirectionsError(null);
                     } else {
-                        console.error(`error fetching directions ${result}`);
+                        setDirectionsError("Could not calculate directions to this restaurant.");
                     }
                 }
             );
@@ -238,6 +240,12 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                     )}
 
                     {/* Overlay Info */}
+                    {directionsError && (
+                        <div className="absolute top-4 left-4 right-4 bg-red-50 text-red-600 text-sm p-3 rounded-xl shadow-sm">
+                            {directionsError}
+                        </div>
+                    )}
+
                     {mapPlace && directions && (
                         <div className="absolute bottom-6 left-6 right-6 bg-white p-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex justify-between items-center">
                             <div>

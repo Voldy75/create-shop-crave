@@ -79,7 +79,7 @@ export function RecipeView({ data }: RecipeViewProps) {
                         <p className="text-sm text-gray-500 font-medium">Estimated Total</p>
                         <p className="text-lg font-bold text-gray-900">
                             ₹{data.ingredients.reduce((acc, curr) => {
-                                const price = parseInt(curr.price.replace(/[^0-9]/g, '')) || 0;
+                                const price = parseFloat(curr.price.replace(/[^0-9.]/g, '')) || 0;
                                 return acc + price;
                             }, 0)}
                         </p>
