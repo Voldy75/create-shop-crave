@@ -6,8 +6,15 @@ import { UserProvider } from "./context/UserContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Crave & Create",
-  description: "Find recipes or restaurants based on your mood.",
+  title: "Crave & Create - AI Food Companion",
+  description:
+    "Your personal AI food companion. Discover recipes or find the perfect restaurant based on your cravings.",
+  openGraph: {
+    title: "Crave & Create - AI Food Companion",
+    description:
+      "Discover recipes or find the perfect restaurant based on your cravings.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

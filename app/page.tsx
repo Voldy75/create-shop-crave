@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { useUser } from "./context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MapPin, ArrowRight, Loader2 } from "lucide-react";
 
 export default function LandingPage() {
@@ -34,7 +33,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4 relative overflow-hidden">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-white p-4 relative overflow-hidden" role="main">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
         <div className="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] bg-indigo-50 rounded-full blur-3xl opacity-50" />
@@ -125,6 +124,6 @@ export default function LandingPage() {
           </div>
         </div>
       </motion.div>
-    </div>
+    </main>
   );
 }

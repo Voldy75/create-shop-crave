@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from "@react-google-maps/api";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Star, Utensils, ExternalLink } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 
