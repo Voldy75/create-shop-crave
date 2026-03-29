@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 interface Location {
   lat: number;
@@ -30,7 +30,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const requestLocation = async (): Promise<boolean> => {
     setIsLoadingLocation(true);
     setLocationError(null); // Reset error before new request
-    return new Promise<boolean>((resolve, reject) => {
+    return new Promise<boolean>((resolve) => {
       if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
           (position) => {

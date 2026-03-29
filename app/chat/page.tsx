@@ -2,27 +2,39 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useChat } from "ai/react";
+import { useRouter } from "next/navigation";
 import { useUser } from "../context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Send, User, Bot, Sparkles } from "lucide-react";
+import { Send, Bot, Sparkles, RotateCcw, AlertCircle } from "lucide-react";
 import { RecipeView } from "@/components/RecipeView";
 import { RestaurantView } from "@/components/RestaurantView";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ChatPage() {
     const { userName, location } = useUser();
+    const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    // Redirect to home if user hasn't entered their name
+    useEffect(() => {
+        if (!userName) {
+            router.replace("/");
+        }
+    }, [userName, router]);
 
     // Custom body for the API call to include user context
-    const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    const { messages, input, handleInputChange, handleSubmit, setInput, setMessages, isLoading } = useChat({
         api: "/api/chat",
         body: {
             userContext: {
                 userName,
                 location,
             },
+        },
+        onError: () => {
+            setError("Something went wrong. Please try again.");
         },
     });
 
@@ -64,7 +76,7 @@ export default function ChatPage() {
 
     return (
         <div className="flex flex-col h-screen bg-white">
-            {/* Minimal Header */}
+            {/* Header */}
             <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-2">
                     <div className="bg-indigo-600 p-1.5 rounded-lg text-white">
@@ -74,15 +86,28 @@ export default function ChatPage() {
                         Crave & Create
                     </h1>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium">
+                <div className="flex items-center gap-3">
+                    {messages.length > 0 && (
+                        <button
+                            onClick={() => { setMessages([]); setError(null); }}
+                            className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-full hover:bg-gray-100"
+                            aria-label="Start a new conversation"
+                        >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            New Chat
+                        </button>
+                    )}
+                    <div
+                        className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium"
+                        aria-label={userName ? `Logged in as ${userName}` : "Guest user"}
+                    >
                         {userName ? userName[0].toUpperCase() : "G"}
                     </div>
                 </div>
             </header>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 pb-44">
+            <main className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 pb-44" role="main" aria-label="Chat messages">
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-6">
                         <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-2">
@@ -92,11 +117,11 @@ export default function ChatPage() {
                         <p className="text-gray-500 max-w-md text-lg">
                             I can help you find the perfect restaurant or guide you through a delicious recipe.
                         </p>
-                        <div className="flex gap-2 flex-wrap justify-center">
+                        <div className="flex gap-2 flex-wrap justify-center" role="group" aria-label="Suggested prompts">
                             {["Italian dinner", "Spicy tacos", "Healthy salad", "Sushi nearby"].map((suggestion) => (
                                 <button
                                     key={suggestion}
-                                    onClick={() => handleInputChange({ target: { value: suggestion } } as React.ChangeEvent<HTMLInputElement>)}
+                                    onClick={() => setInput(suggestion)}
                                     className="px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-full text-sm font-medium text-gray-600 transition-colors"
                                 >
                                     {suggestion}
@@ -125,7 +150,7 @@ export default function ChatPage() {
                                 <div className={`flex gap-4 max-w-[90%] md:max-w-[80%] ${isUser ? "flex-row-reverse" : ""}`}>
                                     {/* Avatar */}
                                     {!isUser && (
-                                        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shrink-0 mt-1">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shrink-0 mt-1" aria-hidden="true">
                                             <Bot className="w-5 h-5" />
                                         </div>
                                     )}
@@ -145,7 +170,7 @@ export default function ChatPage() {
                                         {isIncomplete && isStreamingMessage && (
                                             <div className="p-5 rounded-2xl bg-gray-50 text-gray-900 rounded-tl-sm">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex gap-1">
+                                                    <div className="flex gap-1" aria-hidden="true">
                                                         <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
                                                         <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-75" />
                                                         <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-150" />
@@ -183,16 +208,28 @@ export default function ChatPage() {
                 </AnimatePresence>
 
                 {isLoading && (
-                    <div className="flex justify-start ml-12">
-                        <div className="flex gap-1">
+                    <div className="flex justify-start ml-12" aria-live="polite">
+                        <div className="flex gap-1" aria-hidden="true">
                             <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" />
                             <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce delay-75" />
                             <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce delay-150" />
                         </div>
+                        <span className="sr-only">Loading response...</span>
                     </div>
                 )}
+
+                {error && (
+                    <div className="flex justify-start ml-12">
+                        <div className="flex items-center gap-2 p-4 bg-red-50 text-red-600 rounded-2xl text-sm" role="alert">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            <span>{error}</span>
+                            <button onClick={() => setError(null)} className="ml-2 underline text-xs">Dismiss</button>
+                        </div>
+                    </div>
+                )}
+
                 <div ref={scrollRef} />
-            </div>
+            </main>
 
             {/* Floating Input Area */}
             <div className="fixed bottom-6 left-0 right-0 px-4 flex justify-center pointer-events-none">
@@ -204,12 +241,14 @@ export default function ChatPage() {
                             placeholder="Ask anything about food..."
                             className="flex-1 border-0 bg-transparent text-lg px-6 py-4 focus-visible:ring-0 placeholder:text-gray-400"
                             disabled={isLoading}
+                            aria-label="Type your message"
                         />
                         <Button
                             type="submit"
                             size="icon"
                             className="rounded-full bg-indigo-600 hover:bg-indigo-700 text-white w-12 h-12 shrink-0 transition-transform hover:scale-105"
                             disabled={isLoading || !input.trim()}
+                            aria-label="Send message"
                         >
                             <Send className="w-5 h-5" />
                         </Button>
