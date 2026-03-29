@@ -5,9 +5,15 @@ import { streamText } from "ai";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  if (!process.env.GOOGLE_AI_API_KEY) {
+    return new Response(
+      JSON.stringify({ error: "Google AI API key is not configured" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const { messages, userContext } = await req.json();
-    console.log("Received request:", { messagesLength: messages.length, userContext });
 
     const systemPrompt = `
     You are a helpful AI food companion. Your goal is to help the user decide what to eat based on their input (Dish Type) and optional Occasion.
@@ -62,24 +68,17 @@ export async function POST(req: Request) {
     Keep the conversational part friendly and engaging.
   `;
 
-    console.log("Calling Google AI model...");
-    // Switch to stable 'gemini-1.5-flash' model
     const result = await streamText({
       model: google("gemini-2.5-flash"),
       system: systemPrompt,
       messages,
     });
 
-    console.log("Stream created successfully.");
     return result.toDataStreamResponse();
   } catch (error) {
-    // Enhanced error logging
     console.error("Error in chat API:", error);
-    if (error instanceof Error) {
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-    }
-    return new Response(JSON.stringify({ error: "Failed to process request" }), {
+    const message = error instanceof Error ? error.message : "Failed to process request";
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
