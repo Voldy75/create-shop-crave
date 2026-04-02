@@ -3,23 +3,17 @@
 import { useState, useEffect } from "react";
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from "@react-google-maps/api";
 import { Card } from "@/components/ui/card";
-import { Star, Utensils, ExternalLink } from "lucide-react";
+import { Star, Utensils, ExternalLink, Car, MapPin, Navigation } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
-
-interface Restaurant {
-    name: string;
-    rating: string;
-    priceRange: string;
-    area: string;
-    zomatoUrl: string;
-    swiggyUrl: string;
-}
-
-interface RestaurantSuggestion {
-    query: string;
-    reason: string;
-    restaurants?: Restaurant[];
-}
+import {
+    buildUberDeepLink,
+    buildOlaDeepLink,
+    buildGoogleMapsDirectionsLink,
+    buildSwiggyOrderLink,
+    buildZomatoOrderLink,
+} from "@/lib/deeplinks";
+import { ShareButton } from "@/components/ShareButton";
+import type { Restaurant, RestaurantSuggestion } from "@/lib/types";
 
 interface RestaurantViewProps {
     data: RestaurantSuggestion;
@@ -53,12 +47,10 @@ export function RestaurantView({ data }: RestaurantViewProps) {
         libraries: ["places"],
     });
 
-    // Fetch a place for the map based on the query or first restaurant
     useEffect(() => {
         const fetchPlaceForMap = async () => {
             if (!location) return;
             try {
-                // Use the query provided by AI to find a representative place on the map
                 const res = await fetch(
                     `/api/places?query=${encodeURIComponent(data.query)}&lat=${location.lat}&lng=${location.lng}`
                 );
@@ -97,15 +89,66 @@ export function RestaurantView({ data }: RestaurantViewProps) {
 
     const mapCenter = location || { lat: 28.6139, lng: 77.2090 };
 
+    const getRideButtons = (restaurantName: string, dropoff: { lat: number; lng: number }) => {
+        if (!location) return null;
+        const uberUrl = buildUberDeepLink(location, dropoff, restaurantName);
+        const olaUrl = buildOlaDeepLink(location, dropoff, restaurantName);
+        return (
+            <div className="flex gap-2">
+                <a
+                    href={uberUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-black hover:bg-gray-800 px-3 py-1.5 rounded-full transition-colors"
+                >
+                    <Car className="w-3 h-3" /> Uber
+                </a>
+                <a
+                    href={olaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-full transition-colors"
+                >
+                    <Car className="w-3 h-3" /> Ola
+                </a>
+            </div>
+        );
+    };
+
     return (
         <Card className="w-full bg-white shadow-none border-0 overflow-hidden">
             <div className="mb-6">
-                <div className="flex items-center gap-2 text-indigo-600 mb-2">
-                    <Utensils className="w-4 h-4" />
-                    <span className="font-bold uppercase tracking-wider text-xs">Dine Out</span>
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-indigo-600">
+                        <Utensils className="w-4 h-4" />
+                        <span className="font-bold uppercase tracking-wider text-xs">Dine Out</span>
+                    </div>
+                    <ShareButton title="Restaurant Suggestions" text={`Check out these restaurant suggestions: ${data.reason}`} />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900">Restaurant Suggestions</h2>
                 <p className="text-gray-500 mt-1">{data.reason}</p>
+
+                {/* Delivery order buttons */}
+                {data.dishName && location && (
+                    <div className="flex gap-2 mt-3">
+                        <a
+                            href={buildSwiggyOrderLink(data.dishName, location.lat, location.lng)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-full transition-colors"
+                        >
+                            Order on Swiggy <ExternalLink className="w-3 h-3" />
+                        </a>
+                        <a
+                            href={buildZomatoOrderLink(data.dishName)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-full transition-colors"
+                        >
+                            Order on Zomato <ExternalLink className="w-3 h-3" />
+                        </a>
+                    </div>
+                )}
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -137,6 +180,11 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                         <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                                         {restaurant.rating}
                                     </div>
+                                    {restaurant.cuisine && (
+                                        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-2 py-1 rounded-md text-xs font-medium text-gray-700 shadow-sm">
+                                            {restaurant.cuisine}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Content */}
@@ -149,7 +197,8 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                     </div>
                                     <p className="text-gray-500 text-sm mt-1">{restaurant.area}</p>
 
-                                    <div className="flex gap-3 mt-3">
+                                    {/* Platform links */}
+                                    <div className="flex flex-wrap gap-2 mt-3">
                                         {restaurant.zomatoUrl && (
                                             <a
                                                 href={restaurant.zomatoUrl}
@@ -173,6 +222,13 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                             </a>
                                         )}
                                     </div>
+
+                                    {/* Ride buttons per restaurant */}
+                                    {restaurant.lat && restaurant.lng && (
+                                        <div className="mt-2">
+                                            {getRideButtons(restaurant.name, { lat: restaurant.lat, lng: restaurant.lng })}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))
@@ -246,19 +302,36 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                     )}
 
                     {mapPlace && directions && (
-                        <div className="absolute bottom-6 left-6 right-6 bg-white p-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex justify-between items-center">
-                            <div>
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nearest Option</p>
-                                <p className="font-bold text-gray-900 text-lg">
-                                    {mapPlace.name}
-                                </p>
+                        <div className="absolute bottom-6 left-6 right-6 bg-white p-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] space-y-3">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nearest Option</p>
+                                    <p className="font-bold text-gray-900 text-lg">
+                                        {mapPlace.name}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-2xl font-bold text-indigo-600">
+                                        {directions.routes[0]?.legs[0]?.duration?.text?.split(" ")[0]}
+                                    </p>
+                                    <p className="text-xs text-gray-500 font-medium">min drive</p>
+                                </div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-indigo-600">
-                                    {directions.routes[0]?.legs[0]?.duration?.text?.split(" ")[0]}
-                                </p>
-                                <p className="text-xs text-gray-500 font-medium">min drive</p>
-                            </div>
+
+                            {/* Action buttons */}
+                            {location && (
+                                <div className="flex flex-wrap gap-2">
+                                    {getRideButtons(mapPlace.name, mapPlace.geometry.location)}
+                                    <a
+                                        href={buildGoogleMapsDirectionsLink(location, mapPlace.geometry.location)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-full transition-colors"
+                                    >
+                                        <Navigation className="w-3 h-3" /> Directions
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

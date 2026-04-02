@@ -8,10 +8,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, ArrowRight, Loader2 } from "lucide-react";
 
+const DIETARY_OPTIONS = [
+  "Vegetarian",
+  "Vegan",
+  "Gluten-Free",
+  "Dairy-Free",
+  "Nut-Free",
+  "Halal",
+  "Keto",
+];
+
 export default function LandingPage() {
-  const { userName, setUserName, requestLocation, location, isLoadingLocation, locationError } = useUser();
+  const {
+    userName,
+    setUserName,
+    requestLocation,
+    location,
+    isLoadingLocation,
+    locationError,
+    dietaryPreferences,
+    setDietaryPreferences,
+  } = useUser();
   const router = useRouter();
   const [error, setError] = useState("");
+
+  const toggleDietaryPref = (pref: string) => {
+    if (dietaryPreferences.includes(pref)) {
+      setDietaryPreferences(dietaryPreferences.filter((p) => p !== pref));
+    } else {
+      setDietaryPreferences([...dietaryPreferences, pref]);
+    }
+  };
 
   const handleStart = async () => {
     if (!userName.trim()) {
@@ -19,16 +46,13 @@ export default function LandingPage() {
       return;
     }
 
-    // Request location if not already present
     if (!location) {
       const success = await requestLocation();
       if (!success) {
-        // Do not navigate if location failed. Error is shown in UI.
         return;
       }
     }
 
-    // Navigate to chat
     router.push("/chat");
   };
 
@@ -52,7 +76,7 @@ export default function LandingPage() {
           </h1>
           <p className="text-xl text-gray-500 max-w-lg mx-auto leading-relaxed">
             Your personal AI food companion. <br />
-            Discover recipes or find the perfect spot to dine.
+            Discover recipes, order ingredients, find restaurants, or book a ride.
           </p>
         </div>
 
@@ -73,6 +97,32 @@ export default function LandingPage() {
                 className="border-0 bg-gray-50 text-lg py-6 px-4 rounded-xl focus-visible:ring-0 focus-visible:bg-gray-100 transition-all"
               />
               {error && <p className="text-sm text-red-500 ml-1">{error}</p>}
+            </div>
+
+            {/* Dietary Preferences */}
+            <div className="space-y-2 text-left">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">
+                Dietary Preferences <span className="font-normal text-gray-400">(optional)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {DIETARY_OPTIONS.map((pref) => {
+                  const isSelected = dietaryPreferences.includes(pref);
+                  return (
+                    <button
+                      key={pref}
+                      type="button"
+                      onClick={() => toggleDietaryPref(pref)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        isSelected
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {pref}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className={`flex flex-col gap-2 text-sm p-3 rounded-xl ${locationError ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-500"}`}>

@@ -6,23 +6,23 @@ import { useRouter } from "next/navigation";
 import { useUser } from "../context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, Sparkles, RotateCcw, AlertCircle } from "lucide-react";
+import { Send, Bot, Sparkles, RotateCcw, AlertCircle, Heart, Calendar } from "lucide-react";
 import { RecipeView } from "@/components/RecipeView";
 import { RestaurantView } from "@/components/RestaurantView";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ChatPage() {
-    const { userName, location } = useUser();
+    const { userName, location, dietaryPreferences, hydrated } = useUser();
     const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // Redirect to home if user hasn't entered their name
+    // Redirect to home if user hasn't entered their name (wait for hydration first)
     useEffect(() => {
-        if (!userName) {
+        if (hydrated && !userName) {
             router.replace("/");
         }
-    }, [userName, router]);
+    }, [userName, router, hydrated]);
 
     // Custom body for the API call to include user context
     const { messages, input, handleInputChange, handleSubmit, setInput, setMessages, isLoading } = useChat({
@@ -31,6 +31,7 @@ export default function ChatPage() {
             userContext: {
                 userName,
                 location,
+                dietaryPreferences,
             },
         },
         onError: () => {
@@ -97,6 +98,22 @@ export default function ChatPage() {
                             New Chat
                         </button>
                     )}
+                    <button
+                        onClick={() => router.push("/favorites")}
+                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-red-500 transition-colors px-3 py-1.5 rounded-full hover:bg-gray-100"
+                        aria-label="View favorites"
+                    >
+                        <Heart className="w-3.5 h-3.5" />
+                        Favorites
+                    </button>
+                    <button
+                        onClick={() => router.push("/planner")}
+                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-full hover:bg-gray-100"
+                        aria-label="Meal planner"
+                    >
+                        <Calendar className="w-3.5 h-3.5" />
+                        Planner
+                    </button>
                     <div
                         className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium"
                         aria-label={userName ? `Logged in as ${userName}` : "Guest user"}
