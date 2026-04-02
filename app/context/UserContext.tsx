@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import type { User, Session } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
 interface Location {
   lat: number;
@@ -8,16 +10,21 @@ interface Location {
 }
 
 interface UserContextType {
+  // Auth
+  user: User | null;
+  session: Session | null;
   userName: string;
-  setUserName: (name: string) => void;
+  hydrated: boolean;
+  signOut: () => Promise<void>;
+  // Location
   location: Location | null;
   setLocation: (location: Location | null) => void;
   isLoadingLocation: boolean;
   locationError: string | null;
   requestLocation: () => Promise<boolean>;
+  // Preferences
   dietaryPreferences: string[];
   setDietaryPreferences: (prefs: string[]) => void;
-  hydrated: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -32,28 +39,51 @@ function getStoredValue<T>(key: string, fallback: T): T {
   }
 }
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [userName, setUserNameState] = useState("");
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const supabase = createClient();
+
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const [location, setLocation] = useState<Location | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [dietaryPreferences, setDietaryPreferencesState] = useState<string[]>([]);
-  const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from localStorage on mount
+  // Hydrate from Supabase session + localStorage
   useEffect(() => {
-    setUserNameState(getStoredValue("crave_userName", ""));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    // Migrate dietary prefs from localStorage (preserved from old flow)
     setDietaryPreferencesState(getStoredValue("crave_dietaryPreferences", []));
+    // Clean up the old userName key since it's now from OAuth profile
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("crave_userName");
+    }
+
     setHydrated(true);
+
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setUserName = (name: string) => {
-    setUserNameState(name);
+  const signOut = async () => {
+    // Clear BYOK keys on sign out
     if (typeof window !== "undefined") {
-      localStorage.setItem("crave_userName", JSON.stringify(name));
+      localStorage.removeItem("crave_byok_provider");
+      localStorage.removeItem("crave_byok_key");
     }
+    await supabase.auth.signOut();
   };
 
   const setDietaryPreferences = (prefs: string[]) => {
@@ -63,59 +93,55 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "";
+
   const requestLocation = async (): Promise<boolean> => {
     setIsLoadingLocation(true);
     setLocationError(null);
     return new Promise<boolean>((resolve) => {
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setLocation({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
-            setIsLoadingLocation(false);
-            resolve(true);
-          },
-          (error) => {
-            console.error("Error getting location:", error);
-            let errorMessage = "Failed to get location.";
-            switch (error.code) {
-              case error.PERMISSION_DENIED:
-                errorMessage = "Location permission denied. Please enable it in your browser settings.";
-                break;
-              case error.POSITION_UNAVAILABLE:
-                errorMessage = "Location information is unavailable.";
-                break;
-              case error.TIMEOUT:
-                errorMessage = "The request to get user location timed out.";
-                break;
-            }
-            setLocationError(errorMessage);
-            setIsLoadingLocation(false);
-            resolve(false);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0,
-          }
-        );
-      } else {
+      if (!("geolocation" in navigator)) {
         const msg = "Geolocation is not supported by this browser.";
-        console.error(msg);
         setLocationError(msg);
         setIsLoadingLocation(false);
         resolve(false);
+        return;
       }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+          setIsLoadingLocation(false);
+          resolve(true);
+        },
+        (error) => {
+          let errorMessage = "Failed to get location.";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = "Location permission denied. Please enable it in your browser settings.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "Location information is unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMessage = "The request to get user location timed out.";
+              break;
+          }
+          setLocationError(errorMessage);
+          setIsLoadingLocation(false);
+          resolve(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
     });
   };
 
   return (
     <UserContext.Provider
       value={{
+        user,
+        session,
         userName,
-        setUserName,
+        hydrated,
+        signOut,
         location,
         setLocation,
         isLoadingLocation,
@@ -123,7 +149,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         requestLocation,
         dietaryPreferences,
         setDietaryPreferences,
-        hydrated,
       }}
     >
       {children}
