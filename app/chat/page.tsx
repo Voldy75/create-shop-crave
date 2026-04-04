@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "../context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, Sparkles, RotateCcw, AlertCircle, Heart, Calendar, LogOut } from "lucide-react";
+import { Send, Bot, Sparkles, RotateCcw, AlertCircle, Heart, Calendar, LogOut, Swords } from "lucide-react";
 import { RecipeView } from "@/components/RecipeView";
 import { RestaurantView } from "@/components/RestaurantView";
 import { UsageBadge } from "@/components/UsageBadge";
@@ -219,6 +219,15 @@ export default function ChatPage() {
             >
               <RotateCcw className="w-3.5 h-3.5" />
               New Chat
+            </button>
+          )}
+          {isPro && (
+            <button
+              onClick={() => router.push("/arena")}
+              className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-full hover:bg-gray-100"
+            >
+              <Swords className="w-3.5 h-3.5" />
+              Arena
             </button>
           )}
           <button
