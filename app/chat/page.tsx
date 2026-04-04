@@ -11,6 +11,7 @@ import { RecipeView } from "@/components/RecipeView";
 import { RestaurantView } from "@/components/RestaurantView";
 import { UsageBadge } from "@/components/UsageBadge";
 import { ApiKeyDialog } from "@/components/ApiKeyDialog";
+import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Provider } from "@/lib/providers";
 import { DAILY_LIMIT } from "@/lib/constants";
@@ -43,15 +44,34 @@ export default function ChatPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [byokError, setByokError] = useState<string | null>(null);
   const [byok, setByok] = useState<{ provider: Provider; apiKey: string } | null>(null);
   const [usageCount, setUsageCount] = useState(0);
+  const [isPro, setIsPro] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
   // Hydrate BYOK from localStorage
   useEffect(() => {
     setByok(getStoredBYOK());
   }, []);
+
+  // Check pro status + handle ?upgraded=true from Stripe redirect
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/subscribe/status")
+      .then((r) => r.json())
+      .then((data) => { if (data.isPro) setIsPro(true); })
+      .catch(() => {/* non-critical */});
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("upgraded") === "true") {
+        setIsPro(true);
+        window.history.replaceState({}, "", "/chat");
+      }
+    }
+  }, [user]);
 
   // Redirect to home if not signed in (wait for hydration first)
   useEffect(() => {
@@ -93,7 +113,7 @@ export default function ChatPage() {
       if (response.status === 429) {
         response.json().then((data) => {
           if (data.needsKey) {
-            setShowApiKeyDialog(true);
+            setShowUpgradeDialog(true);
           }
         });
         return;
@@ -179,14 +199,17 @@ export default function ChatPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Usage badge — shows free usage; hidden when BYOK active */}
-          {!byok && (
-            <UsageBadge count={usageCount} limit={DAILY_LIMIT} />
-          )}
-          {byok && (
+          {/* Pro badge or usage badge */}
+          {isPro ? (
+            <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-indigo-600 text-white flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> Pro
+            </span>
+          ) : byok ? (
             <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-600">
               Using {byok.provider}
             </span>
+          ) : (
+            <UsageBadge count={usageCount} limit={DAILY_LIMIT} />
           )}
 
           {messages.length > 0 && (
@@ -387,7 +410,16 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* BYOK Dialog */}
+      {/* Upgrade Dialog — shown when rate limit hit */}
+      {showUpgradeDialog && (
+        <UpgradeDialog
+          onProActivated={() => { setIsPro(true); setShowUpgradeDialog(false); if (pendingMessage) { setInput(pendingMessage); setPendingMessage(null); } }}
+          onBYOKSave={(provider, apiKey) => { handleBYOKSave(provider, apiKey); setShowUpgradeDialog(false); }}
+          onClose={() => setShowUpgradeDialog(false)}
+        />
+      )}
+
+      {/* BYOK Dialog — shown from settings or direct trigger */}
       {showApiKeyDialog && (
         <ApiKeyDialog
           onSave={handleBYOKSave}
