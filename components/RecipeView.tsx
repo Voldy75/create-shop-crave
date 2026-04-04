@@ -2,7 +2,8 @@
 
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShoppingCart, ExternalLink, ChefHat, Clock, Users, Flame, Dumbbell } from "lucide-react";
+import { ShoppingCart, ExternalLink, ChefHat, Clock, Users, Flame, Dumbbell, Zap } from "lucide-react";
+import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ShareButton } from "@/components/ShareButton";
 import type { RecipeData, Ingredient, ShoppingLink } from "@/lib/types";
@@ -91,11 +92,44 @@ export function RecipeView({ data }: RecipeViewProps) {
                         <h3 className="font-bold text-gray-900 flex items-center gap-2">
                             <ShoppingCart className="w-4 h-4 text-indigo-600" />
                             Shopping List
+                            <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-full border border-gray-100">
+                                {data.ingredients.length} items
+                            </span>
                         </h3>
-                        <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-full border border-gray-100">
-                            ~ {data.ingredients.length} items
-                        </span>
                     </div>
+
+                    {/* Buy All buttons */}
+                    {(() => {
+                        const allItems = data.ingredients.map((i) => i.item).join(" ");
+                        return (
+                            <div className="flex gap-2 mb-4 flex-wrap">
+                                <a
+                                    href={buildBlinkitLink(allItems)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-yellow-500 hover:bg-yellow-600 px-3 py-2 rounded-full transition-colors"
+                                >
+                                    <Zap className="w-3 h-3" /> Buy all on Blinkit
+                                </a>
+                                <a
+                                    href={buildSwiggyInstamartLink(allItems)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 px-3 py-2 rounded-full transition-colors"
+                                >
+                                    <Zap className="w-3 h-3" /> Buy all on Instamart
+                                </a>
+                                <a
+                                    href={buildInstacartLink(allItems)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-2 rounded-full transition-colors"
+                                >
+                                    <Zap className="w-3 h-3" /> Buy all on Instacart
+                                </a>
+                            </div>
+                        );
+                    })()}
                     <ScrollArea className="h-[400px] pr-4">
                         <div className="space-y-3">
                             {data.ingredients.map((ing, idx) => {
