@@ -29,7 +29,8 @@ export async function checkAndIncrementUsage(userId: string): Promise<UsageResul
 
   if (error) {
     console.error("Rate limit check error:", error.message);
-    throw new Error("Failed to check usage limit");
+    // Fail open — don't block users during infrastructure hiccups
+    return { allowed: true, count: 0, remaining: DAILY_LIMIT };
   }
 
   const count = data?.count ?? 0;

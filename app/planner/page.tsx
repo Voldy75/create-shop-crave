@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, ShoppingCart, Plus, X, ChefHat } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,8 +80,8 @@ export default function PlannerPage() {
 
                         {/* Meal rows */}
                         {MEALS.map((meal) => (
-                            <>
-                                <div key={`label-${meal}`} className="flex items-center text-sm font-medium text-gray-500 capitalize">
+                            <React.Fragment key={meal}>
+                                <div className="flex items-center text-sm font-medium text-gray-500 capitalize">
                                     {meal}
                                 </div>
                                 {DAYS.map((day) => {
@@ -154,7 +154,7 @@ export default function PlannerPage() {
                                         </div>
                                     );
                                 })}
-                            </>
+                            </React.Fragment>
                         ))}
                     </div>
                 </div>

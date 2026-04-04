@@ -119,7 +119,7 @@ export function RecipeView({ data }: RecipeViewProps) {
                                             </div>
                                         </div>
                                         {links.length > 0 && (
-                                            <div className="flex gap-2 mt-2 ml-13">
+                                            <div className="flex gap-2 mt-2 ml-12">
                                                 {links.map((lnk) => {
                                                     const colors = platformColors[lnk.platform] || { bg: "bg-gray-900", hover: "hover:bg-gray-700" };
                                                     return (

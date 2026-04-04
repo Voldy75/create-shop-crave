@@ -137,10 +137,13 @@ export async function POST(req: Request) {
     }
 
     // 4. Stream the response
+    const safeMessages = messages.filter(
+      (m: { role: string }) => m.role === "user" || m.role === "assistant"
+    );
     const result = await streamText({
       model,
       system: systemPrompt(userName, locationStr, dietaryPrefs),
-      messages,
+      messages: safeMessages,
     });
 
     const response = result.toDataStreamResponse();
