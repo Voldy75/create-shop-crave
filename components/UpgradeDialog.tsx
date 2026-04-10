@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { X, Sparkles, CreditCard, Key, Loader2, AlertCircle, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { Provider } from "@/lib/providers";
 import { PROVIDERS } from "@/lib/providers";
 
@@ -36,7 +34,6 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create order");
 
-      // Load Razorpay script dynamically
       if (!window.Razorpay) {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
@@ -55,7 +52,7 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
         description: "Pro Plan — 1 month",
         order_id: data.orderId,
         prefill: { name: data.userName, email: data.userEmail },
-        theme: { color: "#4F46E5" },
+        theme: { color: "#ff6b35" },
         handler: async (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
@@ -107,110 +104,171 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-full max-w-md overflow-hidden"
+        style={{
+          background: "var(--cc-surface)",
+          borderRadius: "20px",
+          border: "1px solid var(--cc-border)",
+          boxShadow: "var(--cc-shadow-lg, 0 25px 50px rgba(0,0,0,0.4))",
+        }}
+      >
         {/* Header */}
-        <div className="bg-indigo-600 px-6 py-5 text-white relative">
+        <div
+          style={{
+            background: "linear-gradient(135deg, #ff6b35 0%, #ff8c5a 100%)",
+            padding: "24px",
+            position: "relative",
+          }}
+        >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/20 transition-colors"
+            className="absolute top-4 right-4 p-1.5 rounded-full transition-colors"
+            style={{ background: "rgba(255,255,255,0.2)" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.3)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.2)"; }}
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 text-white" />
           </button>
           <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-5 h-5" />
-            <span className="font-bold text-lg">Upgrade to Pro</span>
+            <Sparkles className="w-5 h-5 text-white" />
+            <span style={{ fontSize: "18px", fontWeight: 700, color: "#fff" }}>
+              Upgrade to Pro
+            </span>
           </div>
-          <p className="text-indigo-200 text-sm">
+          <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.8)" }}>
             You&apos;ve used your free requests for today.
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-100">
+        <div className="flex" style={{ borderBottom: "1px solid var(--cc-border)" }}>
           <button
             onClick={() => setTab("upgrade")}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${
-              tab === "upgrade"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className="flex-1 py-3 text-sm font-medium transition-colors"
+            style={{
+              color: tab === "upgrade" ? "#ff6b35" : "var(--cc-text-secondary)",
+              borderBottom: tab === "upgrade" ? "2px solid #ff6b35" : "2px solid transparent",
+            }}
           >
             Upgrade Pro
           </button>
           <button
             onClick={() => setTab("byok")}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${
-              tab === "byok"
-                ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className="flex-1 py-3 text-sm font-medium transition-colors"
+            style={{
+              color: tab === "byok" ? "#ff6b35" : "var(--cc-text-secondary)",
+              borderBottom: tab === "byok" ? "2px solid #ff6b35" : "2px solid transparent",
+            }}
           >
             Use Your API Key
           </button>
         </div>
 
-        <div className="p-6">
+        <div style={{ padding: "24px" }}>
           {tab === "upgrade" ? (
             <div className="space-y-4">
               {/* Pro benefits */}
-              <div className="bg-indigo-50 rounded-xl p-4 space-y-2">
+              <div
+                style={{
+                  background: "rgba(255,107,53,0.08)",
+                  borderRadius: "12px",
+                  padding: "16px",
+                }}
+                className="space-y-2"
+              >
                 {[
                   "Unlimited AI requests",
                   "All 3 AI models (Gemini, GPT-4, Claude)",
                   "Model Arena — compare side by side",
                   "Priority support",
                 ].map((benefit) => (
-                  <div key={benefit} className="flex items-center gap-2 text-sm text-indigo-800">
-                    <Check className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <div
+                    key={benefit}
+                    className="flex items-center gap-2"
+                    style={{ fontSize: "14px", color: "var(--cc-text-primary)" }}
+                  >
+                    <Check className="w-4 h-4 shrink-0" style={{ color: "#ff6b35" }} />
                     {benefit}
                   </div>
                 ))}
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-xl">
+                <div
+                  className="flex items-center gap-2"
+                  style={{
+                    fontSize: "14px",
+                    color: "#ff453a",
+                    background: "rgba(255,69,58,0.08)",
+                    padding: "12px",
+                    borderRadius: "12px",
+                  }}
+                >
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   {error}
                 </div>
               )}
 
-              {/* Razorpay — India */}
-              <Button
+              {/* Razorpay */}
+              <button
                 onClick={handleRazorpay}
                 disabled={loading !== null}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 rounded-xl font-medium"
+                className="w-full flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                style={{
+                  background: "#ff6b35",
+                  color: "#fff",
+                  height: "48px",
+                  borderRadius: "980px",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                }}
+                onMouseEnter={(e) => { if (loading === null) (e.currentTarget as HTMLButtonElement).style.background = "#ff5520"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#ff6b35"; }}
               >
                 {loading === "razorpay" ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <CreditCard className="w-4 h-4 mr-2" />
+                  <CreditCard className="w-4 h-4" />
                 )}
                 Pay ₹749/month via Razorpay
-              </Button>
+              </button>
 
-              {/* Stripe — Global */}
-              <Button
+              {/* Stripe */}
+              <button
                 onClick={handleStripe}
                 disabled={loading !== null}
-                variant="outline"
-                className="w-full h-12 rounded-xl font-medium border-gray-200"
+                className="w-full flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                style={{
+                  background: "transparent",
+                  color: "var(--cc-text-primary)",
+                  height: "48px",
+                  borderRadius: "980px",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  border: "1px solid var(--cc-border)",
+                }}
               >
                 {loading === "stripe" ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <CreditCard className="w-4 h-4 mr-2" />
+                  <CreditCard className="w-4 h-4" />
                 )}
                 Pay $9/month via Stripe
-              </Button>
+              </button>
 
-              <p className="text-xs text-center text-gray-400">
+              <p style={{ fontSize: "12px", textAlign: "center", color: "var(--cc-text-tertiary)" }}>
                 Cancel anytime. No hidden fees.
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-gray-500">
+              <p style={{ fontSize: "14px", color: "var(--cc-text-secondary)" }}>
                 Already have an API key? Use it for unlimited requests — your key, your quota.
               </p>
 
@@ -220,11 +278,16 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
                   <button
                     key={p.id}
                     onClick={() => setByokProvider(p.id)}
-                    className={`p-2.5 rounded-xl border text-xs font-medium transition-all text-center ${
-                      byokProvider === p.id
-                        ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                        : "border-gray-200 text-gray-600 hover:border-gray-300"
-                    }`}
+                    className="transition-all text-center"
+                    style={{
+                      padding: "10px",
+                      borderRadius: "12px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      border: byokProvider === p.id ? "1.5px solid #ff6b35" : "1px solid var(--cc-border)",
+                      background: byokProvider === p.id ? "rgba(255,107,53,0.08)" : "transparent",
+                      color: byokProvider === p.id ? "#ff6b35" : "var(--cc-text-secondary)",
+                    }}
                   >
                     {p.label}
                   </button>
@@ -233,28 +296,45 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
 
               <div className="space-y-1">
                 <div className="relative">
-                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--cc-text-tertiary)" }} />
+                  <input
                     value={byokKey}
                     onChange={(e) => { setByokKey(e.target.value); setByokError(null); }}
                     placeholder={PROVIDERS.find((p) => p.id === byokProvider)?.keyPlaceholder ?? "API Key"}
-                    className="pl-10 rounded-xl border-gray-200"
                     type="password"
+                    className="w-full outline-none"
+                    style={{
+                      paddingLeft: "40px",
+                      height: "44px",
+                      borderRadius: "12px",
+                      border: "1px solid var(--cc-border)",
+                      background: "var(--cc-surface-2)",
+                      color: "var(--cc-text-primary)",
+                      fontSize: "14px",
+                    }}
                   />
                 </div>
                 {byokError && (
-                  <p className="text-xs text-red-600 ml-1">{byokError}</p>
+                  <p style={{ fontSize: "12px", color: "#ff453a", marginLeft: "4px" }}>{byokError}</p>
                 )}
               </div>
 
-              <Button
+              <button
                 onClick={handleBYOKSave}
-                className="w-full bg-gray-900 hover:bg-gray-800 text-white h-11 rounded-xl"
+                className="w-full flex items-center justify-center gap-2 transition-all"
+                style={{
+                  background: "var(--cc-text-primary)",
+                  color: "var(--cc-bg)",
+                  height: "44px",
+                  borderRadius: "980px",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                }}
               >
                 Use This Key
-              </Button>
+              </button>
 
-              <p className="text-xs text-gray-400">
+              <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)" }}>
                 Your key is stored locally and never sent to our servers (except to the AI provider on each request).
               </p>
             </div>

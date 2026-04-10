@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { saveFavorite, removeFavorite, getFavorites } from "@/lib/storage";
+import { toast } from "sonner";
 import type { RecipeData, Restaurant } from "@/lib/types";
 
 interface FavoriteButtonProps {
@@ -30,6 +31,7 @@ export function FavoriteButton({ type, data }: FavoriteButtonProps) {
       removeFavorite(favId);
       setIsFav(false);
       setFavId(null);
+      toast("Removed from favorites");
     } else {
       saveFavorite(type, data);
       const favorites = getFavorites();
@@ -40,20 +42,28 @@ export function FavoriteButton({ type, data }: FavoriteButtonProps) {
         setIsFav(true);
         setFavId(match.id);
       }
+      toast("Saved to favorites ♥");
     }
   };
 
   return (
     <button
       onClick={toggle}
-      className={`p-1.5 rounded-full transition-colors ${
+      className="p-1.5 rounded-full transition-colors"
+      style={
         isFav
-          ? "text-red-500 bg-red-50 hover:bg-red-100"
-          : "text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600"
-      }`}
+          ? { color: "#ff453a", background: "rgba(255,69,58,0.12)" }
+          : { color: "var(--cc-text-tertiary)", background: "var(--cc-surface-2)" }
+      }
+      onMouseEnter={(e) => {
+        if (!isFav) (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-3)";
+      }}
+      onMouseLeave={(e) => {
+        if (!isFav) (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-2)";
+      }}
       aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
     >
-      <Heart className={`w-4 h-4 ${isFav ? "fill-red-500" : ""}`} />
+      <Heart className="w-4 h-4" fill={isFav ? "currentColor" : "none"} />
     </button>
   );
 }

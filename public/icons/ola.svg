@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 50">
+  <!-- O -->
+  <path d="M20 25 A16 16 0 1 1 20 24.99z M20 25 A9 9 0 1 0 20 24.99z" fill="#000" fill-rule="evenodd"/>
+  <!-- L -->
+  <path d="M45 5 L45 38 L65 38 L65 31 L52 31 L52 5z" fill="#000"/>
+  <!-- A (no crossbar, geometric) -->
+  <path d="M82 38 L96 5 L110 38 L103 38 L96 18 L89 38z" fill="#000"/>
+</svg>

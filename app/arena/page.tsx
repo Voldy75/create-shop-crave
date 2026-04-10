@@ -4,9 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useChat } from "ai/react";
 import { useRouter } from "next/navigation";
 import { useUser } from "../context/UserContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Send, Bot, Sparkles, RotateCcw, ArrowLeft, Lock } from "lucide-react";
+import { LottiePlayer } from "@/components/LottiePlayer";
 import { RecipeView } from "@/components/RecipeView";
 import { RestaurantView } from "@/components/RestaurantView";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,9 +43,9 @@ function parseContent(content: string, isStreaming = false) {
 function ThinkingDots() {
   return (
     <div className="flex gap-1 p-4">
-      <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
-      <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-75" />
-      <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-150" />
+      <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "#ff6b35" }} />
+      <div className="w-2 h-2 rounded-full animate-bounce delay-75" style={{ background: "#ff6b35" }} />
+      <div className="w-2 h-2 rounded-full animate-bounce delay-150" style={{ background: "#ff6b35" }} />
     </div>
   );
 }
@@ -54,33 +53,35 @@ function ThinkingDots() {
 interface ModelPanelProps {
   label: string;
   modelName: string;
-  color: string;
+  accentColor: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   messages: any[];
   isLoading: boolean;
 }
 
-function ModelPanel({ label, modelName, color, messages, isLoading }: ModelPanelProps) {
+function ModelPanel({ label, modelName, accentColor, messages, isLoading }: ModelPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full border border-gray-100 rounded-2xl overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden"
+      style={{ background: "var(--cc-surface)", borderRadius: "12px" }}>
       {/* Panel header */}
-      <div className={`px-4 py-3 flex items-center gap-2 border-b border-gray-100 ${color}`}>
-        <Bot className="w-4 h-4" />
+      <div className="px-4 py-3 flex items-center gap-2"
+        style={{ borderBottom: "1px solid var(--cc-border)", background: "var(--cc-surface-2)" }}>
+        <Bot className="w-4 h-4" style={{ color: accentColor }} />
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider">{label}</p>
-          <p className="text-xs opacity-75">{modelName}</p>
+          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: accentColor }}>{label}</p>
+          <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>{modelName}</p>
         </div>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !isLoading && (
-          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+          <div className="flex items-center justify-center h-full text-sm" style={{ color: "var(--cc-text-tertiary)" }}>
             Response will appear here
           </div>
         )}
@@ -94,7 +95,8 @@ function ModelPanel({ label, modelName, color, messages, isLoading }: ModelPanel
             return (
               <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                 {text && (
-                  <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                  <div className="p-4 rounded-xl text-sm leading-relaxed whitespace-pre-wrap"
+                    style={{ background: "var(--cc-surface-2)", color: "var(--cc-text-primary)" }}>
                     {text}
                   </div>
                 )}
@@ -108,7 +110,7 @@ function ModelPanel({ label, modelName, color, messages, isLoading }: ModelPanel
                     {data.type === "both" && (
                       <>
                         {data.recipe && <RecipeView data={data.recipe} />}
-                        <div className="text-center py-2 text-xs font-bold text-gray-400 uppercase">OR</div>
+                        <div className="text-center py-2 text-xs font-bold uppercase" style={{ color: "var(--cc-text-tertiary)" }}>OR</div>
                         {data.restaurantSuggestion && <RestaurantView data={data.restaurantSuggestion} />}
                       </>
                     )}
@@ -151,14 +153,12 @@ export default function ArenaPage() {
 
   const userContext = { userName, location, dietaryPreferences };
 
-  // Left: always Gemini server model
   const leftChat = useChat({
     api: "/api/chat",
     body: { userContext },
     id: "arena-left",
   });
 
-  // Right: user's chosen provider via BYOK
   const rightChat = useChat({
     api: "/api/chat",
     body: {
@@ -171,10 +171,6 @@ export default function ArenaPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!sharedInput.trim()) return;
-    const fakeEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
-    leftChat.setInput(sharedInput);
-    rightChat.setInput(sharedInput);
-    // Submit both — need to set input first then call append
     leftChat.append({ role: "user", content: sharedInput });
     rightChat.append({ role: "user", content: sharedInput });
     setSharedInput("");
@@ -189,75 +185,85 @@ export default function ArenaPage() {
 
   if (!hydrated || !proChecked) {
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center h-screen" style={{ background: "var(--cc-bg)" }}>
+        <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#ff6b35", borderTopColor: "transparent" }} />
       </div>
     );
   }
 
   if (!isPro) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-6 p-8">
-        <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center">
-          <Lock className="w-8 h-8 text-indigo-600" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">Model Arena is Pro-only</h1>
-        <p className="text-gray-500 text-center max-w-sm">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8" style={{ background: "var(--cc-bg)" }}>
+        {/* Pikachu animation — LottieFiles */}
+        <LottiePlayer
+          src="https://lottie.host/0bc2deaa-cb80-4558-bd84-d69810d90265/Y55Snq2B5D.lottie"
+          width={200}
+          height={200}
+        />
+        <h1 className="text-2xl font-bold" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+          Model Arena is Pro-only
+        </h1>
+        <p className="text-center max-w-sm" style={{ color: "var(--cc-text-secondary)" }}>
           Compare two AI models side by side on the same food prompt. Upgrade to Pro to unlock.
         </p>
         <div className="flex gap-3">
-          <Button onClick={() => router.push("/chat")} variant="outline" className="rounded-full">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Chat
-          </Button>
-          <Button
-            onClick={() => router.push("/chat")}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full"
-          >
-            <Sparkles className="w-4 h-4 mr-2" /> Upgrade to Pro
-          </Button>
+          <button onClick={() => router.push("/chat")} className="btn-pill-secondary">
+            <ArrowLeft className="w-4 h-4 inline mr-2" /> Back to Chat
+          </button>
+          <button onClick={() => router.push("/chat")} className="btn-pill-primary flex items-center gap-2">
+            <Sparkles className="w-4 h-4" /> Upgrade to Pro
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen" style={{ background: "var(--cc-bg)" }}>
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <header className="glass-nav px-6 flex items-center justify-between sticky top-0 z-10" style={{ height: "48px" }}>
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/chat")}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-full transition-colors"
+            style={{ color: "var(--cc-text-secondary)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--cc-surface-2)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             aria-label="Back"
           >
-            <ArrowLeft className="w-4 h-4 text-gray-600" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-1.5 rounded-lg text-white">
-              <Sparkles className="w-4 h-4" />
+            <div className="p-1.5 rounded-lg" style={{ background: "rgba(255,107,53,0.15)" }}>
+              <Sparkles className="w-4 h-4" style={{ color: "#ff6b35" }} />
             </div>
             <div>
-              <h1 className="font-bold text-lg tracking-tight text-gray-900">Model Arena</h1>
-              <p className="text-xs text-gray-400">Same prompt, two AI models</p>
+              <h1 className="font-bold text-lg tracking-tight" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+                Model Arena
+              </h1>
+              <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>Same prompt, two AI models</p>
             </div>
           </div>
-          <span className="text-xs font-bold px-2 py-1 rounded-full bg-indigo-600 text-white">Pro</span>
+          <span className="text-xs font-bold px-2 py-1 rounded-full"
+            style={{ background: "rgba(255,107,53,0.15)", color: "#ff6b35", border: "1px solid rgba(255,107,53,0.25)" }}>
+            Pro
+          </span>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Right panel model selector */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 font-medium">Right model:</span>
+            <span className="text-xs font-medium" style={{ color: "var(--cc-text-tertiary)" }}>Right model:</span>
             <div className="flex gap-1">
               {PROVIDERS.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => setRightProvider(p.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                  style={
                     rightProvider === p.id
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
+                      ? { background: "#ff6b35", color: "#ffffff" }
+                      : { background: "var(--cc-surface-2)", color: "var(--cc-text-secondary)" }
+                  }
                 >
                   {p.label.replace("Google ", "").replace("Anthropic ", "")}
                 </button>
@@ -268,7 +274,10 @@ export default function ArenaPage() {
           {(leftChat.messages.length > 0 || rightChat.messages.length > 0) && (
             <button
               onClick={handleReset}
-              className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-full hover:bg-gray-100"
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+              style={{ color: "var(--cc-text-secondary)" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-2)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-text-primary)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-text-secondary)"; }}
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset
             </button>
@@ -276,9 +285,10 @@ export default function ArenaPage() {
         </div>
       </header>
 
-      {/* BYOK notice if no key for right panel */}
+      {/* BYOK notice */}
       {!byok && (
-        <div className="bg-amber-50 border-b border-amber-100 px-6 py-2 text-xs text-amber-700 text-center">
+        <div className="px-6 py-2 text-xs text-center"
+          style={{ background: "rgba(255,159,28,0.08)", borderBottom: "1px solid rgba(255,159,28,0.15)", color: "#ff9f1c" }}>
           Right panel needs your API key. Go to{" "}
           <button onClick={() => router.push("/chat")} className="underline font-medium">
             Chat
@@ -292,14 +302,14 @@ export default function ArenaPage() {
         <ModelPanel
           label="Model A"
           modelName="Gemini 2.5 Flash"
-          color="bg-blue-50 text-blue-700"
+          accentColor="#0a84ff"
           messages={leftChat.messages}
           isLoading={leftChat.isLoading}
         />
         <ModelPanel
           label="Model B"
           modelName={PROVIDERS.find((p) => p.id === rightProvider)?.label ?? rightProvider}
-          color="bg-purple-50 text-purple-700"
+          accentColor="#bf5af2"
           messages={rightChat.messages}
           isLoading={rightChat.isLoading}
         />
@@ -310,23 +320,29 @@ export default function ArenaPage() {
         <div className="w-full max-w-3xl pointer-events-auto">
           <form
             onSubmit={handleSubmit}
-            className="relative flex items-center shadow-2xl rounded-full bg-white border border-gray-100 p-2"
+            className="relative flex items-center rounded-full p-2"
+            style={{
+              background: "var(--cc-surface)",
+              border: "1px solid var(--cc-border-strong)",
+              boxShadow: "var(--cc-shadow-lg)",
+            }}
           >
-            <Input
+            <input
               value={sharedInput}
               onChange={(e) => setSharedInput(e.target.value)}
               placeholder="Ask both models the same food question..."
-              className="flex-1 border-0 bg-transparent text-lg px-6 py-4 focus-visible:ring-0 placeholder:text-gray-400"
+              className="flex-1 bg-transparent text-base px-6 py-3 outline-none"
+              style={{ color: "var(--cc-text-primary)" }}
               disabled={isLoading}
             />
-            <Button
+            <button
               type="submit"
-              size="icon"
-              className="rounded-full bg-indigo-600 hover:bg-indigo-700 text-white w-12 h-12 shrink-0"
+              className="rounded-full w-12 h-12 shrink-0 flex items-center justify-center transition-colors disabled:opacity-50"
+              style={{ background: "#ff6b35", color: "#ffffff" }}
               disabled={isLoading || !sharedInput.trim()}
             >
               <Send className="w-5 h-5" />
-            </Button>
+            </button>
           </form>
         </div>
       </div>

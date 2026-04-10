@@ -3,9 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, ShoppingCart, Plus, X, ChefHat } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { getMealPlan, saveMealPlan, type WeekPlan, type MealSlot } from "@/lib/storage";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 
@@ -44,44 +41,62 @@ export default function PlannerPage() {
         saveMealPlan(updated);
     };
 
-    // Collect all unique dish names for consolidated shopping list
     const allDishes = DAYS.flatMap((day) =>
         MEALS.map((meal) => plan[day]?.[meal]?.dish).filter(Boolean) as string[]
     );
     const uniqueDishes = [...new Set(allDishes)];
 
     return (
-        <div className="min-h-screen bg-white">
-            <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
+        <div className="min-h-screen" style={{ background: "var(--cc-bg)", color: "var(--cc-text-primary)" }}>
+            <header className="glass-nav px-6 flex items-center gap-4 sticky top-0 z-10" style={{ height: "48px" }}>
                 <button
                     onClick={() => router.push("/chat")}
-                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                    className="p-2 rounded-full transition-opacity hover:opacity-70"
+                    style={{ color: "var(--cc-text-secondary)" }}
                     aria-label="Back to chat"
                 >
-                    <ArrowLeft className="w-5 h-5 text-gray-600" />
+                    <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-indigo-600" />
-                    <h1 className="font-bold text-lg text-gray-900">Weekly Meal Planner</h1>
+                    <Calendar className="w-4 h-4" style={{ color: "#ff6b35" }} />
+                    <h1 style={{ fontSize: "14px", fontWeight: 400, color: "var(--cc-text-primary)" }}>Weekly Meal Planner</h1>
                 </div>
             </header>
 
-            <main className="max-w-6xl mx-auto p-6 space-y-8">
+            <main className="max-w-[1080px] mx-auto p-6 space-y-8">
                 {/* Planner Grid */}
-                <div className="overflow-x-auto">
-                    <div className="grid grid-cols-[120px_repeat(7,minmax(140px,1fr))] gap-2 min-w-[1100px]">
+                <div className="overflow-x-auto" style={{ borderRadius: "12px", border: "1px solid var(--cc-border)" }}>
+                    <div className="grid grid-cols-[100px_repeat(7,minmax(130px,1fr))] gap-0 min-w-[1050px]">
                         {/* Header row */}
-                        <div />
+                        <div style={{ padding: "12px", borderBottom: "1px solid var(--cc-border)" }} />
                         {DAYS.map((day) => (
-                            <div key={day} className="text-center text-sm font-bold text-gray-900 py-2">
-                                {day}
+                            <div key={day}
+                                className="text-center py-3 px-2"
+                                style={{
+                                    fontSize: "12px",
+                                    fontWeight: 600,
+                                    textTransform: "uppercase",
+                                    letterSpacing: "-0.01em",
+                                    color: "var(--cc-text-secondary)",
+                                    borderBottom: "1px solid var(--cc-border)",
+                                    borderLeft: "1px solid var(--cc-border)",
+                                }}>
+                                {day.slice(0, 3)}
                             </div>
                         ))}
 
                         {/* Meal rows */}
-                        {MEALS.map((meal) => (
+                        {MEALS.map((meal, mealIdx) => (
                             <React.Fragment key={meal}>
-                                <div className="flex items-center text-sm font-medium text-gray-500 capitalize">
+                                <div className="flex items-center px-3 py-4"
+                                    style={{
+                                        fontSize: "12px",
+                                        fontWeight: 600,
+                                        textTransform: "uppercase",
+                                        letterSpacing: "-0.01em",
+                                        color: "var(--cc-text-tertiary)",
+                                        borderBottom: mealIdx < MEALS.length - 1 ? "1px solid var(--cc-border)" : "none",
+                                    }}>
                                     {meal}
                                 </div>
                                 {DAYS.map((day) => {
@@ -89,54 +104,65 @@ export default function PlannerPage() {
                                     const isEditing = editingSlot?.day === day && editingSlot?.meal === meal;
 
                                     return (
-                                        <div key={`${day}-${meal}`} className="min-h-[80px]">
+                                        <div key={`${day}-${meal}`}
+                                            className="p-2"
+                                            style={{
+                                                borderLeft: "1px solid var(--cc-border)",
+                                                borderBottom: mealIdx < MEALS.length - 1 ? "1px solid var(--cc-border)" : "none",
+                                                minHeight: "80px",
+                                            }}>
                                             {isEditing ? (
-                                                <div className="p-2 bg-indigo-50 rounded-xl border border-indigo-200 space-y-2">
-                                                    <Input
+                                                <div className="p-2 space-y-2" style={{
+                                                    background: "rgba(255,107,53,0.08)",
+                                                    borderRadius: "8px",
+                                                }}>
+                                                    <input
                                                         value={dishInput}
                                                         onChange={(e) => setDishInput(e.target.value)}
                                                         placeholder="Dish name..."
-                                                        className="text-xs h-8 border-0 bg-white"
+                                                        className="w-full px-2 py-1.5 outline-none"
+                                                        style={{
+                                                            fontSize: "12px",
+                                                            borderRadius: "8px",
+                                                            background: "var(--cc-surface-2)",
+                                                            color: "var(--cc-text-primary)",
+                                                            border: "1px solid var(--cc-border)",
+                                                        }}
                                                         onKeyDown={(e) => {
-                                                            if (e.key === "Enter" && dishInput.trim()) {
-                                                                setMeal(day, meal, dishInput.trim());
-                                                            }
-                                                            if (e.key === "Escape") {
-                                                                setEditingSlot(null);
-                                                                setDishInput("");
-                                                            }
+                                                            if (e.key === "Enter" && dishInput.trim()) setMeal(day, meal, dishInput.trim());
+                                                            if (e.key === "Escape") { setEditingSlot(null); setDishInput(""); }
                                                         }}
                                                         autoFocus
                                                     />
                                                     <div className="flex gap-1">
-                                                        <Button
-                                                            size="sm"
-                                                            className="text-[10px] h-6 bg-indigo-600 hover:bg-indigo-700 rounded-full px-2"
-                                                            onClick={() => {
-                                                                if (dishInput.trim()) setMeal(day, meal, dishInput.trim());
-                                                            }}
+                                                        <button
+                                                            className="text-white"
+                                                            style={{ fontSize: "10px", fontWeight: 600, padding: "4px 8px", borderRadius: "980px", background: "#ff6b35" }}
+                                                            onClick={() => { if (dishInput.trim()) setMeal(day, meal, dishInput.trim()); }}
                                                         >
                                                             Add
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            className="text-[10px] h-6 rounded-full px-2"
+                                                        </button>
+                                                        <button
+                                                            style={{ fontSize: "10px", fontWeight: 400, padding: "4px 8px", borderRadius: "980px", color: "var(--cc-text-secondary)" }}
                                                             onClick={() => { setEditingSlot(null); setDishInput(""); }}
                                                         >
                                                             Cancel
-                                                        </Button>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             ) : slot ? (
-                                                <div className="p-2 bg-gray-50 rounded-xl border border-gray-100 h-full group relative">
+                                                <div className="h-full group relative p-2" style={{
+                                                    background: "var(--cc-surface-2)",
+                                                    borderRadius: "8px",
+                                                }}>
                                                     <div className="flex items-start gap-1">
-                                                        <ChefHat className="w-3 h-3 text-orange-500 mt-0.5 shrink-0" />
-                                                        <p className="text-xs font-medium text-gray-900 line-clamp-3">{slot.dish}</p>
+                                                        <ChefHat className="w-3 h-3 mt-0.5 shrink-0" style={{ color: "#ff6b35" }} />
+                                                        <p className="line-clamp-3" style={{ fontSize: "12px", fontWeight: 400, color: "var(--cc-text-primary)" }}>{slot.dish}</p>
                                                     </div>
                                                     <button
                                                         onClick={() => removeMeal(day, meal)}
-                                                        className="absolute top-1 right-1 p-0.5 rounded-full bg-white shadow-sm text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        className="absolute top-1 right-1 p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        style={{ background: "var(--cc-surface-3)", color: "var(--cc-text-tertiary)" }}
                                                         aria-label="Remove meal"
                                                     >
                                                         <X className="w-3 h-3" />
@@ -145,7 +171,14 @@ export default function PlannerPage() {
                                             ) : (
                                                 <button
                                                     onClick={() => { setEditingSlot({ day, meal }); setDishInput(""); }}
-                                                    className="w-full h-full min-h-[80px] border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-300 hover:border-indigo-300 hover:text-indigo-400 transition-colors"
+                                                    className="w-full h-full min-h-[72px] flex items-center justify-center transition-colors"
+                                                    style={{
+                                                        border: "2px dashed var(--cc-border)",
+                                                        borderRadius: "8px",
+                                                        color: "var(--cc-text-tertiary)",
+                                                    }}
+                                                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,107,53,0.4)"; (e.currentTarget as HTMLButtonElement).style.color = "#ff6b35"; }}
+                                                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--cc-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-text-tertiary)"; }}
                                                     aria-label={`Add ${meal} for ${day}`}
                                                 >
                                                     <Plus className="w-4 h-4" />
@@ -161,51 +194,57 @@ export default function PlannerPage() {
 
                 {/* Consolidated Shopping List */}
                 {uniqueDishes.length > 0 && (
-                    <Card className="p-6 border border-gray-100">
-                        <div className="flex items-center gap-2 mb-4">
-                            <ShoppingCart className="w-5 h-5 text-indigo-600" />
-                            <h2 className="font-bold text-lg text-gray-900">Shopping List</h2>
-                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                                {uniqueDishes.length} dishes planned
+                    <div className="p-6" style={{ background: "var(--cc-surface)", borderRadius: "12px" }}>
+                        <div className="flex items-center gap-2" style={{ marginBottom: "4px" }}>
+                            <ShoppingCart className="w-4 h-4" style={{ color: "#ff6b35" }} />
+                            <h2 style={{ fontSize: "17px", fontWeight: 600, color: "var(--cc-text-primary)" }}>Shopping List</h2>
+                            <span style={{
+                                fontSize: "12px", fontWeight: 400, padding: "2px 8px",
+                                borderRadius: "980px", background: "var(--cc-surface-2)", color: "var(--cc-text-tertiary)",
+                            }}>
+                                {uniqueDishes.length} dishes
                             </span>
                         </div>
-                        <p className="text-sm text-gray-500 mb-4">
+                        <p style={{ fontSize: "14px", color: "var(--cc-text-secondary)", marginBottom: "16px" }}>
                             Quick-buy ingredients for your planned meals:
                         </p>
                         <div className="space-y-3">
                             {uniqueDishes.map((dish) => (
-                                <div key={dish} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                                    <span className="font-medium text-sm text-gray-900">{dish}</span>
+                                <div key={dish} className="flex items-center justify-between p-3" style={{
+                                    background: "var(--cc-surface-2)", borderRadius: "8px",
+                                }}>
+                                    <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--cc-text-primary)" }}>{dish}</span>
                                     <div className="flex gap-2">
-                                        <a
-                                            href={buildBlinkitLink(dish + " ingredients")}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-[10px] font-bold text-white bg-yellow-500 hover:bg-yellow-600 px-2 py-1 rounded-full transition-colors"
-                                        >
+                                        <a href={buildBlinkitLink(dish + " ingredients")} target="_blank" rel="noopener noreferrer"
+                                            className="text-white bg-yellow-500 hover:bg-yellow-600 transition-colors"
+                                            style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "980px" }}>
                                             Blinkit
                                         </a>
-                                        <a
-                                            href={buildSwiggyInstamartLink(dish + " ingredients")}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-[10px] font-bold text-white bg-orange-500 hover:bg-orange-600 px-2 py-1 rounded-full transition-colors"
-                                        >
+                                        <a href={buildSwiggyInstamartLink(dish + " ingredients")} target="_blank" rel="noopener noreferrer"
+                                            className="text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+                                            style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "980px" }}>
                                             Instamart
                                         </a>
-                                        <a
-                                            href={buildInstacartLink(dish + " ingredients")}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-[10px] font-bold text-white bg-green-600 hover:bg-green-700 px-2 py-1 rounded-full transition-colors"
-                                        >
+                                        <a href={buildInstacartLink(dish + " ingredients")} target="_blank" rel="noopener noreferrer"
+                                            className="text-white bg-green-600 hover:bg-green-700 transition-colors"
+                                            style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "980px" }}>
                                             Instacart
                                         </a>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </Card>
+                    </div>
+                )}
+
+                {uniqueDishes.length === 0 && (
+                    <div className="text-center" style={{ paddingTop: "64px", paddingBottom: "64px" }}>
+                        <div style={{ fontSize: "40px", marginBottom: "12px" }}>📅</div>
+                        <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--cc-text-primary)" }}>Your week is empty</p>
+                        <p style={{ fontSize: "14px", color: "var(--cc-text-secondary)", marginTop: "4px" }}>
+                            Click any slot above to plan your meals for the week.
+                        </p>
+                    </div>
                 )}
             </main>
         </div>

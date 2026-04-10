@@ -68,9 +68,8 @@ The JSON structure should be:
 
 IMPORTANT RULES:
 - If the user's input is vague, ask for clarification (type: "clarification").
-- If the user specifically asks to cook, provide "recipe".
-- If the user specifically asks to go out, provide "restaurant".
-- If it's ambiguous, suggest "both" or ask.
+- PREFER returning "both" (recipe AND restaurant suggestions) for most food queries. Only return "recipe" alone if the user explicitly says they want to cook at home. Only return "restaurant" alone if the user explicitly says they want to eat out or find restaurants.
+- Default to "both" whenever a dish or cuisine is mentioned without specifying cook vs. eat out.
 - For "ingredients", simulate realistic prices in INR. For EACH ingredient, generate a "links" array with ALL THREE platforms (Blinkit, Swiggy Instamart, Instacart) using the URL templates shown above. Replace ITEM_NAME with the URL-encoded ingredient name.
 - For "restaurants", suggest 3-5 popular real restaurants in the user's city (if known from their coordinates) or general famous chains. Include approximate lat/lng coordinates for each restaurant. Include the cuisine type.
 - Generate search URLs for Zomato and Swiggy for each restaurant.

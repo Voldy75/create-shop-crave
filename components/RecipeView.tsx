@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShoppingCart, ExternalLink, ChefHat, Clock, Users, Flame, Dumbbell, Zap } from "lucide-react";
+import { ShoppingCart, ExternalLink, Clock, Users, Flame, Dumbbell, Zap, ChevronDown, BookOpen } from "lucide-react";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ShareButton } from "@/components/ShareButton";
@@ -14,198 +14,402 @@ interface RecipeViewProps {
 
 function getLinksForIngredient(ing: Ingredient): ShoppingLink[] {
     if (ing.links && ing.links.length > 0) return ing.links;
-    // Backward compat: old single-link format
     if (ing.link) {
         return [{ platform: "blinkit", label: "Blinkit", url: ing.link }];
     }
     return [];
 }
 
-const platformColors: Record<string, { bg: string; hover: string }> = {
-    blinkit: { bg: "bg-yellow-500", hover: "hover:bg-yellow-600" },
-    swiggy_instamart: { bg: "bg-orange-500", hover: "hover:bg-orange-600" },
-    instacart: { bg: "bg-green-600", hover: "hover:bg-green-700" },
-};
+const STORE_OPTIONS = [
+    { id: "blinkit", name: "Blinkit", color: "#f8d800", buildLink: buildBlinkitLink },
+    { id: "swiggy_instamart", name: "Swiggy Instamart", color: "#fc8019", buildLink: buildSwiggyInstamartLink },
+    { id: "instacart", name: "Instacart", color: "#43b02a", buildLink: buildInstacartLink },
+];
+
+const FOOD_EMOJIS = ["🍗", "🧅", "🧄", "🫚", "🍅", "🌶️", "🧈", "🥛", "🍋", "🧂", "🌿", "🫘", "🥚", "🍚", "🥥", "🫒", "🥕", "🥔", "🌽", "🍞"];
+
+function getIngredientEmoji(item: string, index: number): string {
+    const lower = item.toLowerCase();
+    if (lower.includes("chicken") || lower.includes("meat") || lower.includes("mutton")) return "🍗";
+    if (lower.includes("onion")) return "🧅";
+    if (lower.includes("garlic")) return "🧄";
+    if (lower.includes("ginger")) return "🫚";
+    if (lower.includes("tomato")) return "🍅";
+    if (lower.includes("chili") || lower.includes("pepper") || lower.includes("mirch")) return "🌶️";
+    if (lower.includes("butter") || lower.includes("ghee")) return "🧈";
+    if (lower.includes("cream") || lower.includes("milk") || lower.includes("yogurt") || lower.includes("curd")) return "🥛";
+    if (lower.includes("lemon") || lower.includes("lime")) return "🍋";
+    if (lower.includes("salt") || lower.includes("spice") || lower.includes("masala") || lower.includes("cumin") || lower.includes("turmeric")) return "🧂";
+    if (lower.includes("coriander") || lower.includes("cilantro") || lower.includes("parsley") || lower.includes("mint") || lower.includes("basil")) return "🌿";
+    if (lower.includes("dal") || lower.includes("lentil") || lower.includes("bean") || lower.includes("chickpea")) return "🫘";
+    if (lower.includes("egg")) return "🥚";
+    if (lower.includes("rice") || lower.includes("basmati")) return "🍚";
+    if (lower.includes("coconut")) return "🥥";
+    if (lower.includes("oil") || lower.includes("olive")) return "🫒";
+    if (lower.includes("carrot")) return "🥕";
+    if (lower.includes("potato")) return "🥔";
+    if (lower.includes("corn")) return "🌽";
+    if (lower.includes("bread") || lower.includes("naan") || lower.includes("roti") || lower.includes("flour")) return "🍞";
+    return FOOD_EMOJIS[index % FOOD_EMOJIS.length];
+}
 
 export function RecipeView({ data }: RecipeViewProps) {
+    const [selectedStore, setSelectedStore] = useState(STORE_OPTIONS[0]);
+    const [showStoreDropdown, setShowStoreDropdown] = useState(false);
+
+    const allItems = data.ingredients.map((i) => i.item).join(", ");
+
     return (
-        <Card className="w-full bg-white shadow-none border-0 overflow-hidden">
-            <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 text-orange-600">
-                        <ChefHat className="w-4 h-4" />
-                        <span className="font-bold uppercase tracking-wider text-xs">Cook at Home</span>
+        <Card className="w-full overflow-hidden shadow-none border-0" style={{ background: "var(--cc-surface)", color: "var(--cc-text-primary)", borderRadius: "16px" }}>
+
+            {/* ── Hero Section — Recipe title + image ── */}
+            <div className="grid md:grid-cols-[1fr_1.2fr]" style={{ borderBottom: "1px solid var(--cc-border)" }}>
+                {/* Left: Recipe info */}
+                <div className="flex flex-col justify-center" style={{ padding: "32px 28px" }}>
+                    <h2 style={{
+                        fontSize: "clamp(24px, 3vw, 32px)",
+                        fontWeight: 700,
+                        lineHeight: 1.12,
+                        letterSpacing: "-0.02em",
+                        color: "var(--cc-text-primary)",
+                    }}>
+                        {data.name}
+                    </h2>
+
+                    <p style={{
+                        marginTop: "12px",
+                        fontSize: "15px",
+                        lineHeight: 1.5,
+                        color: "var(--cc-text-secondary)",
+                    }}>
+                        {data.description}
+                    </p>
+
+                    {/* Metadata pill */}
+                    <div className="inline-flex items-center gap-2 mt-4" style={{
+                        padding: "8px 16px",
+                        borderRadius: "980px",
+                        border: "1px solid var(--cc-border)",
+                        fontSize: "13px",
+                        fontWeight: 500,
+                        color: "var(--cc-text-secondary)",
+                        width: "fit-content",
+                    }}>
+                        {data.prepTime && <><Clock className="w-3.5 h-3.5" /> {data.prepTime}</>}
+                        {data.prepTime && data.servings && <span style={{ color: "var(--cc-border)" }}>·</span>}
+                        {data.servings && <><Users className="w-3.5 h-3.5" /> {data.servings} servings</>}
+                        {data.nutritionEstimate && (
+                            <>
+                                <span style={{ color: "var(--cc-border)" }}>·</span>
+                                <Flame className="w-3.5 h-3.5" style={{ color: "#ff6b35" }} />
+                                {data.nutritionEstimate.calories}
+                            </>
+                        )}
                     </div>
-                    <div className="flex items-center gap-1">
+
+                    {/* Dietary tags */}
+                    {data.dietaryTags && data.dietaryTags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                            {data.dietaryTags.map((tag) => (
+                                <span key={tag} style={{
+                                    fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "980px",
+                                    background: "rgba(52,199,89,0.1)", color: "#34c759", textTransform: "uppercase", letterSpacing: "0.02em",
+                                }}>
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 mt-4">
                         <FavoriteButton type="recipe" data={data} />
                         <ShareButton title={data.name} text={`Check out this recipe for ${data.name}!`} />
                     </div>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">{data.name}</h2>
-                <p className="text-gray-500 mt-1">{data.description}</p>
 
-                {/* Recipe metadata */}
-                <div className="flex flex-wrap gap-3 mt-3">
-                    {data.prepTime && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
-                            <Clock className="w-3 h-3" /> {data.prepTime}
+                {/* Right: Food image placeholder */}
+                <div
+                    className="relative flex items-center justify-center overflow-hidden"
+                    style={{
+                        background: "linear-gradient(135deg, rgba(255,107,53,0.08) 0%, rgba(255,107,53,0.02) 100%)",
+                        minHeight: "280px",
+                    }}
+                >
+                    <div className="text-center space-y-3">
+                        <span style={{ fontSize: "72px", display: "block" }}>
+                            {data.name.toLowerCase().includes("chicken") ? "🍗" :
+                             data.name.toLowerCase().includes("pizza") ? "🍕" :
+                             data.name.toLowerCase().includes("salad") ? "🥗" :
+                             data.name.toLowerCase().includes("pasta") ? "🍝" :
+                             data.name.toLowerCase().includes("curry") ? "🍛" :
+                             data.name.toLowerCase().includes("biryani") ? "🍚" :
+                             data.name.toLowerCase().includes("soup") ? "🍜" :
+                             data.name.toLowerCase().includes("cake") || data.name.toLowerCase().includes("dessert") ? "🎂" :
+                             data.name.toLowerCase().includes("bread") || data.name.toLowerCase().includes("naan") ? "🫓" :
+                             data.name.toLowerCase().includes("rice") ? "🍚" :
+                             "🍽️"}
                         </span>
-                    )}
-                    {data.servings && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
-                            <Users className="w-3 h-3" /> {data.servings} servings
-                        </span>
-                    )}
-                    {data.dietaryTags?.map((tag) => (
-                        <span
-                            key={tag}
-                            className="inline-flex items-center text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-full"
-                        >
-                            {tag}
-                        </span>
-                    ))}
-                </div>
-
-                {/* Nutrition estimate */}
-                {data.nutritionEstimate && (
-                    <div className="flex flex-wrap gap-3 mt-3">
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-700 bg-orange-50 px-2.5 py-1 rounded-full">
-                            <Flame className="w-3 h-3" /> {data.nutritionEstimate.calories}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
-                            <Dumbbell className="w-3 h-3" /> {data.nutritionEstimate.protein} protein
-                        </span>
-                        <span className="text-xs font-medium text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full">
-                            {data.nutritionEstimate.carbs} carbs
-                        </span>
-                        <span className="text-xs font-medium text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full">
-                            {data.nutritionEstimate.fat} fat
-                        </span>
-                    </div>
-                )}
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-8">
-                {/* Ingredients Section */}
-                <div className="bg-gray-50 rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                            <ShoppingCart className="w-4 h-4 text-indigo-600" />
-                            Shopping List
-                            <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-full border border-gray-100">
-                                {data.ingredients.length} items
-                            </span>
-                        </h3>
-                    </div>
-
-                    {/* Buy All buttons */}
-                    {(() => {
-                        const allItems = data.ingredients.map((i) => i.item).join(" ");
-                        return (
-                            <div className="flex gap-2 mb-4 flex-wrap">
-                                <a
-                                    href={buildBlinkitLink(allItems)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-yellow-500 hover:bg-yellow-600 px-3 py-2 rounded-full transition-colors"
-                                >
-                                    <Zap className="w-3 h-3" /> Buy all on Blinkit
-                                </a>
-                                <a
-                                    href={buildSwiggyInstamartLink(allItems)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 px-3 py-2 rounded-full transition-colors"
-                                >
-                                    <Zap className="w-3 h-3" /> Buy all on Instamart
-                                </a>
-                                <a
-                                    href={buildInstacartLink(allItems)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-2 rounded-full transition-colors"
-                                >
-                                    <Zap className="w-3 h-3" /> Buy all on Instacart
-                                </a>
-                            </div>
-                        );
-                    })()}
-                    <ScrollArea className="h-[400px] pr-4">
-                        <div className="space-y-3">
-                            {data.ingredients.map((ing, idx) => {
-                                const links = getLinksForIngredient(ing);
-                                return (
-                                    <div
-                                        key={idx}
-                                        className="p-3 bg-white rounded-xl border border-gray-100 shadow-sm group hover:border-indigo-100 transition-colors"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg">
-                                                    🥗
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-gray-900 text-sm">{ing.item}</p>
-                                                    <p className="text-xs text-gray-500 font-medium">
-                                                        {ing.quantity && `${ing.quantity} · `}{ing.price}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {links.length > 0 && (
-                                            <div className="flex gap-2 mt-2 ml-12">
-                                                {links.map((lnk) => {
-                                                    const colors = platformColors[lnk.platform] || { bg: "bg-gray-900", hover: "hover:bg-gray-700" };
-                                                    return (
-                                                        <a
-                                                            key={lnk.platform}
-                                                            href={lnk.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className={`inline-flex items-center gap-1 text-[10px] font-bold text-white ${colors.bg} ${colors.hover} px-2 py-1 rounded-full transition-colors`}
-                                                        >
-                                                            {lnk.label}
-                                                            <ExternalLink className="w-2.5 h-2.5" />
-                                                        </a>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </ScrollArea>
-
-                    {/* Total Estimate */}
-                    <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                        <p className="text-sm text-gray-500 font-medium">Estimated Total</p>
-                        <p className="text-lg font-bold text-gray-900">
-                            ₹{data.ingredients.reduce((acc, curr) => {
-                                const price = parseFloat(curr.price.replace(/[^0-9.]/g, '')) || 0;
-                                return acc + price;
-                            }, 0)}
+                        <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)", fontWeight: 500 }}>
+                            AI-generated recipe
                         </p>
                     </div>
                 </div>
+            </div>
 
-                {/* Instructions Section */}
-                <div>
-                    <h3 className="font-bold text-gray-900 mb-4">Instructions</h3>
-                    <ScrollArea className="h-[400px] pr-4">
-                        <div className="space-y-6">
+            {/* ── Nutrition Bar ── */}
+            {data.nutritionEstimate && (
+                <div className="flex items-center gap-6 flex-wrap" style={{ padding: "16px 28px", borderBottom: "1px solid var(--cc-border)" }}>
+                    <div className="flex items-center gap-1.5">
+                        <Flame className="w-3.5 h-3.5" style={{ color: "#ff6b35" }} />
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#ff6b35" }}>{data.nutritionEstimate.calories}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <Dumbbell className="w-3.5 h-3.5" style={{ color: "#0a84ff" }} />
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#0a84ff" }}>{data.nutritionEstimate.protein} protein</span>
+                    </div>
+                    <span style={{ fontSize: "13px", color: "var(--cc-text-secondary)" }}>{data.nutritionEstimate.carbs} carbs</span>
+                    <span style={{ fontSize: "13px", color: "var(--cc-text-secondary)" }}>{data.nutritionEstimate.fat} fat</span>
+                </div>
+            )}
+
+            {/* ── Ingredients Section ── */}
+            <div style={{ padding: "28px" }}>
+                <div className="flex items-center justify-between flex-wrap gap-4" style={{ marginBottom: "20px" }}>
+                    <h3 style={{ fontSize: "22px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--cc-text-primary)" }}>
+                        Ingredients
+                    </h3>
+
+                    {/* Store selector + Add all button */}
+                    <div className="flex items-center gap-3">
+                        {/* Store dropdown */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowStoreDropdown(!showStoreDropdown)}
+                                className="flex items-center gap-2 transition-colors"
+                                style={{
+                                    padding: "8px 14px",
+                                    borderRadius: "980px",
+                                    border: "1px solid var(--cc-border)",
+                                    background: "var(--cc-surface-2)",
+                                    fontSize: "13px",
+                                    fontWeight: 500,
+                                    color: "var(--cc-text-primary)",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: selectedStore.color, fontSize: "9px", fontWeight: 700, color: "#fff" }}>
+                                    {selectedStore.name[0]}
+                                </span>
+                                {selectedStore.name}
+                                <ChevronDown className="w-3.5 h-3.5" style={{ color: "var(--cc-text-tertiary)" }} />
+                            </button>
+                            {showStoreDropdown && (
+                                <div
+                                    className="absolute right-0 mt-2 z-20"
+                                    style={{
+                                        background: "var(--cc-surface)",
+                                        border: "1px solid var(--cc-border)",
+                                        borderRadius: "12px",
+                                        boxShadow: "rgba(0,0,0,0.22) 3px 5px 30px 0px",
+                                        overflow: "hidden",
+                                        minWidth: "180px",
+                                    }}
+                                >
+                                    {STORE_OPTIONS.map((store) => (
+                                        <button
+                                            key={store.id}
+                                            onClick={() => { setSelectedStore(store); setShowStoreDropdown(false); }}
+                                            className="w-full flex items-center gap-2 text-left transition-colors"
+                                            style={{
+                                                padding: "10px 14px",
+                                                fontSize: "13px",
+                                                fontWeight: selectedStore.id === store.id ? 600 : 400,
+                                                color: "var(--cc-text-primary)",
+                                                background: selectedStore.id === store.id ? "var(--cc-surface-2)" : "transparent",
+                                                border: "none",
+                                                cursor: "pointer",
+                                            }}
+                                            onMouseEnter={(e) => { if (selectedStore.id !== store.id) e.currentTarget.style.background = "var(--cc-surface-2)"; }}
+                                            onMouseLeave={(e) => { if (selectedStore.id !== store.id) e.currentTarget.style.background = "transparent"; }}
+                                        >
+                                            <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: store.color, fontSize: "9px", fontWeight: 700, color: "#fff" }}>
+                                                {store.name[0]}
+                                            </span>
+                                            {store.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Add all to cart */}
+                        <a
+                            href={selectedStore.buildLink(allItems)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 transition-opacity hover:opacity-90"
+                            style={{
+                                padding: "10px 20px",
+                                borderRadius: "980px",
+                                background: selectedStore.color,
+                                color: selectedStore.id === "blinkit" ? "#1d1d1f" : "#ffffff",
+                                fontSize: "14px",
+                                fontWeight: 600,
+                                textDecoration: "none",
+                            }}
+                        >
+                            <ShoppingCart className="w-4 h-4" />
+                            Add {data.ingredients.length} items to cart
+                        </a>
+                    </div>
+                </div>
+
+                {/* Ingredient grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {data.ingredients.map((ing, idx) => {
+                        const emoji = getIngredientEmoji(ing.item, idx);
+                        const links = getLinksForIngredient(ing);
+                        const storeLink = links.find(l => l.platform === selectedStore.id)?.url || selectedStore.buildLink(ing.item);
+
+                        return (
+                            <div key={idx} className="flex flex-col" style={{
+                                borderRadius: "12px",
+                                border: "1px solid var(--cc-border)",
+                                overflow: "hidden",
+                                background: "var(--cc-surface)",
+                            }}>
+                                {/* Emoji image area */}
+                                <a
+                                    href={storeLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center relative transition-colors"
+                                    style={{
+                                        height: "100px",
+                                        background: "var(--cc-surface-2)",
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    <span style={{ fontSize: "40px" }}>{emoji}</span>
+                                    {/* Cart badge */}
+                                    <span className="absolute top-2 right-2 flex items-center justify-center" style={{
+                                        width: "22px", height: "22px", borderRadius: "50%",
+                                        background: selectedStore.color,
+                                        color: selectedStore.id === "blinkit" ? "#1d1d1f" : "#fff",
+                                        fontSize: "11px", fontWeight: 700,
+                                    }}>
+                                        +
+                                    </span>
+                                </a>
+
+                                {/* Info */}
+                                <div style={{ padding: "10px 12px" }}>
+                                    <p className="line-clamp-2" style={{
+                                        fontSize: "13px", fontWeight: 500, lineHeight: 1.3,
+                                        color: "var(--cc-text-primary)",
+                                        minHeight: "34px",
+                                    }}>
+                                        {ing.quantity ? `${ing.quantity} ${ing.item}` : ing.item}
+                                    </p>
+                                    <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)", marginTop: "4px" }}>
+                                        {ing.price}
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Total estimate */}
+                <div className="flex items-center justify-between" style={{
+                    marginTop: "20px", paddingTop: "16px",
+                    borderTop: "1px solid var(--cc-border)",
+                }}>
+                    <span style={{ fontSize: "14px", color: "var(--cc-text-secondary)" }}>Estimated total</span>
+                    <span style={{ fontSize: "22px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+                        ₹{data.ingredients.reduce((acc, curr) => {
+                            const price = parseFloat(curr.price.replace(/[^0-9.]/g, "")) || 0;
+                            return acc + price;
+                        }, 0)}
+                    </span>
+                </div>
+            </div>
+
+            {/* ── About this recipe + Preparation ── */}
+            <div style={{ borderTop: "1px solid var(--cc-border)" }}>
+                <div className="grid md:grid-cols-2 gap-0">
+                    {/* Left: About + Full Ingredient List */}
+                    <div style={{ padding: "28px 28px 36px", borderRight: "1px solid var(--cc-border)" }}>
+                        {/* About */}
+                        <h3 style={{
+                            fontSize: "24px", fontWeight: 700, letterSpacing: "-0.02em",
+                            color: "var(--cc-text-primary)", marginBottom: "16px",
+                        }}>
+                            About this recipe
+                        </h3>
+                        <p style={{
+                            fontSize: "17px", lineHeight: 1.76, letterSpacing: "-0.01em",
+                            color: "var(--cc-text-secondary)",
+                            marginBottom: "32px",
+                        }}>
+                            {data.description}
+                        </p>
+
+                        {/* Full ingredient list */}
+                        <h4 style={{
+                            fontSize: "20px", fontWeight: 700, letterSpacing: "-0.02em",
+                            color: "var(--cc-text-primary)", marginBottom: "16px",
+                        }}>
+                            Full ingredient list
+                        </h4>
+                        <ul style={{ paddingLeft: "24px", margin: 0 }}>
+                            {data.ingredients.map((ing, idx) => (
+                                <li key={idx} style={{
+                                    fontSize: "17px", lineHeight: 1.76, letterSpacing: "-0.01em",
+                                    color: "var(--cc-text-secondary)",
+                                    paddingBottom: "4px",
+                                }}>
+                                    {ing.quantity ? `${ing.quantity} ${ing.item}` : ing.item}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Right: Preparation */}
+                    <div style={{ padding: "28px 28px 36px" }}>
+                        <h3 style={{
+                            fontSize: "24px", fontWeight: 700, letterSpacing: "-0.02em",
+                            color: "var(--cc-text-primary)", marginBottom: "28px",
+                        }}>
+                            Preparation
+                        </h3>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
                             {data.instructions.map((step, idx) => (
-                                <div key={idx} className="flex gap-4">
-                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">
+                                <div key={idx} className="flex" style={{ gap: "16px" }}>
+                                    <div
+                                        className="flex-shrink-0 flex items-center justify-center"
+                                        style={{
+                                            width: "36px", height: "36px", borderRadius: "50%",
+                                            fontSize: "15px", fontWeight: 700,
+                                            background: "var(--cc-text-primary)", color: "var(--cc-surface)",
+                                        }}
+                                    >
                                         {idx + 1}
                                     </div>
-                                    <p className="text-gray-600 leading-relaxed pt-1">
+                                    <p style={{
+                                        fontSize: "17px",
+                                        lineHeight: 1.76,
+                                        letterSpacing: "-0.01em",
+                                        color: "var(--cc-text-secondary)",
+                                        paddingTop: "6px",
+                                    }}>
                                         {step}
                                     </p>
                                 </div>
                             ))}
                         </div>
-                    </ScrollArea>
+                    </div>
                 </div>
             </div>
         </Card>

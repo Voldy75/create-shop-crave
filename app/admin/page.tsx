@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
 import { ArrowLeft, Users, Zap, Crown, TrendingUp, BarChart2, RefreshCw, Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
 interface DayData { usage_date: string; total: number }
 interface TopUser { user_id: string; email: string; total_requests: number; is_pro: boolean }
@@ -23,15 +21,21 @@ interface Stats {
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 function Sparkline({ data }: { data: DayData[] }) {
-  if (data.length === 0) return <div className="h-12 bg-gray-50 rounded-lg" />;
+  if (data.length === 0) return (
+    <div className="h-12 rounded-lg" style={{ background: "var(--cc-surface-2)" }} />
+  );
   const max = Math.max(...data.map((d) => d.total), 1);
   return (
     <div className="flex items-end gap-1 h-12">
       {data.map((d) => (
         <div
           key={d.usage_date}
-          className="flex-1 bg-indigo-400 rounded-sm opacity-80 hover:opacity-100 transition-opacity"
-          style={{ height: `${Math.max(4, (d.total / max) * 100)}%` }}
+          className="flex-1 rounded-sm transition-opacity hover:opacity-100"
+          style={{
+            height: `${Math.max(4, (d.total / max) * 100)}%`,
+            background: "#ff6b35",
+            opacity: 0.7,
+          }}
           title={`${d.usage_date}: ${d.total} requests`}
         />
       ))}
@@ -44,28 +48,29 @@ function StatCard({
   label,
   value,
   sub,
-  color,
+  iconColor,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: any;
   label: string;
   value: number | string;
   sub?: string;
-  color: string;
+  iconColor: string;
 }) {
   return (
-    <Card className="p-5 border border-gray-100 shadow-sm">
+    <div className="p-5" style={{ background: "var(--cc-surface)", borderRadius: "12px" }}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
-          {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cc-text-tertiary)", letterSpacing: "0.08em" }}>{label}</p>
+          <p className="text-3xl font-bold mt-1" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.03em" }}>{value}</p>
+          {sub && <p className="text-xs mt-0.5" style={{ color: "var(--cc-text-secondary)" }}>{sub}</p>}
         </div>
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{ background: `${iconColor}18`, color: iconColor }}>
           <Icon className="w-5 h-5" />
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -108,23 +113,27 @@ export default function AdminPage() {
 
   if (!hydrated || (loading && !stats && isAdmin)) {
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center h-screen" style={{ background: "var(--cc-bg)" }}>
+        <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
+          style={{ borderColor: "#ff6b35", borderTopColor: "transparent" }} />
       </div>
     );
   }
 
   if (!isAdmin || error === "forbidden") {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-6 p-8">
-        <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center">
-          <Lock className="w-8 h-8 text-red-500" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-8" style={{ background: "var(--cc-bg)" }}>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+          style={{ background: "rgba(255,69,58,0.1)", border: "1px solid rgba(255,69,58,0.2)" }}>
+          <Lock className="w-8 h-8" style={{ color: "#ff453a" }} />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Admin Access Only</h1>
-        <p className="text-gray-500">This page is restricted to the app owner.</p>
-        <Button onClick={() => router.push("/chat")} variant="outline" className="rounded-full">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Chat
-        </Button>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+          Admin Access Only
+        </h1>
+        <p style={{ color: "var(--cc-text-secondary)" }}>This page is restricted to the app owner.</p>
+        <button onClick={() => router.push("/chat")} className="btn-pill-secondary flex items-center gap-2">
+          <ArrowLeft className="w-4 h-4" /> Back to Chat
+        </button>
       </div>
     );
   }
@@ -136,125 +145,108 @@ export default function AdminPage() {
   const mrr = stats ? stats.proCount * 9 : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+    <div className="min-h-screen" style={{ background: "var(--cc-bg)" }}>
+      <header className="glass-nav px-6 flex items-center justify-between sticky top-0 z-10" style={{ height: "48px" }}>
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/chat")}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-full transition-colors"
+            style={{ color: "var(--cc-text-secondary)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--cc-surface-2)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            aria-label="Back to chat"
           >
-            <ArrowLeft className="w-4 h-4 text-gray-600" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="font-bold text-lg text-gray-900">Admin Dashboard</h1>
-            <p className="text-xs text-gray-400">
+            <h1 className="font-bold text-lg" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+              Admin Dashboard
+            </h1>
+            <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>
               Last updated: {lastRefresh.toLocaleTimeString()}
             </p>
           </div>
         </div>
-        <Button
+        <button
           onClick={fetchStats}
           disabled={loading}
-          variant="outline"
-          className="rounded-full text-xs h-8 gap-1.5"
+          className="btn-pill-secondary flex items-center gap-1.5 text-xs h-8 px-4 disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
           Refresh
-        </Button>
+        </button>
       </header>
 
       <main className="max-w-5xl mx-auto p-6 space-y-8">
         {error && error !== "forbidden" && (
-          <div className="bg-red-50 text-red-600 rounded-xl p-4 text-sm">{error}</div>
+          <div className="rounded-xl p-4 text-sm"
+            style={{ background: "rgba(255,69,58,0.08)", color: "#ff453a", border: "1px solid rgba(255,69,58,0.15)" }}>
+            {error}
+          </div>
         )}
 
         {/* KPI grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard
-            icon={Users}
-            label="Total Users"
-            value={stats?.totalUsers ?? 0}
-            color="bg-blue-50 text-blue-600"
-          />
-          <StatCard
-            icon={Zap}
-            label="DAU"
-            value={stats?.dau ?? 0}
-            sub="active today"
-            color="bg-indigo-50 text-indigo-600"
-          />
-          <StatCard
-            icon={Crown}
-            label="Pro Subscribers"
-            value={stats?.proCount ?? 0}
-            sub={`${conversionRate}% conversion`}
-            color="bg-amber-50 text-amber-600"
-          />
-          <StatCard
-            icon={TrendingUp}
-            label="Est. MRR"
-            value={`$${mrr}`}
-            sub={`₹${mrr * 84} / month`}
-            color="bg-green-50 text-green-600"
-          />
+          <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? 0} iconColor="#0a84ff" />
+          <StatCard icon={Zap} label="DAU" value={stats?.dau ?? 0} sub="active today" iconColor="#ff6b35" />
+          <StatCard icon={Crown} label="Pro Subscribers" value={stats?.proCount ?? 0} sub={`${conversionRate}% conversion`} iconColor="#ffd60a" />
+          <StatCard icon={TrendingUp} label="Est. MRR" value={`$${mrr}`} sub={`₹${mrr * 84} / month`} iconColor="#34c759" />
         </div>
 
         {/* Request stats + sparkline */}
-        <Card className="p-6 border border-gray-100 shadow-sm">
+        <div className="p-6 rounded-2xl" style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)" }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <BarChart2 className="w-4 h-4 text-indigo-600" />
-              <h2 className="font-bold text-gray-900">AI Requests</h2>
+              <BarChart2 className="w-4 h-4" style={{ color: "#ff6b35" }} />
+              <h2 className="font-bold" style={{ color: "var(--cc-text-primary)" }}>AI Requests</h2>
             </div>
             <div className="flex gap-4 text-sm">
               <div className="text-center">
-                <p className="font-bold text-gray-900">{stats?.requestsToday ?? 0}</p>
-                <p className="text-xs text-gray-400">Today</p>
+                <p className="font-bold" style={{ color: "var(--cc-text-primary)" }}>{stats?.requestsToday ?? 0}</p>
+                <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>Today</p>
               </div>
               <div className="text-center">
-                <p className="font-bold text-gray-900">{stats?.requestsWeek ?? 0}</p>
-                <p className="text-xs text-gray-400">This week</p>
+                <p className="font-bold" style={{ color: "var(--cc-text-primary)" }}>{stats?.requestsWeek ?? 0}</p>
+                <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>This week</p>
               </div>
             </div>
           </div>
           <Sparkline data={stats?.dailyRequests ?? []} />
           <div className="flex justify-between mt-1">
-            <p className="text-xs text-gray-400">14 days ago</p>
-            <p className="text-xs text-gray-400">Today</p>
+            <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>14 days ago</p>
+            <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>Today</p>
           </div>
-        </Card>
+        </div>
 
         {/* Top users */}
-        <Card className="p-6 border border-gray-100 shadow-sm">
-          <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Users className="w-4 h-4 text-indigo-600" />
+        <div className="p-6 rounded-2xl" style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)" }}>
+          <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: "var(--cc-text-primary)" }}>
+            <Users className="w-4 h-4" style={{ color: "#ff6b35" }} />
             Top Users This Week
           </h2>
           {!stats?.topUsers?.length ? (
-            <p className="text-sm text-gray-400">No requests yet this week.</p>
+            <p className="text-sm" style={{ color: "var(--cc-text-tertiary)" }}>No requests yet this week.</p>
           ) : (
             <div className="space-y-2">
               {stats.topUsers.map((u, i) => (
-                <div
-                  key={u.user_id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
-                >
+                <div key={u.user_id} className="flex items-center justify-between p-3 rounded-xl"
+                  style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)" }}>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-gray-400 w-4">{i + 1}</span>
-                    <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold">
+                    <span className="text-xs font-bold w-4" style={{ color: "var(--cc-text-tertiary)" }}>{i + 1}</span>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                      style={{ background: "rgba(255,107,53,0.15)", color: "#ff6b35" }}>
                       {u.email[0].toUpperCase()}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{u.email}</p>
-                    </div>
+                    <p className="text-sm font-medium" style={{ color: "var(--cc-text-primary)" }}>{u.email}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {u.is_pro && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: "rgba(255,107,53,0.15)", color: "#ff6b35", border: "1px solid rgba(255,107,53,0.25)" }}>
                         Pro
                       </span>
                     )}
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="text-sm font-bold" style={{ color: "var(--cc-text-primary)" }}>
                       {u.total_requests} req
                     </span>
                   </div>
@@ -262,7 +254,7 @@ export default function AdminPage() {
               ))}
             </div>
           )}
-        </Card>
+        </div>
       </main>
     </div>
   );

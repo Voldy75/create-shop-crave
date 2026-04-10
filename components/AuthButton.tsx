@@ -1,7 +1,7 @@
 "use client";
 
+import React from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
 
 function GoogleIcon() {
@@ -48,24 +48,43 @@ export function AuthButton() {
     });
   };
 
+  const btnStyle: React.CSSProperties = {
+    width: "100%",
+    height: "48px",
+    background: "var(--cc-surface-2, #232323)",
+    color: "var(--cc-text-primary, #f5f5f5)",
+    border: "1px solid rgba(255,255,255,0.09)",
+    borderRadius: "999px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "10px",
+    fontSize: "15px",
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: "background 0.15s ease",
+  };
+
   return (
     <div className="flex flex-col gap-3 w-full">
-      <Button
+      <button
         onClick={signInWithGoogle}
-        variant="outline"
-        className="w-full h-12 text-base font-medium border-gray-200 hover:bg-gray-50 gap-3"
+        style={btnStyle}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2c2c2c"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-2, #232323)"; }}
       >
         <GoogleIcon />
         Continue with Google
-      </Button>
-      <Button
+      </button>
+      <button
         onClick={signInWithGitHub}
-        variant="outline"
-        className="w-full h-12 text-base font-medium border-gray-200 hover:bg-gray-50 gap-3"
+        style={btnStyle}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2c2c2c"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-2, #232323)"; }}
       >
         <Github className="w-5 h-5" />
         Continue with GitHub
-      </Button>
+      </button>
     </div>
   );
 }

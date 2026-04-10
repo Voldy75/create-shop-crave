@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <!-- Black circle -->
+  <circle cx="40" cy="40" r="40" fill="#000"/>
+  <!-- Uber text -->
+  <text x="40" y="47" text-anchor="middle" font-family="'Helvetica Neue',Arial,sans-serif" font-weight="500" font-size="26" fill="#fff" letter-spacing="0.5">Uber</text>
+</svg>
