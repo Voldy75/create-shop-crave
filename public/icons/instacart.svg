@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 50">
+  <!-- Carrot icon -->
+  <g transform="translate(0,0)">
+    <!-- Orange half circle (carrot body) -->
+    <path d="M8 38 A14 14 0 0 1 36 38z" fill="#ff7f00"/>
+    <!-- Green leaves/arrow -->
+    <path d="M22 8 L16 22 L20 22 L20 30 L24 30 L24 22 L28 22 Z" fill="#43b02a"/>
+    <!-- Green dot -->
+    <circle cx="22" cy="4" r="3" fill="#003d29"/>
+  </g>
+  <!-- instacart text -->
+  <text x="160" y="40" text-anchor="middle" font-family="'Helvetica Neue',Arial,sans-serif" font-weight="800" font-size="36" fill="#003d29" letter-spacing="-0.5">instacart</text>
+</svg>

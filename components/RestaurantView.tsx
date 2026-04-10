@@ -3,23 +3,17 @@
 import { useState, useEffect } from "react";
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from "@react-google-maps/api";
 import { Card } from "@/components/ui/card";
-import { Star, Utensils, ExternalLink } from "lucide-react";
+import { Star, Utensils, ExternalLink, Car, MapPin, Navigation } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
-
-interface Restaurant {
-    name: string;
-    rating: string;
-    priceRange: string;
-    area: string;
-    zomatoUrl: string;
-    swiggyUrl: string;
-}
-
-interface RestaurantSuggestion {
-    query: string;
-    reason: string;
-    restaurants?: Restaurant[];
-}
+import {
+    buildUberDeepLink,
+    buildOlaDeepLink,
+    buildGoogleMapsDirectionsLink,
+    buildSwiggyOrderLink,
+    buildZomatoOrderLink,
+} from "@/lib/deeplinks";
+import { ShareButton } from "@/components/ShareButton";
+import type { Restaurant, RestaurantSuggestion } from "@/lib/types";
 
 interface RestaurantViewProps {
     data: RestaurantSuggestion;
@@ -53,12 +47,10 @@ export function RestaurantView({ data }: RestaurantViewProps) {
         libraries: ["places"],
     });
 
-    // Fetch a place for the map based on the query or first restaurant
     useEffect(() => {
         const fetchPlaceForMap = async () => {
             if (!location) return;
             try {
-                // Use the query provided by AI to find a representative place on the map
                 const res = await fetch(
                     `/api/places?query=${encodeURIComponent(data.query)}&lat=${location.lat}&lng=${location.lng}`
                 );
@@ -97,15 +89,70 @@ export function RestaurantView({ data }: RestaurantViewProps) {
 
     const mapCenter = location || { lat: 28.6139, lng: 77.2090 };
 
+    const getRideButtons = (restaurantName: string, dropoff: { lat: number; lng: number }) => {
+        if (!location) return null;
+        const uberUrl = buildUberDeepLink(location, dropoff, restaurantName);
+        const olaUrl = buildOlaDeepLink(location, dropoff, restaurantName);
+        return (
+            <div className="flex gap-2">
+                <a
+                    href={uberUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-white bg-black hover:bg-gray-800 transition-colors"
+                    style={{ fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "980px" }}
+                >
+                    <Car className="w-3 h-3" /> Uber
+                </a>
+                <a
+                    href={olaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-white bg-green-600 hover:bg-green-700 transition-colors"
+                    style={{ fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "980px" }}
+                >
+                    <Car className="w-3 h-3" /> Ola
+                </a>
+            </div>
+        );
+    };
+
     return (
-        <Card className="w-full bg-white shadow-none border-0 overflow-hidden">
-            <div className="mb-6">
-                <div className="flex items-center gap-2 text-indigo-600 mb-2">
-                    <Utensils className="w-4 h-4" />
-                    <span className="font-bold uppercase tracking-wider text-xs">Dine Out</span>
+        <Card className="w-full overflow-hidden shadow-none border-0" style={{ background: "var(--cc-surface)", color: "var(--cc-text-primary)", borderRadius: "12px" }}>
+            <div style={{ marginBottom: "24px" }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: "8px" }}>
+                    <div className="flex items-center gap-2" style={{ color: "#ff6b35" }}>
+                        <Utensils className="w-4 h-4" />
+                        <span style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em" }}>Dine Out</span>
+                    </div>
+                    <ShareButton title="Restaurant Suggestions" text={`Check out these restaurant suggestions: ${data.reason}`} />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">Restaurant Suggestions</h2>
-                <p className="text-gray-500 mt-1">{data.reason}</p>
+                <h2 style={{ fontSize: "28px", fontWeight: 600, lineHeight: 1.14, letterSpacing: "0.007em", color: "var(--cc-text-primary)" }}>Restaurant Suggestions</h2>
+                <p style={{ marginTop: "4px", fontSize: "14px", lineHeight: 1.43, letterSpacing: "-0.016em", color: "var(--cc-text-secondary)" }}>{data.reason}</p>
+
+                {/* Delivery order buttons */}
+                {data.dishName && location && (
+                    <div className="flex gap-2" style={{ marginTop: "12px" }}>
+                        <a
+                            href={buildSwiggyOrderLink(data.dishName, location.lat, location.lng)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+                            style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "980px" }}
+                        >
+                            Order on Swiggy <ExternalLink className="w-3 h-3" />
+                        </a>
+                        <a
+                            href={buildZomatoOrderLink(data.dishName)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-white bg-red-500 hover:bg-red-600 transition-colors"
+                            style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "980px" }}
+                        >
+                            Order on Zomato <ExternalLink className="w-3 h-3" />
+                        </a>
+                    </div>
+                )}
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -113,12 +160,9 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                 <div className="space-y-6">
                     {data.restaurants && data.restaurants.length > 0 ? (
                         data.restaurants.map((restaurant, index) => (
-                            <div
-                                key={index}
-                                className="group cursor-pointer"
-                            >
+                            <div key={index} className="group cursor-pointer">
                                 {/* Restaurant Thumbnail */}
-                                <div className="aspect-[4/3] bg-gray-100 rounded-xl mb-3 relative overflow-hidden">
+                                <div className="aspect-[4/3] mb-3 relative overflow-hidden" style={{ borderRadius: "12px", background: "var(--cc-surface-2)" }}>
                                     <img
                                         src={`https://images.unsplash.com/photo-${[
                                             '1517248135467-4c7edcad34c4',
@@ -133,32 +177,60 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop&auto=format';
                                         }}
                                     />
-                                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1 shadow-sm">
+                                    <div
+                                        className="absolute top-3 right-3 flex items-center gap-1"
+                                        style={{
+                                            background: "rgba(0,0,0,0.65)",
+                                            backdropFilter: "blur(8px)",
+                                            padding: "4px 8px",
+                                            borderRadius: "8px",
+                                            fontSize: "12px",
+                                            fontWeight: 600,
+                                            color: "#ffffff",
+                                        }}
+                                    >
                                         <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                                         {restaurant.rating}
                                     </div>
+                                    {restaurant.cuisine && (
+                                        <div
+                                            className="absolute top-3 left-3"
+                                            style={{
+                                                background: "rgba(0,0,0,0.65)",
+                                                backdropFilter: "blur(8px)",
+                                                padding: "4px 8px",
+                                                borderRadius: "8px",
+                                                fontSize: "12px",
+                                                fontWeight: 400,
+                                                color: "#ffffff",
+                                            }}
+                                        >
+                                            {restaurant.cuisine}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Content */}
                                 <div>
                                     <div className="flex justify-between items-start">
-                                        <h3 className="font-bold text-gray-900 text-lg group-hover:text-indigo-600 transition-colors">
+                                        <h3 style={{ fontSize: "17px", fontWeight: 600, lineHeight: 1.24, letterSpacing: "-0.022em", color: "var(--cc-text-primary)" }}>
                                             {restaurant.name}
                                         </h3>
-                                        <span className="text-gray-900 font-medium text-sm">{restaurant.priceRange}</span>
+                                        <span style={{ fontSize: "14px", fontWeight: 400, color: "var(--cc-text-secondary)" }}>{restaurant.priceRange}</span>
                                     </div>
-                                    <p className="text-gray-500 text-sm mt-1">{restaurant.area}</p>
+                                    <p style={{ fontSize: "14px", marginTop: "4px", color: "var(--cc-text-secondary)" }}>{restaurant.area}</p>
 
-                                    <div className="flex gap-3 mt-3">
+                                    {/* Platform links */}
+                                    <div className="flex flex-wrap gap-2" style={{ marginTop: "12px" }}>
                                         {restaurant.zomatoUrl && (
                                             <a
                                                 href={restaurant.zomatoUrl}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-full transition-colors"
+                                                className="inline-flex items-center gap-1 text-white bg-red-500 hover:bg-red-600 transition-colors"
+                                                style={{ fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "980px" }}
                                             >
-                                                Zomato
-                                                <ExternalLink className="w-3 h-3" />
+                                                Zomato <ExternalLink className="w-3 h-3" />
                                             </a>
                                         )}
                                         {restaurant.swiggyUrl && (
@@ -166,23 +238,30 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                                 href={restaurant.swiggyUrl}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-full transition-colors"
+                                                className="inline-flex items-center gap-1 text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+                                                style={{ fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "980px" }}
                                             >
-                                                Swiggy
-                                                <ExternalLink className="w-3 h-3" />
+                                                Swiggy <ExternalLink className="w-3 h-3" />
                                             </a>
                                         )}
                                     </div>
+
+                                    {/* Ride buttons per restaurant */}
+                                    {restaurant.lat && restaurant.lng && (
+                                        <div style={{ marginTop: "8px" }}>
+                                            {getRideButtons(restaurant.name, { lat: restaurant.lat, lng: restaurant.lng })}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))
                     ) : (
-                        <p className="text-sm text-gray-500">No specific restaurants found. Check the map!</p>
+                        <p style={{ fontSize: "14px", color: "var(--cc-text-tertiary)" }}>No specific restaurants found. Check the map!</p>
                     )}
                 </div>
 
                 {/* Map Section */}
-                <div className="relative min-h-[400px] w-full rounded-2xl overflow-hidden bg-gray-100">
+                <div className="relative min-h-[400px] w-full overflow-hidden" style={{ borderRadius: "12px", background: "var(--cc-surface-2)" }}>
                     {isLoaded ? (
                         <GoogleMap
                             mapContainerStyle={containerStyle}
@@ -203,14 +282,13 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                 ]
                             }}
                         >
-                            {/* User Location */}
                             {location && (
                                 <Marker
                                     position={location}
                                     icon={{
                                         path: google.maps.SymbolPath.CIRCLE,
                                         scale: 8,
-                                        fillColor: "#4F46E5",
+                                        fillColor: "#0071e3",
                                         fillOpacity: 1,
                                         strokeColor: "white",
                                         strokeWeight: 2,
@@ -218,14 +296,13 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                 />
                             )}
 
-                            {/* Directions */}
                             {directions && (
                                 <DirectionsRenderer
                                     directions={directions}
                                     options={{
                                         suppressMarkers: false,
                                         polylineOptions: {
-                                            strokeColor: "#4F46E5",
+                                            strokeColor: "#0071e3",
                                             strokeWeight: 4,
                                         },
                                     }}
@@ -233,32 +310,59 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                             )}
                         </GoogleMap>
                     ) : (
-                        <div className="flex items-center justify-center h-full text-gray-500">
+                        <div className="flex items-center justify-center h-full" style={{ color: "var(--cc-text-tertiary)" }}>
                             Loading Map...
                         </div>
                     )}
 
                     {/* Overlay Info */}
                     {directionsError && (
-                        <div className="absolute top-4 left-4 right-4 bg-red-50 text-red-600 text-sm p-3 rounded-xl shadow-sm">
+                        <div className="absolute top-4 left-4 right-4 p-3" style={{
+                            background: "rgba(255,69,58,0.08)",
+                            color: "#ff453a",
+                            fontSize: "14px",
+                            borderRadius: "12px",
+                        }}>
                             {directionsError}
                         </div>
                     )}
 
                     {mapPlace && directions && (
-                        <div className="absolute bottom-6 left-6 right-6 bg-white p-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex justify-between items-center">
-                            <div>
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nearest Option</p>
-                                <p className="font-bold text-gray-900 text-lg">
-                                    {mapPlace.name}
-                                </p>
+                        <div className="absolute bottom-6 left-6 right-6 p-4 space-y-3" style={{
+                            background: "rgba(0,0,0,0.8)",
+                            backdropFilter: "saturate(180%) blur(20px)",
+                            borderRadius: "12px",
+                            color: "#ffffff",
+                        }}>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <p style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em", color: "rgba(255,255,255,0.48)" }}>Nearest Option</p>
+                                    <p style={{ fontSize: "17px", fontWeight: 600, color: "#ffffff" }}>
+                                        {mapPlace.name}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p style={{ fontSize: "28px", fontWeight: 600, lineHeight: 1.14, color: "#ff6b35" }}>
+                                        {directions.routes[0]?.legs[0]?.duration?.text?.split(" ")[0]}
+                                    </p>
+                                    <p style={{ fontSize: "12px", fontWeight: 400, color: "rgba(255,255,255,0.48)" }}>min drive</p>
+                                </div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-indigo-600">
-                                    {directions.routes[0]?.legs[0]?.duration?.text?.split(" ")[0]}
-                                </p>
-                                <p className="text-xs text-gray-500 font-medium">min drive</p>
-                            </div>
+
+                            {location && (
+                                <div className="flex flex-wrap gap-2">
+                                    {getRideButtons(mapPlace.name, mapPlace.geometry.location)}
+                                    <a
+                                        href={buildGoogleMapsDirectionsLink(location, mapPlace.geometry.location)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                                        style={{ fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "980px" }}
+                                    >
+                                        <Navigation className="w-3 h-3" /> Directions
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
