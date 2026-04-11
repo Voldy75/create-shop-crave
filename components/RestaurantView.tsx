@@ -344,12 +344,14 @@ function InteractiveRestaurantMap({
     selectedIndex,
     onSelect,
     apiKey,
+    embedFallbackUrl,
 }: {
     restaurants: MapRestaurant[];
     center: Coords;
     selectedIndex: number | null;
     onSelect: (index: number) => void;
     apiKey: string;
+    embedFallbackUrl: string | null;
 }) {
     const { isLoaded, loadError } = useJsApiLoader({
         id: "crave-create-maps",
@@ -357,6 +359,23 @@ function InteractiveRestaurantMap({
     });
 
     const mapRef = useRef<google.maps.Map | null>(null);
+    const [authFailed, setAuthFailed] = useState(false);
+
+    // Google Maps calls window.gm_authFailure() when the JS API key is invalid,
+    // has referer restrictions that block this origin, or Maps JavaScript API is
+    // not enabled on the project. This fires AFTER isLoaded=true, so useJsApiLoader's
+    // loadError alone isn't enough. Hook into the global and flip to fallback.
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const w = window as typeof window & { gm_authFailure?: () => void };
+        const prev = w.gm_authFailure;
+        w.gm_authFailure = () => {
+            setAuthFailed(true);
+        };
+        return () => {
+            w.gm_authFailure = prev;
+        };
+    }, []);
 
     // Fit bounds once after load so all markers are visible.
     useEffect(() => {
@@ -376,12 +395,12 @@ function InteractiveRestaurantMap({
         mapRef.current.panTo({ lat: r.lat, lng: r.lng });
     }, [isLoaded, selectedIndex, restaurants]);
 
-    if (loadError) {
-        return (
-            <MapErrorFallback
-                message="Couldn't load Google Maps. Check that the Maps JavaScript API is enabled for your key."
-            />
-        );
+    if (loadError || authFailed) {
+        // The JS API script failed OR auth was rejected post-load (invalid key,
+        // referer restrictions, Maps JavaScript API not enabled). Fall back to
+        // the iframe Embed API, which is a separate service and may still work.
+        // If that's also unavailable, show a helpful error message instead.
+        return <IframeMapFallback embedUrl={embedFallbackUrl} />;
     }
 
     if (!isLoaded) {
@@ -510,6 +529,7 @@ function RestaurantMap({
                     selectedIndex={selectedIndex}
                     onSelect={onSelect}
                     apiKey={apiKey}
+                    embedFallbackUrl={embedFallbackUrl}
                 />
             ) : (
                 <IframeMapFallback embedUrl={embedFallbackUrl} />
@@ -593,6 +613,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                 background: "var(--cc-surface)",
                 color: "var(--cc-text-primary)",
                 borderRadius: "12px",
+                padding: "28px",
             }}
         >
             {/* Header */}
