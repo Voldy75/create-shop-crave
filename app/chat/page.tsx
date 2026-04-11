@@ -236,7 +236,11 @@ export default function ChatPage() {
               {byok.provider}
             </span>
           ) : (
-            <UsageBadge count={usageCount} limit={DAILY_LIMIT} />
+            <UsageBadge
+              count={usageCount}
+              limit={DAILY_LIMIT}
+              onClick={() => setShowUpgradeDialog(true)}
+            />
           )}
 
           {messages.length > 0 && (
