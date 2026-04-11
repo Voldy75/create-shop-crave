@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useMemo, useRef, useState } from "react";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { Card } from "@/components/ui/card";
 import { Star, Utensils, ExternalLink, Navigation, AlertCircle } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
@@ -78,11 +80,17 @@ function RestaurantCard({
     index,
     userLocation,
     dishName,
+    selected,
+    onSelect,
+    cardRef,
 }: {
     restaurant: Restaurant;
     index: number;
     userLocation: Coords | null;
     dishName?: string;
+    selected: boolean;
+    onSelect: (index: number) => void;
+    cardRef?: (el: HTMLElement | null) => void;
 }) {
     const photoId = IMAGE_POOL[index % IMAGE_POOL.length];
     const hasCoords = typeof restaurant.lat === "number" && typeof restaurant.lng === "number";
@@ -108,13 +116,21 @@ function RestaurantCard({
 
     return (
         <article
+            ref={cardRef}
             className="group"
+            onMouseEnter={() => onSelect(index)}
+            onClick={() => onSelect(index)}
             style={{
                 background: "var(--cc-surface)",
-                border: "1px solid var(--cc-border)",
+                border: selected
+                    ? "2px solid var(--cc-accent)"
+                    : "1px solid var(--cc-border)",
                 borderRadius: "12px",
                 overflow: "hidden",
-                transition: "border-color 180ms ease, transform 180ms ease",
+                transition: "border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease",
+                boxShadow: selected ? "0 8px 24px rgba(255,107,53,0.18)" : "none",
+                cursor: "pointer",
+                scrollMarginTop: "12px",
             }}
         >
             {/* Thumbnail */}
@@ -289,7 +305,194 @@ function RestaurantCard({
     );
 }
 
-function RestaurantMap({ embedUrl }: { embedUrl: string | null }) {
+// Apple-dark map style to match the app's aesthetic.
+const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
+    { elementType: "geometry", stylers: [{ color: "#1d1d1f" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#8a8a8f" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#0b0b0d" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a2a2d" }] },
+    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1a1a1c" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b2535" }] },
+    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+    { featureType: "transit", stylers: [{ visibility: "off" }] },
+    { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#2a2a2d" }] },
+];
+
+// Build a data-URI SVG for a numbered pin marker.
+function numberedMarkerIcon(label: number, active: boolean): google.maps.Icon {
+    const fill = active ? "#ff6b35" : "#1d1d1f";
+    const stroke = active ? "#ffffff" : "#ff6b35";
+    const text = active ? "#ffffff" : "#ff6b35";
+    const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48">
+  <path d="M18 0C8.06 0 0 8.06 0 18c0 12.75 16.31 28.56 17 29.21.28.26.72.26 1 0C18.69 46.56 36 30.75 36 18 36 8.06 27.94 0 18 0z" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
+  <circle cx="18" cy="18" r="11" fill="${active ? "#ffffff" : "transparent"}" stroke="${active ? "#ff6b35" : "transparent"}" stroke-width="0"/>
+  <text x="18" y="23" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="${text}">${label}</text>
+</svg>`.trim();
+    return {
+        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+        scaledSize: new google.maps.Size(36, 48),
+        anchor: new google.maps.Point(18, 48),
+    };
+}
+
+type MapRestaurant = Restaurant & { lat: number; lng: number };
+
+function InteractiveRestaurantMap({
+    restaurants,
+    center,
+    selectedIndex,
+    onSelect,
+    apiKey,
+}: {
+    restaurants: MapRestaurant[];
+    center: Coords;
+    selectedIndex: number | null;
+    onSelect: (index: number) => void;
+    apiKey: string;
+}) {
+    const { isLoaded, loadError } = useJsApiLoader({
+        id: "crave-create-maps",
+        googleMapsApiKey: apiKey,
+    });
+
+    const mapRef = useRef<google.maps.Map | null>(null);
+
+    // Fit bounds once after load so all markers are visible.
+    useEffect(() => {
+        if (!isLoaded || !mapRef.current) return;
+        if (restaurants.length === 0) return;
+        const bounds = new google.maps.LatLngBounds();
+        restaurants.forEach((r) => bounds.extend({ lat: r.lat, lng: r.lng }));
+        bounds.extend(center);
+        mapRef.current.fitBounds(bounds, 64);
+    }, [isLoaded, restaurants, center]);
+
+    // Pan to selected marker on change.
+    useEffect(() => {
+        if (!isLoaded || !mapRef.current || selectedIndex === null) return;
+        const r = restaurants[selectedIndex];
+        if (!r) return;
+        mapRef.current.panTo({ lat: r.lat, lng: r.lng });
+    }, [isLoaded, selectedIndex, restaurants]);
+
+    if (loadError) {
+        return (
+            <MapErrorFallback
+                message="Couldn't load Google Maps. Check that the Maps JavaScript API is enabled for your key."
+            />
+        );
+    }
+
+    if (!isLoaded) {
+        return (
+            <div
+                className="w-full h-full animate-pulse"
+                style={{
+                    background: "var(--cc-surface-2)",
+                    borderRadius: "12px",
+                }}
+                aria-label="Loading map"
+            />
+        );
+    }
+
+    return (
+        <GoogleMap
+            mapContainerStyle={{ width: "100%", height: "100%", borderRadius: "12px" }}
+            center={center}
+            zoom={13}
+            onLoad={(map) => {
+                mapRef.current = map;
+            }}
+            options={{
+                styles: DARK_MAP_STYLE,
+                disableDefaultUI: true,
+                zoomControl: true,
+                clickableIcons: false,
+                backgroundColor: "#1d1d1f",
+                gestureHandling: "greedy",
+            }}
+        >
+            {/* User location marker */}
+            <Marker
+                position={center}
+                icon={{
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 8,
+                    fillColor: "#2997ff",
+                    fillOpacity: 1,
+                    strokeColor: "#ffffff",
+                    strokeWeight: 2,
+                }}
+                title="You"
+                zIndex={1}
+            />
+
+            {/* Numbered restaurant markers */}
+            {restaurants.map((r, i) => (
+                <Marker
+                    key={i}
+                    position={{ lat: r.lat, lng: r.lng }}
+                    icon={numberedMarkerIcon(i + 1, selectedIndex === i)}
+                    onClick={() => onSelect(i)}
+                    zIndex={selectedIndex === i ? 999 : 10 + i}
+                    title={r.name}
+                />
+            ))}
+        </GoogleMap>
+    );
+}
+
+function MapErrorFallback({ message }: { message: string }) {
+    return (
+        <div
+            className="flex flex-col items-center justify-center h-full p-6 text-center gap-2"
+            style={{ color: "var(--cc-text-tertiary)" }}
+        >
+            <AlertCircle className="w-6 h-6" />
+            <p style={{ fontSize: "14px" }}>{message}</p>
+        </div>
+    );
+}
+
+function IframeMapFallback({ embedUrl }: { embedUrl: string | null }) {
+    if (!embedUrl) {
+        return (
+            <MapErrorFallback
+                message="Map unavailable — set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to enable."
+            />
+        );
+    }
+    return (
+        <iframe
+            src={embedUrl}
+            title="Restaurant map"
+            width="100%"
+            height="100%"
+            style={{ border: 0, display: "block", borderRadius: "12px" }}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+        />
+    );
+}
+
+function RestaurantMap({
+    restaurants,
+    center,
+    selectedIndex,
+    onSelect,
+    apiKey,
+    embedFallbackUrl,
+}: {
+    restaurants: MapRestaurant[];
+    center: Coords;
+    selectedIndex: number | null;
+    onSelect: (index: number) => void;
+    apiKey: string;
+    embedFallbackUrl: string | null;
+}) {
     return (
         <div
             className="relative w-full overflow-hidden"
@@ -300,27 +503,16 @@ function RestaurantMap({ embedUrl }: { embedUrl: string | null }) {
                 minHeight: "400px",
             }}
         >
-            {embedUrl ? (
-                <iframe
-                    src={embedUrl}
-                    title="Restaurant map"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0, display: "block" }}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    allowFullScreen
+            {apiKey && restaurants.length > 0 ? (
+                <InteractiveRestaurantMap
+                    restaurants={restaurants}
+                    center={center}
+                    selectedIndex={selectedIndex}
+                    onSelect={onSelect}
+                    apiKey={apiKey}
                 />
             ) : (
-                <div
-                    className="flex flex-col items-center justify-center h-full p-6 text-center gap-2"
-                    style={{ color: "var(--cc-text-tertiary)" }}
-                >
-                    <AlertCircle className="w-6 h-6" />
-                    <p style={{ fontSize: "14px" }}>
-                        Map unavailable — set <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> to enable.
-                    </p>
-                </div>
+                <IframeMapFallback embedUrl={embedFallbackUrl} />
             )}
         </div>
     );
@@ -332,22 +524,31 @@ export function RestaurantView({ data }: RestaurantViewProps) {
     const { location } = useUser();
     const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
-    // Restaurants from AI that have valid coordinates
-    const restaurantsWithCoords = (data.restaurants || []).filter(
-        (r): r is typeof r & { lat: number; lng: number } =>
-            typeof r.lat === "number" && typeof r.lng === "number"
+    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+    const cardRefs = useRef<Array<HTMLElement | null>>([]);
+
+    // Restaurants from AI that have valid coordinates — these are what we pin.
+    const restaurantsWithCoords = useMemo<MapRestaurant[]>(
+        () =>
+            (data.restaurants || []).filter(
+                (r): r is MapRestaurant =>
+                    typeof r.lat === "number" && typeof r.lng === "number"
+            ),
+        [data.restaurants]
     );
 
-    // Determine map center: user location, else first restaurant, else India default
-    const mapCenter: Coords =
-        location ||
-        (restaurantsWithCoords.length > 0
-            ? { lat: restaurantsWithCoords[0].lat, lng: restaurantsWithCoords[0].lng }
-            : { lat: 28.6139, lng: 77.209 });
+    // Determine map center: user location, else first restaurant, else India default.
+    const mapCenter: Coords = useMemo(
+        () =>
+            location ||
+            (restaurantsWithCoords.length > 0
+                ? { lat: restaurantsWithCoords[0].lat, lng: restaurantsWithCoords[0].lng }
+                : { lat: 28.6139, lng: 77.209 }),
+        [location, restaurantsWithCoords]
+    );
 
-    // Build an Embed API URL. Use "search" mode with the query so Google shows
-    // multiple results as markers automatically, centered on the user's location.
-    const embedUrl = (() => {
+    // Iframe Embed fallback URL for when the JS API can't load.
+    const embedUrl = useMemo(() => {
         if (!mapsApiKey) return null;
         const params = new URLSearchParams({
             key: mapsApiKey,
@@ -356,7 +557,34 @@ export function RestaurantView({ data }: RestaurantViewProps) {
             zoom: "13",
         });
         return `https://www.google.com/maps/embed/v1/search?${params.toString()}`;
-    })();
+    }, [mapsApiKey, data.query, mapCenter]);
+
+    // When a pin is clicked on the map, scroll the matching card into view.
+    // We look up by the restaurant's position in data.restaurants, not
+    // restaurantsWithCoords, because cardRefs are indexed by the full list.
+    const handleSelectFromMap = (mapIndex: number) => {
+        const target = restaurantsWithCoords[mapIndex];
+        if (!target) return;
+        const cardIndex = (data.restaurants || []).findIndex((r) => r === target);
+        if (cardIndex < 0) return;
+        setSelectedIndex(cardIndex);
+        const el = cardRefs.current[cardIndex];
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    };
+
+    // When a card is hovered/clicked, sync the map highlight.
+    const handleSelectFromCard = (cardIndex: number) => {
+        setSelectedIndex(cardIndex);
+    };
+
+    // Translate the card-index selection to a map-index selection for the map.
+    const mapSelectedIndex = useMemo(() => {
+        if (selectedIndex === null) return null;
+        const card = (data.restaurants || [])[selectedIndex];
+        if (!card) return null;
+        const mi = restaurantsWithCoords.findIndex((r) => r === card);
+        return mi >= 0 ? mi : null;
+    }, [selectedIndex, data.restaurants, restaurantsWithCoords]);
 
     return (
         <Card
@@ -447,6 +675,11 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                 index={index}
                                 userLocation={location}
                                 dishName={data.dishName}
+                                selected={selectedIndex === index}
+                                onSelect={handleSelectFromCard}
+                                cardRef={(el) => {
+                                    cardRefs.current[index] = el;
+                                }}
                             />
                         ))
                     ) : (
@@ -456,7 +689,14 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                     )}
                 </div>
 
-                <RestaurantMap embedUrl={embedUrl} />
+                <RestaurantMap
+                    restaurants={restaurantsWithCoords}
+                    center={mapCenter}
+                    selectedIndex={mapSelectedIndex}
+                    onSelect={handleSelectFromMap}
+                    apiKey={mapsApiKey}
+                    embedFallbackUrl={embedUrl}
+                />
             </div>
         </Card>
     );
