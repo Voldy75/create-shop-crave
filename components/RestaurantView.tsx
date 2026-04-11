@@ -77,7 +77,8 @@ const labelStyle: React.CSSProperties = {
 
 function RestaurantCard({
     restaurant,
-    index,
+    stableId,
+    displayNumber,
     userLocation,
     dishName,
     selected,
@@ -85,14 +86,15 @@ function RestaurantCard({
     cardRef,
 }: {
     restaurant: Restaurant;
-    index: number;
+    stableId: number;
+    displayNumber: number;
     userLocation: Coords | null;
     dishName?: string;
     selected: boolean;
-    onSelect: (index: number) => void;
+    onSelect: (stableId: number) => void;
     cardRef?: (el: HTMLElement | null) => void;
 }) {
-    const photoId = IMAGE_POOL[index % IMAGE_POOL.length];
+    const photoId = IMAGE_POOL[stableId % IMAGE_POOL.length];
     const hasCoords = typeof restaurant.lat === "number" && typeof restaurant.lng === "number";
     const dropoff: Coords | null = hasCoords
         ? { lat: restaurant.lat as number, lng: restaurant.lng as number }
@@ -118,14 +120,14 @@ function RestaurantCard({
         <article
             ref={cardRef}
             className="group"
-            onMouseEnter={() => onSelect(index)}
-            onClick={() => onSelect(index)}
+            onMouseEnter={() => onSelect(stableId)}
+            onClick={() => onSelect(stableId)}
             style={{
                 background: "var(--cc-surface)",
                 border: selected
                     ? "2px solid var(--cc-accent)"
                     : "1px solid var(--cc-border)",
-                borderRadius: "12px",
+                borderRadius: "14px",
                 overflow: "hidden",
                 transition: "border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease",
                 boxShadow: selected ? "0 8px 24px rgba(255,107,53,0.18)" : "none",
@@ -133,21 +135,21 @@ function RestaurantCard({
                 scrollMarginTop: "12px",
             }}
         >
-            {/* Thumbnail */}
+            {/* Thumbnail — 4:3 aspect gives photo ~60% card dominance (Sweetgreen-style) */}
             <div
-                className="aspect-[16/9] relative overflow-hidden"
+                className="aspect-[4/3] relative overflow-hidden"
                 style={{ background: "var(--cc-surface-2)" }}
             >
                 <img
-                    src={`https://images.unsplash.com/photo-${photoId}?w=600&h=340&fit=crop&auto=format`}
+                    src={`https://images.unsplash.com/photo-${photoId}?w=600&h=450&fit=crop&auto=format`}
                     alt={restaurant.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     onError={(e) => {
                         (e.target as HTMLImageElement).src = FALLBACK_IMG;
                     }}
                 />
 
-                {/* Numbered pin badge */}
+                {/* Numbered pin badge (display order, matches the map pin number) */}
                 <div
                     className="absolute top-3 left-3 flex items-center justify-center"
                     style={{
@@ -160,21 +162,20 @@ function RestaurantCard({
                         fontWeight: 700,
                         boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
                     }}
-                    aria-label={`Marker ${index + 1}`}
+                    aria-label={`Marker ${displayNumber}`}
                 >
-                    {index + 1}
+                    {displayNumber}
                 </div>
 
-                {/* Rating badge */}
+                {/* Rating pill — cleaner, flatter, Sweetgreen-style */}
                 <div
                     className="absolute top-3 right-3 flex items-center gap-1"
                     style={{
-                        background: "rgba(0,0,0,0.7)",
-                        backdropFilter: "blur(8px)",
-                        padding: "4px 8px",
-                        borderRadius: "8px",
+                        background: "rgba(0,0,0,0.85)",
+                        padding: "4px 9px",
+                        borderRadius: "980px",
                         fontSize: "12px",
-                        fontWeight: 600,
+                        fontWeight: 700,
                         color: "#ffffff",
                     }}
                 >
@@ -185,34 +186,12 @@ function RestaurantCard({
 
             {/* Body */}
             <div style={{ padding: "14px 16px 16px" }}>
-                {/* Meta row: cuisine · price · distance · ETA */}
-                <div
-                    className="flex items-center flex-wrap gap-x-1.5"
-                    style={{
-                        fontSize: "12px",
-                        color: "var(--cc-text-tertiary)",
-                        marginBottom: "4px",
-                    }}
-                >
-                    {restaurant.cuisine && <span>{restaurant.cuisine}</span>}
-                    {restaurant.cuisine && <span aria-hidden>·</span>}
-                    <span>{restaurant.priceRange}</span>
-                    {distanceKm !== null && (
-                        <>
-                            <span aria-hidden>·</span>
-                            <span>{formatDistance(distanceKm)}</span>
-                            <span aria-hidden>·</span>
-                            <span>{etaMinutes(distanceKm)}</span>
-                        </>
-                    )}
-                </div>
-
                 {/* Title */}
                 <h3
                     style={{
-                        fontSize: "17px",
-                        fontWeight: 600,
-                        lineHeight: 1.24,
+                        fontSize: "18px",
+                        fontWeight: 700,
+                        lineHeight: 1.2,
                         letterSpacing: "-0.022em",
                         color: "var(--cc-text-primary)",
                     }}
@@ -228,6 +207,29 @@ function RestaurantCard({
                 >
                     {restaurant.area}
                 </p>
+
+                {/* Meta row: cuisine · price · distance · ETA */}
+                <div
+                    className="flex items-center flex-wrap gap-x-1.5"
+                    style={{
+                        fontSize: "12px",
+                        color: "var(--cc-text-tertiary)",
+                        marginTop: "8px",
+                        fontWeight: 500,
+                    }}
+                >
+                    {restaurant.cuisine && <span>{restaurant.cuisine}</span>}
+                    {restaurant.cuisine && <span aria-hidden>·</span>}
+                    <span>{restaurant.priceRange}</span>
+                    {distanceKm !== null && (
+                        <>
+                            <span aria-hidden>·</span>
+                            <span>{formatDistance(distanceKm)}</span>
+                            <span aria-hidden>·</span>
+                            <span>{etaMinutes(distanceKm)}</span>
+                        </>
+                    )}
+                </div>
 
                 {/* Action groups */}
                 {hasGoThere && (
@@ -338,18 +340,26 @@ function numberedMarkerIcon(label: number, active: boolean): google.maps.Icon {
 
 type MapRestaurant = Restaurant & { lat: number; lng: number };
 
+type MapPin = {
+    lat: number;
+    lng: number;
+    label: number; // display number (post-sort)
+    stableId: number; // original index in data.restaurants
+    title: string;
+};
+
 function InteractiveRestaurantMap({
-    restaurants,
+    pins,
     center,
-    selectedIndex,
+    selectedStableId,
     onSelect,
     apiKey,
     embedFallbackUrl,
 }: {
-    restaurants: MapRestaurant[];
+    pins: MapPin[];
     center: Coords;
-    selectedIndex: number | null;
-    onSelect: (index: number) => void;
+    selectedStableId: number | null;
+    onSelect: (stableId: number) => void;
     apiKey: string;
     embedFallbackUrl: string | null;
 }) {
@@ -380,20 +390,20 @@ function InteractiveRestaurantMap({
     // Fit bounds once after load so all markers are visible.
     useEffect(() => {
         if (!isLoaded || !mapRef.current) return;
-        if (restaurants.length === 0) return;
+        if (pins.length === 0) return;
         const bounds = new google.maps.LatLngBounds();
-        restaurants.forEach((r) => bounds.extend({ lat: r.lat, lng: r.lng }));
+        pins.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
         bounds.extend(center);
         mapRef.current.fitBounds(bounds, 64);
-    }, [isLoaded, restaurants, center]);
+    }, [isLoaded, pins, center]);
 
     // Pan to selected marker on change.
     useEffect(() => {
-        if (!isLoaded || !mapRef.current || selectedIndex === null) return;
-        const r = restaurants[selectedIndex];
-        if (!r) return;
-        mapRef.current.panTo({ lat: r.lat, lng: r.lng });
-    }, [isLoaded, selectedIndex, restaurants]);
+        if (!isLoaded || !mapRef.current || selectedStableId === null) return;
+        const p = pins.find((x) => x.stableId === selectedStableId);
+        if (!p) return;
+        mapRef.current.panTo({ lat: p.lat, lng: p.lng });
+    }, [isLoaded, selectedStableId, pins]);
 
     if (loadError || authFailed) {
         // The JS API script failed OR auth was rejected post-load (invalid key,
@@ -449,16 +459,19 @@ function InteractiveRestaurantMap({
             />
 
             {/* Numbered restaurant markers */}
-            {restaurants.map((r, i) => (
-                <Marker
-                    key={i}
-                    position={{ lat: r.lat, lng: r.lng }}
-                    icon={numberedMarkerIcon(i + 1, selectedIndex === i)}
-                    onClick={() => onSelect(i)}
-                    zIndex={selectedIndex === i ? 999 : 10 + i}
-                    title={r.name}
-                />
-            ))}
+            {pins.map((p) => {
+                const active = selectedStableId === p.stableId;
+                return (
+                    <Marker
+                        key={p.stableId}
+                        position={{ lat: p.lat, lng: p.lng }}
+                        icon={numberedMarkerIcon(p.label, active)}
+                        onClick={() => onSelect(p.stableId)}
+                        zIndex={active ? 999 : 10 + p.label}
+                        title={p.title}
+                    />
+                );
+            })}
         </GoogleMap>
     );
 }
@@ -497,18 +510,98 @@ function IframeMapFallback({ embedUrl }: { embedUrl: string | null }) {
     );
 }
 
+// ---------- Filter chips ----------
+
+type SortKey = "default" | "rating" | "distance" | "price";
+
+const SORT_OPTIONS: Array<{ key: SortKey; label: string; requiresLocation?: boolean }> = [
+    { key: "default", label: "Recommended" },
+    { key: "rating", label: "Top rated" },
+    { key: "distance", label: "Nearest", requiresLocation: true },
+    { key: "price", label: "Price" },
+];
+
+function FilterChips({
+    value,
+    onChange,
+    hasLocation,
+}: {
+    value: SortKey;
+    onChange: (key: SortKey) => void;
+    hasLocation: boolean;
+}) {
+    return (
+        <div
+            role="group"
+            aria-label="Sort restaurants"
+            className="flex flex-wrap gap-2"
+            style={{ marginBottom: "16px" }}
+        >
+            {SORT_OPTIONS.map((opt) => {
+                const disabled = opt.requiresLocation && !hasLocation;
+                const active = value === opt.key;
+                return (
+                    <button
+                        key={opt.key}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => onChange(opt.key)}
+                        style={{
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            padding: "6px 14px",
+                            borderRadius: "980px",
+                            border: active
+                                ? "1px solid var(--cc-accent)"
+                                : "1px solid var(--cc-border)",
+                            background: active ? "var(--cc-accent)" : "transparent",
+                            color: active
+                                ? "#ffffff"
+                                : disabled
+                                ? "var(--cc-text-tertiary)"
+                                : "var(--cc-text-primary)",
+                            cursor: disabled ? "not-allowed" : "pointer",
+                            opacity: disabled ? 0.5 : 1,
+                            transition: "all 160ms ease",
+                        }}
+                        title={disabled ? "Enable location to sort by distance" : undefined}
+                    >
+                        {opt.label}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+// Parse a price string like "₹₹₹" or "$$" or "₹500" into a comparable number.
+// Returns 0 for unknown so unknowns sort to the top when ascending.
+function priceScore(priceRange: string | undefined): number {
+    if (!priceRange) return 0;
+    const symbolCount = (priceRange.match(/[₹$€£]/g) || []).length;
+    if (symbolCount > 0) return symbolCount;
+    const numeric = parseFloat(priceRange.replace(/[^0-9.]/g, ""));
+    return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function ratingScore(rating: string | undefined): number {
+    if (!rating) return 0;
+    const n = parseFloat(rating);
+    return Number.isFinite(n) ? n : 0;
+}
+
 function RestaurantMap({
-    restaurants,
+    pins,
     center,
-    selectedIndex,
+    selectedStableId,
     onSelect,
     apiKey,
     embedFallbackUrl,
 }: {
-    restaurants: MapRestaurant[];
+    pins: MapPin[];
     center: Coords;
-    selectedIndex: number | null;
-    onSelect: (index: number) => void;
+    selectedStableId: number | null;
+    onSelect: (stableId: number) => void;
     apiKey: string;
     embedFallbackUrl: string | null;
 }) {
@@ -522,11 +615,11 @@ function RestaurantMap({
                 minHeight: "400px",
             }}
         >
-            {apiKey && restaurants.length > 0 ? (
+            {apiKey && pins.length > 0 ? (
                 <InteractiveRestaurantMap
-                    restaurants={restaurants}
+                    pins={pins}
                     center={center}
-                    selectedIndex={selectedIndex}
+                    selectedStableId={selectedStableId}
                     onSelect={onSelect}
                     apiKey={apiKey}
                     embedFallbackUrl={embedFallbackUrl}
@@ -544,27 +637,82 @@ export function RestaurantView({ data }: RestaurantViewProps) {
     const { location } = useUser();
     const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
-    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-    const cardRefs = useRef<Array<HTMLElement | null>>([]);
+    // Selection is tracked by STABLE ID (original index in data.restaurants)
+    // so sorting never breaks the selection or ref bookkeeping.
+    const [selectedStableId, setSelectedStableId] = useState<number | null>(null);
+    const [sortKey, setSortKey] = useState<SortKey>("default");
+    // cardRefs indexed by stableId (original position), so sort is purely visual.
+    const cardRefs = useRef<Record<number, HTMLElement | null>>({});
 
-    // Restaurants from AI that have valid coordinates — these are what we pin.
-    const restaurantsWithCoords = useMemo<MapRestaurant[]>(
+    // Sort the full restaurant list by the active sort key. Each entry keeps its
+    // stableId (original index) and gets a displayNumber (post-sort position + 1)
+    // that the UI uses for pin badges + map markers.
+    const sortedEntries = useMemo(() => {
+        const base = (data.restaurants || []).map((restaurant, i) => ({
+            restaurant,
+            stableId: i,
+        }));
+
+        const withDistance = base.map((e) => {
+            const hasCoords =
+                typeof e.restaurant.lat === "number" &&
+                typeof e.restaurant.lng === "number";
+            const distanceKm =
+                hasCoords && location
+                    ? haversineKm(location, {
+                          lat: e.restaurant.lat as number,
+                          lng: e.restaurant.lng as number,
+                      })
+                    : Infinity;
+            return { ...e, distanceKm };
+        });
+
+        const sorted = [...withDistance];
+        if (sortKey === "rating") {
+            sorted.sort(
+                (a, b) =>
+                    ratingScore(b.restaurant.rating) - ratingScore(a.restaurant.rating)
+            );
+        } else if (sortKey === "price") {
+            sorted.sort(
+                (a, b) =>
+                    priceScore(a.restaurant.priceRange) - priceScore(b.restaurant.priceRange)
+            );
+        } else if (sortKey === "distance") {
+            sorted.sort((a, b) => a.distanceKm - b.distanceKm);
+        }
+
+        return sorted.map((e, i) => ({ ...e, displayNumber: i + 1 }));
+    }, [data.restaurants, sortKey, location]);
+
+    // Map pins: only entries with real coordinates. Pin labels match the card's
+    // displayNumber so pin "3" on the map is the same as card "3" in the list.
+    const mapPins = useMemo<MapPin[]>(
         () =>
-            (data.restaurants || []).filter(
-                (r): r is MapRestaurant =>
-                    typeof r.lat === "number" && typeof r.lng === "number"
-            ),
-        [data.restaurants]
+            sortedEntries
+                .filter(
+                    (e) =>
+                        typeof e.restaurant.lat === "number" &&
+                        typeof e.restaurant.lng === "number"
+                )
+                .map((e) => ({
+                    lat: e.restaurant.lat as number,
+                    lng: e.restaurant.lng as number,
+                    label: e.displayNumber,
+                    stableId: e.stableId,
+                    title: e.restaurant.name,
+                })),
+        [sortedEntries]
     );
 
-    // Determine map center: user location, else first restaurant, else India default.
+    // Determine map center: user location, else first pin, else India default.
     const mapCenter: Coords = useMemo(
         () =>
             location ||
-            (restaurantsWithCoords.length > 0
-                ? { lat: restaurantsWithCoords[0].lat, lng: restaurantsWithCoords[0].lng }
+            (mapPins.length > 0
+                ? { lat: mapPins[0].lat, lng: mapPins[0].lng }
                 : { lat: 28.6139, lng: 77.209 }),
-        [location, restaurantsWithCoords]
+        [location, mapPins]
     );
 
     // Iframe Embed fallback URL for when the JS API can't load.
@@ -579,32 +727,12 @@ export function RestaurantView({ data }: RestaurantViewProps) {
         return `https://www.google.com/maps/embed/v1/search?${params.toString()}`;
     }, [mapsApiKey, data.query, mapCenter]);
 
-    // When a pin is clicked on the map, scroll the matching card into view.
-    // We look up by the restaurant's position in data.restaurants, not
-    // restaurantsWithCoords, because cardRefs are indexed by the full list.
-    const handleSelectFromMap = (mapIndex: number) => {
-        const target = restaurantsWithCoords[mapIndex];
-        if (!target) return;
-        const cardIndex = (data.restaurants || []).findIndex((r) => r === target);
-        if (cardIndex < 0) return;
-        setSelectedIndex(cardIndex);
-        const el = cardRefs.current[cardIndex];
+    // Unified selection handler: both map pins and cards call this with a stableId.
+    const handleSelect = (stableId: number) => {
+        setSelectedStableId(stableId);
+        const el = cardRefs.current[stableId];
         if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
     };
-
-    // When a card is hovered/clicked, sync the map highlight.
-    const handleSelectFromCard = (cardIndex: number) => {
-        setSelectedIndex(cardIndex);
-    };
-
-    // Translate the card-index selection to a map-index selection for the map.
-    const mapSelectedIndex = useMemo(() => {
-        if (selectedIndex === null) return null;
-        const card = (data.restaurants || [])[selectedIndex];
-        if (!card) return null;
-        const mi = restaurantsWithCoords.findIndex((r) => r === card);
-        return mi >= 0 ? mi : null;
-    }, [selectedIndex, data.restaurants, restaurantsWithCoords]);
 
     return (
         <Card
@@ -685,21 +813,31 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                 )}
             </div>
 
+            {/* Filter chips */}
+            {sortedEntries.length > 1 && (
+                <FilterChips
+                    value={sortKey}
+                    onChange={setSortKey}
+                    hasLocation={!!location}
+                />
+            )}
+
             {/* Body: list + map */}
             <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-6">
-                    {data.restaurants && data.restaurants.length > 0 ? (
-                        data.restaurants.map((restaurant, index) => (
+                    {sortedEntries.length > 0 ? (
+                        sortedEntries.map((entry) => (
                             <RestaurantCard
-                                key={index}
-                                restaurant={restaurant}
-                                index={index}
+                                key={entry.stableId}
+                                restaurant={entry.restaurant}
+                                stableId={entry.stableId}
+                                displayNumber={entry.displayNumber}
                                 userLocation={location}
                                 dishName={data.dishName}
-                                selected={selectedIndex === index}
-                                onSelect={handleSelectFromCard}
+                                selected={selectedStableId === entry.stableId}
+                                onSelect={handleSelect}
                                 cardRef={(el) => {
-                                    cardRefs.current[index] = el;
+                                    cardRefs.current[entry.stableId] = el;
                                 }}
                             />
                         ))
@@ -711,10 +849,10 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                 </div>
 
                 <RestaurantMap
-                    restaurants={restaurantsWithCoords}
+                    pins={mapPins}
                     center={mapCenter}
-                    selectedIndex={mapSelectedIndex}
-                    onSelect={handleSelectFromMap}
+                    selectedStableId={selectedStableId}
+                    onSelect={handleSelect}
                     apiKey={mapsApiKey}
                     embedFallbackUrl={embedUrl}
                 />
