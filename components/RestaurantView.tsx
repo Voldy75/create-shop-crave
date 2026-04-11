@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Star, Utensils, ExternalLink, Car, Navigation, AlertCircle } from "lucide-react";
+import { Star, Utensils, ExternalLink, Navigation, AlertCircle } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import {
     buildUberDeepLink,
@@ -19,81 +19,141 @@ interface RestaurantViewProps {
 
 type Coords = { lat: number; lng: number };
 
+// ---------- Distance + ETA helpers ----------
+
+function haversineKm(a: Coords, b: Coords): number {
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const R = 6371; // km
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const h =
+        Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function formatDistance(km: number): string {
+    if (km < 1) return `${Math.round(km * 1000)} m`;
+    return `${km.toFixed(1)} km`;
+}
+
+function etaMinutes(km: number): string {
+    // rough urban driving estimate: ~2.5 min per km, floor at 2 min
+    return `${Math.max(2, Math.round(km * 2.5))} min`;
+}
+
 // ---------- Local helper components ----------
 
-function RideButtons({
-    pickup,
-    dropoff,
-    name,
-}: {
-    pickup: Coords;
-    dropoff: Coords;
-    name: string;
-}) {
-    const uberUrl = buildUberDeepLink(pickup, dropoff, name);
-    const olaUrl = buildOlaDeepLink(pickup, dropoff, name);
-    return (
-        <div className="flex gap-2">
-            <a
-                href={uberUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-white bg-black hover:bg-gray-800 transition-colors"
-                style={{ fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "980px" }}
-            >
-                <Car className="w-3 h-3" /> Uber
-            </a>
-            <a
-                href={olaUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-white bg-green-600 hover:bg-green-700 transition-colors"
-                style={{ fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "980px" }}
-            >
-                <Car className="w-3 h-3" /> Ola
-            </a>
-        </div>
-    );
-}
+const IMAGE_POOL = [
+    "1517248135467-4c7edcad34c4",
+    "1552566626-52f8b828add9",
+    "1555396273-367ea4eb4db5",
+    "1414235077428-338989a2e8c0",
+    "1600891964092-4316c288032e",
+];
+const FALLBACK_IMG =
+    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop&auto=format";
+
+// Shared pill styles. Keep CTAs consistent across groups.
+const pillStyle: React.CSSProperties = {
+    fontSize: "12px",
+    fontWeight: 600,
+    padding: "6px 12px",
+    borderRadius: "980px",
+    whiteSpace: "nowrap",
+};
+
+const labelStyle: React.CSSProperties = {
+    fontSize: "11px",
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "var(--cc-text-tertiary)",
+    marginBottom: "6px",
+};
 
 function RestaurantCard({
     restaurant,
     index,
     userLocation,
+    dishName,
 }: {
     restaurant: Restaurant;
     index: number;
     userLocation: Coords | null;
+    dishName?: string;
 }) {
-    const imagePool = [
-        "1517248135467-4c7edcad34c4",
-        "1552566626-52f8b828add9",
-        "1555396273-367ea4eb4db5",
-        "1414235077428-338989a2e8c0",
-        "1600891964092-4316c288032e",
-    ];
-    const photoId = imagePool[index % imagePool.length];
+    const photoId = IMAGE_POOL[index % IMAGE_POOL.length];
+    const hasCoords = typeof restaurant.lat === "number" && typeof restaurant.lng === "number";
+    const dropoff: Coords | null = hasCoords
+        ? { lat: restaurant.lat as number, lng: restaurant.lng as number }
+        : null;
+    const distanceKm =
+        userLocation && dropoff ? haversineKm(userLocation, dropoff) : null;
+
+    // Build action URLs
+    const directionsUrl = userLocation && dropoff ? buildGoogleMapsDirectionsLink(userLocation, dropoff) : null;
+    const uberUrl = userLocation && dropoff ? buildUberDeepLink(userLocation, dropoff, restaurant.name) : null;
+    const olaUrl = userLocation && dropoff ? buildOlaDeepLink(userLocation, dropoff, restaurant.name) : null;
+    const swiggySearchUrl = dishName
+        ? buildSwiggyOrderLink(dishName, userLocation?.lat, userLocation?.lng)
+        : restaurant.swiggyUrl || null;
+    const zomatoSearchUrl = dishName
+        ? buildZomatoOrderLink(dishName)
+        : restaurant.zomatoUrl || null;
+
+    const hasGoThere = Boolean(directionsUrl || uberUrl || olaUrl);
+    const hasOrderIn = Boolean(swiggySearchUrl || zomatoSearchUrl);
 
     return (
-        <div className="group cursor-pointer">
+        <article
+            className="group"
+            style={{
+                background: "var(--cc-surface)",
+                border: "1px solid var(--cc-border)",
+                borderRadius: "12px",
+                overflow: "hidden",
+                transition: "border-color 180ms ease, transform 180ms ease",
+            }}
+        >
             {/* Thumbnail */}
             <div
-                className="aspect-[4/3] mb-3 relative overflow-hidden"
-                style={{ borderRadius: "12px", background: "var(--cc-surface-2)" }}
+                className="aspect-[16/9] relative overflow-hidden"
+                style={{ background: "var(--cc-surface-2)" }}
             >
                 <img
-                    src={`https://images.unsplash.com/photo-${photoId}?w=400&h=300&fit=crop&auto=format`}
+                    src={`https://images.unsplash.com/photo-${photoId}?w=600&h=340&fit=crop&auto=format`}
                     alt={restaurant.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                            "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop&auto=format";
+                        (e.target as HTMLImageElement).src = FALLBACK_IMG;
                     }}
                 />
+
+                {/* Numbered pin badge */}
+                <div
+                    className="absolute top-3 left-3 flex items-center justify-center"
+                    style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "50%",
+                        background: "var(--cc-accent)",
+                        color: "#ffffff",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
+                    }}
+                    aria-label={`Marker ${index + 1}`}
+                >
+                    {index + 1}
+                </div>
+
+                {/* Rating badge */}
                 <div
                     className="absolute top-3 right-3 flex items-center gap-1"
                     style={{
-                        background: "rgba(0,0,0,0.65)",
+                        background: "rgba(0,0,0,0.7)",
                         backdropFilter: "blur(8px)",
                         padding: "4px 8px",
                         borderRadius: "8px",
@@ -105,98 +165,127 @@ function RestaurantCard({
                     <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                     {restaurant.rating}
                 </div>
-                {restaurant.cuisine && (
-                    <div
-                        className="absolute top-3 left-3"
-                        style={{
-                            background: "rgba(0,0,0,0.65)",
-                            backdropFilter: "blur(8px)",
-                            padding: "4px 8px",
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                            fontWeight: 400,
-                            color: "#ffffff",
-                        }}
-                    >
-                        {restaurant.cuisine}
-                    </div>
-                )}
             </div>
 
-            {/* Content */}
-            <div>
-                <div className="flex justify-between items-start">
-                    <h3
-                        style={{
-                            fontSize: "17px",
-                            fontWeight: 600,
-                            lineHeight: 1.24,
-                            letterSpacing: "-0.022em",
-                            color: "var(--cc-text-primary)",
-                        }}
-                    >
-                        {restaurant.name}
-                    </h3>
-                    <span style={{ fontSize: "14px", fontWeight: 400, color: "var(--cc-text-secondary)" }}>
-                        {restaurant.priceRange}
-                    </span>
+            {/* Body */}
+            <div style={{ padding: "14px 16px 16px" }}>
+                {/* Meta row: cuisine · price · distance · ETA */}
+                <div
+                    className="flex items-center flex-wrap gap-x-1.5"
+                    style={{
+                        fontSize: "12px",
+                        color: "var(--cc-text-tertiary)",
+                        marginBottom: "4px",
+                    }}
+                >
+                    {restaurant.cuisine && <span>{restaurant.cuisine}</span>}
+                    {restaurant.cuisine && <span aria-hidden>·</span>}
+                    <span>{restaurant.priceRange}</span>
+                    {distanceKm !== null && (
+                        <>
+                            <span aria-hidden>·</span>
+                            <span>{formatDistance(distanceKm)}</span>
+                            <span aria-hidden>·</span>
+                            <span>{etaMinutes(distanceKm)}</span>
+                        </>
+                    )}
                 </div>
-                <p style={{ fontSize: "14px", marginTop: "4px", color: "var(--cc-text-secondary)" }}>
+
+                {/* Title */}
+                <h3
+                    style={{
+                        fontSize: "17px",
+                        fontWeight: 600,
+                        lineHeight: 1.24,
+                        letterSpacing: "-0.022em",
+                        color: "var(--cc-text-primary)",
+                    }}
+                >
+                    {restaurant.name}
+                </h3>
+                <p
+                    style={{
+                        fontSize: "13px",
+                        marginTop: "2px",
+                        color: "var(--cc-text-secondary)",
+                    }}
+                >
                     {restaurant.area}
                 </p>
 
-                {/* Platform links */}
-                <div className="flex flex-wrap gap-2" style={{ marginTop: "12px" }}>
-                    {restaurant.zomatoUrl && (
-                        <a
-                            href={restaurant.zomatoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-white bg-red-500 hover:bg-red-600 transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "980px" }}
-                        >
-                            Zomato <ExternalLink className="w-3 h-3" />
-                        </a>
-                    )}
-                    {restaurant.swiggyUrl && (
-                        <a
-                            href={restaurant.swiggyUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-white bg-orange-500 hover:bg-orange-600 transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "980px" }}
-                        >
-                            Swiggy <ExternalLink className="w-3 h-3" />
-                        </a>
-                    )}
-                    {restaurant.lat && restaurant.lng && userLocation && (
-                        <a
-                            href={buildGoogleMapsDirectionsLink(userLocation, {
-                                lat: restaurant.lat,
-                                lng: restaurant.lng,
-                            })}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 600, padding: "4px 12px", borderRadius: "980px" }}
-                        >
-                            <Navigation className="w-3 h-3" /> Directions
-                        </a>
-                    )}
-                </div>
+                {/* Action groups */}
+                {hasGoThere && (
+                    <div style={{ marginTop: "14px" }}>
+                        <div style={labelStyle}>Go there</div>
+                        <div className="flex flex-wrap gap-2">
+                            {directionsUrl && (
+                                <a
+                                    href={directionsUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                                    style={pillStyle}
+                                >
+                                    <Navigation className="w-3 h-3" /> Directions
+                                </a>
+                            )}
+                            {uberUrl && (
+                                <a
+                                    href={uberUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-white bg-black hover:bg-neutral-800 transition-colors"
+                                    style={pillStyle}
+                                >
+                                    Uber
+                                </a>
+                            )}
+                            {olaUrl && (
+                                <a
+                                    href={olaUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-white bg-green-600 hover:bg-green-700 transition-colors"
+                                    style={pillStyle}
+                                >
+                                    Ola
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                )}
 
-                {/* Ride buttons per restaurant */}
-                {restaurant.lat && restaurant.lng && userLocation && (
-                    <div style={{ marginTop: "8px" }}>
-                        <RideButtons
-                            pickup={userLocation}
-                            dropoff={{ lat: restaurant.lat, lng: restaurant.lng }}
-                            name={restaurant.name}
-                        />
+                {hasOrderIn && (
+                    <div style={{ marginTop: "12px" }}>
+                        <div style={labelStyle}>Order in</div>
+                        <div className="flex flex-wrap gap-2">
+                            {swiggySearchUrl && (
+                                <a
+                                    href={swiggySearchUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-white bg-orange-500 hover:bg-orange-600 transition-colors"
+                                    style={pillStyle}
+                                >
+                                    Swiggy <ExternalLink className="w-3 h-3" />
+                                </a>
+                            )}
+                            {zomatoSearchUrl && (
+                                <a
+                                    href={zomatoSearchUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-white bg-red-500 hover:bg-red-600 transition-colors"
+                                    style={pillStyle}
+                                >
+                                    Zomato <ExternalLink className="w-3 h-3" />
+                                </a>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
-        </div>
+        </article>
     );
 }
 
@@ -357,6 +446,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                 restaurant={restaurant}
                                 index={index}
                                 userLocation={location}
+                                dishName={data.dishName}
                             />
                         ))
                     ) : (
