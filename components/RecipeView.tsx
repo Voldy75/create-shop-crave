@@ -12,6 +12,23 @@ interface RecipeViewProps {
     data: RecipeData;
 }
 
+// Render a string with **bold** markdown as JSX. Keeps everything else as plain text.
+// Safe against nested asterisks because we split on the outermost pairs.
+function renderInline(text: string): React.ReactNode {
+    if (!text) return null;
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+            return (
+                <strong key={i} style={{ fontWeight: 700, color: "var(--cc-text-primary)" }}>
+                    {part.slice(2, -2)}
+                </strong>
+            );
+        }
+        return <span key={i}>{part}</span>;
+    });
+}
+
 function getLinksForIngredient(ing: Ingredient): ShoppingLink[] {
     if (ing.links && ing.links.length > 0) return ing.links;
     if (ing.link) {
@@ -340,35 +357,35 @@ export function RecipeView({ data }: RecipeViewProps) {
             <div style={{ borderTop: "1px solid var(--cc-border)" }}>
                 <div className="grid md:grid-cols-2 gap-0">
                     {/* Left: About + Full Ingredient List */}
-                    <div style={{ padding: "28px 28px 36px", borderRight: "1px solid var(--cc-border)" }}>
+                    <div style={{ padding: "28px 28px 32px", borderRight: "1px solid var(--cc-border)" }}>
                         {/* About */}
                         <h3 style={{
-                            fontSize: "24px", fontWeight: 700, letterSpacing: "-0.02em",
-                            color: "var(--cc-text-primary)", marginBottom: "16px",
+                            fontSize: "22px", fontWeight: 700, letterSpacing: "-0.02em",
+                            color: "var(--cc-text-primary)", marginBottom: "10px",
                         }}>
                             About this recipe
                         </h3>
                         <p style={{
-                            fontSize: "17px", lineHeight: 1.76, letterSpacing: "-0.01em",
+                            fontSize: "15px", lineHeight: 1.5, letterSpacing: "-0.01em",
                             color: "var(--cc-text-secondary)",
-                            marginBottom: "32px",
+                            marginBottom: "24px",
                         }}>
-                            {data.description}
+                            {renderInline(data.description)}
                         </p>
 
                         {/* Full ingredient list */}
                         <h4 style={{
-                            fontSize: "20px", fontWeight: 700, letterSpacing: "-0.02em",
-                            color: "var(--cc-text-primary)", marginBottom: "16px",
+                            fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em",
+                            color: "var(--cc-text-primary)", marginBottom: "10px",
                         }}>
                             Full ingredient list
                         </h4>
-                        <ul style={{ paddingLeft: "24px", margin: 0 }}>
+                        <ul style={{ paddingLeft: "20px", margin: 0 }}>
                             {data.ingredients.map((ing, idx) => (
                                 <li key={idx} style={{
-                                    fontSize: "17px", lineHeight: 1.76, letterSpacing: "-0.01em",
+                                    fontSize: "15px", lineHeight: 1.5, letterSpacing: "-0.01em",
                                     color: "var(--cc-text-secondary)",
-                                    paddingBottom: "4px",
+                                    paddingBottom: "2px",
                                 }}>
                                     {ing.quantity ? `${ing.quantity} ${ing.item}` : ing.item}
                                 </li>
@@ -377,34 +394,34 @@ export function RecipeView({ data }: RecipeViewProps) {
                     </div>
 
                     {/* Right: Preparation */}
-                    <div style={{ padding: "28px 28px 36px" }}>
+                    <div style={{ padding: "28px 28px 32px" }}>
                         <h3 style={{
-                            fontSize: "24px", fontWeight: 700, letterSpacing: "-0.02em",
-                            color: "var(--cc-text-primary)", marginBottom: "28px",
+                            fontSize: "22px", fontWeight: 700, letterSpacing: "-0.02em",
+                            color: "var(--cc-text-primary)", marginBottom: "18px",
                         }}>
                             Preparation
                         </h3>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
                             {data.instructions.map((step, idx) => (
-                                <div key={idx} className="flex" style={{ gap: "16px" }}>
+                                <div key={idx} className="flex" style={{ gap: "14px" }}>
                                     <div
                                         className="flex-shrink-0 flex items-center justify-center"
                                         style={{
-                                            width: "36px", height: "36px", borderRadius: "50%",
-                                            fontSize: "15px", fontWeight: 700,
+                                            width: "28px", height: "28px", borderRadius: "50%",
+                                            fontSize: "13px", fontWeight: 700,
                                             background: "var(--cc-text-primary)", color: "var(--cc-surface)",
                                         }}
                                     >
                                         {idx + 1}
                                     </div>
                                     <p style={{
-                                        fontSize: "17px",
-                                        lineHeight: 1.76,
+                                        fontSize: "15px",
+                                        lineHeight: 1.5,
                                         letterSpacing: "-0.01em",
                                         color: "var(--cc-text-secondary)",
-                                        paddingTop: "6px",
+                                        paddingTop: "3px",
                                     }}>
-                                        {step}
+                                        {renderInline(step)}
                                     </p>
                                 </div>
                             ))}

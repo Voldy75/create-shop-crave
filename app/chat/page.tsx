@@ -184,18 +184,18 @@ export default function ChatPage() {
     >
       {/* ── Header — Apple glass nav, 48px ── */}
       <header
-        className="glass-nav px-5 flex items-center justify-between sticky top-0 z-10"
+        className="glass-nav px-3 md:px-5 flex items-center justify-between sticky top-0 z-10"
         style={{ height: "48px" }}
       >
         {/* Brand */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <div
             className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
             style={{ background: "#ff6b35" }}
           >
             <Sparkles className="w-3 h-3 text-white" />
           </div>
-          <span style={{
+          <span className="hidden sm:inline" style={{
             fontSize: "14px",
             fontWeight: 400,
             letterSpacing: "-0.01em",
@@ -236,7 +236,11 @@ export default function ChatPage() {
               {byok.provider}
             </span>
           ) : (
-            <UsageBadge count={usageCount} limit={DAILY_LIMIT} />
+            <UsageBadge
+              count={usageCount}
+              limit={DAILY_LIMIT}
+              onClick={() => setShowUpgradeDialog(true)}
+            />
           )}
 
           {messages.length > 0 && (
@@ -275,9 +279,10 @@ export default function ChatPage() {
             </button>
           )}
 
+          {/* Saved + Plan — hidden on mobile since BottomNav has them */}
           <button
             onClick={() => router.push("/favorites")}
-            className="flex items-center gap-1 transition-opacity hover:opacity-100"
+            className="hidden md:flex items-center gap-1 transition-opacity hover:opacity-100"
             style={{
               fontSize: "12px",
               fontWeight: 400,
@@ -288,12 +293,12 @@ export default function ChatPage() {
             }}
           >
             <Heart className="w-3 h-3" />
-            <span className="hidden sm:inline">Saved</span>
+            Saved
           </button>
 
           <button
             onClick={() => router.push("/planner")}
-            className="flex items-center gap-1 transition-opacity hover:opacity-100"
+            className="hidden md:flex items-center gap-1 transition-opacity hover:opacity-100"
             style={{
               fontSize: "12px",
               fontWeight: 400,
@@ -304,7 +309,7 @@ export default function ChatPage() {
             }}
           >
             <Calendar className="w-3 h-3" />
-            <span className="hidden sm:inline">Plan</span>
+            Plan
           </button>
 
           <ThemeToggle />
@@ -567,8 +572,9 @@ export default function ChatPage() {
       </main>
 
       {/* ── Floating input — Apple pill ── */}
+      {/* On mobile, offset by BottomNav height (49px + safe-area) so input sits above it */}
       <div
-        className="fixed bottom-0 left-0 right-0 px-4 pb-[calc(env(safe-area-inset-bottom,8px)+20px)] pt-2 flex justify-center pointer-events-none"
+        className="fixed bottom-[57px] md:bottom-0 left-0 right-0 px-4 pb-2 md:pb-[calc(env(safe-area-inset-bottom,8px)+20px)] pt-2 flex justify-center pointer-events-none"
         style={{ background: "linear-gradient(to top, var(--cc-bg) 60%, transparent)" }}
       >
         <div className="w-full max-w-3xl pointer-events-auto">
