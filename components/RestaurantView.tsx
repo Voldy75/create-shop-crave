@@ -57,6 +57,67 @@ const IMAGE_POOL = [
 const FALLBACK_IMG =
     "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop&auto=format";
 
+// ---------- Skeleton card for loading state ----------
+
+function RestaurantCardSkeleton() {
+    const shimmer: React.CSSProperties = {
+        background: "var(--cc-surface-2)",
+        borderRadius: "8px",
+    };
+    return (
+        <div
+            style={{
+                background: "var(--cc-surface)",
+                border: "1px solid var(--cc-border)",
+                borderRadius: "14px",
+                overflow: "hidden",
+            }}
+        >
+            {/* Photo placeholder */}
+            <div
+                className="aspect-[4/3] animate-pulse"
+                style={{ background: "var(--cc-surface-2)" }}
+            />
+            {/* Body */}
+            <div style={{ padding: "14px 16px 16px" }}>
+                <div className="animate-pulse" style={{ ...shimmer, width: "60%", height: "18px" }} />
+                <div
+                    className="animate-pulse"
+                    style={{ ...shimmer, width: "40%", height: "13px", marginTop: "6px" }}
+                />
+                <div
+                    className="animate-pulse"
+                    style={{ ...shimmer, width: "75%", height: "12px", marginTop: "10px" }}
+                />
+                <div className="flex gap-2" style={{ marginTop: "16px" }}>
+                    <div className="animate-pulse" style={{ ...shimmer, width: "80px", height: "28px", borderRadius: "980px" }} />
+                    <div className="animate-pulse" style={{ ...shimmer, width: "60px", height: "28px", borderRadius: "980px" }} />
+                    <div className="animate-pulse" style={{ ...shimmer, width: "60px", height: "28px", borderRadius: "980px" }} />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ---------- Empty state ----------
+
+function RestaurantEmptyState() {
+    return (
+        <div
+            className="flex flex-col items-center justify-center text-center py-12 px-6"
+            style={{ color: "var(--cc-text-tertiary)" }}
+        >
+            <Utensils className="w-10 h-10 mb-3" style={{ opacity: 0.4 }} />
+            <p style={{ fontSize: "16px", fontWeight: 600, color: "var(--cc-text-secondary)", marginBottom: "4px" }}>
+                No restaurants found
+            </p>
+            <p style={{ fontSize: "13px", lineHeight: 1.5, maxWidth: "260px" }}>
+                Try asking for a different dish or a broader area. The map might still have results nearby.
+            </p>
+        </div>
+    );
+}
+
 // Shared pill styles. Keep CTAs consistent across groups.
 const pillStyle: React.CSSProperties = {
     fontSize: "12px",
@@ -801,11 +862,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
         />
     );
 
-    const emptyMessage = (
-        <p style={{ fontSize: "14px", color: "var(--cc-text-tertiary)" }}>
-            No specific restaurants found. Check the map!
-        </p>
-    );
+    const emptyMessage = <RestaurantEmptyState />;
 
     return (
         <Card
@@ -832,6 +889,20 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                         >
                             Dine Out
                         </span>
+                        {sortedEntries.length > 0 && (
+                            <span
+                                style={{
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                    padding: "2px 8px",
+                                    borderRadius: "980px",
+                                    background: "rgba(255,107,53,0.15)",
+                                    color: "#ff6b35",
+                                }}
+                            >
+                                {sortedEntries.length}
+                            </span>
+                        )}
                     </div>
                     <ShareButton
                         title="Restaurant Suggestions"
@@ -953,6 +1024,75 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                         apiKey={mapsApiKey}
                         embedFallbackUrl={embedUrl}
                     />
+                </div>
+            </div>
+        </Card>
+    );
+}
+
+// ---------- Exported skeleton for streaming / loading state ----------
+
+export function RestaurantViewSkeleton() {
+    return (
+        <Card
+            className="w-full overflow-hidden shadow-none border-0"
+            style={{
+                background: "var(--cc-surface)",
+                color: "var(--cc-text-primary)",
+                borderRadius: "12px",
+                padding: "28px",
+            }}
+        >
+            {/* Header skeleton */}
+            <div style={{ marginBottom: "24px" }}>
+                <div
+                    className="animate-pulse"
+                    style={{ width: "80px", height: "14px", borderRadius: "6px", background: "var(--cc-surface-2)", marginBottom: "12px" }}
+                />
+                <div
+                    className="animate-pulse"
+                    style={{ width: "65%", height: "24px", borderRadius: "8px", background: "var(--cc-surface-2)", marginBottom: "8px" }}
+                />
+                <div
+                    className="animate-pulse"
+                    style={{ width: "90%", height: "14px", borderRadius: "6px", background: "var(--cc-surface-2)" }}
+                />
+            </div>
+
+            {/* Body skeleton: cards + map placeholder */}
+            <div className="hidden md:grid md:grid-cols-[380px_1fr] gap-6">
+                <div className="space-y-6">
+                    {[0, 1, 2].map((i) => (
+                        <RestaurantCardSkeleton key={i} />
+                    ))}
+                </div>
+                <div
+                    className="animate-pulse"
+                    style={{
+                        borderRadius: "12px",
+                        background: "var(--cc-surface-2)",
+                        height: "500px",
+                    }}
+                />
+            </div>
+
+            {/* Mobile skeleton */}
+            <div className="block md:hidden">
+                <div
+                    className="animate-pulse"
+                    style={{
+                        borderRadius: "12px",
+                        background: "var(--cc-surface-2)",
+                        height: "320px",
+                        marginBottom: "16px",
+                    }}
+                />
+                <div className="flex gap-4 overflow-hidden">
+                    {[0, 1].map((i) => (
+                        <div key={i} className="shrink-0" style={{ width: "85vw", maxWidth: "340px" }}>
+                            <RestaurantCardSkeleton />
+                        </div>
+                    ))}
                 </div>
             </div>
         </Card>
