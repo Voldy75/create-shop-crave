@@ -983,24 +983,80 @@ export function RestaurantView({ data }: RestaurantViewProps) {
             </div>
 
             {sortedEntries.length > 0 ? (
-                <div
-                    ref={carouselRef}
-                    className="flex md:hidden gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-2 px-2 hide-scrollbar"
-                    style={{
-                        WebkitOverflowScrolling: "touch",
-                    }}
-                >
-                    {sortedEntries.map((entry) => (
-                        <div
-                            key={entry.stableId}
-                            data-stableid={entry.stableId}
-                            className="snap-center shrink-0"
-                            style={{ width: "85vw", maxWidth: "340px" }}
-                        >
-                            {renderCard(entry)}
-                        </div>
-                    ))}
-                </div>
+                <>
+                    {/* Carousel hint */}
+                    <div
+                        className="flex md:hidden items-center justify-between"
+                        style={{ marginBottom: "8px" }}
+                    >
+                        <span style={{
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            color: "var(--cc-text-secondary)",
+                        }}>
+                            {sortedEntries.length} restaurants
+                        </span>
+                        <span style={{
+                            fontSize: "12px",
+                            color: "var(--cc-text-tertiary)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                        }}>
+                            Swipe to explore →
+                        </span>
+                    </div>
+
+                    <div
+                        ref={carouselRef}
+                        className="flex md:hidden gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-2 px-4 hide-scrollbar"
+                        style={{
+                            WebkitOverflowScrolling: "touch",
+                        }}
+                    >
+                        {sortedEntries.map((entry) => (
+                            <div
+                                key={entry.stableId}
+                                data-stableid={entry.stableId}
+                                className="snap-center shrink-0"
+                                style={{ width: "80vw", maxWidth: "320px" }}
+                            >
+                                {renderCard(entry)}
+                            </div>
+                        ))}
+                        {/* End spacer so last card can snap to center */}
+                        <div className="shrink-0" style={{ width: "20vw" }} aria-hidden />
+                    </div>
+
+                    {/* Dot indicators */}
+                    <div
+                        className="flex md:hidden items-center justify-center gap-1.5"
+                        style={{ paddingTop: "8px", paddingBottom: "4px" }}
+                    >
+                        {sortedEntries.map((entry) => (
+                            <button
+                                key={entry.stableId}
+                                type="button"
+                                onClick={() => handleSelect(entry.stableId)}
+                                aria-label={`Go to ${entry.restaurant.name}`}
+                                style={{
+                                    width: selectedStableId === entry.stableId ? "18px" : "6px",
+                                    height: "6px",
+                                    borderRadius: "3px",
+                                    background:
+                                        selectedStableId === entry.stableId
+                                            ? "var(--cc-accent)"
+                                            : "var(--cc-text-tertiary)",
+                                    opacity: selectedStableId === entry.stableId ? 1 : 0.35,
+                                    border: "none",
+                                    padding: 0,
+                                    cursor: "pointer",
+                                    transition: "all 200ms ease",
+                                }}
+                            />
+                        ))}
+                    </div>
+                </>
             ) : (
                 <div className="block md:hidden">{emptyMessage}</div>
             )}

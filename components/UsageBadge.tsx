@@ -33,16 +33,17 @@ export function UsageBadge({ count, limit, onClick }: UsageBadgeProps) {
           ? "Daily limit reached — click to add your API key for unlimited use"
           : `${remaining} of ${limit} free requests remaining today. Click to add your own API key.`
       }
-      className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
+      className="flex items-center gap-1 transition-opacity hover:opacity-80 shrink-0"
       style={{
-        fontSize: "12px",
+        fontSize: "11px",
         fontWeight: 600,
-        padding: "4px 10px",
+        padding: "4px 8px",
         borderRadius: "980px",
         background: bg,
         color,
         border: isExhausted ? "1px solid rgba(255,69,58,0.25)" : "none",
         cursor: onClick ? "pointer" : "default",
+        whiteSpace: "nowrap",
       }}
     >
       {isExhausted ? (
