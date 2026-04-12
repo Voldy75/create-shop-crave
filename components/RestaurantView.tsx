@@ -607,12 +607,10 @@ function RestaurantMap({
 }) {
     return (
         <div
-            className="relative w-full overflow-hidden"
+            className="relative w-full overflow-hidden h-[320px] md:h-[500px]"
             style={{
                 borderRadius: "12px",
                 background: "var(--cc-surface-2)",
-                height: "500px",
-                minHeight: "400px",
             }}
         >
             {apiKey && pins.length > 0 ? (
@@ -643,6 +641,13 @@ export function RestaurantView({ data }: RestaurantViewProps) {
     const [sortKey, setSortKey] = useState<SortKey>("default");
     // cardRefs indexed by stableId (original position), so sort is purely visual.
     const cardRefs = useRef<Record<number, HTMLElement | null>>({});
+    // Carousel container on mobile — used as the IntersectionObserver root so
+    // we can tell which card is centered in the horizontal scroll view.
+    const carouselRef = useRef<HTMLDivElement | null>(null);
+    // When handleSelect programmatically scrolls a card into view, IntersectionObserver
+    // will fire with a new "centered" card and flip selection back, creating a loop
+    // on mobile. This flag suppresses observer-driven updates during a programmatic scroll.
+    const suppressObserverRef = useRef(false);
 
     // Sort the full restaurant list by the active sort key. Each entry keeps its
     // stableId (original index) and gets a displayNumber (post-sort position + 1)
@@ -728,11 +733,79 @@ export function RestaurantView({ data }: RestaurantViewProps) {
     }, [mapsApiKey, data.query, mapCenter]);
 
     // Unified selection handler: both map pins and cards call this with a stableId.
+    // On desktop, scrolls the vertical list. On mobile carousel, scrolls horizontally.
     const handleSelect = (stableId: number) => {
         setSelectedStableId(stableId);
+        suppressObserverRef.current = true;
         const el = cardRefs.current[stableId];
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        }
+        // Allow observer to resume after the programmatic scroll animation settles.
+        setTimeout(() => {
+            suppressObserverRef.current = false;
+        }, 600);
     };
+
+    // Mobile carousel IntersectionObserver: when a card snaps into center,
+    // update selectedStableId so the map pin highlights in sync.
+    useEffect(() => {
+        const container = carouselRef.current;
+        if (!container) return;
+        // Only observe on mobile-width viewports where the carousel is visible.
+        // On desktop (md+), the carousel is hidden and the vertical list is shown.
+        const mql = window.matchMedia("(min-width: 768px)");
+        if (mql.matches) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (suppressObserverRef.current) return;
+                for (const entry of entries) {
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+                        const sid = Number(
+                            (entry.target as HTMLElement).dataset.stableid
+                        );
+                        if (!Number.isNaN(sid)) {
+                            setSelectedStableId(sid);
+                        }
+                    }
+                }
+            },
+            {
+                root: container,
+                threshold: 0.6,
+            }
+        );
+
+        // Observe every card element inside the carousel.
+        const cards = container.querySelectorAll<HTMLElement>("[data-stableid]");
+        cards.forEach((card) => observer.observe(card));
+
+        return () => observer.disconnect();
+    }, [sortedEntries]);
+
+    // Render a single card instance (shared between desktop list and mobile carousel).
+    const renderCard = (entry: (typeof sortedEntries)[number]) => (
+        <RestaurantCard
+            key={entry.stableId}
+            restaurant={entry.restaurant}
+            stableId={entry.stableId}
+            displayNumber={entry.displayNumber}
+            userLocation={location}
+            dishName={data.dishName}
+            selected={selectedStableId === entry.stableId}
+            onSelect={handleSelect}
+            cardRef={(el) => {
+                cardRefs.current[entry.stableId] = el;
+            }}
+        />
+    );
+
+    const emptyMessage = (
+        <p style={{ fontSize: "14px", color: "var(--cc-text-tertiary)" }}>
+            No specific restaurants found. Check the map!
+        </p>
+    );
 
     return (
         <Card
@@ -790,7 +863,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
 
                 {/* Delivery order buttons */}
                 {data.dishName && location && (
-                    <div className="flex gap-2" style={{ marginTop: "12px" }}>
+                    <div className="flex gap-2 flex-wrap" style={{ marginTop: "12px" }}>
                         <a
                             href={buildSwiggyOrderLink(data.dishName, location.lat, location.lng)}
                             target="_blank"
@@ -822,32 +895,12 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                 />
             )}
 
-            {/* Body: list + map */}
-            <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-6">
-                    {sortedEntries.length > 0 ? (
-                        sortedEntries.map((entry) => (
-                            <RestaurantCard
-                                key={entry.stableId}
-                                restaurant={entry.restaurant}
-                                stableId={entry.stableId}
-                                displayNumber={entry.displayNumber}
-                                userLocation={location}
-                                dishName={data.dishName}
-                                selected={selectedStableId === entry.stableId}
-                                onSelect={handleSelect}
-                                cardRef={(el) => {
-                                    cardRefs.current[entry.stableId] = el;
-                                }}
-                            />
-                        ))
-                    ) : (
-                        <p style={{ fontSize: "14px", color: "var(--cc-text-tertiary)" }}>
-                            No specific restaurants found. Check the map!
-                        </p>
-                    )}
-                </div>
-
+            {/* ============================================================
+                MOBILE layout (<md): map on top, horizontal snap carousel below.
+                Carousel cards are ~280px wide, snap to center, one visible
+                at a time with peek of the next card on both sides.
+               ============================================================ */}
+            <div className="block md:hidden" style={{ marginBottom: "16px" }}>
                 <RestaurantMap
                     pins={mapPins}
                     center={mapCenter}
@@ -856,6 +909,51 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                     apiKey={mapsApiKey}
                     embedFallbackUrl={embedUrl}
                 />
+            </div>
+
+            {sortedEntries.length > 0 ? (
+                <div
+                    ref={carouselRef}
+                    className="flex md:hidden gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-2 px-2 hide-scrollbar"
+                    style={{
+                        WebkitOverflowScrolling: "touch",
+                    }}
+                >
+                    {sortedEntries.map((entry) => (
+                        <div
+                            key={entry.stableId}
+                            data-stableid={entry.stableId}
+                            className="snap-center shrink-0"
+                            style={{ width: "85vw", maxWidth: "340px" }}
+                        >
+                            {renderCard(entry)}
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="block md:hidden">{emptyMessage}</div>
+            )}
+
+            {/* ============================================================
+                DESKTOP layout (md+): vertical scrollable list + sticky map.
+               ============================================================ */}
+            <div className="hidden md:grid md:grid-cols-[380px_1fr] gap-6">
+                <div className="space-y-6 max-h-[700px] overflow-y-auto pr-2" style={{ scrollbarWidth: "thin" }}>
+                    {sortedEntries.length > 0
+                        ? sortedEntries.map((entry) => renderCard(entry))
+                        : emptyMessage}
+                </div>
+
+                <div className="sticky top-4 self-start">
+                    <RestaurantMap
+                        pins={mapPins}
+                        center={mapCenter}
+                        selectedStableId={selectedStableId}
+                        onSelect={handleSelect}
+                        apiKey={mapsApiKey}
+                        embedFallbackUrl={embedUrl}
+                    />
+                </div>
             </div>
         </Card>
     );
