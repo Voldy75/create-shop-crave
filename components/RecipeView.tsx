@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { ShoppingCart, ExternalLink, Clock, Users, Flame, Dumbbell, Zap, ChevronDown, BookOpen } from "lucide-react";
+import { ShoppingCart, ExternalLink, Clock, Users, Flame, Dumbbell, Zap, ChevronDown, BookOpen, Utensils } from "lucide-react";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ShareButton } from "@/components/ShareButton";
+import { setPendingMealLog } from "@/lib/storage";
+import { parseNumeric } from "@/lib/nutrition";
 import type { RecipeData, Ingredient, ShoppingLink } from "@/lib/types";
 
 interface RecipeViewProps {
@@ -71,8 +74,22 @@ function getIngredientEmoji(item: string, index: number): string {
 }
 
 export function RecipeView({ data }: RecipeViewProps) {
+    const router = useRouter();
     const [selectedStore, setSelectedStore] = useState(STORE_OPTIONS[0]);
     const [showStoreDropdown, setShowStoreDropdown] = useState(false);
+
+    const handleLogToTracker = () => {
+        const n = data.nutritionEstimate;
+        setPendingMealLog({
+            name: data.name,
+            calories: parseNumeric(n?.calories),
+            protein: parseNumeric(n?.protein),
+            carbs: parseNumeric(n?.carbs),
+            fat: parseNumeric(n?.fat),
+            source: "search",
+        });
+        router.push("/planner?tab=tracker&log=1");
+    };
 
     const allItems = data.ingredients.map((i) => i.item).join(", ");
 
@@ -139,7 +156,21 @@ export function RecipeView({ data }: RecipeViewProps) {
                     )}
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 mt-4">
+                    <div className="flex items-center gap-2 mt-4 flex-wrap">
+                        <button
+                            onClick={handleLogToTracker}
+                            className="flex items-center gap-1.5 px-4 py-2 text-white transition-colors"
+                            style={{
+                                fontSize: "13px",
+                                fontWeight: 600,
+                                background: "var(--cc-accent)",
+                                borderRadius: "980px",
+                            }}
+                            aria-label="Log this meal to your tracker"
+                        >
+                            <Utensils className="w-3.5 h-3.5" />
+                            I ate this
+                        </button>
                         <FavoriteButton type="recipe" data={data} />
                         <ShareButton title={data.name} text={`Check out this recipe for ${data.name}!`} />
                     </div>

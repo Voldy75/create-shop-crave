@@ -1,4 +1,4 @@
-import type { RecipeData, Restaurant } from "./types";
+import type { MealLog, NutritionGoals, RecipeData, Restaurant } from "./types";
 
 // --- Favorites ---
 
@@ -103,4 +103,99 @@ export function getMealPlan(): WeekPlan {
 
 export function saveMealPlan(plan: WeekPlan): void {
   localStorage.setItem(MEAL_PLAN_KEY, JSON.stringify(plan));
+}
+
+// --- Meal Log (tracker) ---
+
+const MEAL_LOGS_KEY = "crave_mealLogs";
+
+function readMealLogs(): MealLog[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(MEAL_LOGS_KEY);
+    return stored ? (JSON.parse(stored) as MealLog[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeMealLogs(logs: MealLog[]): void {
+  localStorage.setItem(MEAL_LOGS_KEY, JSON.stringify(logs));
+}
+
+export function getMealLogs(fromDate?: string, toDate?: string): MealLog[] {
+  const logs = readMealLogs();
+  if (!fromDate && !toDate) return logs;
+  return logs.filter((l) => {
+    if (fromDate && l.date < fromDate) return false;
+    if (toDate && l.date > toDate) return false;
+    return true;
+  });
+}
+
+export function saveMealLog(log: Omit<MealLog, "id" | "loggedAt">): MealLog {
+  const newLog: MealLog = {
+    ...log,
+    id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    loggedAt: new Date().toISOString(),
+  };
+  writeMealLogs([newLog, ...readMealLogs()]);
+  return newLog;
+}
+
+export function updateMealLog(id: string, patch: Partial<MealLog>): void {
+  const logs = readMealLogs().map((l) => (l.id === id ? { ...l, ...patch } : l));
+  writeMealLogs(logs);
+}
+
+export function deleteMealLog(id: string): void {
+  writeMealLogs(readMealLogs().filter((l) => l.id !== id));
+}
+
+// --- Nutrition Goals ---
+
+const NUTRITION_GOALS_KEY = "crave_nutritionGoals";
+
+export function getNutritionGoals(): NutritionGoals | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem(NUTRITION_GOALS_KEY);
+    return stored ? (JSON.parse(stored) as NutritionGoals) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveNutritionGoals(goals: NutritionGoals): void {
+  localStorage.setItem(NUTRITION_GOALS_KEY, JSON.stringify(goals));
+}
+
+// --- Pending log handoff (chat → tracker) ---
+
+export interface PendingMealLog {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  source: "search";
+  notes?: string;
+}
+
+const PENDING_LOG_KEY = "crave_pendingLog";
+
+export function setPendingMealLog(p: PendingMealLog): void {
+  localStorage.setItem(PENDING_LOG_KEY, JSON.stringify(p));
+}
+
+export function takePendingMealLog(): PendingMealLog | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem(PENDING_LOG_KEY);
+    if (!stored) return null;
+    localStorage.removeItem(PENDING_LOG_KEY);
+    return JSON.parse(stored) as PendingMealLog;
+  } catch {
+    return null;
+  }
 }
