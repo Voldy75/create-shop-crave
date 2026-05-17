@@ -52,12 +52,15 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
   const [pendingPrefill, setPendingPrefill] = useState<PendingMealLog | null>(null);
 
   useEffect(() => {
+    // localStorage hydration on mount — the setState-in-effect rule doesn't apply
+    // here because we're synchronizing with an external store (localStorage), which
+    // is exactly what effects are for.
+    /* eslint-disable react-hooks/set-state-in-effect */
     const stored = getNutritionGoals();
     setGoals(stored ?? DEFAULT_GOALS);
     setLogs(getMealLogs());
     setHydrated(true);
     if (!stored) setGoalsOpen(true);
-    // Handoff from RecipeView "I ate this"
     if (autoOpenLog) {
       const pending = takePendingMealLog();
       if (pending) {
@@ -65,6 +68,7 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
         setSheetOpen(true);
       }
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [autoOpenLog]);
 
   const effectiveGoals = goals ?? DEFAULT_GOALS;

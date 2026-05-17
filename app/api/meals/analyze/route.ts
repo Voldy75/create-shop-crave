@@ -126,7 +126,8 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : "Unknown error";
-    console.error("Meal analyze error:", errMsg);
+    // Truncate — provider errors can echo request payload fragments (incl. base64).
+    console.error("Meal analyze error:", errMsg.slice(0, 200));
 
     const isAuthError =
       errMsg.includes("401") ||

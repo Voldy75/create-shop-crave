@@ -120,7 +120,28 @@ function readMealLogs(): MealLog[] {
 }
 
 function writeMealLogs(logs: MealLog[]): void {
-  localStorage.setItem(MEAL_LOGS_KEY, JSON.stringify(logs));
+  try {
+    localStorage.setItem(MEAL_LOGS_KEY, JSON.stringify(logs));
+  } catch {
+    // QuotaExceededError — base64 thumbnails are the heaviest field. Retry
+    // without them so the log itself still persists.
+    const stripped = logs.map((l) => {
+      const copy: MealLog = { ...l };
+      delete copy.imageDataUrl;
+      return copy;
+    });
+    try {
+      localStorage.setItem(MEAL_LOGS_KEY, JSON.stringify(stripped));
+    } catch {
+      // Still full — drop oldest entries until it fits.
+      const trimmed = stripped.slice(0, Math.max(20, Math.floor(stripped.length / 2)));
+      try {
+        localStorage.setItem(MEAL_LOGS_KEY, JSON.stringify(trimmed));
+      } catch {
+        // Give up rather than crash the UI.
+      }
+    }
+  }
 }
 
 export function getMealLogs(fromDate?: string, toDate?: string): MealLog[] {

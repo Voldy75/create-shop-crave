@@ -23,6 +23,13 @@ export async function checkAndIncrementPhotoUsage(userId: string): Promise<Photo
   });
 
   if (error) {
+    // PGRST202 = function not found. If the migration hasn't been run, fail closed
+    // so we don't grant unlimited free photo analyses until someone notices.
+    if (error.code === "PGRST202") {
+      console.error("Photo quota RPC missing — run scripts/sql/photo-usage.sql:", error.message);
+      return { allowed: false, count: 0, remaining: 0 };
+    }
+    // Transient infrastructure errors — fail open to avoid blocking users.
     console.error("Photo quota check error:", error.message);
     return { allowed: true, count: 0, remaining: FREE_PHOTO_LIMIT };
   }
