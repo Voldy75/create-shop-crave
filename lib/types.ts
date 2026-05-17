@@ -54,3 +54,45 @@ export interface ChatResponse {
   recipe?: RecipeData;
   restaurantSuggestion?: RestaurantSuggestion;
 }
+
+// --- Meal tracking ---
+
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+export type MealSource = "planned" | "search" | "manual" | "photo";
+
+export interface MealLog {
+  id: string;
+  date: string;          // YYYY-MM-DD in user's local timezone
+  mealType: MealType;
+  source: MealSource;
+  name: string;
+  calories: number;
+  protein: number;       // grams
+  carbs: number;         // grams
+  fat: number;           // grams
+  imageDataUrl?: string; // optional thumbnail (base64); kept client-side only in Phase 1/2
+  notes?: string;
+  loggedAt: string;      // ISO timestamp
+}
+
+export type Sex = "male" | "female";
+export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "very_active";
+export type WeightGoal = "lose" | "maintain" | "gain";
+
+export interface NutritionProfile {
+  sex?: Sex;
+  age?: number;          // years
+  heightCm?: number;
+  weightKg?: number;
+  activity?: ActivityLevel;
+  goal?: WeightGoal;
+}
+
+export interface NutritionGoals {
+  dailyCalories: number;
+  protein: number;       // grams
+  carbs: number;         // grams
+  fat: number;           // grams
+  goal: WeightGoal;
+  profile?: NutritionProfile;
+}
