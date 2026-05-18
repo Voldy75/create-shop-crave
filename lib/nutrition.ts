@@ -66,6 +66,49 @@ export function lastNDates(n: number, end: Date = new Date()): string[] {
   return out;
 }
 
+/**
+ * 42-cell month grid (6 weeks × 7 days), Monday-first.
+ * Includes trailing days from previous month and leading from next month so
+ * the calendar always renders as a clean rectangle.
+ */
+export interface CalendarCell {
+  date: string;       // YYYY-MM-DD
+  inMonth: boolean;   // false for leading/trailing greyed cells
+  isToday: boolean;
+}
+
+export function monthGrid(year: number, month: number /* 0-11 */, today: Date = new Date()): CalendarCell[] {
+  const first = new Date(year, month, 1);
+  // Monday = 0, Sunday = 6 (cf. WeeklyChart uses Sun=0, but the planner already
+  // standardized on Mon-first via DAYS in app/planner/page.tsx)
+  const firstDow = (first.getDay() + 6) % 7;
+  const todayKey = localDateKey(today);
+  const cells: CalendarCell[] = [];
+  // Leading cells from previous month
+  for (let i = firstDow; i > 0; i--) {
+    const d = new Date(year, month, 1 - i);
+    cells.push({ date: localDateKey(d), inMonth: false, isToday: localDateKey(d) === todayKey });
+  }
+  // Days in this month
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let i = 1; i <= daysInMonth; i++) {
+    const d = new Date(year, month, i);
+    cells.push({ date: localDateKey(d), inMonth: true, isToday: localDateKey(d) === todayKey });
+  }
+  // Trailing cells to fill 42 (6 weeks)
+  while (cells.length < 42) {
+    const i = cells.length - (firstDow + daysInMonth) + 1;
+    const d = new Date(year, month + 1, i);
+    cells.push({ date: localDateKey(d), inMonth: false, isToday: localDateKey(d) === todayKey });
+  }
+  return cells;
+}
+
+export const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
 const ACTIVITY_MULTIPLIER: Record<ActivityLevel, number> = {
   sedentary: 1.2,
   light: 1.375,

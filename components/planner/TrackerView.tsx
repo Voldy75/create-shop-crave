@@ -25,6 +25,7 @@ import { TRACKER_SYNC_EVENT } from "@/app/context/UserContext";
 import { CalorieRing } from "./CalorieRing";
 import { MacroBars } from "./MacroBars";
 import { WeeklyChart } from "./WeeklyChart";
+import { HistoryCalendar } from "./HistoryCalendar";
 import { MealLogList } from "./MealLogList";
 import { GoalsDialog } from "./GoalsDialog";
 import { LogMealSheet } from "./LogMealSheet";
@@ -89,12 +90,21 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
 
   const effectiveGoals = goals ?? DEFAULT_GOALS;
 
+  const [historyMode, setHistoryMode] = useState<"week" | "month">("week");
+
   const todaysLogs = useMemo(
     () => logs.filter((l) => l.date === selectedDate),
     [logs, selectedDate],
   );
   const totals = useMemo(() => dayTotals(logs, selectedDate), [logs, selectedDate]);
   const byDay = useMemo(() => logsByDay(logs, weekDates), [logs, weekDates]);
+  // Month view uses the full log set (logsByDay handles arbitrary date arrays).
+  // We pass every logged date as the keys array, then HistoryCalendar reads
+  // byDay[cell.date] for whichever month the user is browsing.
+  const byDate = useMemo(() => {
+    const allDates = Array.from(new Set(logs.map((l) => l.date)));
+    return logsByDay(logs, allDates);
+  }, [logs]);
 
   const handleSaveLog = (input: Omit<MealLog, "id" | "loggedAt">) => {
     const saved = saveMealLog(input);
@@ -187,7 +197,7 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
         </div>
       </div>
 
-      {/* Weekly chart */}
+      {/* History (week or month) */}
       <div
         className="p-5 sm:p-6"
         style={{
@@ -196,13 +206,52 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
           border: "1px solid var(--cc-border)",
         }}
       >
-        <WeeklyChart
-          dates={weekDates}
-          byDay={byDay}
-          goal={effectiveGoals.dailyCalories}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
-        />
+        <div className="flex justify-end" style={{ marginBottom: "12px" }}>
+          <div
+            role="tablist"
+            className="inline-flex p-0.5 gap-0.5"
+            style={{
+              background: "var(--cc-surface-2)",
+              border: "1px solid var(--cc-border)",
+              borderRadius: "999px",
+            }}
+          >
+            {(["week", "month"] as const).map((m) => (
+              <button
+                key={m}
+                role="tab"
+                aria-selected={historyMode === m}
+                onClick={() => setHistoryMode(m)}
+                className="px-3 py-1 capitalize transition-colors"
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  background: historyMode === m ? "var(--cc-accent)" : "transparent",
+                  color: historyMode === m ? "#fff" : "var(--cc-text-secondary)",
+                  borderRadius: "999px",
+                }}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+        {historyMode === "week" ? (
+          <WeeklyChart
+            dates={weekDates}
+            byDay={byDay}
+            goal={effectiveGoals.dailyCalories}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
+        ) : (
+          <HistoryCalendar
+            byDay={byDate}
+            goal={effectiveGoals.dailyCalories}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
+        )}
       </div>
 
       {/* Logged meals + add */}
