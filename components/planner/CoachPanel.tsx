@@ -461,6 +461,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
           summary={chart.summary}
           days={chart.days}
           currentPlan={weekPlan}
+          dietaryPreferences={dietaryPreferences}
           onClose={() => setChartOpen(false)}
           onApply={handleApply}
         />
