@@ -1,4 +1,4 @@
-import { generateObject } from "ai";
+import { generateObject, streamObject } from "ai";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { checkAndIncrementUsage } from "@/lib/rate-limit";
@@ -176,17 +176,50 @@ export async function POST(req: Request) {
     }
 
     if (body.mode === "insights") {
+      // Stream the insights object as NDJSON: each chunk is a complete
+      // JSON.stringify of the in-progress partial. The client takes the last
+      // fully-received line as the current state, so even if a partial is
+      // mid-character the client just waits one more chunk.
       const { system, prompt } = buildInsightsPrompt(body);
-      const { object } = await generateObject({
+      const result = await streamObject({
         model,
         schema: InsightsResponse,
         system,
         prompt,
       });
-      return Response.json({ ...object, byok: usedBYOK });
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const partial of result.partialObjectStream) {
+              controller.enqueue(encoder.encode(JSON.stringify(partial) + "\n"));
+            }
+            // Final marker carrying BYOK flag (clients can ignore if they want).
+            controller.enqueue(encoder.encode(JSON.stringify({ _done: true, byok: usedBYOK }) + "\n"));
+            controller.close();
+          } catch (err) {
+            console.error("Coach insights stream error:", err instanceof Error ? err.message : err);
+            controller.enqueue(
+              encoder.encode(
+                JSON.stringify({ _error: "stream_failed", message: "Stream interrupted" }) + "\n",
+              ),
+            );
+            controller.close();
+          }
+        },
+      });
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "application/x-ndjson; charset=utf-8",
+          "Cache-Control": "no-cache, no-transform",
+          "X-Accel-Buffering": "no",
+        },
+      });
     }
 
-    // diet_chart
+    // diet_chart — keep non-streaming. A partial 7-day plan would render
+    // confusingly (3 days of meals visible, others empty). Single atomic
+    // delivery is the right UX.
     const { system, prompt } = buildDietChartPrompt(body);
     const { object } = await generateObject({
       model,
