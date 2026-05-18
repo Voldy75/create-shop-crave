@@ -11,7 +11,7 @@ import { CoachPanel } from "@/components/planner/CoachPanel";
 import { useUser } from "@/app/context/UserContext";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const MEALS = ["breakfast", "lunch", "dinner"] as const;
+const MEALS = ["breakfast", "lunch", "dinner", "snack"] as const;
 
 type MealType = typeof MEALS[number];
 

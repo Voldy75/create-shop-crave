@@ -33,9 +33,11 @@ interface Props {
   date: string;
   weekPlan: WeekPlan;
   prefill?: Prefill | null;
+  editLog?: MealLog | null;
   isSignedIn: boolean;
   onClose: () => void;
   onSave: (log: Omit<MealLog, "id" | "loggedAt">) => void;
+  onEdit?: (id: string, patch: Partial<MealLog>) => void;
 }
 
 type Mode = "plan" | "manual" | "search" | "photo";
@@ -92,7 +94,8 @@ async function analyzeMeal(
   return data as AnalyzeResult;
 }
 
-export function LogMealSheet({ open, date, weekPlan, prefill, isSignedIn, onClose, onSave }: Props) {
+export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedIn, onClose, onSave, onEdit }: Props) {
+  const isEditing = Boolean(editLog);
   const [mode, setMode] = useState<Mode>("plan");
   const [mealType, setMealType] = useState<MealType>(defaultMealType());
   const [name, setName] = useState("");
@@ -109,10 +112,19 @@ export function LogMealSheet({ open, date, weekPlan, prefill, isSignedIn, onClos
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [aiNotes, setAiNotes] = useState<string | null>(null);
 
-  // Reset when opened or prefill changes
+  // Reset when opened or prefill/editLog changes
   useEffect(() => {
     if (!open) return;
-    if (prefill) {
+    if (editLog) {
+      setMode("manual");
+      setMealType(editLog.mealType);
+      setName(editLog.name);
+      setCalories(String(editLog.calories));
+      setProtein(String(editLog.protein));
+      setCarbs(String(editLog.carbs));
+      setFat(String(editLog.fat));
+      setNotes(editLog.notes || "");
+    } else if (prefill) {
       setMode((prefill.source as Mode) || "manual");
       setMealType(prefill.mealType || defaultMealType());
       setName(prefill.name || "");
@@ -137,7 +149,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, isSignedIn, onClos
     setAnalyzeError(null);
     setNeedsConfirmation(false);
     setAiNotes(null);
-  }, [open, prefill]);
+  }, [open, prefill, editLog]);
 
   const dayName = useMemo(() => dayNameFromDate(date), [date]);
 
@@ -215,6 +227,19 @@ export function LogMealSheet({ open, date, weekPlan, prefill, isSignedIn, onClos
 
   const handleSave = () => {
     if (!canSave) return;
+    if (editLog && onEdit) {
+      onEdit(editLog.id, {
+        mealType,
+        name: name.trim(),
+        calories: parseNumeric(calories),
+        protein: parseNumeric(protein),
+        carbs: parseNumeric(carbs),
+        fat: parseNumeric(fat),
+        notes: notes.trim() || undefined,
+      });
+      onClose();
+      return;
+    }
     const source: MealSource = prefill?.source
       ? prefill.source
       : mode === "search"
@@ -260,7 +285,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, isSignedIn, onClos
         >
           <div>
             <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
-              Log meal
+              {isEditing ? "Edit meal" : "Log meal"}
             </h2>
             <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)", marginTop: "2px" }}>
               {dayName} · {date}
@@ -277,7 +302,8 @@ export function LogMealSheet({ open, date, weekPlan, prefill, isSignedIn, onClos
         </div>
 
         <div className="px-5 py-4 flex flex-col gap-5">
-          {/* Mode picker */}
+          {/* Mode picker — hidden when editing an existing log */}
+          {!isEditing && (
           <div className="grid grid-cols-4 gap-2">
             {MODES.map(({ id, label, icon: Icon, requiresAI }) => {
               const lockedForAuth = requiresAI && !isSignedIn;
@@ -317,6 +343,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, isSignedIn, onClos
               );
             })}
           </div>
+          )}
 
           {/* Meal type chips */}
           <div>
@@ -600,7 +627,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, isSignedIn, onClos
               cursor: canSave ? "pointer" : "not-allowed",
             }}
           >
-            Log meal
+            {isEditing ? "Save changes" : "Log meal"}
           </button>
         </div>
       </div>
