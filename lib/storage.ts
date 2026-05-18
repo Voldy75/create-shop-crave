@@ -85,6 +85,7 @@ export interface DayPlan {
   breakfast?: MealSlot;
   lunch?: MealSlot;
   dinner?: MealSlot;
+  snack?: MealSlot;
 }
 
 export type WeekPlan = Record<string, DayPlan>;
