@@ -115,11 +115,65 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
   const handleGenerateInsights = async () => {
     setInsightsLoading(true);
     setInsightsError(null);
+    setInsights([]); // clear and start with empty so the loading state shows the streaming list
     try {
-      const data = (await callCoach("insights")) as { insights: Insight[] };
-      setInsights(data.insights);
+      const logs = getMealLogs();
+      const goals = getNutritionGoals();
+      if (!goals) throw Object.assign(new Error("Set your daily goals first."), { code: "missing_goals" });
+      const payload = { mode: "insights" as const, ...buildPayload(logs, goals, dietaryPreferences) };
+      const res = await fetch("/api/coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok || !res.body) {
+        // Non-streaming error response — parse normally
+        const data = await res.json().catch(() => ({} as { message?: string; error?: string }));
+        const err = new Error(data.message || data.error || "Coach failed") as Error & { code?: string };
+        err.code = data.error;
+        throw err;
+      }
+      // NDJSON: one JSON object per line, each is a progressively-fuller partial.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let received = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? ""; // keep the trailing incomplete line for the next chunk
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const partial = JSON.parse(line) as { insights?: Insight[]; _error?: string; message?: string; _done?: boolean };
+            if (partial._error) {
+              throw Object.assign(new Error(partial.message || "Stream interrupted"), { code: partial._error });
+            }
+            if (partial._done) continue;
+            // Filter partials to fully-formed insights only — incomplete entries
+            // (missing title/body/severity while still being generated) shouldn't
+            // render half-cards.
+            const complete = (partial.insights ?? []).filter(
+              (i): i is Insight => Boolean(i?.title && i?.body && i?.severity),
+            );
+            if (complete.length > 0) {
+              received = true;
+              setInsights(complete);
+            }
+          } catch (e) {
+            if ((e as Error & { code?: string }).code) throw e; // surface _error
+            // JSON-parse failures: chunk boundary hit mid-line — ignore, next chunk fixes it
+          }
+        }
+      }
+      if (!received) {
+        throw new Error("No insights received");
+      }
     } catch (e) {
       const err = e as Error & { code?: string };
+      setInsights(null);
       setInsightsError(
         err.code === "rate_limit_exceeded"
           ? "Daily AI limit reached. Add your API key to keep using Coach."
@@ -255,22 +309,29 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
           </div>
         )}
 
-        {insightsLoading && (
-          <div className="flex items-center gap-2" style={{ color: "var(--cc-text-secondary)" }}>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span style={{ fontSize: "13px" }}>Looking at your last 7 days…</span>
-          </div>
-        )}
-
-        {insights && (
+        {(insightsLoading || (insights && insights.length > 0)) && (
           <div className="flex flex-col gap-2">
-            {insights.map((ins, i) => {
+            {insightsLoading && (!insights || insights.length === 0) && (
+              <div
+                className="flex items-center gap-2 px-3 py-3"
+                style={{
+                  background: "var(--cc-surface-2)",
+                  border: "1px solid var(--cc-border)",
+                  borderRadius: "12px",
+                  color: "var(--cc-text-secondary)",
+                }}
+              >
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span style={{ fontSize: "12px" }}>Looking at your last 7 days…</span>
+              </div>
+            )}
+            {(insights ?? []).map((ins, i) => {
               const style = SEVERITY_STYLE[ins.severity];
               const Icon = style.icon;
               return (
                 <div
                   key={i}
-                  className="flex items-start gap-3 p-3"
+                  className="flex items-start gap-3 p-3 animate-in fade-in slide-in-from-bottom-1 duration-300"
                   style={{
                     background: style.bg,
                     border: `1px solid ${style.color}30`,
@@ -294,6 +355,20 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
                 </div>
               );
             })}
+            {insightsLoading && insights && insights.length > 0 && (
+              <div
+                className="flex items-center gap-2 px-3 py-3"
+                style={{
+                  background: "var(--cc-surface-2)",
+                  border: "1px dashed var(--cc-border-strong)",
+                  borderRadius: "12px",
+                  color: "var(--cc-text-tertiary)",
+                }}
+              >
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span style={{ fontSize: "11px" }}>More on the way…</span>
+              </div>
+            )}
           </div>
         )}
       </div>
