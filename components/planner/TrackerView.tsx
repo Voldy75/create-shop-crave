@@ -19,6 +19,8 @@ import {
   logsByDay,
 } from "@/lib/nutrition";
 import type { MealLog, NutritionGoals } from "@/lib/types";
+import { deleteMealLogRemote, pushMealLog, pushNutritionGoals } from "@/lib/meal-sync";
+import { TRACKER_SYNC_EVENT } from "@/app/context/UserContext";
 import { CalorieRing } from "./CalorieRing";
 import { MacroBars } from "./MacroBars";
 import { WeeklyChart } from "./WeeklyChart";
@@ -71,6 +73,18 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [autoOpenLog]);
 
+  // Re-read from localStorage after a sync (sign-in pulled server state).
+  useEffect(() => {
+    const onSynced = () => {
+      setLogs(getMealLogs());
+      const stored = getNutritionGoals();
+      if (stored) setGoals(stored);
+    };
+    if (typeof window === "undefined") return;
+    window.addEventListener(TRACKER_SYNC_EVENT, onSynced);
+    return () => window.removeEventListener(TRACKER_SYNC_EVENT, onSynced);
+  }, []);
+
   const effectiveGoals = goals ?? DEFAULT_GOALS;
 
   const todaysLogs = useMemo(
@@ -83,16 +97,19 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
   const handleSaveLog = (input: Omit<MealLog, "id" | "loggedAt">) => {
     const saved = saveMealLog(input);
     setLogs((prev) => [saved, ...prev]);
+    if (isSignedIn) pushMealLog(saved).catch(() => {});
   };
 
   const handleDelete = (id: string) => {
     deleteMealLog(id);
     setLogs((prev) => prev.filter((l) => l.id !== id));
+    if (isSignedIn) deleteMealLogRemote(id).catch(() => {});
   };
 
   const handleSaveGoals = (next: NutritionGoals) => {
     saveNutritionGoals(next);
     setGoals(next);
+    if (isSignedIn) pushNutritionGoals(next).catch(() => {});
   };
 
   if (!hydrated) {
