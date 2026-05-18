@@ -57,4 +57,10 @@ begin
 end;
 $$;
 
+-- Lock down execute: this function is SECURITY DEFINER and takes a user_id
+-- parameter, so any caller could increment any user's counter if granted.
+-- Only the service-role client (used by the API route) needs to call it.
+revoke execute on function public.check_and_increment_photo_usage(uuid, date, int) from public;
+revoke execute on function public.check_and_increment_photo_usage(uuid, date, int) from anon;
+revoke execute on function public.check_and_increment_photo_usage(uuid, date, int) from authenticated;
 grant execute on function public.check_and_increment_photo_usage(uuid, date, int) to service_role;
