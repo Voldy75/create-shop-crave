@@ -1,8 +1,15 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { X, Check, Layers } from "lucide-react";
+import { X, Check, Layers, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import type { WeekPlan, MealSlot } from "@/lib/storage";
+import type { Ingredient } from "@/lib/types";
+import {
+  fetchBatchIngredients,
+  lookupIngredients,
+  IngredientsFetchError,
+} from "@/lib/ingredients-client";
 
 export interface GeneratedSlot {
   mealType: "breakfast" | "lunch" | "dinner";
@@ -25,15 +32,17 @@ interface Props {
   currentPlan: WeekPlan;
   onClose: () => void;
   onApply: (plan: WeekPlan, mode: "overwrite" | "merge") => void;
+  /** Used by the ingredient batch fetch to respect the user's diet. */
+  dietaryPreferences?: string[];
 }
 
-function toMealSlot(slot: GeneratedSlot): MealSlot {
+function toMealSlot(slot: GeneratedSlot, ingredients?: Ingredient[]): MealSlot {
   return {
     dish: slot.dish,
     recipe: {
       name: slot.dish,
       description: "",
-      ingredients: [],
+      ingredients: ingredients ?? [],
       instructions: [],
       nutritionEstimate: {
         calories: `~${slot.calories} kcal`,
@@ -45,7 +54,12 @@ function toMealSlot(slot: GeneratedSlot): MealSlot {
   };
 }
 
-function buildPlan(days: GeneratedDay[], existing: WeekPlan, mode: "overwrite" | "merge"): WeekPlan {
+function buildPlan(
+  days: GeneratedDay[],
+  existing: WeekPlan,
+  mode: "overwrite" | "merge",
+  ingredientMap?: Map<string, Ingredient[]>,
+): WeekPlan {
   const next: WeekPlan = mode === "merge" ? { ...existing } : {};
   for (const d of days) {
     const dayKey = d.day;
@@ -53,7 +67,8 @@ function buildPlan(days: GeneratedDay[], existing: WeekPlan, mode: "overwrite" |
     const updatedDay: typeof existingDay = { ...existingDay };
     for (const m of d.meals) {
       if (mode === "merge" && updatedDay[m.mealType]) continue; // keep existing slot
-      updatedDay[m.mealType] = toMealSlot(m);
+      const ingredients = ingredientMap ? lookupIngredients(ingredientMap, m.dish) : undefined;
+      updatedDay[m.mealType] = toMealSlot(m, ingredients);
     }
     if (Object.keys(updatedDay).length > 0) next[dayKey] = updatedDay;
   }
@@ -70,8 +85,9 @@ const DAYS_ORDER: GeneratedDay["day"][] = [
   "Sunday",
 ];
 
-export function DietChartPreview({ open, summary, days, currentPlan, onClose, onApply }: Props) {
+export function DietChartPreview({ open, summary, days, currentPlan, onClose, onApply, dietaryPreferences }: Props) {
   const [conflictMode, setConflictMode] = useState<"overwrite" | "merge">("merge");
+  const [applying, setApplying] = useState(false);
 
   const orderedDays = useMemo(() => {
     const map = new Map(days.map((d) => [d.day, d]));
@@ -234,21 +250,52 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
               Cancel
             </button>
             <button
-              onClick={() => {
-                const next = buildPlan(orderedDays, currentPlan, conflictMode);
+              disabled={applying}
+              onClick={async () => {
+                setApplying(true);
+                const allDishes = orderedDays.flatMap((d) => d.meals.map((m) => m.dish));
+                let ingredientMap: Map<string, Ingredient[]> | undefined;
+                try {
+                  const result = await fetchBatchIngredients(allDishes, dietaryPreferences);
+                  ingredientMap = result.byDish;
+                  if (!result.complete) {
+                    // Some dishes missed but the rest are fine — proceed silently.
+                    console.warn("Ingredients fetch partial:", allDishes.length - ingredientMap.size, "missing");
+                  }
+                } catch (e) {
+                  const err = e as IngredientsFetchError;
+                  const msg =
+                    err.code === "rate_limit_exceeded"
+                      ? "AI quota reached — applying plan without ingredient details."
+                      : "Couldn't fetch ingredients — applying plan with dish names only.";
+                  toast(msg);
+                }
+                const next = buildPlan(orderedDays, currentPlan, conflictMode, ingredientMap);
                 onApply(next, conflictMode);
+                setApplying(false);
                 onClose();
               }}
               className="flex items-center gap-1.5 px-5 py-2 text-white transition-colors"
               style={{
                 fontSize: "13px",
                 fontWeight: 600,
-                background: "var(--cc-accent)",
+                background: applying ? "var(--cc-surface-2)" : "var(--cc-accent)",
+                color: applying ? "var(--cc-text-tertiary)" : "#fff",
                 borderRadius: "980px",
+                cursor: applying ? "not-allowed" : "pointer",
               }}
             >
-              <Check className="w-4 h-4" />
-              Apply to Planner
+              {applying ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Preparing ingredients…
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  Apply to Planner
+                </>
+              )}
             </button>
           </div>
         </div>
