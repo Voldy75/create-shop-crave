@@ -135,12 +135,13 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
   };
 
   if (!hydrated) {
+    // Three card-shaped skeletons matching the final layout. Pulses gently to
+    // signal loading without showing a bare spinner.
     return (
-      <div
-        className="flex items-center justify-center"
-        style={{ height: "300px", color: "var(--cc-text-tertiary)" }}
-      >
-        <span style={{ fontSize: "13px" }}>Loading…</span>
+      <div className="flex flex-col gap-6">
+        <SkeletonCard heightPx={210} />
+        <SkeletonCard heightPx={200} />
+        <SkeletonCard heightPx={260} />
       </div>
     );
   }
@@ -169,7 +170,7 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
           </div>
           <button
             onClick={() => setGoalsOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 transition-colors flex-shrink-0"
             style={{
               fontSize: "12px",
               fontWeight: 600,
@@ -177,11 +178,12 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
               background: "var(--cc-surface-2)",
               border: "1px solid var(--cc-border)",
               borderRadius: "980px",
+              minHeight: "32px",
             }}
             aria-label="Edit goals"
           >
             <Settings className="w-3.5 h-3.5" />
-            Goals
+            <span className="hidden sm:inline">Goals</span>
           </button>
         </div>
 
@@ -315,5 +317,19 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
         onEdit={handleEditLog}
       />
     </div>
+  );
+}
+
+function SkeletonCard({ heightPx }: { heightPx: number }) {
+  return (
+    <div
+      className="animate-pulse"
+      style={{
+        height: `${heightPx}px`,
+        background: "var(--cc-surface)",
+        border: "1px solid var(--cc-border)",
+        borderRadius: "16px",
+      }}
+    />
   );
 }

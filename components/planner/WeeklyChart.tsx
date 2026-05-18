@@ -58,8 +58,13 @@ export function WeeklyChart({ dates, byDay, goal, selectedDate, onSelectDate }: 
             <button
               key={d}
               onClick={() => onSelectDate?.(d)}
-              className="flex flex-col items-center justify-end h-full transition-opacity hover:opacity-90"
-              style={{ background: "transparent" }}
+              className="flex flex-col items-center justify-end h-full transition-opacity hover:opacity-90 relative"
+              style={{
+                // Subtle pill behind the selected column to anchor focus
+                background: isSelected ? "rgba(255,107,53,0.08)" : "transparent",
+                borderRadius: "10px",
+                padding: "2px",
+              }}
             >
               <div
                 className="flex flex-col justify-end w-full"

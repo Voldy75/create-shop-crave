@@ -48,6 +48,13 @@ const SEVERITY_STYLE: Record<
   warn: { color: "#ff9f0a", bg: "rgba(255,159,10,0.10)", icon: AlertTriangle },
 };
 
+// Sort priority: lower = earlier. warn first so users see action items above the fold.
+const SEVERITY_ORDER: Record<Insight["severity"], number> = {
+  warn: 0,
+  nudge: 1,
+  info: 2,
+};
+
 function buildPayload(logs: MealLog[], goals: NutritionGoals, dietaryPreferences: string[]) {
   // Limit to last 7 days to keep tokens cheap
   const cutoffSet = new Set(lastNDates(7));
@@ -224,7 +231,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
           Sign in to use Coach
         </h3>
         <p style={{ fontSize: "13px", marginTop: "6px", maxWidth: "340px" }}>
-          Coach reads your meal logs and gives you specific, numeric suggestions and a personalized 7-day plan.
+          Sign in to unlock AI-powered meal planning — Coach reads your logs to generate numeric suggestions and a personalized 7-day plan.
         </p>
       </div>
     );
@@ -325,7 +332,11 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
                 <span style={{ fontSize: "12px" }}>Looking at your last 7 days…</span>
               </div>
             )}
-            {(insights ?? []).map((ins, i) => {
+            {(insights ?? [])
+              .slice()
+              // Surface warn > nudge > info so users see action items first
+              .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity])
+              .map((ins, i) => {
               const style = SEVERITY_STYLE[ins.severity];
               const Icon = style.icon;
               return (
