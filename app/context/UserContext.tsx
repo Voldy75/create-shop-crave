@@ -3,6 +3,20 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import {
+  mergeLogs,
+  pullMealLogs,
+  pullNutritionGoals,
+  pushLocalState,
+} from "@/lib/meal-sync";
+import {
+  getMealLogs,
+  getNutritionGoals,
+  saveNutritionGoals,
+} from "@/lib/storage";
+
+const MEAL_LOGS_KEY = "crave_mealLogs";
+export const TRACKER_SYNC_EVENT = "crave:tracker-synced";
 
 interface Location {
   lat: number;
@@ -52,16 +66,59 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Hydrate from Supabase session + localStorage
   useEffect(() => {
+    let lastSyncedUserId: string | null = null;
+
+    const syncTracker = async (userId: string) => {
+      if (lastSyncedUserId === userId) return; // already synced this session
+      lastSyncedUserId = userId;
+      try {
+        const [remoteLogs, remoteGoals] = await Promise.all([
+          pullMealLogs(userId),
+          pullNutritionGoals(userId),
+        ]);
+        const localLogs = getMealLogs();
+        const localGoals = getNutritionGoals();
+        const merged = mergeLogs(localLogs, remoteLogs);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(MEAL_LOGS_KEY, JSON.stringify(merged));
+        }
+        // Server goals win if present; otherwise push local up (first sign-in).
+        if (remoteGoals) {
+          saveNutritionGoals(remoteGoals);
+        }
+        // Backfill: any local rows not on server get pushed. mergeLogs preserves them.
+        const remoteIds = new Set(remoteLogs.map((l) => l.id));
+        const localOnly = merged.filter((l) => !remoteIds.has(l.id));
+        if (localOnly.length > 0 || (!remoteGoals && localGoals)) {
+          pushLocalState(userId, localOnly, !remoteGoals ? localGoals : null).catch(() => {});
+        }
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent(TRACKER_SYNC_EVENT));
+        }
+      } catch (e) {
+        // Sync is best-effort; never block the UI.
+        console.error("Tracker sync failed:", e instanceof Error ? e.message : e);
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) syncTracker(session.user.id);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      // Sync on actual sign-in only — not on every token refresh.
+      if (event === "SIGNED_IN" && session?.user) {
+        syncTracker(session.user.id);
+      }
+      if (event === "SIGNED_OUT") {
+        lastSyncedUserId = null;
+      }
     });
 
     // Migrate dietary prefs from localStorage (preserved from old flow)
