@@ -22,6 +22,7 @@ export function MacroBars({ protein, carbs, fat }: Props) {
       {MACROS.map(({ key, label, color }) => {
         const { current, goal } = data[key];
         const pct = pctOf(current, goal);
+        const over = current > goal && goal > 0;
         return (
           <div key={key}>
             <div className="flex items-baseline justify-between" style={{ marginBottom: "4px" }}>
@@ -29,7 +30,7 @@ export function MacroBars({ protein, carbs, fat }: Props) {
                 {label}
               </span>
               <span style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
-                <span style={{ color: "var(--cc-text-primary)", fontWeight: 600 }}>{Math.round(current)}</span>
+                <span style={{ color: over ? "#ff453a" : "var(--cc-text-primary)", fontWeight: 600 }}>{Math.round(current)}</span>
                 {" / "}{goal}g
               </span>
             </div>
@@ -45,9 +46,9 @@ export function MacroBars({ protein, carbs, fat }: Props) {
                 style={{
                   width: `${pct}%`,
                   height: "100%",
-                  background: color,
+                  background: over ? "#ff453a" : color,
                   borderRadius: "999px",
-                  transition: "width 0.4s ease-out",
+                  transition: "width 0.4s ease-out, background 0.2s",
                 }}
               />
             </div>

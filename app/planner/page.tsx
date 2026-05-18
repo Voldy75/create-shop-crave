@@ -2,7 +2,7 @@
 
 import React, { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ShoppingCart, Plus, X, ChefHat } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Plus, X, ChefHat, ExternalLink } from "lucide-react";
 import { getMealPlan, saveMealPlan, type WeekPlan, type MealSlot } from "@/lib/storage";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { PlannerTabs, type PlannerTab } from "@/components/planner/PlannerTabs";
@@ -278,26 +278,14 @@ function PlanView({
                     </p>
                     <div className="space-y-3">
                         {uniqueDishes.map((dish) => (
-                            <div key={dish} className="flex items-center justify-between p-3" style={{
+                            <div key={dish} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3" style={{
                                 background: "var(--cc-surface-2)", borderRadius: "8px",
                             }}>
                                 <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--cc-text-primary)" }}>{dish}</span>
-                                <div className="flex gap-2">
-                                    <a href={buildBlinkitLink(dish + " ingredients")} target="_blank" rel="noopener noreferrer"
-                                        className="text-white bg-yellow-500 hover:bg-yellow-600 transition-colors"
-                                        style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "980px" }}>
-                                        Blinkit
-                                    </a>
-                                    <a href={buildSwiggyInstamartLink(dish + " ingredients")} target="_blank" rel="noopener noreferrer"
-                                        className="text-white bg-orange-500 hover:bg-orange-600 transition-colors"
-                                        style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "980px" }}>
-                                        Instamart
-                                    </a>
-                                    <a href={buildInstacartLink(dish + " ingredients")} target="_blank" rel="noopener noreferrer"
-                                        className="text-white bg-green-600 hover:bg-green-700 transition-colors"
-                                        style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "980px" }}>
-                                        Instacart
-                                    </a>
+                                <div className="flex gap-2 flex-wrap">
+                                    <DeepLinkPill href={buildBlinkitLink(dish + " ingredients")} bg="#f8d800" textColor="#1d1d1f" label="Blinkit" />
+                                    <DeepLinkPill href={buildSwiggyInstamartLink(dish + " ingredients")} bg="#fc8019" textColor="#fff" label="Instamart" />
+                                    <DeepLinkPill href={buildInstacartLink(dish + " ingredients")} bg="#43b02a" textColor="#fff" label="Instacart" />
                                 </div>
                             </div>
                         ))}
@@ -315,5 +303,28 @@ function PlanView({
                 </div>
             )}
         </div>
+    );
+}
+
+function DeepLinkPill({ href, bg, textColor, label }: { href: string; bg: string; textColor: string; label: string }) {
+    return (
+        <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 transition-transform active:scale-95"
+            style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                padding: "6px 12px",
+                borderRadius: "980px",
+                background: bg,
+                color: textColor,
+                minHeight: "32px",
+            }}
+        >
+            {label}
+            <ExternalLink className="w-3 h-3" />
+        </a>
     );
 }
