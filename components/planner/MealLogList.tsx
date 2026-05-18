@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { Trash2, Camera, Search, PenLine, CalendarCheck } from "lucide-react";
+import { Trash2, Pencil, Camera, Search, PenLine, CalendarCheck } from "lucide-react";
 import type { MealLog, MealSource, MealType } from "@/lib/types";
 
 interface Props {
   logs: MealLog[];
   onDelete: (id: string) => void;
+  onEdit?: (log: MealLog) => void;
 }
 
 const TYPE_ORDER: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
@@ -32,7 +33,7 @@ const SOURCE_LABEL: Record<MealSource, string> = {
   photo: "Photo",
 };
 
-export function MealLogList({ logs, onDelete }: Props) {
+export function MealLogList({ logs, onDelete, onEdit }: Props) {
   if (logs.length === 0) {
     return (
       <div
@@ -147,14 +148,26 @@ export function MealLogList({ logs, onDelete }: Props) {
                       </span>
                       <span style={{ fontSize: "10px", color: "var(--cc-text-tertiary)" }}>kcal</span>
                     </div>
-                    <button
-                      onClick={() => onDelete(log.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5"
-                      style={{ color: "var(--cc-text-tertiary)", borderRadius: "8px" }}
-                      aria-label={`Delete ${log.name}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                      {onEdit && (
+                        <button
+                          onClick={() => onEdit(log)}
+                          className="p-1.5"
+                          style={{ color: "var(--cc-text-tertiary)", borderRadius: "8px" }}
+                          aria-label={`Edit ${log.name}`}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => onDelete(log.id)}
+                        className="p-1.5"
+                        style={{ color: "var(--cc-text-tertiary)", borderRadius: "8px" }}
+                        aria-label={`Delete ${log.name}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}

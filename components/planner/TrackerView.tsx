@@ -9,6 +9,7 @@ import {
   saveMealLog,
   saveNutritionGoals,
   takePendingMealLog,
+  updateMealLog,
   type PendingMealLog,
   type WeekPlan,
 } from "@/lib/storage";
@@ -52,6 +53,7 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [pendingPrefill, setPendingPrefill] = useState<PendingMealLog | null>(null);
+  const [editingLog, setEditingLog] = useState<MealLog | null>(null);
 
   useEffect(() => {
     // localStorage hydration on mount — the setState-in-effect rule doesn't apply
@@ -104,6 +106,16 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
     deleteMealLog(id);
     setLogs((prev) => prev.filter((l) => l.id !== id));
     if (isSignedIn) deleteMealLogRemote(id).catch(() => {});
+  };
+
+  const handleEditLog = (id: string, patch: Partial<MealLog>) => {
+    updateMealLog(id, patch);
+    setLogs((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    setEditingLog(null);
+    if (isSignedIn) {
+      const updated = { ...(logs.find((l) => l.id === id) as MealLog), ...patch };
+      pushMealLog(updated).catch(() => {});
+    }
   };
 
   const handleSaveGoals = (next: NutritionGoals) => {
@@ -220,7 +232,15 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
             Log meal
           </button>
         </div>
-        <MealLogList logs={todaysLogs} onDelete={handleDelete} />
+        <MealLogList
+          logs={todaysLogs}
+          onDelete={handleDelete}
+          onEdit={(log) => {
+            setEditingLog(log);
+            setPendingPrefill(null);
+            setSheetOpen(true);
+          }}
+        />
       </div>
 
       <GoalsDialog
@@ -236,11 +256,14 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
         weekPlan={weekPlan}
         isSignedIn={isSignedIn}
         prefill={pendingPrefill}
+        editLog={editingLog}
         onClose={() => {
           setSheetOpen(false);
           setPendingPrefill(null);
+          setEditingLog(null);
         }}
         onSave={handleSaveLog}
+        onEdit={handleEditLog}
       />
     </div>
   );

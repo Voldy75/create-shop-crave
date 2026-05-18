@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { ShoppingCart, ExternalLink, Clock, Users, Flame, Dumbbell, Zap, ChevronDown, BookOpen, Utensils } from "lucide-react";
+import { ShoppingCart, ExternalLink, Clock, Users, Flame, Dumbbell, Zap, ChevronDown, BookOpen, Utensils, CalendarPlus } from "lucide-react";
+import { toast } from "sonner";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ShareButton } from "@/components/ShareButton";
+import { AddToPlanDialog } from "@/components/planner/AddToPlanDialog";
 import { setPendingMealLog } from "@/lib/storage";
 import { parseNumeric } from "@/lib/nutrition";
 import type { RecipeData, Ingredient, ShoppingLink } from "@/lib/types";
@@ -77,6 +79,7 @@ export function RecipeView({ data }: RecipeViewProps) {
     const router = useRouter();
     const [selectedStore, setSelectedStore] = useState(STORE_OPTIONS[0]);
     const [showStoreDropdown, setShowStoreDropdown] = useState(false);
+    const [planDialogOpen, setPlanDialogOpen] = useState(false);
 
     const handleLogToTracker = () => {
         const n = data.nutritionEstimate;
@@ -170,6 +173,22 @@ export function RecipeView({ data }: RecipeViewProps) {
                         >
                             <Utensils className="w-3.5 h-3.5" />
                             I ate this
+                        </button>
+                        <button
+                            onClick={() => setPlanDialogOpen(true)}
+                            className="flex items-center gap-1.5 px-4 py-2 transition-colors"
+                            style={{
+                                fontSize: "13px",
+                                fontWeight: 600,
+                                background: "var(--cc-surface-2)",
+                                color: "var(--cc-text-primary)",
+                                border: "1px solid var(--cc-border)",
+                                borderRadius: "980px",
+                            }}
+                            aria-label="Add this recipe to your weekly plan"
+                        >
+                            <CalendarPlus className="w-3.5 h-3.5" />
+                            Add to plan
                         </button>
                         <FavoriteButton type="recipe" data={data} />
                         <ShareButton title={data.name} text={`Check out this recipe for ${data.name}!`} />
@@ -460,6 +479,12 @@ export function RecipeView({ data }: RecipeViewProps) {
                     </div>
                 </div>
             </div>
+            <AddToPlanDialog
+                open={planDialogOpen}
+                recipe={data}
+                onClose={() => setPlanDialogOpen(false)}
+                onAdded={() => toast(`Added to plan: ${data.name}`)}
+            />
         </Card>
     );
 }
