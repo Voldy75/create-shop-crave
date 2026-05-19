@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bell, MessageCircle, Lock, Info } from "lucide-react";
+import { ArrowLeft, Bell, MessageCircle, Lock, Info, Send, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useUser } from "@/app/context/UserContext";
 import { getMySubscription, upsertMySubscription } from "@/lib/notifications-client";
+import { enableWebPush, disableWebPush, isPushSupported, pushPermission, sendTestPush } from "@/lib/push-client";
 import type { NotificationSubscription } from "@/lib/types";
 
 /**
@@ -19,6 +21,15 @@ export default function NotificationsSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sub, setSub] = useState<NotificationSubscription | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [pushSupport, setPushSupport] = useState<{ supported: boolean; permission: string }>({
+    supported: false,
+    permission: "unsupported",
+  });
+
+  useEffect(() => {
+    setPushSupport({ supported: isPushSupported(), permission: pushPermission() });
+  }, []);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -40,13 +51,55 @@ export default function NotificationsSettingsPage() {
   const toggle = async (channel: "webPush" | "whatsapp") => {
     if (!sub && !user) return;
     setSaving(true);
-    const patch =
-      channel === "webPush"
-        ? { webPushEnabled: !(sub?.webPushEnabled ?? false) }
-        : { whatsappEnabled: !(sub?.whatsappEnabled ?? false) };
-    const next = await upsertMySubscription(patch);
-    if (next) setSub(next);
-    setSaving(false);
+    try {
+      if (channel === "webPush") {
+        const willEnable = !(sub?.webPushEnabled ?? false);
+        if (willEnable) {
+          if (!pushSupport.supported) {
+            toast("This browser doesn't support push. On iOS, install the PWA first.");
+            return;
+          }
+          const result = await enableWebPush();
+          if (!result.ok) {
+            toast(
+              result.reason === "permission_denied"
+                ? "Browser permission is blocked. Allow notifications in site settings."
+                : result.reason === "permission_dismissed"
+                  ? "Permission needed to send notifications."
+                  : result.reason === "missing_vapid"
+                    ? "Server not configured for push yet."
+                    : "Couldn't enable push — try again.",
+            );
+            return;
+          }
+          // /api/notifications/push/subscribe already persisted the row; refresh local view.
+          setSub(await getMySubscription());
+          toast("Web push enabled");
+        } else {
+          await disableWebPush();
+          setSub(await getMySubscription());
+          toast("Web push turned off");
+        }
+        setPushSupport({ supported: isPushSupported(), permission: pushPermission() });
+      } else {
+        // WhatsApp wiring lands in PR C; for now this just flips the preference flag.
+        const patch = { whatsappEnabled: !(sub?.whatsappEnabled ?? false) };
+        const next = await upsertMySubscription(patch);
+        if (next) setSub(next);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSendTest = async () => {
+    setTesting(true);
+    try {
+      const result = await sendTestPush();
+      toast(result.ok ? "Test push sent — check your notifications." : `Test failed: ${result.reason}`);
+    } finally {
+      setTesting(false);
+    }
   };
 
   return (
@@ -87,9 +140,45 @@ export default function NotificationsSettingsPage() {
               saving={saving}
               onToggle={() => toggle("webPush")}
               detail={
-                <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)" }}>
-                  Setup wiring lands in the next release. Toggle persists today.
-                </p>
+                <div>
+                  {!pushSupport.supported && (
+                    <p style={{ fontSize: "12px", color: "#ff9f0a" }}>
+                      This browser doesn&apos;t support web push. On iOS, install the PWA first
+                      (Add to Home Screen).
+                    </p>
+                  )}
+                  {pushSupport.supported && pushSupport.permission === "denied" && (
+                    <p style={{ fontSize: "12px", color: "#ff453a" }}>
+                      Permission blocked. Allow notifications in your browser&apos;s site settings.
+                    </p>
+                  )}
+                  {sub?.webPushEnabled && (
+                    <button
+                      onClick={handleSendTest}
+                      disabled={testing}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 transition-colors"
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        background: "var(--cc-surface-2)",
+                        color: "var(--cc-text-primary)",
+                        border: "1px solid var(--cc-border)",
+                        borderRadius: "980px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {testing ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending…
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" /> Send test
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               }
             />
 
