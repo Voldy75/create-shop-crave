@@ -2,7 +2,7 @@
 
 import React, { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ShoppingCart, Plus, X, ChefHat, ExternalLink } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Plus, X, ChefHat, ExternalLink, Bell } from "lucide-react";
 import { getMealPlan, saveMealPlan, type WeekPlan, type MealSlot } from "@/lib/storage";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { PlannerTabs, type PlannerTab } from "@/components/planner/PlannerTabs";
@@ -71,9 +71,17 @@ function PlannerPageInner() {
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>
-                <h1 style={{ fontSize: "14px", fontWeight: 400, color: "var(--cc-text-primary)" }}>
+                <h1 style={{ fontSize: "14px", fontWeight: 400, color: "var(--cc-text-primary)", flex: 1 }}>
                     Weekly Meal Planner
                 </h1>
+                <button
+                    onClick={() => router.push("/settings/notifications")}
+                    className="p-2 rounded-full transition-opacity hover:opacity-70"
+                    style={{ color: "var(--cc-text-secondary)" }}
+                    aria-label="Notification settings"
+                >
+                    <Bell className="w-5 h-5" />
+                </button>
             </header>
 
             <main className="max-w-[1080px] mx-auto p-6 space-y-6">
