@@ -96,3 +96,29 @@ export interface NutritionGoals {
   goal: WeightGoal;
   profile?: NutritionProfile;
 }
+
+// --- Notification subscriptions ---
+
+export type WhatsAppStatus = "none" | "pending" | "active" | "revoked";
+
+/** Wire shape of the notification_subscriptions table row. */
+export interface NotificationSubscription {
+  userId: string;
+  webPushEnabled: boolean;
+  webPushSubscription?: PushSubscriptionJSON | null;
+  whatsappEnabled: boolean;
+  phoneE164?: string | null;
+  whatsappStatus: WhatsAppStatus;
+  lastInboundAt?: string | null;
+  updatedAt: string;
+}
+
+/** Standard PushSubscription serialized — subset we care about, matches browser shape. */
+export interface PushSubscriptionJSON {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
