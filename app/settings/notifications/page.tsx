@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bell, MessageCircle, Lock, Info, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, Bell, MessageCircle, Lock, Info, Send, Loader2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/app/context/UserContext";
 import { getMySubscription, upsertMySubscription } from "@/lib/notifications-client";
 import { enableWebPush, disableWebPush, isPushSupported, pushPermission, sendTestPush } from "@/lib/push-client";
+import { enrollWhatsApp, disableWhatsApp, sendWhatsAppTest, type JoinInstructions } from "@/lib/whatsapp-client";
 import type { NotificationSubscription } from "@/lib/types";
 
 /**
@@ -26,10 +27,44 @@ export default function NotificationsSettingsPage() {
     supported: false,
     permission: "unsupported",
   });
+  const [phoneInput, setPhoneInput] = useState("");
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [joinInstructions, setJoinInstructions] = useState<JoinInstructions | null>(null);
+  const [wTesting, setWTesting] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     setPushSupport({ supported: isPushSupported(), permission: pushPermission() });
   }, []);
+
+  // While the user is in 'pending' state (we showed them the JOIN code,
+  // waiting for the webhook to confirm), poll the subscription every 5s so the
+  // UI can flip to 'active' automatically when they complete the WhatsApp join.
+  useEffect(() => {
+    if (sub?.whatsappStatus !== "pending") {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+      return;
+    }
+    pollRef.current = setInterval(async () => {
+      const next = await getMySubscription();
+      if (next && next.whatsappStatus !== "pending") {
+        setSub(next);
+        if (pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+        if (next.whatsappStatus === "active") {
+          toast("WhatsApp connected ✓");
+        }
+      }
+    }, 5000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [sub?.whatsappStatus]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -82,10 +117,30 @@ export default function NotificationsSettingsPage() {
         }
         setPushSupport({ supported: isPushSupported(), permission: pushPermission() });
       } else {
-        // WhatsApp wiring lands in PR C; for now this just flips the preference flag.
-        const patch = { whatsappEnabled: !(sub?.whatsappEnabled ?? false) };
-        const next = await upsertMySubscription(patch);
-        if (next) setSub(next);
+        const willEnable = !(sub?.whatsappEnabled ?? false);
+        if (willEnable) {
+          // Don't auto-enable on a fresh user — they need to provide a phone first.
+          // If they already have one and just revoked, re-enable inline.
+          if (sub?.phoneE164) {
+            const patch = { whatsappEnabled: true };
+            const next = await upsertMySubscription(patch);
+            if (next) setSub(next);
+            toast(
+              sub.whatsappStatus === "active"
+                ? "WhatsApp turned on"
+                : "WhatsApp turned on — complete the JOIN step below",
+            );
+          } else {
+            // Just flip the enabled flag; the JOIN form is rendered when enabled+!phone.
+            const patch = { whatsappEnabled: true };
+            const next = await upsertMySubscription(patch);
+            if (next) setSub(next);
+          }
+        } else {
+          await disableWhatsApp();
+          setSub(await getMySubscription());
+          toast("WhatsApp turned off");
+        }
       }
     } finally {
       setSaving(false);
@@ -99,6 +154,57 @@ export default function NotificationsSettingsPage() {
       toast(result.ok ? "Test push sent — check your notifications." : `Test failed: ${result.reason}`);
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleEnroll = async () => {
+    setEnrollLoading(true);
+    try {
+      const result = await enrollWhatsApp(phoneInput);
+      if (!result.ok) {
+        toast(result.reason || "Couldn't enroll");
+        return;
+      }
+      setJoinInstructions(result.joinInstructions || null);
+      setSub(await getMySubscription());
+      toast("Phone saved — complete the JOIN step on WhatsApp");
+    } finally {
+      setEnrollLoading(false);
+    }
+  };
+
+  const handleResendJoin = async () => {
+    // If user wants to see instructions again after closing them, just re-display.
+    if (sub?.phoneE164 && !joinInstructions) {
+      const result = await enrollWhatsApp(sub.phoneE164);
+      if (result.ok) setJoinInstructions(result.joinInstructions || null);
+    }
+  };
+
+  const handleWhatsAppTest = async () => {
+    setWTesting(true);
+    try {
+      const result = await sendWhatsAppTest();
+      if (result.ok) {
+        toast("Test WhatsApp sent — check your chat.");
+      } else if (result.channelClosed) {
+        toast("Session closed — re-send the JOIN code from your phone, then try again.");
+        setSub(await getMySubscription());
+      } else {
+        toast(`Test failed: ${result.reason}`);
+      }
+    } finally {
+      setWTesting(false);
+    }
+  };
+
+  const copyJoinText = async () => {
+    if (!joinInstructions) return;
+    try {
+      await navigator.clipboard.writeText(joinInstructions.text);
+      toast("Copied — paste in WhatsApp");
+    } catch {
+      toast("Copy failed — long-press to copy");
     }
   };
 
@@ -200,9 +306,18 @@ export default function NotificationsSettingsPage() {
               saving={saving}
               onToggle={() => toggle("whatsapp")}
               detail={
-                <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)" }}>
-                  Phone entry + JOIN flow lands in the next release. Toggle persists today.
-                </p>
+                <WhatsAppDetail
+                  sub={sub}
+                  phoneInput={phoneInput}
+                  setPhoneInput={setPhoneInput}
+                  enrollLoading={enrollLoading}
+                  joinInstructions={joinInstructions}
+                  onEnroll={handleEnroll}
+                  onResendJoin={handleResendJoin}
+                  onTest={handleWhatsAppTest}
+                  testing={wTesting}
+                  onCopyJoin={copyJoinText}
+                />
               }
             />
 
@@ -410,3 +525,201 @@ function SkeletonCard() {
     </div>
   );
 }
+
+interface WhatsAppDetailProps {
+  sub: NotificationSubscription | null;
+  phoneInput: string;
+  setPhoneInput: (v: string) => void;
+  enrollLoading: boolean;
+  joinInstructions: JoinInstructions | null;
+  onEnroll: () => void;
+  onResendJoin: () => void;
+  onTest: () => void;
+  testing: boolean;
+  onCopyJoin: () => void;
+}
+
+function WhatsAppDetail({
+  sub,
+  phoneInput,
+  setPhoneInput,
+  enrollLoading,
+  joinInstructions,
+  onEnroll,
+  onResendJoin,
+  onTest,
+  testing,
+  onCopyJoin,
+}: WhatsAppDetailProps) {
+  if (!sub?.whatsappEnabled) {
+    return (
+      <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)" }}>
+        Toggle on to add a phone and complete the WhatsApp join.
+      </p>
+    );
+  }
+
+  // No phone yet → show entry
+  if (!sub.phoneE164) {
+    return (
+      <div className="flex flex-col gap-2 w-full">
+        <label
+          style={{
+            fontSize: "11px",
+            fontWeight: 700,
+            color: "var(--cc-text-tertiary)",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+          }}
+        >
+          Your WhatsApp number
+        </label>
+        <div className="flex gap-2 w-full">
+          <input
+            type="tel"
+            inputMode="numeric"
+            placeholder="98765 43210"
+            value={phoneInput}
+            onChange={(e) => setPhoneInput(e.target.value)}
+            className="flex-1 px-3 py-2 outline-none"
+            style={{
+              fontSize: "13px",
+              background: "var(--cc-surface-2)",
+              border: "1px solid var(--cc-border)",
+              borderRadius: "10px",
+              color: "var(--cc-text-primary)",
+              minWidth: "0",
+            }}
+          />
+          <button
+            onClick={onEnroll}
+            disabled={enrollLoading || !phoneInput.trim()}
+            className="px-3 py-2 transition-colors text-white"
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              background: phoneInput.trim() ? "var(--cc-accent)" : "var(--cc-surface-2)",
+              color: phoneInput.trim() ? "#fff" : "var(--cc-text-tertiary)",
+              borderRadius: "10px",
+              cursor: enrollLoading ? "wait" : phoneInput.trim() ? "pointer" : "not-allowed",
+            }}
+          >
+            {enrollLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Continue"}
+          </button>
+        </div>
+        <p style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
+          India default — for other countries, include the + and country code (e.g. +1...).
+        </p>
+      </div>
+    );
+  }
+
+  // Phone saved + pending → show JOIN instructions
+  if (sub.whatsappStatus === "pending") {
+    return (
+      <div className="flex flex-col gap-3 w-full">
+        <p style={{ fontSize: "12px", color: "var(--cc-text-secondary)", lineHeight: 1.5 }}>
+          Open WhatsApp on <strong style={{ color: "var(--cc-text-primary)" }}>{sub.phoneE164}</strong> and send this text to{" "}
+          <strong style={{ color: "var(--cc-text-primary)" }}>
+            {joinInstructions?.to ?? "+1 415 523 8886"}
+          </strong>
+          :
+        </p>
+        {joinInstructions ? (
+          <div
+            className="flex items-center justify-between gap-2 p-3"
+            style={{
+              background: "var(--cc-surface-2)",
+              border: "1px dashed var(--cc-border-strong)",
+              borderRadius: "10px",
+            }}
+          >
+            <code
+              style={{
+                fontFamily: "var(--font-mono, monospace)",
+                fontSize: "13px",
+                color: "var(--cc-text-primary)",
+              }}
+            >
+              {joinInstructions.text}
+            </code>
+            <button
+              onClick={onCopyJoin}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5"
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "var(--cc-text-primary)",
+                background: "var(--cc-surface)",
+                border: "1px solid var(--cc-border)",
+                borderRadius: "999px",
+              }}
+            >
+              <Copy className="w-3 h-3" /> Copy
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onResendJoin}
+            className="self-start inline-flex items-center gap-1.5 px-3 py-1.5"
+            style={{
+              fontSize: "12px",
+              fontWeight: 600,
+              background: "var(--cc-surface-2)",
+              color: "var(--cc-text-primary)",
+              border: "1px solid var(--cc-border)",
+              borderRadius: "980px",
+            }}
+          >
+            Show join code
+          </button>
+        )}
+        <p style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
+          We&apos;ll auto-detect when you join. This usually takes a few seconds.
+        </p>
+      </div>
+    );
+  }
+
+  // Active
+  if (sub.whatsappStatus === "active") {
+    return (
+      <div className="flex flex-col gap-2 w-full">
+        <p style={{ fontSize: "12px", color: "var(--cc-text-secondary)" }}>
+          Connected on <strong style={{ color: "var(--cc-text-primary)" }}>{sub.phoneE164}</strong>
+        </p>
+        <button
+          onClick={onTest}
+          disabled={testing}
+          className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 transition-colors"
+          style={{
+            fontSize: "12px",
+            fontWeight: 600,
+            background: "var(--cc-surface-2)",
+            color: "var(--cc-text-primary)",
+            border: "1px solid var(--cc-border)",
+            borderRadius: "980px",
+          }}
+        >
+          {testing ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending…
+            </>
+          ) : (
+            <>
+              <Send className="w-3.5 h-3.5" /> Send test
+            </>
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  // Revoked
+  return (
+    <p style={{ fontSize: "12px", color: "#ff453a" }}>
+      Channel revoked (you sent STOP). Toggle off and on, then re-send the JOIN code to re-enable.
+    </p>
+  );
+}
+
