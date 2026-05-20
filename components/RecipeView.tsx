@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { ShoppingCart, ExternalLink, Clock, Users, Flame, Dumbbell, Zap, ChevronDown, BookOpen, Utensils, CalendarPlus } from "lucide-react";
+import { ShoppingCart, ExternalLink, Clock, Users, Flame, Dumbbell, Zap, ChevronDown, BookOpen, Utensils, CalendarPlus, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -189,6 +189,24 @@ export function RecipeView({ data }: RecipeViewProps) {
                         >
                             <CalendarPlus className="w-3.5 h-3.5" />
                             Add to plan
+                        </button>
+                        <button
+                            onClick={() => {
+                                const ingredientList = data.ingredients.map((i) => `${i.item}${i.quantity ? ` (${i.quantity})` : ""}`).join(", ");
+                                const prompt = `Order these ingredients on Instamart for ${data.name}: ${ingredientList}. Use my saved address.`;
+                                router.push(`/chat?agent=1&q=${encodeURIComponent(prompt)}`);
+                            }}
+                            className="flex items-center gap-1.5 px-4 py-2 transition-colors text-white"
+                            style={{
+                                fontSize: "13px",
+                                fontWeight: 600,
+                                background: "#fc8019",
+                                borderRadius: "980px",
+                            }}
+                            aria-label="Order these ingredients on Swiggy Instamart"
+                        >
+                            <Bot className="w-3.5 h-3.5" />
+                            Order on Instamart
                         </button>
                         <FavoriteButton type="recipe" data={data} />
                         <ShareButton title={data.name} text={`Check out this recipe for ${data.name}!`} />

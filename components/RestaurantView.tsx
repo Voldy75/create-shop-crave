@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { Card } from "@/components/ui/card";
-import { Star, Utensils, ExternalLink, Navigation, AlertCircle } from "lucide-react";
+import { Star, Utensils, ExternalLink, Navigation, AlertCircle, Bot, CalendarCheck } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import {
     buildUberDeepLink,
@@ -693,6 +694,7 @@ function RestaurantMap({
 // ---------- Main component ----------
 
 export function RestaurantView({ data }: RestaurantViewProps) {
+    const router = useRouter();
     const { location } = useUser();
     const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
@@ -935,6 +937,28 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                 {/* Delivery order buttons */}
                 {data.dishName && location && (
                     <div className="flex gap-2 flex-wrap" style={{ marginTop: "12px" }}>
+                        <button
+                            onClick={() => {
+                                const prompt = `Order ${data.dishName} for delivery via Swiggy Food. Pick a top-rated nearby restaurant.`;
+                                router.push(`/chat?agent=1&q=${encodeURIComponent(prompt)}`);
+                            }}
+                            className="inline-flex items-center gap-1.5 text-white transition-colors"
+                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "#fc8019" }}
+                            aria-label="Use the agent to order via Swiggy Food"
+                        >
+                            <Bot className="w-3 h-3" /> Order via agent
+                        </button>
+                        <button
+                            onClick={() => {
+                                const prompt = `Book a DineOut table for 2 tonight near me. Find a top restaurant serving ${data.dishName}.`;
+                                router.push(`/chat?agent=1&q=${encodeURIComponent(prompt)}`);
+                            }}
+                            className="inline-flex items-center gap-1.5 transition-colors"
+                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "var(--cc-surface-2)", color: "var(--cc-text-primary)", border: "1px solid var(--cc-border)" }}
+                            aria-label="Use the agent to book a DineOut table"
+                        >
+                            <CalendarCheck className="w-3 h-3" /> Book a table
+                        </button>
                         <a
                             href={buildSwiggyOrderLink(data.dishName, location.lat, location.lng)}
                             target="_blank"
@@ -942,7 +966,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                             className="inline-flex items-center gap-1.5 text-white bg-orange-500 hover:bg-orange-600 transition-colors"
                             style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "980px" }}
                         >
-                            Order on Swiggy <ExternalLink className="w-3 h-3" />
+                            Open Swiggy <ExternalLink className="w-3 h-3" />
                         </a>
                         <a
                             href={buildZomatoOrderLink(data.dishName)}
@@ -951,7 +975,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                             className="inline-flex items-center gap-1.5 text-white bg-red-500 hover:bg-red-600 transition-colors"
                             style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "980px" }}
                         >
-                            Order on Zomato <ExternalLink className="w-3 h-3" />
+                            Open Zomato <ExternalLink className="w-3 h-3" />
                         </a>
                     </div>
                 )}
