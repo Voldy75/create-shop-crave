@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useChat } from "ai/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../context/UserContext";
 import { Send, Bot, Sparkles, RotateCcw, AlertCircle, Heart, Calendar, LogOut, Swords, ArrowUp } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -47,6 +47,16 @@ const SUGGESTION_PROMPTS = [
 ];
 
 export default function ChatPage() {
+  // Wrapped in Suspense so useSearchParams inside ChatPageInner doesn't trigger
+  // a static-rendering bailout warning under Next 16.
+  return (
+    <Suspense fallback={null}>
+      <ChatPageInner />
+    </Suspense>
+  );
+}
+
+function ChatPageInner() {
   const { user, session, userName, location, dietaryPreferences, hydrated, signOut } = useUser();
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -106,13 +116,24 @@ export default function ChatPage() {
     [byok, userName, location, dietaryPreferences]
   );
 
-  const { messages, input, handleInputChange, handleSubmit, setInput, setMessages, isLoading, reload } = useChat({
-    api: "/api/chat",
+  const searchParams = useSearchParams();
+  // Capture once at mount — switching modes mid-session requires a new navigation.
+  const agentMode = useMemo(() => searchParams?.get("agent") === "1", []); // eslint-disable-line react-hooks/exhaustive-deps
+  const initialQuery = useMemo(() => searchParams?.get("q") ?? "", []); // eslint-disable-line react-hooks/exhaustive-deps
+  const chatApi = agentMode ? "/api/agent" : "/api/chat";
+
+  const { messages, input, handleInputChange, handleSubmit, setInput, setMessages, isLoading, reload, append } = useChat({
+    api: chatApi,
     body: buildBody(),
     onResponse: (response) => {
       if (response.status === 401) { router.replace("/"); return; }
       if (response.status === 429) {
         setShowUpgradeDialog(true);
+        return;
+      }
+      if (response.status === 412) {
+        // /api/agent emits 412 when the user's Swiggy token is missing/expired.
+        setError("Your Swiggy connection isn't active. Reconnect in Settings → Notifications.");
         return;
       }
       if (!byok) setUsageCount((prev) => Math.min(prev + 1, DAILY_LIMIT));
@@ -136,6 +157,19 @@ export default function ChatPage() {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // One-shot: when the user lands here via a CTA hand-off like
+  // /chat?agent=1&q=Order+ingredients..., prefill the input and auto-fire.
+  const autoFiredRef = useRef(false);
+  useEffect(() => {
+    if (autoFiredRef.current) return;
+    if (!hydrated || !user) return;
+    if (!initialQuery) return;
+    autoFiredRef.current = true;
+    // Strip the query params from the URL so a refresh doesn't re-send.
+    window.history.replaceState({}, "", "/chat" + (agentMode ? "?agent=1" : ""));
+    append({ role: "user", content: initialQuery });
+  }, [hydrated, user, initialQuery, agentMode, append]);
 
   const handleBYOKSave = (provider: Provider, apiKey: string) => {
     saveBYOK(provider, apiKey);
@@ -241,6 +275,24 @@ export default function ChatPage() {
               limit={DAILY_LIMIT}
               onClick={() => setShowUpgradeDialog(true)}
             />
+          )}
+
+          {agentMode && (
+            <span
+              title="Chat is in Swiggy agent mode — calls /api/agent with MCP tools"
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                padding: "3px 8px",
+                borderRadius: "980px",
+                background: "rgba(252,128,25,0.12)",
+                color: "#fc8019",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+              }}
+            >
+              Swiggy
+            </span>
           )}
 
           {messages.length > 0 && (
