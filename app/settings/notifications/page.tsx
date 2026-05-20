@@ -2,12 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bell, MessageCircle, Lock, Info, Send, Loader2, Copy } from "lucide-react";
+import { ArrowLeft, Bell, MessageCircle, Lock, Info, Send, Loader2, Copy, Utensils, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/app/context/UserContext";
 import { getMySubscription, upsertMySubscription } from "@/lib/notifications-client";
 import { enableWebPush, disableWebPush, isPushSupported, pushPermission, sendTestPush } from "@/lib/push-client";
 import { enrollWhatsApp, disableWhatsApp, sendWhatsAppTest, type JoinInstructions } from "@/lib/whatsapp-client";
+import { getSwiggyStatus, startSwiggyAuth, disconnectSwiggy, type SwiggyStatus } from "@/lib/swiggy-client";
 import type { NotificationSubscription } from "@/lib/types";
 
 /**
@@ -32,10 +33,49 @@ export default function NotificationsSettingsPage() {
   const [joinInstructions, setJoinInstructions] = useState<JoinInstructions | null>(null);
   const [wTesting, setWTesting] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [swiggy, setSwiggy] = useState<SwiggyStatus | null>(null);
+  const [swiggyBusy, setSwiggyBusy] = useState(false);
 
   useEffect(() => {
     setPushSupport({ supported: isPushSupported(), permission: pushPermission() });
+    // Honor ?connected=1 / ?error=… from the OAuth callback redirect.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("connected") === "1") {
+      toast("Swiggy connected ✓");
+      // Clean the URL so a refresh doesn't re-toast.
+      window.history.replaceState({}, "", "/settings/notifications");
+    } else if (params.get("error")) {
+      toast(`Swiggy connect failed: ${params.get("error")}`);
+      window.history.replaceState({}, "", "/settings/notifications");
+    }
+    void refreshSwiggy();
   }, []);
+
+  const refreshSwiggy = async () => {
+    const status = await getSwiggyStatus();
+    setSwiggy(status);
+  };
+
+  const handleSwiggyConnect = async () => {
+    setSwiggyBusy(true);
+    const result = await startSwiggyAuth();
+    if (!result.ok) {
+      toast(`Couldn't start Swiggy auth: ${result.reason}`);
+      setSwiggyBusy(false);
+    }
+    // On success the browser is already redirecting — no further state needed.
+  };
+
+  const handleSwiggyDisconnect = async () => {
+    setSwiggyBusy(true);
+    try {
+      await disconnectSwiggy();
+      await refreshSwiggy();
+      toast("Swiggy disconnected");
+    } finally {
+      setSwiggyBusy(false);
+    }
+  };
 
   // While the user is in 'pending' state (we showed them the JOIN code,
   // waiting for the webhook to confirm), poll the subscription every 5s so the
@@ -319,6 +359,13 @@ export default function NotificationsSettingsPage() {
                   onCopyJoin={copyJoinText}
                 />
               }
+            />
+
+            <SwiggyCard
+              status={swiggy}
+              busy={swiggyBusy}
+              onConnect={handleSwiggyConnect}
+              onDisconnect={handleSwiggyDisconnect}
             />
 
             <FreeTierNote />
@@ -720,6 +767,180 @@ function WhatsAppDetail({
     <p style={{ fontSize: "12px", color: "#ff453a" }}>
       Channel revoked (you sent STOP). Toggle off and on, then re-send the JOIN code to re-enable.
     </p>
+  );
+}
+
+interface SwiggyCardProps {
+  status: SwiggyStatus | null;
+  busy: boolean;
+  onConnect: () => void;
+  onDisconnect: () => void;
+}
+
+function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) {
+  // Loading
+  if (!status) {
+    return (
+      <div
+        className="p-5 animate-pulse"
+        style={{
+          background: "var(--cc-surface)",
+          border: "1px solid var(--cc-border)",
+          borderRadius: "16px",
+          minHeight: "120px",
+        }}
+      />
+    );
+  }
+
+  const configured = status.configured !== false;
+  const connected = status.connected;
+  const expiring = status.expiringWithin24h;
+
+  const statusLabel = !configured
+    ? "Not configured"
+    : connected
+      ? expiring
+        ? "Expiring soon"
+        : "Connected"
+      : status.expired
+        ? "Expired"
+        : "Not connected";
+
+  const tone: "active" | "pending" | "off" = connected && !expiring
+    ? "active"
+    : connected || expiring
+      ? "pending"
+      : "off";
+  const t = STATUS_TONE[tone];
+
+  return (
+    <div
+      className="p-5"
+      style={{
+        background: "var(--cc-surface)",
+        border: "1px solid var(--cc-border)",
+        borderRadius: "16px",
+      }}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="flex-shrink-0 flex items-center justify-center"
+          style={{
+            width: "40px",
+            height: "40px",
+            borderRadius: "10px",
+            background: "var(--cc-surface-2)",
+            color: "var(--cc-text-secondary)",
+          }}
+        >
+          <Utensils className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-3">
+            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+              Swiggy agent
+            </h3>
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                color: t.color,
+                background: t.bg,
+                padding: "3px 8px",
+                borderRadius: "980px",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                flexShrink: 0,
+              }}
+            >
+              {statusLabel}
+            </span>
+          </div>
+          <p style={{ fontSize: "12px", color: "var(--cc-text-secondary)", marginTop: "4px", lineHeight: 1.4 }}>
+            Connect your Swiggy account so the chat can order ingredients on Instamart, order food, and book DineOut tables on your behalf.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-2">
+        {!configured && (
+          <div
+            className="flex items-start gap-2 px-3 py-2.5"
+            style={{
+              background: "rgba(255,159,10,0.08)",
+              border: "1px solid rgba(255,159,10,0.25)",
+              borderRadius: "10px",
+              color: "var(--cc-text-secondary)",
+            }}
+          >
+            <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#ff9f0a" }} />
+            <p style={{ fontSize: "11px", lineHeight: 1.45 }}>
+              Swiggy MCP credentials aren&apos;t wired yet. This will become live once the app is approved at{" "}
+              <a
+                href="https://mcp.swiggy.com/builders/access/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--cc-link)", textDecoration: "underline" }}
+              >
+                mcp.swiggy.com/builders/access
+              </a>
+              .
+            </p>
+          </div>
+        )}
+
+        {expiring && (
+          <p style={{ fontSize: "11px", color: "#ff9f0a" }}>
+            Token expires in &lt;24h. Re-connect to keep the agent working — Swiggy MCP v1 doesn&apos;t support refresh tokens yet.
+          </p>
+        )}
+
+        {status.expiresAt && (
+          <p style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
+            Token expires {new Date(status.expiresAt).toLocaleString()}.
+          </p>
+        )}
+
+        <div className="flex gap-2">
+          {connected ? (
+            <button
+              onClick={onDisconnect}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 px-4 py-2 transition-colors"
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                background: "var(--cc-surface-2)",
+                color: "var(--cc-text-primary)",
+                border: "1px solid var(--cc-border)",
+                borderRadius: "980px",
+              }}
+            >
+              {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              Disconnect
+            </button>
+          ) : (
+            <button
+              onClick={onConnect}
+              disabled={busy || !configured}
+              className="inline-flex items-center gap-1.5 px-4 py-2 transition-colors text-white"
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                background: configured ? "var(--cc-accent)" : "var(--cc-surface-2)",
+                color: configured ? "#fff" : "var(--cc-text-tertiary)",
+                borderRadius: "980px",
+                cursor: configured && !busy ? "pointer" : "not-allowed",
+              }}
+            >
+              {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              Connect Swiggy
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
