@@ -10,6 +10,7 @@ import { LottiePlayer } from "@/components/LottiePlayer";
 import { RecipeView } from "@/components/RecipeView";
 import { RestaurantView } from "@/components/RestaurantView";
 import { UsageBadge } from "@/components/UsageBadge";
+import { SwiggyExpiryBanner } from "@/components/SwiggyExpiryBanner";
 import { ApiKeyDialog } from "@/components/ApiKeyDialog";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,6 +45,15 @@ const SUGGESTION_PROMPTS = [
   "Veg dinner for 2",
   "Quick 20-min meal",
   "Restaurants open now",
+];
+
+const AGENT_SUGGESTION_PROMPTS = [
+  "Order milk, eggs, and bread on Instamart",
+  "Order biryani from a top-rated place",
+  "Book a DineOut table for 2 tonight",
+  "What's in my Instamart cart right now?",
+  "Track my last food order",
+  "Re-order my usual groceries",
 ];
 
 export default function ChatPage() {
@@ -415,6 +425,9 @@ function ChatPageInner() {
         aria-live="polite"
         aria-label="Chat messages"
       >
+        {/* Swiggy expiry / not-connected banner, agent mode only */}
+        {agentMode && <SwiggyExpiryBanner />}
+
         {/* Empty state */}
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-[55vh] text-center space-y-6">
@@ -464,7 +477,7 @@ function ChatPageInner() {
               transition={{ duration: 0.4, delay: 0.2 }}
               className="flex gap-2 flex-wrap justify-center"
             >
-              {SUGGESTION_PROMPTS.map((s) => (
+              {(agentMode ? AGENT_SUGGESTION_PROMPTS : SUGGESTION_PROMPTS).map((s) => (
                 <button
                   key={s}
                   onClick={() => handleSuggestionClick(s)}
@@ -643,7 +656,7 @@ function ChatPageInner() {
             <input
               value={input}
               onChange={handleInputChange}
-              placeholder="Ask anything about food..."
+              placeholder={agentMode ? "Order groceries, food, or book a table…" : "Ask anything about food..."}
               className="flex-1 bg-transparent outline-none placeholder-shown:text-ellipsis"
               style={{
                 color: "var(--cc-text-primary)",
