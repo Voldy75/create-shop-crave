@@ -1,27 +1,47 @@
 import type { ReactNode } from "react";
+import { Fraunces, Inter } from "next/font/google";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
+import "./foodkuu.css";
 
 /**
- * Mobile shell layout. Everything under /m renders inside a phone-framed,
- * dark-by-default surface with a fixed bottom tab bar. The Capacitor native
- * shell points server.url at this subtree (.../m), so these routes ARE the app.
+ * Food-Kuu mobile shell. Warm cream surface, Fraunces serif display + Inter
+ * sans, fixed bottom tab bar. The Capacitor native shell points server.url at
+ * /m, so this subtree IS the app. Existing web routes stay untouched.
  *
- * The existing web routes (/chat, /planner, …) are untouched and continue to
- * serve the browser/PWA experience.
+ * next/font wires the two families to the CSS vars foodkuu.css references
+ * (--fk-display / --fk-sans).
  */
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--fk-display-font",
+  display: "swap",
+});
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--fk-sans-font",
+  display: "swap",
+});
+
 export default function MobileLayout({ children }: { children: ReactNode }) {
   return (
     <div
-      className="cc"
-      style={{
-        minHeight: "100dvh",
-        background: "var(--cc-bg)",
-        color: "var(--cc-text-primary)",
-        // leave room for the fixed tab bar + safe area
-        paddingBottom: "calc(56px + env(safe-area-inset-bottom, 0px))",
-        maxWidth: 520,
-        margin: "0 auto",
-      }}
+      className={`fk-screen ${fraunces.variable} ${inter.variable}`}
+      style={
+        {
+          // bind next/font vars to the names foodkuu.css expects
+          ["--fk-display" as string]: "var(--fk-display-font), Georgia, serif",
+          ["--fk-sans" as string]: "var(--fk-sans-font), -apple-system, system-ui, sans-serif",
+          minHeight: "100dvh",
+          background: "var(--fk-bg)",
+          color: "var(--fk-ink)",
+          maxWidth: 520,
+          margin: "0 auto",
+          paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
+        } as React.CSSProperties
+      }
     >
       {children}
       <MobileTabBar />
