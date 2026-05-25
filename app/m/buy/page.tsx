@@ -127,16 +127,9 @@ export default function BuyPrecheck() {
           className="pill-primary"
           disabled={selected.length === 0}
           style={{ opacity: selected.length ? 1 : 0.5 }}
-          onClick={() => {
-            // Functional path: hand the chosen items to the Swiggy agent, which
-            // searches Instamart, builds the cart, and confirms before ordering.
-            // (Dedicated platform/cart/confirmed screens are a later enhancement.)
-            const list = selected.map((i) => `${i.item}${i.quantity ? ` (${i.quantity})` : ""}`).join(", ");
-            const prompt = `Order these ingredients on Instamart: ${list}. Use my saved address.`;
-            router.push(`/m/chat?agent=1&q=${encodeURIComponent(prompt)}`);
-          }}
+          onClick={() => router.push("/m/buy/platform")}
         >
-          Order {selected.length} item{selected.length === 1 ? "" : "s"} on Instamart
+          Continue · {selected.length} item{selected.length === 1 ? "" : "s"}
         </button>
       </div>
     </div>
