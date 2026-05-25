@@ -5,7 +5,7 @@ import { useChat } from "ai/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Mic, ArrowUp, Star } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
-import { setActiveRecipe } from "@/lib/mobile-handoff";
+import { setActiveRecipe, setActiveRestaurants } from "@/lib/mobile-handoff";
 import type { ChatResponse, RecipeData, RestaurantSuggestion } from "@/lib/types";
 
 /**
@@ -66,6 +66,7 @@ function ChatInner() {
 
   const onOpenRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/recipe"); };
   const onBuyRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/buy"); };
+  const onOpenRestaurants = (s: RestaurantSuggestion) => { setActiveRestaurants(s); router.push("/m/restaurants"); };
 
   const empty = messages.length === 0;
 
@@ -114,7 +115,7 @@ function ChatInner() {
                   <div style={{ background: "var(--cc-surf-2)", borderRadius: "4px 18px 18px 18px", padding: "11px 14px", fontSize: 14, lineHeight: 1.45 }}>{text}</div>
                 )}
                 {data?.recipe && <RecipeCard recipe={data.recipe} onOpen={onOpenRecipe} onBuy={onBuyRecipe} />}
-                {data?.restaurantSuggestion?.restaurants?.length ? <RestaurantsCard sugg={data.restaurantSuggestion} /> : null}
+                {data?.restaurantSuggestion?.restaurants?.length ? <RestaurantsCard sugg={data.restaurantSuggestion} onMap={onOpenRestaurants} /> : null}
               </div>
             </div>
           );
@@ -173,13 +174,13 @@ function RecipeCard({ recipe, onOpen, onBuy }: { recipe: RecipeData; onOpen: (r:
   );
 }
 
-function RestaurantsCard({ sugg }: { sugg: RestaurantSuggestion }) {
+function RestaurantsCard({ sugg, onMap }: { sugg: RestaurantSuggestion; onMap: (s: RestaurantSuggestion) => void }) {
   const list = (sugg.restaurants ?? []).slice(0, 3);
   return (
-    <div className="card" style={{ padding: 12 }}>
+    <button onClick={() => onMap(sugg)} className="card" style={{ padding: 12, textAlign: "left", width: "100%" }}>
       <div className="row" style={{ justifyContent: "space-between", marginBottom: 8 }}>
         <span className="t-cap">{list.length} NEAR YOU</span>
-        <span className="t-small" style={{ color: "var(--cc-acc)", fontWeight: 600 }}>Map</span>
+        <span className="t-small" style={{ color: "var(--cc-acc)", fontWeight: 600 }}>Map ›</span>
       </div>
       {list.map((r, i) => (
         <div key={r.name} className="row" style={{ gap: 10, padding: "8px 0", borderTop: i === 0 ? "none" : "1px solid var(--cc-line)" }}>
@@ -194,6 +195,6 @@ function RestaurantsCard({ sugg }: { sugg: RestaurantSuggestion }) {
           </div>
         </div>
       ))}
-    </div>
+    </button>
   );
 }

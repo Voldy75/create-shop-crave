@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Utensils, MapPin, ChevronRight, LogOut, Salad } from "lucide-react";
+import { Bell, Utensils, MapPin, Crown, ChevronRight, LogOut, Salad } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 
 /**
@@ -21,6 +21,7 @@ export default function ProfileTab() {
     { icon: Bell, label: "Notifications", sub: "Daily nudge · WhatsApp · push", href: "/settings/notifications" },
     { icon: Utensils, label: "Swiggy account", sub: "Connect for ordering", href: "/settings/notifications" },
     { icon: MapPin, label: "Location", sub: location ? "Set" : "Not set", href: "/m/onboarding" },
+    { icon: Crown, label: "Go Pro", sub: "Unlimited AI + ordering", href: "/m/paywall" },
   ];
 
   return (
