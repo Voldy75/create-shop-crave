@@ -1,13 +1,12 @@
 import type { ReactNode } from "react";
 import { DM_Sans } from "next/font/google";
-import { MobileTabBar } from "@/components/mobile/MobileTabBar";
 import "./meshi.css";
 
 /**
- * meshi mobile shell — black-first Apple-style. DM Sans stands in for Google
- * Sans (the design's preferred face, not freely licensable). The Capacitor
- * native shell points server.url at /m, so this subtree IS the app; the
- * existing web routes stay untouched for the browser/PWA.
+ * meshi mobile shell (bare) — black-first surface + DM Sans, max-width phone
+ * column. NO tab bar here: full-screen flows like onboarding live directly
+ * under /m, while tabbed screens nest under the (tabs) route group which adds
+ * the bottom bar. The Capacitor native shell points server.url at /m.
  */
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -28,12 +27,10 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
           color: "var(--cc-ink-1)",
           maxWidth: 520,
           margin: "0 auto",
-          paddingBottom: "calc(56px + env(safe-area-inset-bottom, 0px))",
         } as React.CSSProperties
       }
     >
       {children}
-      <MobileTabBar />
     </div>
   );
 }
