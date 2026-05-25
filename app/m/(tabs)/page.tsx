@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Sparkles, MapPin, ShoppingCart, CalendarDays } from "lucide-react";
+import { Sparkles, MapPin, ShoppingCart, CalendarDays, Search as SearchIcon } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 
 /**
@@ -62,12 +62,17 @@ export default function MeshiHome() {
                 What&apos;s it gonna<br />be tonight?
               </h1>
             </div>
-            <Link
-              href="/m/profile"
-              style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--cc-surf-3)", display: "grid", placeItems: "center", color: "var(--cc-ink-1)", fontWeight: 700, fontSize: 14, textDecoration: "none" }}
-            >
-              {initials}
-            </Link>
+            <div className="row" style={{ gap: 8 }}>
+              <Link href="/m/search" aria-label="Search" style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--cc-surf-3)", display: "grid", placeItems: "center", color: "var(--cc-ink-1)", textDecoration: "none" }}>
+                <SearchIcon width={18} height={18} />
+              </Link>
+              <Link
+                href="/m/profile"
+                style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--cc-surf-3)", display: "grid", placeItems: "center", color: "var(--cc-ink-1)", fontWeight: 700, fontSize: 14, textDecoration: "none" }}
+              >
+                {initials}
+              </Link>
+            </div>
           </div>
         </div>
 
