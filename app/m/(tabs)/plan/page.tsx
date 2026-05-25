@@ -50,8 +50,9 @@ export default function PlanTracker() {
 
   return (
     <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)" }}>
-      <div style={{ padding: "calc(env(safe-area-inset-top,12px) + 10px) 16px 4px" }}>
+      <div className="row" style={{ padding: "calc(env(safe-area-inset-top,12px) + 10px) 16px 4px", justifyContent: "space-between", alignItems: "center" }}>
         <h1 className="t-h1">Today</h1>
+        <a href="/m/plan/week" className="chip" style={{ fontSize: 11, textDecoration: "none" }}>This week ›</a>
       </div>
 
       {/* Date strip */}
