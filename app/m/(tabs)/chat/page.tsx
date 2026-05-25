@@ -5,6 +5,7 @@ import { useChat } from "ai/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Mic, ArrowUp, Star } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
+import { setActiveRecipe } from "@/lib/mobile-handoff";
 import type { ChatResponse, RecipeData, RestaurantSuggestion } from "@/lib/types";
 
 /**
@@ -63,6 +64,9 @@ function ChatInner() {
     append({ role: "user", content: seed });
   }, [seed, agentMode, append]);
 
+  const onOpenRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/recipe"); };
+  const onBuyRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/buy"); };
+
   const empty = messages.length === 0;
 
   return (
@@ -109,7 +113,7 @@ function ChatInner() {
                 {text && (
                   <div style={{ background: "var(--cc-surf-2)", borderRadius: "4px 18px 18px 18px", padding: "11px 14px", fontSize: 14, lineHeight: 1.45 }}>{text}</div>
                 )}
-                {data?.recipe && <RecipeCard recipe={data.recipe} />}
+                {data?.recipe && <RecipeCard recipe={data.recipe} onOpen={onOpenRecipe} onBuy={onBuyRecipe} />}
                 {data?.restaurantSuggestion?.restaurants?.length ? <RestaurantsCard sugg={data.restaurantSuggestion} /> : null}
               </div>
             </div>
@@ -146,7 +150,7 @@ function ChatInner() {
   );
 }
 
-function RecipeCard({ recipe }: { recipe: RecipeData }) {
+function RecipeCard({ recipe, onOpen, onBuy }: { recipe: RecipeData; onOpen: (r: RecipeData) => void; onBuy: (r: RecipeData) => void }) {
   const nutr = recipe.nutritionEstimate;
   const meta = [recipe.prepTime, recipe.servings ? `${recipe.servings} servings` : null, nutr?.calories].filter(Boolean).join(" · ");
   return (
@@ -162,8 +166,8 @@ function RecipeCard({ recipe }: { recipe: RecipeData }) {
         </div>
       </div>
       <div style={{ padding: 12, display: "flex", gap: 6 }}>
-        <button className="pill-tonal" style={{ flex: 1, padding: "9px 12px", fontSize: 13 }}>View recipe</button>
-        <button className="pill-primary" style={{ flex: 1, padding: "9px 12px", fontSize: 13 }}>Buy ingredients</button>
+        <button className="pill-tonal" style={{ flex: 1, padding: "9px 12px", fontSize: 13 }} onClick={() => onOpen(recipe)}>View recipe</button>
+        <button className="pill-primary" style={{ flex: 1, padding: "9px 12px", fontSize: 13 }} onClick={() => onBuy(recipe)}>Buy ingredients</button>
       </div>
     </div>
   );
