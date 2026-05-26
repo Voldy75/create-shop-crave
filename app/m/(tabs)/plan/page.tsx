@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, X, Camera, Loader2 } from "lucide-react";
+import { Plus, X, Camera, Loader2, Utensils } from "lucide-react";
 import {
   getMealLogs,
   getNutritionGoals,
@@ -103,7 +103,18 @@ export default function PlanTracker() {
           <span className="t-cap" style={{ padding: "0 4px" }}>MEALS LOGGED</span>
           <div style={{ marginTop: 8 }}>
             {dayLogs.length === 0 && (
-              <p className="t-small" style={{ padding: "0 4px 8px" }}>Nothing logged for this day yet.</p>
+              <div className="col" style={{ alignItems: "center", textAlign: "center", gap: 12, padding: "32px 24px" }}>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--cc-acc-dim)", color: "var(--cc-acc)", display: "grid", placeItems: "center" }}>
+                  <Utensils width={24} height={24} />
+                </div>
+                <div className="col" style={{ gap: 4 }}>
+                  <span style={{ fontSize: 15, fontWeight: 600 }}>Nothing logged yet</span>
+                  <span className="t-small" style={{ maxWidth: 240 }}>Snap a photo or add a meal to start tracking toward your {goals?.dailyCalories ?? 2000} kcal goal.</span>
+                </div>
+                <button className="pill-primary" style={{ width: "auto", padding: "10px 20px" }} onClick={() => setSheet(true)}>
+                  <Plus width={16} height={16} /> Log your first meal
+                </button>
+              </div>
             )}
             {dayLogs.map((m) => (
               <div key={m.id} className="card" style={{ padding: 12, marginBottom: 8 }}>

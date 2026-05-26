@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, Search, Star, Navigation, Car, ExternalLink } from "lucide-react";
 import { getActiveRestaurants } from "@/lib/mobile-handoff";
 import { foodImage } from "@/lib/food-images";
+import RestaurantMap, { type MapPin } from "@/components/mobile/RestaurantMap";
 import { useUser } from "@/app/context/UserContext";
 import {
   buildGoogleMapsDirectionsLink,
@@ -34,10 +35,6 @@ const SAMPLE: RestaurantSuggestion = {
   ],
 };
 
-const PIN_POS = [
-  { x: 28, y: 26 }, { x: 62, y: 40 }, { x: 45, y: 58 }, { x: 78, y: 62 }, { x: 22, y: 70 },
-];
-
 export default function MobileRestaurants() {
   const router = useRouter();
   const { location } = useUser();
@@ -48,22 +45,14 @@ export default function MobileRestaurants() {
 
   if (!sugg) return <div style={{ minHeight: "100dvh", background: "var(--cc-bg)" }} />;
   const list = (sugg.restaurants ?? []).slice(0, 5);
+  const pins: MapPin[] = list
+    .map((r, i) => (typeof r.lat === "number" && typeof r.lng === "number" ? { lat: r.lat, lng: r.lng, label: i + 1, title: r.name } : null))
+    .filter((p): p is MapPin => p !== null);
 
   return (
     <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)", position: "relative" }}>
-      <div className="mapbg" style={{ position: "absolute", inset: 0 }} />
-
-      {/* Pins */}
-      {list.map((r, i) => (
-        <div key={r.name} style={{ position: "absolute", left: `${PIN_POS[i]?.x ?? 50}%`, top: `${PIN_POS[i]?.y ?? 50}%`, transform: "translate(-50%,-100%)", zIndex: 2 }}>
-          <Pin n={i + 1} hi={i === 0} />
-        </div>
-      ))}
-      {location && (
-        <div style={{ position: "absolute", left: "42%", top: "47%", zIndex: 2 }}>
-          <div style={{ width: 16, height: 16, borderRadius: "50%", background: "var(--cc-link)", border: "3px solid #fff", boxShadow: "0 0 0 8px rgba(41,151,255,0.18)" }} />
-        </div>
-      )}
+      {/* Live map (falls back to stylized backdrop + pins without an API key) */}
+      <RestaurantMap pins={pins} center={location} />
 
       {/* Top controls */}
       <div className="row" style={{ position: "absolute", top: "calc(env(safe-area-inset-top,12px) + 6px)", left: 12, right: 12, gap: 8, zIndex: 3 }}>

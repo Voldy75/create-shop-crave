@@ -80,7 +80,7 @@ export default function ProfileTab() {
           </button>
         )}
 
-        <p className="t-small" style={{ textAlign: "center", marginTop: 18, color: "var(--cc-ink-4)" }}>meshi · Crave &amp; Create</p>
+        <p className="t-small" style={{ textAlign: "center", marginTop: 18, color: "var(--cc-ink-4)" }}>meshi</p>
       </div>
     </div>
   );
