@@ -61,7 +61,7 @@ export default function MobileInbox() {
 
   const filtered = rows.filter((r) =>
     filter === "All" ? true :
-    filter === "Push" ? r.channel === "web_push" :
+    filter === "Push" ? r.channel === "web_push" || r.channel === "native_push" :
     filter === "WhatsApp" ? r.channel === "whatsapp" :
     true,
   );

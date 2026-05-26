@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Sparkles, MapPin, ShoppingCart, CalendarDays, Search as SearchIcon } from "lucide-react";
+import { Sparkles, MapPin, ShoppingCart, CalendarDays, Search as SearchIcon, Flame, RotateCcw } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
+import { getMealLogs } from "@/lib/storage";
+import { loggingStreak } from "@/lib/nutrition";
 
 /**
  * meshi Home — faithful to the handoff ScreenHome (v2-screens.jsx) in the
@@ -38,6 +40,7 @@ export default function MeshiHome() {
   const router = useRouter();
   const { userName, hydrated } = useUser();
   const [timeLabel, setTimeLabel] = useState("");
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     const d = new Date();
@@ -46,6 +49,7 @@ export default function MeshiHome() {
         " · " +
         d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }),
     );
+    setStreak(loggingStreak(getMealLogs()));
   }, []);
 
   const initials = hydrated && userName ? userName.slice(0, 2).toUpperCase() : "··";
@@ -57,7 +61,19 @@ export default function MeshiHome() {
         <div style={{ padding: "calc(env(safe-area-inset-top, 12px) + 8px) 18px 4px" }}>
           <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
             <div className="col">
-              <span className="t-cap" style={{ color: "var(--cc-acc)" }}>{timeLabel}</span>
+              <div className="row" style={{ gap: 8, alignItems: "center" }}>
+                <span className="t-cap" style={{ color: "var(--cc-acc)" }}>{timeLabel}</span>
+                {streak > 0 && (
+                  <Link
+                    href="/m/plan"
+                    className="row"
+                    aria-label={`${streak} day logging streak`}
+                    style={{ gap: 3, alignItems: "center", textDecoration: "none", background: "var(--cc-acc-dim)", color: "var(--cc-acc)", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}
+                  >
+                    <Flame width={12} height={12} /> {streak}
+                  </Link>
+                )}
+              </div>
               <h1 className="t-display" style={{ marginTop: 4 }}>
                 What&apos;s it gonna<br />be tonight?
               </h1>
@@ -104,6 +120,23 @@ export default function MeshiHome() {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* 1-tap reorder — hands the agent the user's Instamart go-to items */}
+        <div style={{ padding: "0 18px 4px" }}>
+          <button
+            onClick={() => router.push("/m/chat?agent=1&q=" + encodeURIComponent("Reorder my usual groceries from Swiggy Instamart using my go-to items. Confirm the cart before placing."))}
+            className="card row"
+            style={{ padding: 12, gap: 12, width: "100%", textAlign: "left" }}
+          >
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--cc-acc-dim)", color: "var(--cc-acc)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <RotateCcw width={20} height={20} />
+            </div>
+            <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
+              <span className="t-h3">Order again</span>
+              <span className="t-small">Reorder your go-to groceries on Instamart</span>
+            </div>
+          </button>
         </div>
 
         {/* Quick actions */}
