@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "gen:resources": "node scripts/gen-resources.mjs",
+    "assets": "capacitor-assets generate --iconBackgroundColor '#ff6b35' --iconBackgroundColorDark '#ff6b35' --splashBackgroundColor '#ffffff' --splashBackgroundColorDark '#0f0f0f'"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^0.0.56",
