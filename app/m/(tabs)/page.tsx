@@ -7,6 +7,7 @@ import { Sparkles, MapPin, ShoppingCart, CalendarDays, Search as SearchIcon, Fla
 import { useUser } from "@/app/context/UserContext";
 import { getMealLogs } from "@/lib/storage";
 import { loggingStreak } from "@/lib/nutrition";
+import { foodImage } from "@/lib/food-images";
 
 /**
  * meshi Home — faithful to the handoff ScreenHome (v2-screens.jsx) in the
@@ -162,7 +163,7 @@ export default function MeshiHome() {
                 className="ph"
                 style={{ width: 150, height: 200, borderRadius: "var(--cc-r-lg)", flexShrink: 0, position: "relative", overflow: "hidden", textDecoration: "none" }}
               >
-                <div className={`ph ${c.cls}`} style={{ position: "absolute", inset: 0 }} />
+                <div className={`ph ${c.cls}`} style={{ position: "absolute", inset: 0, backgroundImage: foodImage(c.n) ? `url(${foodImage(c.n)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7) 100%)" }} />
                 <div style={{ position: "absolute", left: 12, top: 12 }}>
                   <span className="chip" style={{ background: "rgba(0,0,0,0.5)", color: "#fff", borderColor: "rgba(255,255,255,0.2)", fontSize: 10, padding: "4px 9px" }}>{c.l}</span>
@@ -180,7 +181,7 @@ export default function MeshiHome() {
           <div className="col" style={{ gap: 10, padding: "0 18px" }}>
             {PICKS.map((e) => (
               <div key={e.n} className="card row" style={{ padding: 10, gap: 12 }}>
-                <div className={`ph ${e.cls}`} style={{ width: 64, height: 64, borderRadius: "var(--cc-r-md)", flexShrink: 0 }} />
+                <div className={`ph ${e.cls}`} style={{ width: 64, height: 64, borderRadius: "var(--cc-r-md)", flexShrink: 0, backgroundImage: foodImage(e.n) ? `url(${foodImage(e.n)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
                 <div className="col" style={{ gap: 3 }}>
                   <span className="t-h3">{e.n}</span>
                   <span className="t-small">{e.s}</span>

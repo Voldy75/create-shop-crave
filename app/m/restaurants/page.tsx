@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronLeft, Search, Star, Navigation, Car, ExternalLink } from "lucide-react";
 import { getActiveRestaurants } from "@/lib/mobile-handoff";
+import { foodImage } from "@/lib/food-images";
 import { useUser } from "@/app/context/UserContext";
 import {
   buildGoogleMapsDirectionsLink,
@@ -116,7 +117,7 @@ function RestaurantCard({ r, n, hi, mode, dish, loc }: { r: Restaurant; n: numbe
   return (
     <div className="card" style={{ minWidth: 250, padding: 12, border: hi ? "1.5px solid var(--cc-acc)" : "1px solid var(--cc-line)" }}>
       <div className="row" style={{ gap: 10 }}>
-        <div className="ph ph-saffron" style={{ width: 48, height: 48, borderRadius: "var(--cc-r-md)", flexShrink: 0, position: "relative" }}>
+        <div className="ph ph-saffron" style={{ width: 48, height: 48, borderRadius: "var(--cc-r-md)", flexShrink: 0, position: "relative", backgroundImage: (foodImage(dish) || foodImage(r.cuisine)) ? `url(${foodImage(dish) || foodImage(r.cuisine)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
           <div style={{ position: "absolute", left: -6, top: -6 }}><Pin n={n} hi={hi} /></div>
         </div>
         <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>

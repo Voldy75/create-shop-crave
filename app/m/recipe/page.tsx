@@ -6,6 +6,7 @@ import { ChevronLeft, Share2, Heart, ShoppingCart } from "lucide-react";
 import { getActiveRecipe, setActiveRecipe } from "@/lib/mobile-handoff";
 import { parseNumeric } from "@/lib/nutrition";
 import { buildBlinkitLink } from "@/lib/deeplinks";
+import { foodImage } from "@/lib/food-images";
 import type { RecipeData } from "@/lib/types";
 
 /**
@@ -64,7 +65,7 @@ export default function MobileRecipe() {
     <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)", position: "relative" }}>
       <div className="scroll" style={{ flex: 1, paddingBottom: 96 }}>
         {/* Hero */}
-        <div className="ph ph-saffron" style={{ height: 260, position: "relative" }}>
+        <div className="ph ph-saffron" style={{ height: 260, position: "relative", backgroundImage: foodImage(recipe.name) ? `url(${foodImage(recipe.name)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 30%, transparent 50%, rgba(0,0,0,0.8) 100%)" }} />
           <div className="row" style={{ position: "absolute", top: "calc(env(safe-area-inset-top,12px) + 6px)", left: 12, right: 12, justifyContent: "space-between" }}>
             <button onClick={() => router.back()} style={iconBtn} aria-label="Back"><ChevronLeft width={20} height={20} /></button>
