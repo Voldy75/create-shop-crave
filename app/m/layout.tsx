@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { DM_Sans } from "next/font/google";
+import NativeInit from "@/components/mobile/NativeInit";
 import "./meshi.css";
 
 /**
@@ -30,6 +31,7 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
         } as React.CSSProperties
       }
     >
+      <NativeInit />
       {children}
     </div>
   );

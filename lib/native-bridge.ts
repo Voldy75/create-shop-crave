@@ -71,12 +71,77 @@ export async function shareContent(opts: { title?: string; text?: string; url?: 
 /**
  * Register for native push (APNs/FCM) and hand the token to the server so the
  * daily-nudge cron can target it. Web returns null (web-push path handles
- * browsers). Fully implemented in M3.
+ * browsers). Resolves with the device token once the OS grants permission and
+ * the 'registration' listener fires, or null if denied/unavailable.
  */
 export async function registerNativePush(): Promise<string | null> {
   if (!isNative()) return null;
-  // M3: import @capacitor/push-notifications, request permission, register,
-  // capture the token via the 'registration' listener, POST to
-  // /api/notifications/native/register.
-  return null;
+  try {
+    const { PushNotifications } = await import("@capacitor/push-notifications");
+
+    const perm = await PushNotifications.checkPermissions();
+    let receive = perm.receive;
+    if (receive === "prompt" || receive === "prompt-with-rationale") {
+      receive = (await PushNotifications.requestPermissions()).receive;
+    }
+    if (receive !== "granted") return null;
+
+    // Wait for the registration event (token) — or registrationError.
+    const token = await new Promise<string | null>((resolve) => {
+      let settled = false;
+      const done = (v: string | null) => {
+        if (!settled) {
+          settled = true;
+          resolve(v);
+        }
+      };
+      PushNotifications.addListener("registration", (t) => done(t.value));
+      PushNotifications.addListener("registrationError", () => done(null));
+      PushNotifications.register().catch(() => done(null));
+      // Safety timeout so a silent failure doesn't hang the caller.
+      setTimeout(() => done(null), 15000);
+    });
+    if (!token) return null;
+
+    await fetch("/api/notifications/native/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, platform: nativePlatform() }),
+    });
+    return token;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Wire deep-link returns (OAuth callbacks, shared links) into client-side
+ * navigation. Capacitor fires `appUrlOpen` when the app is opened via its
+ * custom scheme (com.cravecreate.app://) or a universal link. We strip the
+ * scheme/host and push the in-app path so Supabase/Swiggy OAuth bounces land
+ * back inside the WebView instead of a dead external tab.
+ *
+ * `navigate` is the app's client navigator (e.g. Next's router.replace). Returns
+ * a cleanup function. No-op on web.
+ */
+export async function initDeepLinks(navigate: (path: string) => void): Promise<() => void> {
+  if (!isNative()) return () => {};
+  try {
+    const { App } = await import("@capacitor/app");
+    const handle = await App.addListener("appUrlOpen", ({ url }) => {
+      // url looks like: com.cravecreate.app://callback?code=... or https://host/path
+      try {
+        const u = new URL(url);
+        const path = `${u.pathname}${u.search}${u.hash}` || "/m";
+        navigate(path.startsWith("/") ? path : `/${path}`);
+      } catch {
+        /* unparseable url — ignore */
+      }
+    });
+    return () => {
+      handle.remove();
+    };
+  } catch {
+    return () => {};
+  }
 }

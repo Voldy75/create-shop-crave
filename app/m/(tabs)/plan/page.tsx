@@ -9,6 +9,7 @@ import {
   deleteMealLog,
 } from "@/lib/storage";
 import { dayTotals, lastNDates, localDateKey } from "@/lib/nutrition";
+import { isNative, captureMealPhoto } from "@/lib/native-bridge";
 import type { MealLog, MealType, NutritionGoals } from "@/lib/types";
 
 /**
@@ -192,17 +193,10 @@ function LogSheet({ date, onClose, onSaved }: { date: string; onClose: () => voi
     onSaved(saved);
   };
 
-  const onPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Run a captured/selected image through /api/meals/analyze and prefill fields.
+  const analyzeDataUrl = async (dataUrl: string) => {
     setAnalyzing(true);
     try {
-      const dataUrl = await new Promise<string>((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(fr.result as string);
-        fr.onerror = rej;
-        fr.readAsDataURL(file);
-      });
       setImg(dataUrl);
       const r = await fetch("/api/meals/analyze", {
         method: "POST",
@@ -222,6 +216,24 @@ function LogSheet({ date, onClose, onSaved }: { date: string; onClose: () => voi
     }
   };
 
+  const onPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const dataUrl = await new Promise<string>((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result as string);
+      fr.onerror = rej;
+      fr.readAsDataURL(file);
+    });
+    await analyzeDataUrl(dataUrl);
+  };
+
+  // Native camera path — opens the OS camera/library picker via Capacitor.
+  const onNativeCapture = async () => {
+    const dataUrl = await captureMealPhoto();
+    if (dataUrl) await analyzeDataUrl(dataUrl);
+  };
+
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
       <div onClick={(e) => e.stopPropagation()} className="col" style={{ width: "100%", maxWidth: 520, background: "var(--cc-surf-1)", borderRadius: "22px 22px 0 0", border: "1px solid var(--cc-line)", maxHeight: "90vh", overflowY: "auto" }}>
@@ -236,11 +248,18 @@ function LogSheet({ date, onClose, onSaved }: { date: string; onClose: () => voi
             ))}
           </div>
 
-          <label className="pill-secondary" style={{ cursor: "pointer", justifyContent: "center" }}>
-            {analyzing ? <Loader2 width={16} height={16} className="animate-spin" /> : <Camera width={16} height={16} />}
-            {analyzing ? "Analyzing…" : "Scan with camera / photo"}
-            <input type="file" accept="image/*" capture="environment" onChange={onPhoto} style={{ display: "none" }} />
-          </label>
+          {isNative() ? (
+            <button type="button" className="pill-secondary" disabled={analyzing} style={{ justifyContent: "center" }} onClick={onNativeCapture}>
+              {analyzing ? <Loader2 width={16} height={16} className="animate-spin" /> : <Camera width={16} height={16} />}
+              {analyzing ? "Analyzing…" : "Scan with camera / photo"}
+            </button>
+          ) : (
+            <label className="pill-secondary" style={{ cursor: "pointer", justifyContent: "center" }}>
+              {analyzing ? <Loader2 width={16} height={16} className="animate-spin" /> : <Camera width={16} height={16} />}
+              {analyzing ? "Analyzing…" : "Scan with camera / photo"}
+              <input type="file" accept="image/*" capture="environment" onChange={onPhoto} style={{ display: "none" }} />
+            </label>
+          )}
 
           <input placeholder="Dish name" value={name} onChange={(e) => setName(e.target.value)} />
           <div className="row" style={{ gap: 8 }}>
