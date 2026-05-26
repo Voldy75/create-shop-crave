@@ -24,6 +24,16 @@ verbatim — only the mobile UI + native bridge are new here.
 - **No native projects exist yet** — there is no `ios/` or `android/` directory.
 - **No screenshot/visual QA of the mobile UI was ever obtained** (see Dead Ends).
 
+### Built but NOT production-grade (do not mistake for done)
+- **Paywall** (`app/m/paywall/page.tsx`) — CTA calls `/api/subscribe/razorpay` but the
+  Razorpay checkout SDK is not wired; payment does not complete end-to-end.
+- **Restaurants** (`app/m/restaurants/page.tsx`) — uses a CSS `mapbg` placeholder, NOT
+  live Google Maps tiles. Deep-links are real; the map is decorative.
+- **Instacart native-cart** — deferred; needs a platform API. The buy-journey routes to
+  Instamart (agent) + deeplinks only.
+- **Splash variants** from the meshi design were not built (the generated `resources/`
+  splash is the only one).
+
 ## Files in Play
 All committed and working unless noted.
 - `app/m/(tabs)/page.tsx` — Home; added streak chip + "Order again" reorder card. working
@@ -94,6 +104,23 @@ All committed and working unless noted.
 - **Secrets policy:** real secrets only in gitignored `.env.local`; `.env.example` holds
   empty placeholders. Credentials shared in the original chat (Twilio token, VAPID key,
   CRON_SECRET) should be ROTATED by the user.
+
+### Architecture conventions (easy to break — read before adding screens)
+- **Route layout:** `/m` = bare shell (`app/m/layout.tsx`, mounts `<NativeInit/>`).
+  `app/m/(tabs)/` = route group that adds the bottom tab bar — put tabbed screens here.
+  Full-screen drill-ins (recipe, buy/*, plan/week, etc.) go DIRECTLY under `app/m/`,
+  NOT in `(tabs)`, so they render without the tab bar. Moving a file between these
+  changes its chrome.
+- **Cross-screen object handoff:** recipe/restaurant objects pass between screens via
+  `lib/mobile-handoff.ts` (sessionStorage): `setActiveRecipe/getActiveRecipe`,
+  `setActiveRestaurants/getActiveRestaurants`. Screens read these on mount with a
+  fallback; don't expect router state to carry objects.
+- **Next 16 quirk:** any client screen using `useSearchParams`/`usePathname` must be
+  wrapped in `<Suspense>` or the build fails. Existing screens already do this.
+- **Tokens:** meshi classes live in `app/m/meshi.css` (`t-h1/card/pill-primary/chip/
+  glass/ph-*` etc.). Reuse them; do not introduce Tailwind into `app/m/*`.
+- **Original web repo `create-shop-crave` is FROZEN** — never edit it. All mobile work
+  is additive under `app/m/*`, `components/mobile/*`, and the shared backend/libs here.
 
 ## Next Steps (in order)
 1. On a Mac with Xcode + Android Studio: `cd ~/projects/create-shop-crave-mobile && npx cap add ios && npx cap add android` (creates `ios/`, `android/`).
