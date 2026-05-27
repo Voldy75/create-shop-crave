@@ -82,7 +82,7 @@ export default function MobileInbox() {
         {loading && <p className="t-small" style={{ padding: "12px 4px" }}>Loading…</p>}
 
         {!loading && !signedIn && (
-          <EmptyState icon={<Bell width={26} height={26} />} title="Sign in to see your inbox" sub="Daily nudges and order updates land here." />
+          <EmptyState icon={<Bell width={26} height={26} />} title="Sign in to see your inbox" sub="Daily nudges and order updates land here." action={<button className="pill-primary" style={{ width: "auto", padding: "10px 22px" }} onClick={() => router.push("/m/profile")}>Sign in</button>} />
         )}
 
         {!loading && signedIn && filtered.length === 0 && (
@@ -106,12 +106,13 @@ export default function MobileInbox() {
   );
 }
 
-function EmptyState({ icon, title, sub }: { icon: React.ReactNode; title: string; sub: string }) {
+function EmptyState({ icon, title, sub, action }: { icon: React.ReactNode; title: string; sub: string; action?: React.ReactNode }) {
   return (
     <div className="col" style={{ alignItems: "center", textAlign: "center", gap: 12, paddingTop: "20vh" }}>
       <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--cc-surf-2)", display: "grid", placeItems: "center", color: "var(--cc-ink-3)" }}>{icon}</div>
       <h2 className="t-h2">{title}</h2>
       <p className="t-small" style={{ maxWidth: 260 }}>{sub}</p>
+      {action && <div style={{ marginTop: 4 }}>{action}</div>}
     </div>
   );
 }

@@ -3,19 +3,21 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ChevronLeft, Search } from "lucide-react";
+import { foodImage } from "@/lib/food-images";
 
 /**
  * meshi Search / Discover (v2-screens ScreenSearch). Search field that hands
  * the query to chat, a featured hero, and collection tiles that seed the chat.
  * Drill-in (full-screen). Curated content is static; everything routes into
- * the real chat.
+ * the real chat. Tiles use real food photos (foodImage) behind a dark overlay
+ * for on-brand imagery instead of off-palette gradients.
  */
 
 const COLLECTIONS = [
-  { l: "20-min dinners", cls: "ph-saffron", q: "quick 20-minute dinner ideas" },
-  { l: "Date-night spots", cls: "ph-rose", q: "romantic date-night restaurants near me" },
-  { l: "Healthy bowls", cls: "ph-spinach", q: "healthy grain bowl recipes" },
-  { l: "High protein", cls: "ph-blue", q: "high-protein meals" },
+  { l: "20-min dinners", cls: "ph-saffron", img: "pasta", q: "quick 20-minute dinner ideas" },
+  { l: "Date-night spots", cls: "ph-rose", img: "pizza", q: "romantic date-night restaurants near me" },
+  { l: "Healthy bowls", cls: "ph-spinach", img: "salad bowl", q: "healthy grain bowl recipes" },
+  { l: "High protein", cls: "ph-blue", img: "chicken", q: "high-protein meals" },
 ];
 
 export default function MobileSearch() {
@@ -45,7 +47,7 @@ export default function MobileSearch() {
 
       <div className="scroll" style={{ flex: 1, padding: "12px 16px 90px" }}>
         {/* Featured */}
-        <button onClick={() => go("late-night food open now near me")} className="ph ph-night" style={{ display: "block", width: "100%", height: 180, borderRadius: "var(--cc-r-lg)", position: "relative", overflow: "hidden", marginTop: 4, border: "none", textAlign: "left" }}>
+        <button onClick={() => go("late-night food open now near me")} className="ph ph-night" style={{ display: "block", width: "100%", height: 180, borderRadius: "var(--cc-r-lg)", position: "relative", overflow: "hidden", marginTop: 4, border: "none", textAlign: "left", backgroundImage: foodImage("noodle") ? `url(${foodImage("noodle")})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.8))" }} />
           <div style={{ position: "absolute", left: 16, right: 16, bottom: 14, color: "#fff" }}>
             <span className="chip" style={{ background: "rgba(255,255,255,0.18)", borderColor: "transparent", color: "#fff", fontSize: 10 }}>FEATURED</span>
@@ -58,7 +60,7 @@ export default function MobileSearch() {
           <h3 className="t-h2" style={{ marginBottom: 12 }}>Collections</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {COLLECTIONS.map((c) => (
-              <button key={c.l} onClick={() => go(c.q)} className={`ph ${c.cls}`} style={{ height: 110, borderRadius: "var(--cc-r-md)", position: "relative", overflow: "hidden", border: "none", textAlign: "left" }}>
+              <button key={c.l} onClick={() => go(c.q)} className={`ph ${c.cls}`} style={{ height: 110, borderRadius: "var(--cc-r-md)", position: "relative", overflow: "hidden", border: "none", textAlign: "left", backgroundImage: foodImage(c.img) ? `url(${foodImage(c.img)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.7))" }} />
                 <div style={{ position: "absolute", left: 12, right: 12, bottom: 10, color: "#fff", fontSize: 13, fontWeight: 600 }}>{c.l}</div>
               </button>
