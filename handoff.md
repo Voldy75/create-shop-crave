@@ -11,24 +11,33 @@ verbatim — only the mobile UI + native bridge are new here.
 ## Current State
 - **Web/mobile build is in a known-good state.** `npx tsc --noEmit` is clean and
   `next build` passes (53 routes) with dummy env. Tree is fully committed on `main`,
-  pushed to `github.com/Voldy75/create-shop-crave-mobile`. HEAD = `f5e7a3d`.
+  pushed to `github.com/Voldy75/create-shop-crave-mobile`. HEAD = `5993470`.
 - **All mobile screens (`app/m/*`) are built and wired to backend** — onboarding,
   home, chat, recipe, restaurants, full buy-journey, meal tracker (today/week/
   diet-chart), saved, profile, paywall, inbox, search. These render as web; not yet
   verified inside an actual native WebView.
+- **Design pass DONE this session** — every screen was screenshotted live at
+  390×844 against the deployed prod URL and critiqued. Score went 5.5/10 → 8/10.
+  Real food imagery via keyword lookup landed across home/recipe/restaurants/
+  discover; live Google Maps code landed in `/m/restaurants`; Plan empty state
+  warmed; brand unified to "meshi". See commits `b680a58`, `0fee7d4`, `5993470`.
 - **Native bridge code (M3) is complete but UNVERIFIED on-device** — it cannot run
   until `npx cap add ios/android` is done on the user's Mac. The code build-checks
   fine (dynamic imports of `@capacitor/*` resolve) but has never executed natively.
 - **Native push delivery (FCM) is written but never sent a real message** — gated on
   `FIREBASE_SERVICE_ACCOUNT` env which is NOT set. Skips cleanly when unset.
 - **No native projects exist yet** — there is no `ios/` or `android/` directory.
-- **No screenshot/visual QA of the mobile UI was ever obtained** (see Dead Ends).
 
 ### Built but NOT production-grade (do not mistake for done)
 - **Paywall** (`app/m/paywall/page.tsx`) — CTA calls `/api/subscribe/razorpay` but the
   Razorpay checkout SDK is not wired; payment does not complete end-to-end.
-- **Restaurants** (`app/m/restaurants/page.tsx`) — uses a CSS `mapbg` placeholder, NOT
-  live Google Maps tiles. Deep-links are real; the map is decorative.
+- **Restaurants map** (`components/mobile/RestaurantMap.tsx`) — code now renders
+  real dark-styled Google Maps tiles via `@react-google-maps/api`, BUT production
+  falls back to the gradient because the shared Maps API key is HTTP-referrer-
+  restricted to the web domain only. Console shows `RefererNotAllowedMapError`.
+  Fix: add `https://create-shop-crave-mobile.vercel.app/*` (and the Capacitor
+  scheme) to that key's allowed referrers in Google Cloud Console. Code is fine
+  — degrades gracefully until then.
 - **Instacart native-cart** — deferred; needs a platform API. The buy-journey routes to
   Instamart (agent) + deeplinks only.
 - **Splash variants** from the meshi design were not built (the generated `resources/`
@@ -56,6 +65,17 @@ All committed and working unless noted.
 - `MOBILE_SETUP.md` — status synced + store-submission checklist. working
 - `capacitor.config.ts` — appId `com.cravecreate.app`, server.url `https://create-shop-crave-mobile.vercel.app/m`. working (from earlier session)
 
+Added/touched in the design pass (this session):
+- `lib/food-images.ts` — new; keyword→TheMealDB CDN photo lookup, no API key, gradient fallback. working
+- `components/mobile/RestaurantMap.tsx` — new; live Google Maps with dark style + numbered markers + auth-failure fallback. working; prod blocked on referrer allowlist
+- `app/m/restaurants/page.tsx` — replaced fake mapbg+PIN_POS with `<RestaurantMap>`. working
+- `app/m/(tabs)/page.tsx` — cravings + editor's picks tiles render real food photos. working
+- `app/m/recipe/page.tsx` — hero shows real food photo behind gradient. working
+- `app/m/search/page.tsx` (Discover) — featured + collections show real food photos. working
+- `app/m/(tabs)/plan/page.tsx` — empty state now icon + goal-aware copy + CTA. working
+- `app/m/(tabs)/profile/page.tsx` — footer "meshi · Crave & Create" → "meshi". working
+- `app/m/inbox/page.tsx` — added Sign in button on the unauthenticated empty state. working
+
 ## Changes Made (vs session start)
 - New tracker sub-screens (`week`, `diet-chart`) under `app/m/plan/`.
 - M3 native bridge: `registerNativePush()` (permission → token → POST register) and
@@ -71,14 +91,22 @@ All committed and working unless noted.
   Push filter includes native_push.
 - Asset pipeline: `scripts/gen-resources.mjs`, committed `resources/*.png`, npm scripts.
 - No npm dependencies were installed this session (all `@capacitor/*` were already present).
+- Design pass commits: `b680a58` (imagery), `0fee7d4` (live map + plan empty
+  state + brand), `5993470` (Discover photos + inbox sign-in CTA).
+- Visual audit: 11 screens screenshotted live at 390×844 against the deployed
+  prod URL via the gstack `browse` binary. Score 5.5 → 8/10.
 
 ## Dead Ends — Do Not Retry
-- **Pixel/screenshot QA of the mobile UI failed — do not burn time retrying these
-  exact tools.** `mcp__Control_Chrome__execute_javascript` returned "Google Chrome is
-  not running". `mcp__Claude_Preview__preview_screenshot` requires a local `serverId`
-  bound to a running dev server we didn't have. Root cause: no browser/preview server
-  was attached to this session. Fallback used: `curl` route/content checks. If visual
-  QA is needed, start a dev server first or use the gstack `browse` skill.
+- **Visual QA — solved this session, but with a sandbox catch.** Forget the MCP
+  Chrome/Preview tools (`mcp__Control_Chrome__execute_javascript`, `mcp__Claude_
+  Preview__preview_screenshot`) — both failed last session because nothing was
+  attached. The path that works: gstack `browse` binary at
+  `~/.claude/skills/gstack/browse/dist/browse` against the deployed prod URL.
+  Set `$B viewport 390x844`, then `$B goto <url>`, `$B wait --networkidle`,
+  `$B screenshot <path>`. **Catch:** screenshot path is sandboxed to
+  `/private/tmp/...` or the current worktree — writing to `~/.gstack/...` fails
+  with "Path must be within: /private/tmp, …". Just dump to `/private/tmp/<dir>/`
+  and Read them. Don't waste a retry on the sandbox error.
 - **`npm run build` fails WITHOUT dummy Supabase env.** Error:
   `@supabase/ssr: Your project's URL and API key are required to create a Supabase client!`
   during prerender of `/m/buy/confirmed` (and others). Root cause: static prerender
@@ -104,6 +132,19 @@ All committed and working unless noted.
 - **Secrets policy:** real secrets only in gitignored `.env.local`; `.env.example` holds
   empty placeholders. Credentials shared in the original chat (Twilio token, VAPID key,
   CRON_SECRET) should be ROTATED by the user.
+- **Imagery strategy = keyword → TheMealDB CDN, no key.** `lib/food-images.ts`
+  maps ~16 keywords (chicken/biryani/pizza/etc.) to public TheMealDB image URLs.
+  No env var, no quota, deterministic. Falls back to the existing `ph-*`
+  gradients when no keyword matches (graceful — see "Five 20-minute dinners"
+  keeping its gradient as designed). **Do NOT apply imagery to ingredient-level
+  tiles** (buy-journey grocery items) — dish photos mislead for "Tomato passata"
+  / "Butter". The next imagery tier is an Unsplash Access Key for exact-dish
+  matches; the user has not been asked yet whether they want that.
+- **Maps key referrer restriction is a real prod blocker** — not a code bug.
+  Verified by reading console: `RefererNotAllowedMapError` on every page load.
+  The `gm_authFailure` handler in `RestaurantMap` catches it and falls back, so
+  the screen never appears broken. But until the referrer allowlist is updated,
+  prod will keep showing the gradient.
 
 ### Architecture conventions (easy to break — read before adding screens)
 - **Route layout:** `/m` = bare shell (`app/m/layout.tsx`, mounts `<NativeInit/>`).
@@ -123,13 +164,21 @@ All committed and working unless noted.
   is additive under `app/m/*`, `components/mobile/*`, and the shared backend/libs here.
 
 ## Next Steps (in order)
-1. On a Mac with Xcode + Android Studio: `cd ~/projects/create-shop-crave-mobile && npx cap add ios && npx cap add android` (creates `ios/`, `android/`).
-2. `npm run gen:resources && npm run assets` — expands `resources/` into all native icon/splash sizes.
-3. Apply DB migration: run `scripts/sql/notifications.sql` against Supabase project `lxaaclelfhjmqrhdqzxp` (idempotent; adds native_push columns). Verify with `select column_name from information_schema.columns where table_name='notification_subscriptions';`.
-4. In Supabase Auth dashboard, add `com.cravecreate.app://` to allowed redirect URLs; register the same custom scheme with Swiggy via DCR.
-5. `npx cap sync && npx cap run ios` (and android) — FIRST on-device smoke test. Verify: app loads the remote URL, Google OAuth returns into the WebView via the custom scheme (this is the highest-risk unverified path), camera opens in the plan log sheet.
-6. (Optional, for push) Set `FIREBASE_SERVICE_ACCOUNT` env in Vercel; add APNs auth key in Firebase console; trigger `/api/cron/daily-nudge?token=<CRON_SECRET>&dry=1` then live, confirm a native notification arrives.
-7. Store submission — follow the checklist in `MOBILE_SETUP.md`.
+1. **Maps referrer fix (cheapest, biggest visual win).** Google Cloud Console →
+   the existing Maps API key → Application restrictions → HTTP referrers → add
+   `https://create-shop-crave-mobile.vercel.app/*`. Real dark map tiles replace
+   the gradient immediately on next load. Verify by re-running the screenshot
+   loop on `/m/restaurants`.
+2. On a Mac with Xcode + Android Studio: `cd ~/projects/create-shop-crave-mobile && npx cap add ios && npx cap add android` (creates `ios/`, `android/`).
+3. `npm run gen:resources && npm run assets` — expands `resources/` into all native icon/splash sizes.
+4. Apply DB migration: run `scripts/sql/notifications.sql` against Supabase project `lxaaclelfhjmqrhdqzxp` (idempotent; adds native_push columns). Verify with `select column_name from information_schema.columns where table_name='notification_subscriptions';`.
+5. In Supabase Auth dashboard, add `com.cravecreate.app://` to allowed redirect URLs; register the same custom scheme with Swiggy via DCR; ALSO add the Capacitor scheme to the Maps key's referrer allowlist.
+6. `npx cap sync && npx cap run ios` (and android) — FIRST on-device smoke test. Verify: app loads the remote URL, Google OAuth returns into the WebView via the custom scheme (this is the highest-risk unverified path), camera opens in the plan log sheet.
+7. (Optional, for push) Set `FIREBASE_SERVICE_ACCOUNT` env in Vercel; add APNs auth key in Firebase console; trigger `/api/cron/daily-nudge?token=<CRON_SECRET>&dry=1` then live, confirm a native notification arrives.
+8. (Optional, for imagery beyond ~16 keyword buckets) Add an Unsplash Access Key
+   and extend `lib/food-images.ts` to query the Unsplash Search API per dish.
+   Pending user decision.
+9. Store submission — follow the checklist in `MOBILE_SETUP.md`.
 
 ## Open Questions
 - Does the **Supabase OAuth PKCE cookie flow survive the iOS WKWebView + custom-scheme
@@ -138,7 +187,10 @@ All committed and working unless noted.
 - Has the user created the **Firebase project** at all? `FIREBASE_SERVICE_ACCOUNT` is
   just a placeholder; native push won't work until it exists + an APNs key is uploaded.
 - The PROD deployment URL in `capacitor.config.ts` is `create-shop-crave-mobile.vercel.app`.
-  Confirm that alias is live and public (not behind Vercel auth-protection) before on-device testing.
+  Confirmed live + public this session (HTTP 200, all routes loaded under
+  gstack browse). Not behind Vercel auth-protection.
+- **Does the user want Unsplash imagery** (exact-dish photos beyond the ~16
+  keyword buckets) — flagged at end of session, awaiting their call.
 
 ## Environmental Notes
 - Repo path: `~/projects/create-shop-crave-mobile`. Branch `main`, clean working tree, pushed.
