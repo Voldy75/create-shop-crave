@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "rea
 import { useChat } from "ai/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../context/UserContext";
-import { Send, Bot, Sparkles, RotateCcw, AlertCircle, Heart, Calendar, LogOut, Swords, ArrowUp } from "lucide-react";
+import { Send, Bot, Sparkles, RotateCcw, AlertCircle, Heart, Calendar, LogOut, Swords, ArrowUp, Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LottiePlayer } from "@/components/LottiePlayer";
 import { RecipeView } from "@/components/RecipeView";
@@ -372,6 +372,22 @@ function ChatPageInner() {
           >
             <Calendar className="w-3 h-3" />
             Plan
+          </button>
+
+          <button
+            onClick={() => router.push("/settings")}
+            className="flex items-center gap-1 transition-opacity hover:opacity-100"
+            style={{
+              fontSize: "12px",
+              fontWeight: 400,
+              color: "var(--cc-text-secondary)",
+              padding: "4px 10px",
+              borderRadius: "980px",
+              opacity: 0.8,
+            }}
+            aria-label="Settings"
+          >
+            <Settings className="w-3.5 h-3.5" />
           </button>
 
           <ThemeToggle />
