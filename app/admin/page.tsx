@@ -34,7 +34,7 @@ function Sparkline({ data }: { data: DayData[] }) {
           className="flex-1 rounded-sm transition-opacity hover:opacity-100"
           style={{
             height: `${Math.max(4, (d.total / max) * 100)}%`,
-            background: "#ff6b35",
+            background: "var(--cc-accent)",
             opacity: 0.7,
           }}
           title={`${d.usage_date}: ${d.total} requests`}
@@ -116,7 +116,7 @@ export default function AdminPage() {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: "var(--cc-bg)" }}>
         <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: "#ff6b35", borderTopColor: "transparent" }} />
+          style={{ borderColor: "var(--cc-accent)", borderTopColor: "transparent" }} />
       </div>
     );
   }
@@ -189,7 +189,7 @@ export default function AdminPage() {
         {/* KPI grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? 0} iconColor="#0a84ff" />
-          <StatCard icon={Zap} label="DAU" value={stats?.dau ?? 0} sub="active today" iconColor="#ff6b35" />
+          <StatCard icon={Zap} label="DAU" value={stats?.dau ?? 0} sub="active today" iconColor="var(--cc-accent)" />
           <StatCard icon={Crown} label="Pro Subscribers" value={stats?.proCount ?? 0} sub={`${conversionRate}% conversion`} iconColor="#ffd60a" />
           <StatCard icon={TrendingUp} label="Est. MRR" value={`$${mrr}`} sub={`₹${mrr * 84} / month`} iconColor="#34c759" />
         </div>
@@ -198,7 +198,7 @@ export default function AdminPage() {
         <div className="p-6 rounded-2xl" style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)" }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <BarChart2 className="w-4 h-4" style={{ color: "#ff6b35" }} />
+              <BarChart2 className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
               <h2 className="font-bold" style={{ color: "var(--cc-text-primary)" }}>AI Requests</h2>
             </div>
             <div className="flex gap-4 text-sm">
@@ -222,7 +222,7 @@ export default function AdminPage() {
         {/* Top users */}
         <div className="p-6 rounded-2xl" style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)" }}>
           <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: "var(--cc-text-primary)" }}>
-            <Users className="w-4 h-4" style={{ color: "#ff6b35" }} />
+            <Users className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
             Top Users This Week
           </h2>
           {!stats?.topUsers?.length ? (
@@ -235,7 +235,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold w-4" style={{ color: "var(--cc-text-tertiary)" }}>{i + 1}</span>
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ background: "rgba(255,107,53,0.15)", color: "#ff6b35" }}>
+                      style={{ background: "var(--cc-accent-dim)", color: "var(--cc-accent)" }}>
                       {u.email[0].toUpperCase()}
                     </div>
                     <p className="text-sm font-medium" style={{ color: "var(--cc-text-primary)" }}>{u.email}</p>
@@ -243,7 +243,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2">
                     {u.is_pro && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "rgba(255,107,53,0.15)", color: "#ff6b35", border: "1px solid rgba(255,107,53,0.25)" }}>
+                        style={{ background: "var(--cc-accent-dim)", color: "var(--cc-accent)", border: "1px solid rgba(255,107,53,0.25)" }}>
                         Pro
                       </span>
                     )}
@@ -325,7 +325,7 @@ function FeatureFlagsPanel() {
     <div className="p-6 rounded-2xl" style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)" }}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-bold flex items-center gap-2" style={{ color: "var(--cc-text-primary)" }}>
-          <Flag className="w-4 h-4" style={{ color: "#ff6b35" }} />
+          <Flag className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
           Feature Flags
         </h2>
         <button
@@ -359,7 +359,7 @@ function FeatureFlagsPanel() {
               onClick={handleCreate}
               disabled={creating || !newId.trim()}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-full disabled:opacity-50"
-              style={{ background: "#ff6b35", color: "#fff" }}
+              style={{ background: "var(--cc-accent)", color: "#fff" }}
             >
               {creating && <Loader2 className="w-3 h-3 animate-spin" />}
               Create

@@ -9,12 +9,8 @@ import { enableWebPush, disableWebPush, isPushSupported, pushPermission, sendTes
 import { enrollWhatsApp, disableWhatsApp, sendWhatsAppTest, type JoinInstructions } from "@/lib/whatsapp-client";
 import { getSwiggyStatus, startSwiggyAuth, disconnectSwiggy, type SwiggyStatus } from "@/lib/swiggy-client";
 import type { NotificationSubscription } from "@/lib/types";
-
-const STATUS_TONE = {
-  active: { color: "#34c759", bg: "rgba(52,199,89,0.10)" },
-  pending: { color: "#ff9f0a", bg: "rgba(255,159,10,0.10)" },
-  off: { color: "var(--cc-text-tertiary)", bg: "var(--cc-surface-2)" },
-};
+import { StatusPill, type StatusTone } from "@/components/cc/status-pill";
+import { IconBadge } from "@/components/cc/icon-badge";
 
 export function NotificationsSection() {
   const { user, hydrated } = useUser();
@@ -237,24 +233,18 @@ function SmallButton({ onClick, loading, icon: Icon, children }: { onClick: () =
   );
 }
 
-function ChannelCard({ icon: Icon, title, subtitle, enabled, status, tone, saving, onToggle, detail }: {
+function ChannelCard({ icon, title, subtitle, enabled, status, tone, saving, onToggle, detail }: {
   icon: React.ComponentType<{ className?: string }>; title: string; subtitle: string; enabled: boolean;
-  status: string; tone: "active" | "pending" | "off"; saving: boolean; onToggle: () => void; detail: React.ReactNode;
+  status: string; tone: StatusTone; saving: boolean; onToggle: () => void; detail: React.ReactNode;
 }) {
-  const t = STATUS_TONE[tone];
   return (
     <div className="p-4" style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)", borderRadius: "16px" }}>
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 flex items-center justify-center"
-          style={{ width: "36px", height: "36px", borderRadius: "10px", background: "var(--cc-surface-2)", color: "var(--cc-text-secondary)" }}>
-          <Icon className="w-4.5 h-4.5" />
-        </div>
+        <IconBadge icon={icon} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <h3 style={{ fontSize: "14px", fontWeight: 700, color: "var(--cc-text-primary)" }}>{title}</h3>
-            <span style={{ fontSize: "10px", fontWeight: 700, color: t.color, background: t.bg, padding: "2px 7px", borderRadius: "980px", textTransform: "uppercase", letterSpacing: "0.04em", flexShrink: 0 }}>
-              {status}
-            </span>
+            <StatusPill tone={tone}>{status}</StatusPill>
           </div>
           <p style={{ fontSize: "11px", color: "var(--cc-text-secondary)", marginTop: "2px" }}>{subtitle}</p>
         </div>
@@ -275,20 +265,16 @@ function ChannelCard({ icon: Icon, title, subtitle, enabled, status, tone, savin
 function SwiggyCard({ status, busy, onConnect, onDisconnect }: { status: SwiggyStatus | null; busy: boolean; onConnect: () => void; onDisconnect: () => void }) {
   if (!status) return <div className="animate-pulse h-24 rounded-2xl" style={{ background: "var(--cc-surface)" }} />;
   const connected = status.connected;
-  const t = STATUS_TONE[connected ? "active" : "off"];
   return (
     <div className="p-4" style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)", borderRadius: "16px" }}>
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 flex items-center justify-center"
-          style={{ width: "36px", height: "36px", borderRadius: "10px", background: "var(--cc-surface-2)", color: "var(--cc-text-secondary)" }}>
-          <Utensils className="w-4.5 h-4.5" />
-        </div>
+        <IconBadge icon={Utensils} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <h3 style={{ fontSize: "14px", fontWeight: 700, color: "var(--cc-text-primary)" }}>Swiggy agent</h3>
-            <span style={{ fontSize: "10px", fontWeight: 700, color: t.color, background: t.bg, padding: "2px 7px", borderRadius: "980px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            <StatusPill tone={connected ? "active" : "off"}>
               {connected ? "Connected" : "Not connected"}
-            </span>
+            </StatusPill>
           </div>
           <p style={{ fontSize: "11px", color: "var(--cc-text-secondary)", marginTop: "2px" }}>
             Order food, groceries, and book tables via chat.

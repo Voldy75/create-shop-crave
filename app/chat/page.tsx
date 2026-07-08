@@ -235,7 +235,7 @@ function ChatPageInner() {
         <div className="flex items-center gap-1.5 shrink-0">
           <div
             className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: "#ff6b35" }}
+            style={{ background: "var(--cc-accent)" }}
           >
             <Sparkles className="w-3 h-3 text-white" />
           </div>
@@ -260,7 +260,7 @@ function ChatPageInner() {
                 padding: "4px 10px",
                 borderRadius: "980px",
                 background: "rgba(255,107,53,0.15)",
-                color: "#ff6b35",
+                color: "var(--cc-accent)",
                 display: "flex",
                 alignItems: "center",
                 gap: "4px",
@@ -396,7 +396,7 @@ function ChatPageInner() {
           <div className="relative group ml-1">
             <button
               className="w-6 h-6 rounded-full flex items-center justify-center text-white font-semibold shrink-0"
-              style={{ background: "#ff6b35", fontSize: "11px" }}
+              style={{ background: "var(--cc-accent)", fontSize: "11px" }}
               aria-label={userName ? `Signed in as ${userName}` : "User menu"}
             >
               {userName ? userName[0].toUpperCase() : "U"}
@@ -415,16 +415,7 @@ function ChatPageInner() {
               <hr style={{ borderColor: "var(--cc-border)", margin: "4px 0" }} />
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
-                style={{ fontSize: "14px", color: "var(--cc-text-secondary)" }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,69,58,0.1)";
-                  (e.currentTarget as HTMLButtonElement).style.color = "#ff453a";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                  (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-text-secondary)";
-                }}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-[14px] text-[var(--cc-text-secondary)] hover:bg-[rgba(255,69,58,0.1)] hover:text-[#ff453a]"
               >
                 <LogOut className="w-3 h-3" />
                 Sign out
@@ -453,7 +444,7 @@ function ChatPageInner() {
               transition={{ duration: 0.5 }}
             >
               <LottiePlayer
-                src="https://lottie.host/8483639a-af26-4834-96a4-65b1037ba3f7/xxffw9TMQQ.lottie"
+                src="/lottie/chef.lottie"
                 width={260}
                 height={260}
               />
@@ -532,7 +523,7 @@ function ChatPageInner() {
                           className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1"
                           style={{ background: "rgba(255,107,53,0.12)" }}
                         >
-                          <Bot className="w-3.5 h-3.5" style={{ color: "#ff6b35" }} />
+                          <Bot className="w-3.5 h-3.5" style={{ color: "var(--cc-accent)" }} />
                         </div>
                       )}
                       <div className="space-y-3">
@@ -541,7 +532,7 @@ function ChatPageInner() {
                             style={
                               isUser
                                 ? {
-                                    background: "#ff6b35",
+                                    background: "var(--cc-accent)",
                                     color: "#ffffff",
                                     borderRadius: "18px 18px 4px 18px",
                                     padding: "12px 16px",
@@ -566,7 +557,7 @@ function ChatPageInner() {
                         {isIncomplete && isStreamingMessage && (
                           <div className="flex items-center gap-2">
                             <LottiePlayer
-                              src="https://lottie.host/e2a8398b-9344-4093-81f0-794006e677b2/VOvEFRmVnf.lottie"
+                              src="/lottie/cooking.lottie"
                               width={52}
                               height={52}
                             />
@@ -618,7 +609,7 @@ function ChatPageInner() {
         {isLoading && (
           <div className="flex justify-start ml-9">
             <LottiePlayer
-              src="https://lottie.host/e2a8398b-9344-4093-81f0-794006e677b2/VOvEFRmVnf.lottie"
+              src="/lottie/cooking.lottie"
               width={64}
               height={64}
             />
@@ -666,7 +657,7 @@ function ChatPageInner() {
               background: "var(--cc-surface)",
               borderRadius: "980px",
               padding: "6px 6px 6px 20px",
-              boxShadow: "rgba(0,0,0,0.22) 3px 5px 30px 0px",
+              boxShadow: "var(--cc-shadow-sm)",
             }}
           >
             <input
@@ -686,18 +677,7 @@ function ChatPageInner() {
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-150 disabled:opacity-40"
-              style={{ background: "#ff6b35" }}
-              onMouseEnter={(e) => {
-                if (!isLoading && input.trim()) {
-                  (e.currentTarget as HTMLButtonElement).style.background = "#ff5520";
-                  (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.05)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "#ff6b35";
-                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
-              }}
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-150 disabled:opacity-40 bg-[var(--cc-accent)] enabled:hover:bg-[var(--cc-accent-hover)] enabled:hover:scale-105"
               aria-label="Send message"
             >
               <ArrowUp className="w-4 h-4 text-white" />

@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useUser } from "./context/UserContext";
 import { AuthButton } from "@/components/AuthButton";
-import { MapPin, Loader2, AlertCircle, ArrowRight, Check, ChevronDown, Plus, Minus } from "lucide-react";
+import { MapPin, Loader2, AlertCircle, ArrowRight, Check, ChevronDown, Plus, Minus, ShoppingCart, Car, Star, Clock } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Section } from "@/components/cc/section";
+import { Chip } from "@/components/cc/chip";
 
 const DIETARY_OPTIONS = [
   "Vegetarian",
@@ -22,75 +25,47 @@ const FEATURES = [
   {
     title: "Recipe Generator",
     desc: "Get a full recipe with nutrition info, prep time, and step-by-step instructions tailored to your taste.",
-    detail: "Our AI understands complex preferences \u2014 \"something spicy but low-carb\" or \"a 20-minute vegan dinner for two.\" Every recipe includes per-serving nutrition estimates, ingredient quantities with prices, and clear instructions.",
-    icon: (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <path d="M16 4C16 4 8 8 8 16C8 20.4183 11.5817 24 16 24C20.4183 24 24 20.4183 24 16C24 8 16 4 16 4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M16 4V16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M12 28H20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M16 24V28" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    detail: "Our AI understands complex preferences — \"something spicy but low-carb\" or \"a 20-minute vegan dinner for two.\" Every recipe includes per-serving nutrition estimates, ingredient quantities with prices, and clear instructions.",
+    visual: "image-plate",
   },
   {
     title: "Ingredient Delivery",
     desc: "One tap to order every ingredient on Blinkit, Swiggy Instamart, or Instacart. No list-making.",
     detail: "Each ingredient links directly to your preferred grocery platform with the right search query pre-filled. We also generate a \"Buy All\" button that adds everything to your cart at once.",
-    icon: (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <path d="M6 8H8L10 22H24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="12" cy="26" r="2" stroke="currentColor" strokeWidth="1.5"/>
-        <circle cx="22" cy="26" r="2" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M10 12H26L24 22H10" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-      </svg>
-    ),
+    visual: "mock-cart",
   },
   {
     title: "Restaurant Finder",
     desc: "We find the best nearby restaurants on a live map with Zomato and Swiggy links.",
-    detail: "Using your location, we surface restaurants serving exactly what you\u2019re craving \u2014 complete with ratings, cuisine tags, price ranges, and deep links to order delivery or view the menu on Zomato and Swiggy.",
-    icon: (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <path d="M16 28C16 28 26 20 26 13C26 7.47715 21.5228 3 16 3C10.4772 3 6 7.47715 6 13C6 20 16 28 16 28Z" stroke="currentColor" strokeWidth="1.5"/>
-        <circle cx="16" cy="13" r="3" stroke="currentColor" strokeWidth="1.5"/>
-      </svg>
-    ),
+    detail: "Using your location, we surface restaurants serving exactly what you’re craving — complete with ratings, cuisine tags, price ranges, and deep links to order delivery or view the menu on Zomato and Swiggy.",
+    visual: "image-spread",
   },
   {
     title: "Ride Booking",
     desc: "One tap to open Uber or Ola with the restaurant pre-filled as your destination.",
     detail: "When you choose a restaurant, we generate deep links to Uber and Ola with your current location as pickup and the restaurant as drop-off. You also get Google Maps directions as a backup.",
-    icon: (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect x="4" y="14" width="24" height="10" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M8 14V10C8 8.89543 8.89543 8 10 8H22C23.1046 8 24 8.89543 24 10V14" stroke="currentColor" strokeWidth="1.5"/>
-        <circle cx="9" cy="20" r="1.5" fill="currentColor"/>
-        <circle cx="23" cy="20" r="1.5" fill="currentColor"/>
-        <path d="M12 24V27" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M20 24V27" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    visual: "mock-ride",
   },
-];
+] as const;
 
 const HOW_IT_WORKS = [
-  { step: "01", title: "Tell us what you crave", desc: "Type anything \u2014 a dish, a mood, a cuisine, dietary preferences. Our AI understands natural language, so just talk like you would to a friend." },
-  { step: "02", title: "Get your options instantly", desc: "In seconds, we return a full recipe with shopping links, or 3+ nearby restaurants with maps and ride options \u2014 or both. You choose what fits your mood." },
+  { step: "01", title: "Tell us what you crave", desc: "Type anything — a dish, a mood, a cuisine, dietary preferences. Our AI understands natural language, so just talk like you would to a friend." },
+  { step: "02", title: "Get your options instantly", desc: "In seconds, we return a full recipe with shopping links, or 3+ nearby restaurants with maps and ride options — or both. You choose what fits your mood." },
   { step: "03", title: "Cook, order, or go out", desc: "One tap to buy all ingredients on Blinkit, order delivery on Swiggy, or book an Uber to the restaurant. From craving to eating in minutes." },
 ];
 
 const DEMO_MESSAGES = [
-  { role: "user", text: "I\u2019m craving butter chicken but want to cook it at home. Something rich and creamy." },
-  { role: "ai", text: "Here\u2019s a restaurant-style Butter Chicken recipe \u2014 rich, creamy, and ready in 45 minutes." },
-  { role: "recipe", name: "Butter Chicken (Murgh Makhani)", meta: "45 min \u00b7 4 servings \u00b7 520 cal", tags: ["Gluten-Free", "High Protein"] },
-  { role: "ai", text: "I\u2019ve also found 3 restaurants near you serving butter chicken, with Zomato links and ride booking." },
+  { role: "user", text: "I’m craving butter chicken but want to cook it at home. Something rich and creamy." },
+  { role: "ai", text: "Here’s a restaurant-style Butter Chicken recipe — rich, creamy, and ready in 45 minutes." },
+  { role: "recipe", name: "Butter Chicken (Murgh Makhani)", meta: "45 min · 4 servings · 520 cal", tags: ["Gluten-Free", "High Protein"] },
+  { role: "ai", text: "I’ve also found 3 restaurants near you serving butter chicken, with Zomato links and ride booking." },
 ];
 
 const STATS = [
   { value: "50+", label: "Cuisines supported", desc: "From Indian to Italian, Thai to Mexican" },
   { value: "6", label: "Platforms integrated", desc: "Blinkit, Swiggy, Zomato, Uber, Ola, Instacart" },
   { value: "<10s", label: "Average response time", desc: "Full recipe with links in seconds" },
-  { value: "24/7", label: "Always available", desc: "Craving at 2 AM? We\u2019re here" },
+  { value: "24/7", label: "Always available", desc: "Craving at 2 AM? We’re here" },
 ];
 
 const FAQS = [
@@ -100,11 +75,11 @@ const FAQS = [
   },
   {
     q: "Which cities and countries does this work in?",
-    a: "The recipe generator works worldwide. Restaurant finding and ingredient delivery work best in India (Blinkit, Swiggy, Zomato, Ola) and the US (Instacart, Uber). We\u2019re expanding to more platforms.",
+    a: "The recipe generator works worldwide. Restaurant finding and ingredient delivery work best in India (Blinkit, Swiggy, Zomato, Ola) and the US (Instacart, Uber). We’re expanding to more platforms.",
   },
   {
     q: "How does the AI know what I want?",
-    a: "We use Google\u2019s Gemini AI to understand your natural language requests. You can describe a mood (\"something comforting\"), a constraint (\"keto dinner under 30 min\"), or a specific dish. The AI also remembers your dietary preferences across sessions.",
+    a: "We use Google’s Gemini AI to understand your natural language requests. You can describe a mood (\"something comforting\"), a constraint (\"keto dinner under 30 min\"), or a specific dish. The AI also remembers your dietary preferences across sessions.",
   },
   {
     q: "Do I need to create an account?",
@@ -116,20 +91,97 @@ const FAQS = [
   },
 ];
 
-const PLATFORMS = [
-  { name: "Blinkit", color: "#f8d800" },
-  { name: "Swiggy", color: "#fc8019" },
-  { name: "Zomato", color: "#e23744" },
-  { name: "Uber", color: "#ffffff" },
-  { name: "Ola", color: "#35b44b" },
-  { name: "Instacart", color: "#43b02a" },
-];
+const PLATFORMS = ["Blinkit", "Swiggy", "Zomato", "Uber", "Ola", "Instacart"];
 
 const TESTIMONIALS = [
   { text: "I used to spend 20 minutes deciding what to eat. Now I just tell Crave & Create my mood and it handles everything.", name: "Priya S.", role: "Home cook, Mumbai" },
   { text: "The ingredient delivery links are a game-changer. I go from recipe to Blinkit cart in literally one tap.", name: "Arjun M.", role: "Student, Delhi" },
-  { text: "Finally an app that understands \u2018something healthy but not boring.\u2019 The AI suggestions are surprisingly good.", name: "Sneha R.", role: "Fitness enthusiast, Bangalore" },
+  { text: "Finally an app that understands ‘something healthy but not boring.’ The AI suggestions are surprisingly good.", name: "Sneha R.", role: "Fitness enthusiast, Bangalore" },
 ];
+
+/* Small product-mock vignettes used in the feature rows */
+function MockCart() {
+  const items = [
+    { name: "Chicken thighs", qty: "500 g", price: "₹240" },
+    { name: "Butter", qty: "100 g", price: "₹62" },
+    { name: "Heavy cream", qty: "200 ml", price: "₹85" },
+    { name: "Kasuri methi", qty: "1 pack", price: "₹30" },
+  ];
+  return (
+    <div className="w-full max-w-[360px] rounded-2xl border border-[var(--cc-border)] bg-[var(--cc-surface)] p-5 shadow-[var(--cc-shadow-md)]">
+      <div className="flex items-center gap-2 mb-4">
+        <ShoppingCart className="w-4 h-4 text-[var(--cc-accent)]" />
+        <span className="text-[13px] font-semibold text-[var(--cc-text-primary)]">Everything for Butter Chicken</span>
+      </div>
+      <div className="space-y-2.5">
+        {items.map((it) => (
+          <div key={it.name} className="flex items-center justify-between text-[13px]">
+            <span className="text-[var(--cc-text-secondary)]">{it.name} <span className="text-[var(--cc-text-tertiary)]">· {it.qty}</span></span>
+            <span className="text-price font-medium text-[var(--cc-text-primary)]">{it.price}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 flex items-center justify-center rounded-[var(--cc-radius-pill)] bg-[var(--cc-accent)] py-2.5 text-[13px] font-semibold text-white">
+        Buy all on Blinkit →
+      </div>
+    </div>
+  );
+}
+
+function MockRide() {
+  return (
+    <div className="w-full max-w-[360px] rounded-2xl border border-[var(--cc-border)] bg-[var(--cc-surface)] p-5 shadow-[var(--cc-shadow-md)]">
+      <div className="flex items-center gap-2 mb-4">
+        <Car className="w-4 h-4 text-[var(--cc-accent)]" />
+        <span className="text-[13px] font-semibold text-[var(--cc-text-primary)]">Ride to Punjab Grill</span>
+      </div>
+      <div className="space-y-3">
+        <div className="flex items-start gap-3">
+          <div className="mt-1 flex flex-col items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[var(--cc-accent)]" />
+            <span className="w-px h-6 bg-[var(--cc-border-strong)]" />
+            <span className="w-2 h-2 rounded-full border border-[var(--cc-text-tertiary)]" />
+          </div>
+          <div className="space-y-3 text-[13px]">
+            <p className="text-[var(--cc-text-secondary)]">Your location</p>
+            <p className="text-[var(--cc-text-primary)] font-medium">Punjab Grill, Koramangala</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-xl bg-[var(--cc-surface-2)] px-4 py-3 text-[13px]">
+          <span className="flex items-center gap-1.5 text-[var(--cc-text-secondary)]"><Clock className="w-3.5 h-3.5" /> 12 min away</span>
+          <span className="text-price font-semibold text-[var(--cc-text-primary)]">₹184</span>
+        </div>
+        <div className="flex gap-2">
+          <span className="flex-1 rounded-[var(--cc-radius-pill)] bg-[var(--cc-accent)] py-2 text-center text-[12px] font-semibold text-white">Book Uber</span>
+          <span className="flex-1 rounded-[var(--cc-radius-pill)] border border-[var(--cc-border-strong)] py-2 text-center text-[12px] font-semibold text-[var(--cc-text-primary)]">Book Ola</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeatureVisual({ kind }: { kind: (typeof FEATURES)[number]["visual"] }) {
+  if (kind === "image-plate" || kind === "image-spread") {
+    const src = kind === "image-plate" ? "/images/hero-indian.webp" : "/images/food-spread.webp";
+    const alt = kind === "image-plate" ? "Curry with naan on a plate" : "Three plated dishes seen from above";
+    return (
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-[var(--cc-shadow-md)]">
+        <Image src={src} alt={alt} fill sizes="(max-width: 768px) 100vw, 480px" className="object-cover" />
+        {kind === "image-spread" && (
+          <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-[var(--cc-radius-pill)] bg-[rgba(12,10,9,0.82)] px-3.5 py-2 backdrop-blur">
+            <Star className="w-3.5 h-3.5 text-[#ff9f0a]" fill="#ff9f0a" />
+            <span className="text-[12px] font-semibold text-white">4.6 · Punjab Grill · 1.2 km</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-[var(--cc-surface-2)] p-6">
+      {kind === "mock-cart" ? <MockCart /> : <MockRide />}
+    </div>
+  );
+}
 
 export default function LandingPage() {
   const {
@@ -145,7 +197,6 @@ export default function LandingPage() {
   const router = useRouter();
   const [showAuthCard, setShowAuthCard] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [expandedFeature, setExpandedFeature] = useState<number | null>(null);
 
   useEffect(() => {
     if (hydrated && user && location) {
@@ -171,28 +222,25 @@ export default function LandingPage() {
 
   if (!hydrated) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: "#000000" }}>
-        <Loader2 className="w-5 h-5 animate-spin" style={{ color: "#ff6b35" }} />
+      <main className="min-h-screen flex items-center justify-center bg-[var(--cc-bg)]">
+        <Loader2 className="w-5 h-5 animate-spin text-[var(--cc-accent)]" />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex flex-col" style={{ background: "#000000" }}>
+    <main className="min-h-screen flex flex-col bg-[var(--cc-bg)]">
 
-      {/* ── Apple Glass Nav ── */}
+      {/* ── Glass Nav ── */}
       <nav
         className="glass-nav px-6 flex items-center justify-between sticky top-0 z-50"
         style={{ height: "48px" }}
       >
         <div className="flex items-center gap-2">
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center font-semibold text-xs"
-            style={{ background: "#ff6b35", color: "#ffffff" }}
-          >
+          <div className="w-6 h-6 rounded-md flex items-center justify-center font-semibold text-xs bg-[var(--cc-accent)] text-white">
             C
           </div>
-          <span style={{ color: "#ffffff", fontSize: "14px", fontWeight: 400, letterSpacing: "-0.01em" }}>
+          <span className="text-[14px] text-[var(--cc-text-primary)] tracking-[-0.01em]">
             Crave &amp; Create
           </span>
         </div>
@@ -200,189 +248,108 @@ export default function LandingPage() {
           <ThemeToggle />
           <button
             onClick={() => setShowAuthCard(true)}
-            style={{ color: "#ffffff", fontSize: "12px", fontWeight: 400, background: "none", border: "none", cursor: "pointer" }}
-            className="hover:opacity-70 transition-opacity"
+            className="text-[12px] text-[var(--cc-text-primary)] bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity"
           >
             Sign in
           </button>
         </div>
       </nav>
 
-      {/* ── Hero — Black, cinematic ── */}
-      <section
-        className="flex flex-col items-center justify-center text-center relative overflow-hidden"
-        style={{ background: "#000000", padding: "60px 24px 80px" }}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-          className="max-w-[980px] w-full space-y-6"
-        >
-          {/* Eyebrow */}
+      {/* ── Hero — product-forward, appetite-first ── */}
+      <section className="relative overflow-hidden section-dark px-6 pt-14 pb-20 md:pt-20 md:pb-28">
+        <div className="mx-auto grid max-w-[1100px] items-center gap-12 md:grid-cols-2">
+          {/* Copy */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="inline-flex items-center gap-2"
-            style={{
-              padding: "6px 14px",
-              borderRadius: "980px",
-              fontSize: "12px",
-              fontWeight: 600,
-              letterSpacing: "-0.01em",
-              background: "rgba(255,107,53,0.12)",
-              color: "#ff6b35",
-              border: "1px solid rgba(255,107,53,0.2)",
-            }}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+            className="space-y-6 text-center md:text-left"
           >
-            AI-Powered Food Companion
-          </motion.div>
+            <div className="inline-flex items-center gap-2 rounded-[var(--cc-radius-pill)] border border-[rgba(255,107,53,0.2)] bg-[rgba(255,107,53,0.12)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--cc-accent)]">
+              AI-Powered Food Companion
+            </div>
 
-          {/* Headline */}
-          <h1 style={{
-            fontSize: "clamp(40px, 6vw, 56px)",
-            fontWeight: 600,
-            lineHeight: 1.07,
-            letterSpacing: "-0.005em",
-            color: "#ffffff",
-          }}>
-            Discover. <span style={{ color: "#ff6b35" }}>Cook.</span>
-            <br />
-            Order.
-          </h1>
+            <h1 className="headline-hero">
+              Discover. <span className="text-[var(--cc-accent)]">Cook.</span> Order.
+            </h1>
 
-          {/* Subtitle */}
-          <p style={{
-            fontSize: "21px",
-            fontWeight: 400,
-            lineHeight: 1.38,
-            letterSpacing: "0.011em",
-            color: "rgba(255, 255, 255, 0.7)",
-            maxWidth: "580px",
-            margin: "0 auto",
-          }}>
-            Tell us what you&apos;re craving. We&apos;ll find a recipe with ingredient delivery, or the best nearby restaurant with a ride booked &mdash; all from one conversation.
-          </p>
+            <p className="mx-auto max-w-[520px] text-[19px] leading-[1.4] text-[rgba(250,249,247,0.68)] md:mx-0">
+              Tell us what you&apos;re craving. We&apos;ll find a recipe with ingredient delivery, or the best nearby restaurant with a ride booked &mdash; all from one conversation.
+            </p>
 
-          {/* CTAs */}
-          {!user && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex flex-wrap items-center justify-center gap-4 pt-2"
-            >
-              <button
-                onClick={() => setShowAuthCard(true)}
-                className="btn-pill-primary flex items-center gap-2"
-                style={{ padding: "14px 32px", fontSize: "17px" }}
-              >
-                Get started free <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
-                style={{
-                  padding: "13px 28px",
-                  fontSize: "17px",
-                  fontWeight: 400,
-                  borderRadius: "980px",
-                  background: "transparent",
-                  color: "#ffffff",
-                  border: "1px solid rgba(255,255,255,0.32)",
-                  cursor: "pointer",
-                  transition: "background 0.15s ease, border-color 0.15s ease",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.48)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.32)"; }}
-              >
-                See how it works
-              </button>
-            </motion.div>
-          )}
-
-          {/* Auth modal overlay */}
-          {showAuthCard && !user && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center"
-              style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
-              onClick={(e) => { if (e.target === e.currentTarget) setShowAuthCard(false); }}
-            >
+            {!user && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 16 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="w-full max-w-sm text-left relative"
-                style={{ background: "#1d1d1f", borderRadius: "12px", padding: "28px", boxShadow: "rgba(0,0,0,0.55) 0px 16px 48px" }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex flex-wrap items-center justify-center gap-4 pt-2 md:justify-start"
               >
                 <button
-                  onClick={() => setShowAuthCard(false)}
-                  className="absolute top-3 right-3 p-1.5 rounded-full transition-colors"
-                  style={{ color: "rgba(255,255,255,0.48)", background: "transparent" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                  aria-label="Close"
+                  onClick={() => setShowAuthCard(true)}
+                  className="btn-pill-primary flex items-center gap-2"
+                  style={{ padding: "14px 32px", fontSize: "17px" }}
                 >
-                  <Plus className="w-4 h-4 rotate-45" />
+                  Get started free <ArrowRight className="w-4 h-4" />
                 </button>
-                <div className="space-y-5">
-                  <div className="space-y-1">
-                    <p style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em", color: "rgba(255,255,255,0.48)" }}>
-                      Get started
-                    </p>
-                    <p style={{ fontSize: "14px", letterSpacing: "-0.016em", color: "rgba(255,255,255,0.48)" }}>
-                      2 free requests per day. Bring your own key for unlimited use.
-                    </p>
-                  </div>
-                  <AuthButton />
-                </div>
+                <button
+                  onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
+                  className="btn-pill-secondary"
+                  style={{ padding: "13px 28px", fontSize: "17px" }}
+                >
+                  See how it works
+                </button>
               </motion.div>
-            </div>
-          )}
+            )}
 
-          {/* Signed-in user card */}
-          {user && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="mx-auto w-full max-w-sm text-left"
-              style={{ background: "#1d1d1f", borderRadius: "12px", padding: "28px", boxShadow: "rgba(0,0,0,0.55) 0px 16px 48px" }}
-            >
-              <div className="space-y-5">
-                  <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: "#272729" }}>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0" style={{ background: "#ff6b35" }}>
+            {/* Signed-in user card */}
+            {user && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="mx-auto w-full max-w-sm rounded-2xl bg-[var(--cc-surface)] p-7 text-left shadow-[var(--cc-shadow-lg)] md:mx-0"
+              >
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3 rounded-xl bg-[var(--cc-surface-2)] p-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--cc-accent)] text-sm font-semibold text-white">
                       {(user.user_metadata?.full_name || user.email || "U")[0].toUpperCase()}
                     </div>
-                    <div className="text-left min-w-0">
-                      <p style={{ fontSize: "14px", fontWeight: 600, color: "#ffffff" }} className="truncate">{user.user_metadata?.full_name || user.email}</p>
-                      <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.48)" }}>Signed in</p>
+                    <div className="min-w-0 text-left">
+                      <p className="truncate text-[14px] font-semibold text-[var(--cc-text-primary)]">{user.user_metadata?.full_name || user.email}</p>
+                      <p className="text-[12px] text-[var(--cc-text-tertiary)]">Signed in</p>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em", color: "rgba(255,255,255,0.48)" }}>
-                      Dietary preferences <span style={{ fontWeight: 400 }}>(optional)</span>
+                    <label className="text-label">
+                      Dietary preferences <span className="font-normal normal-case">(optional)</span>
                     </label>
                     <div className="flex flex-wrap gap-2" role="group" aria-label="Dietary preferences">
-                      {DIETARY_OPTIONS.map((pref) => {
-                        const isSelected = dietaryPreferences.includes(pref);
-                        return (
-                          <button key={pref} type="button" onClick={() => toggleDietaryPref(pref)} className="chip"
-                            style={isSelected ? { background: "#ff6b35", color: "#fff", borderColor: "#ff6b35", fontSize: "12px" } : { fontSize: "12px" }}>
-                            {pref}
-                          </button>
-                        );
-                      })}
+                      {DIETARY_OPTIONS.map((pref) => (
+                        <Chip
+                          key={pref}
+                          active={dietaryPreferences.includes(pref)}
+                          onClick={() => toggleDietaryPref(pref)}
+                          style={{ fontSize: "12px" }}
+                        >
+                          {pref}
+                        </Chip>
+                      ))}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 p-3 rounded-lg" style={{ fontSize: "14px", background: locationError ? "rgba(255,69,58,0.08)" : "#272729", border: locationError ? "1px solid rgba(255,69,58,0.2)" : "none" }}>
-                    <MapPin className="w-4 h-4 shrink-0" style={{ color: locationError ? "#ff453a" : "#ff6b35" }} />
-                    <span style={{ fontWeight: 400, color: locationError ? "#ff453a" : "rgba(255,255,255,0.7)" }}>
+                  <div
+                    className="flex items-center gap-2 rounded-xl p-3 text-[14px]"
+                    style={{
+                      background: locationError ? "rgba(255,69,58,0.08)" : "var(--cc-surface-2)",
+                      border: locationError ? "1px solid rgba(255,69,58,0.2)" : "none",
+                    }}
+                  >
+                    <MapPin className="w-4 h-4 shrink-0" style={{ color: locationError ? "#ff453a" : "var(--cc-accent)" }} />
+                    <span style={{ color: locationError ? "#ff453a" : "var(--cc-text-secondary)" }}>
                       {location ? "Location ready" : locationError ? locationError : "Needed for restaurant suggestions"}
                     </span>
                   </div>
                   {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("error") && (
-                    <div className="flex items-center gap-2 p-3 rounded-lg" style={{ fontSize: "14px", background: "rgba(255,69,58,0.08)", color: "#ff453a" }}>
+                    <div className="flex items-center gap-2 rounded-xl p-3 text-[14px]" style={{ background: "rgba(255,69,58,0.08)", color: "#ff453a" }}>
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>Sign-in failed. Please try again.</span>
                     </div>
@@ -396,326 +363,324 @@ export default function LandingPage() {
                     )}
                   </div>
                 </div>
-            </motion.div>
-          )}
-
-          {/* Scroll hint */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="flex flex-col items-center gap-2 pt-4"
-          >
-            <p style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "-0.01em", color: "rgba(255,255,255,0.36)" }}>
-              Powered by Gemini &middot; Blinkit &middot; Swiggy &middot; Zomato &middot; Uber &middot; Ola
-            </p>
-            <ChevronDown className="w-4 h-4 animate-bounce" style={{ color: "rgba(255,255,255,0.2)" }} />
+              </motion.div>
+            )}
           </motion.div>
+
+          {/* Product visual — food photo + floating chat exchange */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+            className="relative mx-auto w-full max-w-[480px]"
+            aria-hidden="true"
+          >
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl shadow-[var(--cc-shadow-lg)]">
+              <Image
+                src="/images/hero-curry.webp"
+                alt=""
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 480px"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(12,10,9,0.85)] via-[rgba(12,10,9,0.15)] to-[rgba(12,10,9,0.25)]" />
+            </div>
+
+            {/* Floating chat exchange */}
+            <div className="absolute inset-x-4 bottom-4 space-y-2.5 md:inset-x-6 md:bottom-6">
+              <div className="flex justify-end">
+                <div className="max-w-[85%] rounded-[16px_16px_4px_16px] bg-[var(--cc-accent)] px-4 py-2.5 text-[13px] leading-snug text-white shadow-[var(--cc-shadow-md)]">
+                  I&apos;m craving butter chicken tonight
+                </div>
+              </div>
+              <div className="flex justify-start">
+                <div className="max-w-[90%] rounded-[4px_16px_16px_16px] bg-[rgba(28,25,23,0.92)] px-4 py-3 shadow-[var(--cc-shadow-md)] backdrop-blur">
+                  <p className="text-[13px] leading-snug text-[rgba(250,249,247,0.9)]">
+                    Recipe ready &mdash; 45 min, 520 cal. Or Punjab Grill is 1.2 km away.
+                  </p>
+                  <div className="mt-2 flex gap-1.5">
+                    <span className="rounded-[var(--cc-radius-pill)] bg-[var(--cc-accent)] px-2.5 py-1 text-[10px] font-bold text-white">COOK IT</span>
+                    <span className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.3)] px-2.5 py-1 text-[10px] font-bold text-[rgba(250,249,247,0.9)]">ORDER IN</span>
+                    <span className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.3)] px-2.5 py-1 text-[10px] font-bold text-[rgba(250,249,247,0.9)]">GO OUT</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Scroll hint */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="mt-14 flex flex-col items-center gap-2"
+        >
+          <p className="text-[12px] text-[rgba(250,249,247,0.4)] tracking-[-0.01em]">
+            Powered by Gemini &middot; Blinkit &middot; Swiggy &middot; Zomato &middot; Uber &middot; Ola
+          </p>
+          <ChevronDown className="w-4 h-4 animate-bounce text-[rgba(250,249,247,0.25)]" />
         </motion.div>
+
+        {/* Auth modal overlay */}
+        {showAuthCard && !user && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: "rgba(12,10,9,0.6)", backdropFilter: "blur(8px)" }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowAuthCard(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="relative w-full max-w-sm rounded-2xl bg-[var(--cc-surface)] p-7 text-left shadow-[var(--cc-shadow-lg)]"
+            >
+              <button
+                onClick={() => setShowAuthCard(false)}
+                className="absolute top-3 right-3 rounded-full p-1.5 text-[var(--cc-text-tertiary)] transition-colors hover:bg-[var(--cc-surface-2)]"
+                aria-label="Close"
+              >
+                <Plus className="w-4 h-4 rotate-45" />
+              </button>
+              <div className="space-y-5">
+                <div className="space-y-1">
+                  <p className="text-label">Get started</p>
+                  <p className="text-[14px] text-[var(--cc-text-tertiary)] tracking-[-0.016em]">
+                    2 free requests per day. Bring your own key for unlimited use.
+                  </p>
+                </div>
+                <AuthButton />
+              </div>
+            </motion.div>
+          </div>
+        )}
       </section>
 
-      {/* ── Stats — Light section ── */}
-      <section className="section-light" style={{ padding: "64px 24px" }}>
-        <div className="max-w-[980px] mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      {/* ── Stats — Light band ── */}
+      <section className="section-light px-6 py-16">
+        <div className="mx-auto max-w-[980px]">
+          <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
             {STATS.map((s) => (
               <div key={s.label}>
-                <p style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 600, lineHeight: 1.07, letterSpacing: "-0.005em", color: "#ff6b35" }}>
+                <p className="text-[var(--cc-accent)]" style={{ fontFamily: "var(--font-display-stack)", fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 600, lineHeight: 1.07, letterSpacing: "-0.02em" }}>
                   {s.value}
                 </p>
-                <p style={{ fontSize: "14px", fontWeight: 600, letterSpacing: "-0.016em", color: "#1d1d1f", marginTop: "4px" }}>
-                  {s.label}
-                </p>
-                <p style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "-0.01em", color: "rgba(0,0,0,0.48)", marginTop: "2px" }}>
-                  {s.desc}
-                </p>
+                <p className="mt-1 text-[14px] font-semibold tracking-[-0.016em]">{s.label}</p>
+                <p className="mt-0.5 text-[12px] opacity-55">{s.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── See it in action — Dark section ── */}
-      <section className="section-dark" style={{ padding: "80px 24px" }}>
-        <div className="max-w-[980px] mx-auto">
-          <div className="text-center" style={{ marginBottom: "48px" }}>
-            <p style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em", color: "#ff6b35", marginBottom: "8px" }}>
-              See it in action
-            </p>
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, lineHeight: 1.10, color: "#ffffff" }}>
-              One message. Everything you need.
-            </h2>
-            <p style={{ fontSize: "17px", fontWeight: 400, lineHeight: 1.47, letterSpacing: "-0.022em", color: "rgba(255,255,255,0.7)", maxWidth: "540px", margin: "16px auto 0" }}>
-              Just type what you&apos;re craving. The AI handles the rest &mdash; recipes, ingredients, restaurants, and rides.
-            </p>
-          </div>
-
-          {/* Demo chat */}
-          <div className="max-w-[640px] mx-auto space-y-4">
-            {DEMO_MESSAGES.map((msg, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.15 }}
-              >
-                {msg.role === "user" && (
-                  <div className="flex justify-end">
-                    <div style={{
-                      background: "#ff6b35", color: "#ffffff", borderRadius: "18px 18px 4px 18px",
-                      padding: "12px 16px", fontSize: "15px", lineHeight: 1.47, letterSpacing: "-0.022em",
-                      maxWidth: "85%",
-                    }}>
+      {/* ── See it in action — Dark band ── */}
+      <Section
+        tone="dark"
+        eyebrow="See it in action"
+        headline={<>One message. Everything you need.</>}
+        subtitle="Just type what you're craving. The AI handles the rest — recipes, ingredients, restaurants, and rides."
+      >
+        {/* Demo chat — always visible; scroll only nudges position */}
+        <div className="mx-auto max-w-[640px] space-y-4">
+          {DEMO_MESSAGES.map((msg, i) => (
+            <motion.div
+              key={i}
+              initial={{ y: 16 }}
+              whileInView={{ y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.1 }}
+            >
+              {msg.role === "user" && (
+                <div className="flex justify-end">
+                  <div className="max-w-[85%] rounded-[18px_18px_4px_18px] bg-[var(--cc-accent)] px-4 py-3 text-[15px] leading-[1.47] tracking-[-0.022em] text-white">
+                    {msg.text}
+                  </div>
+                </div>
+              )}
+              {msg.role === "ai" && (
+                <div className="flex justify-start">
+                  <div className="flex max-w-[85%] gap-3">
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--cc-accent-dim)]">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 8V4H8"/><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+                      </svg>
+                    </div>
+                    <div className="rounded-[4px_18px_18px_18px] bg-[#292524] px-4 py-3 text-[15px] leading-[1.47] tracking-[-0.022em] text-[rgba(250,249,247,0.9)]">
                       {msg.text}
                     </div>
                   </div>
-                )}
-                {msg.role === "ai" && (
-                  <div className="flex justify-start">
-                    <div className="flex gap-3 max-w-[85%]">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1" style={{ background: "rgba(255,107,53,0.12)" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 8V4H8"/><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
-                        </svg>
-                      </div>
-                      <div style={{
-                        background: "#272729", color: "rgba(255,255,255,0.9)", borderRadius: "4px 18px 18px 18px",
-                        padding: "12px 16px", fontSize: "15px", lineHeight: 1.47, letterSpacing: "-0.022em",
-                      }}>
-                        {msg.text}
-                      </div>
+                </div>
+              )}
+              {msg.role === "recipe" && (
+                <div className="flex justify-start">
+                  <div className="ml-9 w-full max-w-[85%] rounded-xl border border-[rgba(250,249,247,0.08)] bg-[#292524] p-4">
+                    <div className="mb-2 flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[var(--cc-accent)]" />
+                      <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-[var(--cc-accent)]">Recipe</span>
+                    </div>
+                    <p className="text-[17px] font-semibold tracking-[-0.022em] text-[#faf9f7]">{msg.name}</p>
+                    <p className="mt-1 text-[12px] text-[rgba(250,249,247,0.45)]">{msg.meta}</p>
+                    <div className="mt-3 flex gap-2">
+                      {msg.tags?.map((tag) => (
+                        <span key={tag} className="rounded-[var(--cc-radius-pill)] bg-[rgba(52,199,89,0.15)] px-2 py-[3px] text-[11px] text-[#34c759]">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <span className="rounded-[var(--cc-radius-pill)] bg-[#f8d800] px-2.5 py-1 text-[11px] font-semibold text-black">Buy on Blinkit</span>
+                      <span className="rounded-[var(--cc-radius-pill)] bg-[#fc8019] px-2.5 py-1 text-[11px] font-semibold text-white">Buy on Instamart</span>
                     </div>
                   </div>
-                )}
-                {msg.role === "recipe" && (
-                  <div className="flex justify-start">
-                    <div className="ml-9 w-full max-w-[85%]" style={{
-                      background: "#272729", borderRadius: "12px", padding: "16px", border: "1px solid rgba(255,255,255,0.08)",
-                    }}>
-                      <div className="flex items-center gap-2" style={{ marginBottom: "8px" }}>
-                        <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#ff6b35" }} />
-                        <span style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em", color: "#ff6b35" }}>Recipe</span>
-                      </div>
-                      <p style={{ fontSize: "17px", fontWeight: 600, color: "#ffffff", letterSpacing: "-0.022em" }}>{msg.name}</p>
-                      <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.48)", marginTop: "4px" }}>{msg.meta}</p>
-                      <div className="flex gap-2 mt-3">
-                        {msg.tags?.map((tag) => (
-                          <span key={tag} style={{ fontSize: "11px", fontWeight: 400, padding: "3px 8px", borderRadius: "980px", background: "rgba(52,199,89,0.15)", color: "#34c759" }}>
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="flex gap-2 mt-3">
-                        <span style={{ fontSize: "11px", fontWeight: 600, padding: "4px 10px", borderRadius: "980px", background: "#f8d800", color: "#000" }}>Buy on Blinkit</span>
-                        <span style={{ fontSize: "11px", fontWeight: 600, padding: "4px 10px", borderRadius: "980px", background: "#fc8019", color: "#fff" }}>Buy on Instamart</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </div>
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
 
-          {/* CTA after demo */}
-          <div className="text-center" style={{ marginTop: "48px" }}>
-            <button
-              onClick={() => { setShowAuthCard(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="btn-pill-primary inline-flex items-center gap-2"
-              style={{ padding: "14px 32px", fontSize: "17px" }}
+        <div className="mt-12 text-center">
+          <button
+            onClick={() => { setShowAuthCard(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            className="btn-pill-primary inline-flex items-center gap-2"
+            style={{ padding: "14px 32px", fontSize: "17px" }}
+          >
+            Try it yourself <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </Section>
+
+      {/* ── Features — editorial alternating rows, Light band ── */}
+      <Section
+        tone="light"
+        eyebrow="Everything in one chat"
+        headline="From craving to table."
+        subtitle="No more switching between recipe apps, delivery apps, and map apps. One conversation covers everything."
+        wide
+      >
+        <div className="space-y-16 md:space-y-24">
+          {FEATURES.map((f, i) => (
+            <div
+              key={f.title}
+              className={`grid items-center gap-8 md:grid-cols-2 md:gap-14 ${i % 2 === 1 ? "md:[&>*:first-child]:order-2" : ""}`}
             >
-              Try it yourself <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Features — Light section ── */}
-      <section className="section-light" style={{ padding: "80px 24px" }}>
-        <div className="max-w-[980px] mx-auto">
-          <div className="text-center" style={{ marginBottom: "56px" }}>
-            <p style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em", color: "#ff6b35", marginBottom: "8px" }}>
-              Everything in one chat
-            </p>
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, lineHeight: 1.10, color: "#1d1d1f" }}>
-              From craving to table.
-            </h2>
-            <p style={{ fontSize: "17px", fontWeight: 400, lineHeight: 1.47, letterSpacing: "-0.022em", color: "rgba(0,0,0,0.56)", maxWidth: "540px", margin: "12px auto 0" }}>
-              No more switching between recipe apps, delivery apps, and map apps. One conversation covers everything.
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {FEATURES.map((f, i) => (
-              <div
-                key={f.title}
-                style={{ background: "#ffffff", borderRadius: "12px", padding: "32px 24px", cursor: "pointer", transition: "box-shadow 0.2s ease" }}
-                onClick={() => setExpandedFeature(expandedFeature === i ? null : i)}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "rgba(0,0,0,0.08) 0px 4px 20px"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}
-              >
-                <div style={{ color: "#1d1d1f", marginBottom: "16px" }}>{f.icon}</div>
-                <h3 style={{ fontSize: "21px", fontWeight: 700, lineHeight: 1.19, letterSpacing: "0.011em", color: "#1d1d1f", marginBottom: "8px" }}>
-                  {f.title}
-                </h3>
-                <p style={{ fontSize: "14px", fontWeight: 400, lineHeight: 1.43, letterSpacing: "-0.016em", color: "rgba(0,0,0,0.56)" }}>
-                  {f.desc}
-                </p>
-                {expandedFeature === i && (
-                  <motion.p
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    style={{ fontSize: "13px", fontWeight: 400, lineHeight: 1.5, color: "rgba(0,0,0,0.48)", marginTop: "12px", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "12px" }}
-                  >
-                    {f.detail}
-                  </motion.p>
-                )}
-                <p style={{ fontSize: "14px", fontWeight: 400, color: "#0066cc", marginTop: "12px", cursor: "pointer" }}>
-                  {expandedFeature === i ? "Less" : "Learn more"} &rsaquo;
-                </p>
+              <FeatureVisual kind={f.visual} />
+              <div className="space-y-4">
+                <span className="text-[13px] font-bold uppercase tracking-[0.08em] text-[var(--cc-accent)]">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <h3 className="headline-tile" style={{ color: "inherit" }}>{f.title}</h3>
+                <p className="text-[17px] leading-[1.5] opacity-75">{f.desc}</p>
+                <p className="text-[14px] leading-[1.6] opacity-55">{f.detail}</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      </section>
+      </Section>
 
-      {/* ── How it works — Dark section ── */}
-      <section id="how-it-works" className="section-dark" style={{ padding: "80px 24px" }}>
-        <div className="max-w-[980px] mx-auto">
-          <div className="text-center" style={{ marginBottom: "56px" }}>
-            <p style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em", color: "#ff6b35", marginBottom: "8px" }}>
-              How it works
-            </p>
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, lineHeight: 1.10, color: "#ffffff" }}>
-              Three steps. That&apos;s it.
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-10">
-            {HOW_IT_WORKS.map((step) => (
-              <div key={step.step}>
-                <div style={{ fontSize: "56px", fontWeight: 600, lineHeight: 1.07, letterSpacing: "-0.005em", color: "rgba(255,107,53,0.2)", marginBottom: "16px" }}>
-                  {step.step}
-                </div>
-                <h3 style={{ fontSize: "21px", fontWeight: 600, lineHeight: 1.19, letterSpacing: "0.011em", color: "#ffffff", marginBottom: "8px" }}>
-                  {step.title}
-                </h3>
-                <p style={{ fontSize: "14px", fontWeight: 400, lineHeight: 1.57, letterSpacing: "-0.016em", color: "rgba(255,255,255,0.7)" }}>
-                  {step.desc}
-                </p>
+      {/* ── How it works — Dark band ── */}
+      <Section tone="dark" eyebrow="How it works" headline={<>Three steps. That&apos;s it.</>}>
+        <div id="how-it-works" className="grid gap-10 md:grid-cols-3">
+          {HOW_IT_WORKS.map((step) => (
+            <div key={step.step}>
+              <div className="mb-4 text-[rgba(255,107,53,0.25)]" style={{ fontFamily: "var(--font-display-stack)", fontSize: "56px", fontWeight: 600, lineHeight: 1.07 }}>
+                {step.step}
               </div>
-            ))}
-          </div>
+              <h3 className="mb-2 text-[21px] font-semibold leading-[1.19] tracking-[-0.01em] text-[#faf9f7]">
+                {step.title}
+              </h3>
+              <p className="text-[14px] leading-[1.57] tracking-[-0.016em] text-[rgba(250,249,247,0.68)]">
+                {step.desc}
+              </p>
+            </div>
+          ))}
         </div>
-      </section>
+      </Section>
 
-      {/* ── Testimonials — Light section ── */}
-      <section className="section-light" style={{ padding: "80px 24px" }}>
-        <div className="max-w-[980px] mx-auto">
-          <div className="text-center" style={{ marginBottom: "48px" }}>
-            <p style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em", color: "#ff6b35", marginBottom: "8px" }}>
-              What people are saying
-            </p>
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, lineHeight: 1.10, color: "#1d1d1f" }}>
-              Loved by home cooks and foodies.
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t, i) => (
-              <div key={i} style={{ background: "#ffffff", borderRadius: "12px", padding: "28px" }}>
-                <p style={{ fontSize: "15px", fontWeight: 400, lineHeight: 1.53, letterSpacing: "-0.022em", color: "#1d1d1f" }}>
-                  &ldquo;{t.text}&rdquo;
-                </p>
-                <div style={{ marginTop: "20px", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "16px" }}>
-                  <p style={{ fontSize: "14px", fontWeight: 600, color: "#1d1d1f" }}>{t.name}</p>
-                  <p style={{ fontSize: "12px", fontWeight: 400, color: "rgba(0,0,0,0.48)" }}>{t.role}</p>
-                </div>
+      {/* ── Testimonials — Light band ── */}
+      <Section tone="light" eyebrow="What people are saying" headline="Loved by home cooks and foodies.">
+        <div className="grid gap-6 md:grid-cols-3">
+          {TESTIMONIALS.map((t, i) => (
+            <div key={i} className="rounded-2xl bg-white p-7 shadow-[rgba(28,25,23,0.05)_0px_2px_12px]">
+              <p className="text-[15px] leading-[1.53] tracking-[-0.022em] text-[#1c1917]">
+                &ldquo;{t.text}&rdquo;
+              </p>
+              <div className="mt-5 border-t border-[rgba(28,25,23,0.07)] pt-4">
+                <p className="text-[14px] font-semibold text-[#1c1917]">{t.name}</p>
+                <p className="text-[12px] text-[rgba(28,25,23,0.5)]">{t.role}</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      </section>
+      </Section>
 
-      {/* ── Platform strip — Dark section ── */}
-      <section className="section-dark" style={{ padding: "56px 24px" }}>
-        <div className="max-w-[980px] mx-auto text-center space-y-5">
-          <p style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em", color: "rgba(255,255,255,0.36)" }}>
+      {/* ── Platform strip — Dark band ── */}
+      <section className="section-dark px-6 py-14">
+        <div className="mx-auto max-w-[980px] space-y-5 text-center">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[rgba(250,249,247,0.4)]">
             Integrated with your favourite platforms
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
-            {PLATFORMS.map((p) => (
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {PLATFORMS.map((name) => (
               <span
-                key={p.name}
-                style={{
-                  fontSize: "22px",
-                  fontWeight: 700,
-                  color: p.color,
-                  letterSpacing: "-0.02em",
-                }}
+                key={name}
+                className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.14)] px-5 py-2 text-[15px] font-semibold tracking-[-0.01em] text-[rgba(250,249,247,0.75)]"
               >
-                {p.name}
+                {name}
               </span>
             ))}
           </div>
-          <p style={{ fontSize: "14px", fontWeight: 400, letterSpacing: "-0.016em", color: "rgba(255,255,255,0.48)", maxWidth: "480px", margin: "0 auto" }}>
+          <p className="mx-auto max-w-[480px] text-[14px] tracking-[-0.016em] text-[rgba(250,249,247,0.45)]">
             We generate deep links directly into each platform &mdash; no API keys or accounts needed on our end. Just tap and go.
           </p>
         </div>
       </section>
 
-      {/* ── FAQ — Light section ── */}
-      <section className="section-light" style={{ padding: "80px 24px" }}>
-        <div className="max-w-[680px] mx-auto">
-          <div className="text-center" style={{ marginBottom: "48px" }}>
-            <p style={{ fontSize: "12px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "-0.01em", color: "#ff6b35", marginBottom: "8px" }}>
-              FAQ
-            </p>
-            <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, lineHeight: 1.10, color: "#1d1d1f" }}>
-              Common questions.
-            </h2>
-          </div>
-          <div className="space-y-0">
-            {FAQS.map((faq, i) => (
-              <div
-                key={i}
-                style={{ borderTop: i === 0 ? "1px solid rgba(0,0,0,0.1)" : "none", borderBottom: "1px solid rgba(0,0,0,0.1)" }}
+      {/* ── FAQ — Light band ── */}
+      <Section tone="light" eyebrow="FAQ" headline="Common questions." className="[&>div]:max-w-[680px]">
+        <div>
+          {FAQS.map((faq, i) => (
+            <div
+              key={i}
+              className="border-b border-[rgba(28,25,23,0.1)]"
+              style={{ borderTop: i === 0 ? "1px solid rgba(28,25,23,0.1)" : "none" }}
+            >
+              <button
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                className="flex w-full cursor-pointer items-center justify-between border-none bg-transparent py-5 text-left text-[17px] font-semibold tracking-[-0.022em] text-[#1c1917]"
               >
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between text-left"
-                  style={{ padding: "20px 0", fontSize: "17px", fontWeight: 600, letterSpacing: "-0.022em", color: "#1d1d1f", background: "none", border: "none", cursor: "pointer" }}
-                >
-                  <span style={{ paddingRight: "16px" }}>{faq.q}</span>
-                  {openFaq === i ? (
-                    <Minus className="w-4 h-4 shrink-0" style={{ color: "rgba(0,0,0,0.36)" }} />
-                  ) : (
-                    <Plus className="w-4 h-4 shrink-0" style={{ color: "rgba(0,0,0,0.36)" }} />
-                  )}
-                </button>
-                {openFaq === i && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    style={{ paddingBottom: "20px" }}
-                  >
-                    <p style={{ fontSize: "14px", fontWeight: 400, lineHeight: 1.57, letterSpacing: "-0.016em", color: "rgba(0,0,0,0.56)" }}>
-                      {faq.a}
-                    </p>
-                  </motion.div>
+                <span className="pr-4">{faq.q}</span>
+                {openFaq === i ? (
+                  <Minus className="w-4 h-4 shrink-0 text-[rgba(28,25,23,0.4)]" />
+                ) : (
+                  <Plus className="w-4 h-4 shrink-0 text-[rgba(28,25,23,0.4)]" />
                 )}
-              </div>
-            ))}
-          </div>
+              </button>
+              {openFaq === i && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="pb-5"
+                >
+                  <p className="text-[14px] leading-[1.57] tracking-[-0.016em] text-[rgba(28,25,23,0.62)]">
+                    {faq.a}
+                  </p>
+                </motion.div>
+              )}
+            </div>
+          ))}
         </div>
-      </section>
+      </Section>
 
-      {/* ── Bottom CTA — Dark section ── */}
-      <section className="section-dark text-center" style={{ padding: "100px 24px" }}>
-        <div className="max-w-[580px] mx-auto space-y-6">
-          <h2 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 600, lineHeight: 1.07, letterSpacing: "-0.005em", color: "#ffffff" }}>
+      {/* ── Bottom CTA — Dark band ── */}
+      <section className="section-dark px-6 py-24 text-center md:py-28">
+        <div className="mx-auto max-w-[580px] space-y-6">
+          <h2 className="headline-hero" style={{ fontSize: "clamp(32px, 5vw, 48px)" }}>
             Your next great meal
             <br />
-            <span style={{ color: "#ff6b35" }}>starts here.</span>
+            <span className="text-[var(--cc-accent)]">starts here.</span>
           </h2>
-          <p style={{ fontSize: "17px", fontWeight: 400, lineHeight: 1.47, letterSpacing: "-0.022em", color: "rgba(255,255,255,0.7)" }}>
+          <p className="text-[17px] leading-[1.47] tracking-[-0.022em] text-[rgba(250,249,247,0.68)]">
             Free to try. No credit card required. Just sign in with Google and start exploring.
           </p>
           <button
@@ -727,8 +692,8 @@ export default function LandingPage() {
           </button>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 pt-4">
             {["2 free requests/day", "No credit card", "Works on mobile", "Save recipes & plan meals"].map((item) => (
-              <div key={item} className="flex items-center gap-1.5" style={{ fontSize: "12px", color: "rgba(255,255,255,0.48)" }}>
-                <Check className="w-3 h-3" style={{ color: "#ff6b35" }} />
+              <div key={item} className="flex items-center gap-1.5 text-[12px] text-[rgba(250,249,247,0.45)]">
+                <Check className="w-3 h-3 text-[var(--cc-accent)]" />
                 {item}
               </div>
             ))}
@@ -737,8 +702,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="section-light text-center" style={{ padding: "32px 24px" }}>
-        <p style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "-0.01em", color: "rgba(0,0,0,0.36)" }}>
+      <footer className="section-light px-6 py-8 text-center">
+        <p className="text-[12px] tracking-[-0.01em] text-[rgba(28,25,23,0.4)]">
           &copy; {new Date().getFullYear()} Crave &amp; Create &middot; Your personal AI food companion
         </p>
       </footer>

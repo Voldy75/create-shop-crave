@@ -138,7 +138,7 @@ export function RecipeView({ data }: RecipeViewProps) {
                         {data.nutritionEstimate && (
                             <>
                                 <span style={{ color: "var(--cc-border)" }}>·</span>
-                                <Flame className="w-3.5 h-3.5" style={{ color: "#ff6b35" }} />
+                                <Flame className="w-3.5 h-3.5" style={{ color: "var(--cc-accent)" }} />
                                 {data.nutritionEstimate.calories}
                             </>
                         )}
@@ -246,8 +246,8 @@ export function RecipeView({ data }: RecipeViewProps) {
             {data.nutritionEstimate && (
                 <div className="flex items-center gap-6 flex-wrap" style={{ padding: "16px 28px", borderBottom: "1px solid var(--cc-border)" }}>
                     <div className="flex items-center gap-1.5">
-                        <Flame className="w-3.5 h-3.5" style={{ color: "#ff6b35" }} />
-                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#ff6b35" }}>{data.nutritionEstimate.calories}</span>
+                        <Flame className="w-3.5 h-3.5" style={{ color: "var(--cc-accent)" }} />
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--cc-accent)" }}>{data.nutritionEstimate.calories}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <Dumbbell className="w-3.5 h-3.5" style={{ color: "#0a84ff" }} />
@@ -296,7 +296,7 @@ export function RecipeView({ data }: RecipeViewProps) {
                                         background: "var(--cc-surface)",
                                         border: "1px solid var(--cc-border)",
                                         borderRadius: "12px",
-                                        boxShadow: "rgba(0,0,0,0.22) 3px 5px 30px 0px",
+                                        boxShadow: "var(--cc-shadow-sm)",
                                         overflow: "hidden",
                                         minWidth: "180px",
                                     }}
@@ -397,7 +397,7 @@ export function RecipeView({ data }: RecipeViewProps) {
                                     }}>
                                         {ing.quantity ? `${ing.quantity} ${ing.item}` : ing.item}
                                     </p>
-                                    <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)", marginTop: "4px" }}>
+                                    <p className="text-price" style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)", marginTop: "4px" }}>
                                         {ing.price}
                                     </p>
                                 </div>
@@ -412,7 +412,7 @@ export function RecipeView({ data }: RecipeViewProps) {
                     borderTop: "1px solid var(--cc-border)",
                 }}>
                     <span style={{ fontSize: "14px", color: "var(--cc-text-secondary)" }}>Estimated total</span>
-                    <span style={{ fontSize: "22px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+                    <span className="text-price" style={{ fontSize: "22px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
                         ₹{data.ingredients.reduce((acc, curr) => {
                             const price = parseFloat(curr.price.replace(/[^0-9.]/g, "")) || 0;
                             return acc + price;

@@ -511,7 +511,7 @@ function InteractiveRestaurantMap({
                 icon={{
                     path: google.maps.SymbolPath.CIRCLE,
                     scale: 8,
-                    fillColor: "#2997ff",
+                    fillColor: "#4285F4",
                     fillOpacity: 1,
                     strokeColor: "#ffffff",
                     strokeWeight: 2,
@@ -879,7 +879,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
             {/* Header */}
             <div style={{ marginBottom: "24px" }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: "8px" }}>
-                    <div className="flex items-center gap-2" style={{ color: "#ff6b35" }}>
+                    <div className="flex items-center gap-2" style={{ color: "var(--cc-accent)" }}>
                         <Utensils className="w-4 h-4" />
                         <span
                             style={{
@@ -898,8 +898,8 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                     fontWeight: 700,
                                     padding: "2px 8px",
                                     borderRadius: "980px",
-                                    background: "rgba(255,107,53,0.15)",
-                                    color: "#ff6b35",
+                                    background: "var(--cc-accent-dim)",
+                                    color: "var(--cc-accent)",
                                 }}
                             >
                                 {sortedEntries.length}
