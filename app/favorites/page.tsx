@@ -34,7 +34,7 @@ export default function FavoritesPage() {
                     <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 fill-current" style={{ color: "#ff6b35" }} />
+                    <Heart className="w-4 h-4 fill-current" style={{ color: "var(--cc-accent)" }} />
                     <h1 style={{ fontSize: "14px", fontWeight: 400, color: "var(--cc-text-primary)" }}>Favorites</h1>
                 </div>
             </header>
@@ -74,7 +74,7 @@ export default function FavoritesPage() {
                             color: "var(--cc-text-secondary)",
                             marginBottom: "16px",
                         }}>
-                            <ChefHat className="w-4 h-4" style={{ color: "#ff6b35" }} />
+                            <ChefHat className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
                             Saved Recipes
                             <span style={{
                                 fontSize: "12px", fontWeight: 400, padding: "2px 8px",
@@ -139,7 +139,7 @@ export default function FavoritesPage() {
                             color: "var(--cc-text-secondary)",
                             marginBottom: "16px",
                         }}>
-                            <Utensils className="w-4 h-4" style={{ color: "#ff6b35" }} />
+                            <Utensils className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
                             Saved Restaurants
                             <span style={{
                                 fontSize: "12px", fontWeight: 400, padding: "2px 8px",

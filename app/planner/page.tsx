@@ -214,7 +214,7 @@ function PlanView({
                                                 <div className="flex gap-1">
                                                     <button
                                                         className="text-white"
-                                                        style={{ fontSize: "10px", fontWeight: 600, padding: "4px 8px", borderRadius: "980px", background: "#ff6b35" }}
+                                                        style={{ fontSize: "10px", fontWeight: 600, padding: "4px 8px", borderRadius: "980px", background: "var(--cc-accent)" }}
                                                         onClick={() => { if (dishInput.trim()) onSetMeal(day, meal, dishInput.trim()); }}
                                                     >
                                                         Add
@@ -233,7 +233,7 @@ function PlanView({
                                                 borderRadius: "8px",
                                             }}>
                                                 <div className="flex items-start gap-1">
-                                                    <ChefHat className="w-3 h-3 mt-0.5 shrink-0" style={{ color: "#ff6b35" }} />
+                                                    <ChefHat className="w-3 h-3 mt-0.5 shrink-0" style={{ color: "var(--cc-accent)" }} />
                                                     <p className="line-clamp-3" style={{ fontSize: "12px", fontWeight: 400, color: "var(--cc-text-primary)" }}>{slot.dish}</p>
                                                 </div>
                                                 <button
@@ -254,7 +254,7 @@ function PlanView({
                                                     borderRadius: "8px",
                                                     color: "var(--cc-text-tertiary)",
                                                 }}
-                                                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,107,53,0.4)"; (e.currentTarget as HTMLButtonElement).style.color = "#ff6b35"; }}
+                                                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,107,53,0.4)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-accent)"; }}
                                                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--cc-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-text-tertiary)"; }}
                                                 aria-label={`Add ${meal} for ${day}`}
                                             >
@@ -272,7 +272,7 @@ function PlanView({
             {uniqueDishes.length > 0 && (
                 <div className="p-6" style={{ background: "var(--cc-surface)", borderRadius: "12px" }}>
                     <div className="flex items-center gap-2" style={{ marginBottom: "4px" }}>
-                        <ShoppingCart className="w-4 h-4" style={{ color: "#ff6b35" }} />
+                        <ShoppingCart className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
                         <h2 style={{ fontSize: "17px", fontWeight: 600, color: "var(--cc-text-primary)" }}>Shopping List</h2>
                         <span style={{
                             fontSize: "12px", fontWeight: 400, padding: "2px 8px",

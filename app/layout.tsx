@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
+import localFont from "next/font/local";
 import "./globals.css";
+
+const generalSans = localFont({
+  src: "./fonts/GeneralSans-Variable.woff2",
+  variable: "--font-display",
+  weight: "200 700",
+  display: "swap",
+});
 import { UserProvider } from "./context/UserContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { BottomNav } from "@/components/BottomNav";
@@ -36,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={GeistSans.variable} data-theme="dark">
+    <html lang="en" className={`${GeistSans.variable} ${generalSans.variable}`} data-theme="dark">
       <head>
         {/* Anti-flash: sets data-theme before React hydrates */}
         <script
@@ -46,13 +54,7 @@ export default function RootLayout({
         />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body
-        className={GeistSans.className}
-        style={{
-          fontFamily:
-            '"SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif',
-        }}
-      >
+      <body className={GeistSans.className}>
         <ThemeProvider>
         <UserProvider>
           {children}

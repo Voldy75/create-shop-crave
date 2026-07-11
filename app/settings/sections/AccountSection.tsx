@@ -31,7 +31,7 @@ export function AccountSection() {
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0"
-            style={{ background: "#ff6b35", fontSize: "16px" }}
+            style={{ background: "var(--cc-accent)", fontSize: "16px" }}
           >
             {userName ? userName[0].toUpperCase() : "U"}
           </div>
@@ -63,7 +63,7 @@ export function AccountSection() {
               style={{
                 fontSize: "10px",
                 fontWeight: 700,
-                color: "#ff6b35",
+                color: "var(--cc-accent)",
                 background: "rgba(255,107,53,0.12)",
                 padding: "2px 8px",
                 borderRadius: "980px",
@@ -96,7 +96,7 @@ export function AccountSection() {
               height: "36px",
               borderRadius: "10px",
               background: "rgba(255,107,53,0.10)",
-              color: "#ff6b35",
+              color: "var(--cc-accent)",
             }}
           >
             <Shield className="w-4 h-4" />

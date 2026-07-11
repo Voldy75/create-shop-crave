@@ -43,9 +43,9 @@ function parseContent(content: string, isStreaming = false) {
 function ThinkingDots() {
   return (
     <div className="flex gap-1 p-4">
-      <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "#ff6b35" }} />
-      <div className="w-2 h-2 rounded-full animate-bounce delay-75" style={{ background: "#ff6b35" }} />
-      <div className="w-2 h-2 rounded-full animate-bounce delay-150" style={{ background: "#ff6b35" }} />
+      <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--cc-accent)" }} />
+      <div className="w-2 h-2 rounded-full animate-bounce delay-75" style={{ background: "var(--cc-accent)" }} />
+      <div className="w-2 h-2 rounded-full animate-bounce delay-150" style={{ background: "var(--cc-accent)" }} />
     </div>
   );
 }
@@ -186,7 +186,7 @@ export default function ArenaPage() {
   if (!hydrated || !proChecked) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: "var(--cc-bg)" }}>
-        <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#ff6b35", borderTopColor: "transparent" }} />
+        <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--cc-accent)", borderTopColor: "transparent" }} />
       </div>
     );
   }
@@ -196,7 +196,7 @@ export default function ArenaPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8" style={{ background: "var(--cc-bg)" }}>
         {/* Pikachu animation — LottieFiles */}
         <LottiePlayer
-          src="https://lottie.host/0bc2deaa-cb80-4558-bd84-d69810d90265/Y55Snq2B5D.lottie"
+          src="/lottie/arena.lottie"
           width={200}
           height={200}
         />
@@ -234,8 +234,8 @@ export default function ArenaPage() {
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg" style={{ background: "rgba(255,107,53,0.15)" }}>
-              <Sparkles className="w-4 h-4" style={{ color: "#ff6b35" }} />
+            <div className="p-1.5 rounded-lg" style={{ background: "var(--cc-accent-dim)" }}>
+              <Sparkles className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
             </div>
             <div>
               <h1 className="font-bold text-lg tracking-tight" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
@@ -245,7 +245,7 @@ export default function ArenaPage() {
             </div>
           </div>
           <span className="text-xs font-bold px-2 py-1 rounded-full"
-            style={{ background: "rgba(255,107,53,0.15)", color: "#ff6b35", border: "1px solid rgba(255,107,53,0.25)" }}>
+            style={{ background: "var(--cc-accent-dim)", color: "var(--cc-accent)", border: "1px solid rgba(255,107,53,0.25)" }}>
             Pro
           </span>
         </div>
@@ -261,7 +261,7 @@ export default function ArenaPage() {
                   className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                   style={
                     rightProvider === p.id
-                      ? { background: "#ff6b35", color: "#ffffff" }
+                      ? { background: "var(--cc-accent)", color: "#ffffff" }
                       : { background: "var(--cc-surface-2)", color: "var(--cc-text-secondary)" }
                   }
                 >
@@ -338,7 +338,7 @@ export default function ArenaPage() {
             <button
               type="submit"
               className="rounded-full w-12 h-12 shrink-0 flex items-center justify-center transition-colors disabled:opacity-50"
-              style={{ background: "#ff6b35", color: "#ffffff" }}
+              style={{ background: "var(--cc-accent)", color: "#ffffff" }}
               disabled={isLoading || !sharedInput.trim()}
             >
               <Send className="w-5 h-5" />

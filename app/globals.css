@@ -7,8 +7,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-sf-pro: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-system: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, var(--font-geist-sans), "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-system: var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, sans-serif;
+  --font-display-stack: var(--font-display), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -46,80 +46,80 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Crave & Create — Apple Design System
-   SF Pro typography · cinematic black/light sections
-   · pill CTAs · glass navigation · warm orange accent
+   Crave & Create — "Midnight Kitchen" Design System
+   General Sans display · Geist body · warm charcoal surfaces
+   · pill CTAs · glass navigation · one confident orange
    ───────────────────────────────────────────────────────────── */
 :root {
-  /* App surfaces — Apple dark */
-  --cc-bg:               #000000;
-  --cc-surface:          #1d1d1f;
-  --cc-surface-2:        #272729;
-  --cc-surface-3:        #2a2a2d;
-  --cc-surface-alt:      #f5f5f7;
-  --cc-border:           rgba(255, 255, 255, 0.08);
-  --cc-border-strong:    rgba(255, 255, 255, 0.14);
+  /* App surfaces — warm charcoal, never pure black */
+  --cc-bg:               #0c0a09;
+  --cc-surface:          #1c1917;
+  --cc-surface-2:        #292524;
+  --cc-surface-3:        #34302c;
+  --cc-surface-alt:      #faf7f4;
+  --cc-border:           rgba(250, 249, 247, 0.08);
+  --cc-border-strong:    rgba(250, 249, 247, 0.14);
 
-  /* Text — Apple scale */
-  --cc-text-primary:     #ffffff;
-  --cc-text-secondary:   rgba(255, 255, 255, 0.7);
-  --cc-text-tertiary:    rgba(255, 255, 255, 0.48);
+  /* Text — warm white scale */
+  --cc-text-primary:     #faf9f7;
+  --cc-text-secondary:   rgba(250, 249, 247, 0.68);
+  --cc-text-tertiary:    rgba(250, 249, 247, 0.45);
 
   /* Accent — warm orange, food-forward */
   --cc-accent:           #ff6b35;
   --cc-accent-hover:     #ff5520;
   --cc-accent-dim:       rgba(255, 107, 53, 0.15);
 
-  /* Interactive — Apple Blue for links/focus on dark */
-  --cc-link:             #2997ff;
-  --cc-link-light:       #0066cc;
-  --cc-focus:            #0071e3;
+  /* Interactive — in-family warm tones (no borrowed blue) */
+  --cc-link:             #ffa06b;
+  --cc-link-light:       #c2410c;
+  --cc-focus:            #ff8a4d;
 
-  /* Shadows — Apple soft diffused */
-  --cc-shadow-sm:        rgba(0, 0, 0, 0.22) 3px 5px 30px 0px;
-  --cc-shadow-md:        rgba(0, 0, 0, 0.35) 0px 8px 24px;
-  --cc-shadow-lg:        rgba(0, 0, 0, 0.55) 0px 16px 48px;
+  /* Shadows — soft diffused, warm-tinted */
+  --cc-shadow-sm:        rgba(10, 6, 3, 0.25) 3px 5px 30px 0px;
+  --cc-shadow-md:        rgba(10, 6, 3, 0.4) 0px 8px 24px;
+  --cc-shadow-lg:        rgba(10, 6, 3, 0.6) 0px 16px 48px;
 
-  /* Radius — Apple scale */
-  --cc-radius-sm:        5px;
-  --cc-radius-md:        8px;
-  --cc-radius-lg:        12px;
+  /* Radius scale */
+  --cc-radius-sm:        6px;
+  --cc-radius-md:        10px;
+  --cc-radius-lg:        14px;
   --cc-radius-pill:      980px;
 }
 
 /* shadcn/ui tokens */
 :root {
-  --radius: 0.5rem;
-  --background: #000000;
-  --foreground: #ffffff;
-  --card: #1d1d1f;
-  --card-foreground: #ffffff;
-  --popover: #272729;
-  --popover-foreground: #ffffff;
+  --radius: 0.625rem;
+  --background: #0c0a09;
+  --foreground: #faf9f7;
+  --card: #1c1917;
+  --card-foreground: #faf9f7;
+  --popover: #292524;
+  --popover-foreground: #faf9f7;
   --primary: #ff6b35;
   --primary-foreground: #ffffff;
-  --secondary: #272729;
-  --secondary-foreground: #ffffff;
-  --muted: #272729;
-  --muted-foreground: rgba(255, 255, 255, 0.7);
-  --accent: #2a2a2d;
-  --accent-foreground: #ffffff;
+  --secondary: #292524;
+  --secondary-foreground: #faf9f7;
+  --muted: #292524;
+  --muted-foreground: rgba(250, 249, 247, 0.68);
+  --accent: #34302c;
+  --accent-foreground: #faf9f7;
   --destructive: #ff453a;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.08);
+  --border: rgba(250, 249, 247, 0.08);
+  --input: rgba(250, 249, 247, 0.08);
   --ring: #ff6b35;
   --chart-1: #ff6b35;
   --chart-2: #ff9f1c;
   --chart-3: #ffbf69;
   --chart-4: #cbf3f0;
   --chart-5: #2ec4b6;
-  --sidebar: #000000;
-  --sidebar-foreground: #ffffff;
+  --sidebar: #0c0a09;
+  --sidebar-foreground: #faf9f7;
   --sidebar-primary: #ff6b35;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #272729;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-accent: #292524;
+  --sidebar-accent-foreground: #faf9f7;
+  --sidebar-border: rgba(250, 249, 247, 0.08);
   --sidebar-ring: #ff6b35;
 }
 
@@ -148,14 +148,14 @@
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* ── Apple Glass Navigation ── */
+  /* ── Glass Navigation — warm tint ── */
   .glass-nav {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(12, 10, 9, 0.8);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
   }
 
-  /* ── Apple Cards ── */
+  /* ── Cards ── */
   .cc-card {
     background: var(--cc-surface);
     border-radius: var(--cc-radius-md);
@@ -246,47 +246,61 @@
     border-color: var(--cc-accent);
   }
 
-  /* ── Apple Display Headlines ── */
+  /* ── Display Headlines — General Sans ── */
   .headline-hero {
-    font-size: clamp(2.5rem, 6vw, 3.5rem);
+    font-family: var(--font-display-stack);
+    font-size: clamp(2.5rem, 6vw, 4rem);
     font-weight: 600;
-    line-height: 1.07;
-    letter-spacing: -0.005em;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
     color: var(--cc-text-primary);
   }
 
   .headline-section {
+    font-family: var(--font-display-stack);
     font-size: clamp(1.75rem, 3vw, 2.5rem);
     font-weight: 600;
     line-height: 1.10;
-    letter-spacing: normal;
+    letter-spacing: -0.015em;
     color: var(--cc-text-primary);
   }
 
   .headline-tile {
+    font-family: var(--font-display-stack);
     font-size: 28px;
-    font-weight: 400;
+    font-weight: 500;
     line-height: 1.14;
-    letter-spacing: 0.007em;
+    letter-spacing: -0.01em;
     color: var(--cc-text-primary);
   }
 
-  /* ── Apple Text Scale ── */
-  .text-title   { font-size: 21px; font-weight: 700; line-height: 1.19; letter-spacing: 0.011em; color: var(--cc-text-primary); }
+  /* ── Text Scale ── */
+  .text-title   { font-size: 21px; font-weight: 700; line-height: 1.19; letter-spacing: -0.01em; color: var(--cc-text-primary); }
   .text-body    { font-size: 17px; line-height: 1.47; letter-spacing: -0.022em; color: var(--cc-text-secondary); }
   .text-caption { font-size: 14px; font-weight: 400; line-height: 1.29; letter-spacing: -0.016em; color: var(--cc-text-tertiary); }
-  .text-label   { font-size: 12px; font-weight: 600; letter-spacing: -0.01em; text-transform: uppercase; color: var(--cc-text-tertiary); }
+  .text-label   { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--cc-text-tertiary); }
   .text-link    { font-size: 14px; font-weight: 400; line-height: 1.43; letter-spacing: -0.016em; color: var(--cc-link); }
   .text-link:hover { text-decoration: underline; }
+  .text-price   { font-variant-numeric: tabular-nums; }
 
-  /* ── Apple Section Backgrounds ── */
+  /* ── Section Backgrounds — fixed alternating bands ── */
   .section-dark {
-    background: #000000;
-    color: #ffffff;
+    background: #0c0a09;
+    color: #faf9f7;
   }
   .section-light {
-    background: #f5f5f7;
-    color: #1d1d1f;
+    background: #faf7f4;
+    color: #1c1917;
+  }
+
+  /* Inside fixed bands, headlines follow the band, not the theme */
+  .section-dark .headline-hero,
+  .section-dark .headline-section,
+  .section-dark .headline-tile,
+  .section-light .headline-hero,
+  .section-light .headline-section,
+  .section-light .headline-tile {
+    color: inherit;
   }
 
   /* ── Mobile touch targets ── */
@@ -325,40 +339,41 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Light mode — Apple #f5f5f7 background
+   Light mode — warm off-white
    ───────────────────────────────────────────────────────────── */
 [data-theme="light"] {
-  --cc-bg:               #f5f5f7;
+  --cc-bg:               #faf7f4;
   --cc-surface:          #ffffff;
-  --cc-surface-2:        #f5f5f7;
-  --cc-surface-3:        #e8e8ed;
-  --cc-surface-alt:      #000000;
-  --cc-border:           rgba(0, 0, 0, 0.06);
-  --cc-border-strong:    rgba(0, 0, 0, 0.12);
-  --cc-text-primary:     #1d1d1f;
-  --cc-text-secondary:   rgba(0, 0, 0, 0.56);
-  --cc-text-tertiary:    rgba(0, 0, 0, 0.36);
-  --cc-link:             #0066cc;
-  --cc-link-light:       #0066cc;
-  --cc-shadow-sm:        rgba(0, 0, 0, 0.04) 0px 2px 12px;
-  --cc-shadow-md:        rgba(0, 0, 0, 0.08) 0px 8px 24px;
-  --cc-shadow-lg:        rgba(0, 0, 0, 0.12) 0px 16px 48px;
+  --cc-surface-2:        #f3efe9;
+  --cc-surface-3:        #e9e3db;
+  --cc-surface-alt:      #0c0a09;
+  --cc-border:           rgba(28, 25, 23, 0.07);
+  --cc-border-strong:    rgba(28, 25, 23, 0.13);
+  --cc-text-primary:     #1c1917;
+  --cc-text-secondary:   rgba(28, 25, 23, 0.62);
+  --cc-text-tertiary:    rgba(28, 25, 23, 0.4);
+  --cc-link:             #c2410c;
+  --cc-link-light:       #c2410c;
+  --cc-focus:            #ea580c;
+  --cc-shadow-sm:        rgba(28, 25, 23, 0.05) 0px 2px 12px;
+  --cc-shadow-md:        rgba(28, 25, 23, 0.09) 0px 8px 24px;
+  --cc-shadow-lg:        rgba(28, 25, 23, 0.13) 0px 16px 48px;
 
   /* shadcn tokens */
-  --background:          #f5f5f7;
-  --foreground:          #1d1d1f;
+  --background:          #faf7f4;
+  --foreground:          #1c1917;
   --card:                #ffffff;
-  --card-foreground:     #1d1d1f;
+  --card-foreground:     #1c1917;
   --popover:             #ffffff;
-  --popover-foreground:  #1d1d1f;
-  --secondary:           #f5f5f7;
-  --secondary-foreground:#1d1d1f;
-  --muted:               #f5f5f7;
-  --muted-foreground:    rgba(0, 0, 0, 0.56);
-  --accent:              #e8e8ed;
-  --accent-foreground:   #1d1d1f;
-  --border:              rgba(0, 0, 0, 0.06);
-  --input:               rgba(0, 0, 0, 0.06);
+  --popover-foreground:  #1c1917;
+  --secondary:           #f3efe9;
+  --secondary-foreground:#1c1917;
+  --muted:               #f3efe9;
+  --muted-foreground:    rgba(28, 25, 23, 0.62);
+  --accent:              #e9e3db;
+  --accent-foreground:   #1c1917;
+  --border:              rgba(28, 25, 23, 0.07);
+  --input:               rgba(28, 25, 23, 0.07);
 }
 
 [data-theme="light"] body {
@@ -367,45 +382,54 @@
 }
 
 [data-theme="light"] .glass-nav {
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(250, 247, 244, 0.72);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
 [data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(28, 25, 23, 0.14);
 }
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(28, 25, 23, 0.22);
 }
 
 [data-theme="light"] .btn-pill-secondary {
-  color: #1d1d1f;
-  border-color: rgba(0, 0, 0, 0.2);
+  color: #1c1917;
+  border-color: rgba(28, 25, 23, 0.2);
 }
 [data-theme="light"] .btn-pill-secondary:hover {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.32);
+  background: rgba(28, 25, 23, 0.04);
+  border-color: rgba(28, 25, 23, 0.32);
+}
+/* Secondary pills on fixed dark bands stay light-on-dark in light mode */
+[data-theme="light"] .section-dark .btn-pill-secondary {
+  color: #faf9f7;
+  border-color: rgba(250, 249, 247, 0.32);
+}
+[data-theme="light"] .section-dark .btn-pill-secondary:hover {
+  background: rgba(250, 249, 247, 0.08);
+  border-color: rgba(250, 249, 247, 0.48);
 }
 
 [data-theme="light"] .chip {
   background: #ffffff;
-  color: rgba(0, 0, 0, 0.56);
-  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(28, 25, 23, 0.62);
+  border-color: rgba(28, 25, 23, 0.1);
 }
 [data-theme="light"] .chip:hover {
-  background: #f0f0f2;
-  color: #1d1d1f;
+  background: #f3efe9;
+  color: #1c1917;
 }
 
 /* Alternating sections in light mode */
 [data-theme="light"] .section-dark {
-  background: #1d1d1f;
-  color: #ffffff;
+  background: #1c1917;
+  color: #faf9f7;
 }
 [data-theme="light"] .section-light {
-  background: #f5f5f7;
-  color: #1d1d1f;
+  background: #faf7f4;
+  color: #1c1917;
 }
 
 @media (prefers-reduced-motion: reduce) {

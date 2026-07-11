@@ -121,7 +121,7 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
         {/* Header */}
         <div
           style={{
-            background: "linear-gradient(135deg, #ff6b35 0%, #ff8c5a 100%)",
+            background: "linear-gradient(135deg, var(--cc-accent) 0%, #ff8c5a 100%)",
             padding: "24px",
             position: "relative",
           }}
@@ -152,8 +152,8 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
             onClick={() => setTab("upgrade")}
             className="flex-1 py-3 text-sm font-medium transition-colors"
             style={{
-              color: tab === "upgrade" ? "#ff6b35" : "var(--cc-text-secondary)",
-              borderBottom: tab === "upgrade" ? "2px solid #ff6b35" : "2px solid transparent",
+              color: tab === "upgrade" ? "var(--cc-accent)" : "var(--cc-text-secondary)",
+              borderBottom: tab === "upgrade" ? "2px solid var(--cc-accent)" : "2px solid transparent",
             }}
           >
             Upgrade Pro
@@ -162,8 +162,8 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
             onClick={() => setTab("byok")}
             className="flex-1 py-3 text-sm font-medium transition-colors"
             style={{
-              color: tab === "byok" ? "#ff6b35" : "var(--cc-text-secondary)",
-              borderBottom: tab === "byok" ? "2px solid #ff6b35" : "2px solid transparent",
+              color: tab === "byok" ? "var(--cc-accent)" : "var(--cc-text-secondary)",
+              borderBottom: tab === "byok" ? "2px solid var(--cc-accent)" : "2px solid transparent",
             }}
           >
             Use Your API Key
@@ -193,7 +193,7 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
                     className="flex items-center gap-2"
                     style={{ fontSize: "14px", color: "var(--cc-text-primary)" }}
                   >
-                    <Check className="w-4 h-4 shrink-0" style={{ color: "#ff6b35" }} />
+                    <Check className="w-4 h-4 shrink-0" style={{ color: "var(--cc-accent)" }} />
                     {benefit}
                   </div>
                 ))}
@@ -221,7 +221,7 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
                 disabled={loading !== null}
                 className="w-full flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                 style={{
-                  background: "#ff6b35",
+                  background: "var(--cc-accent)",
                   color: "#fff",
                   height: "48px",
                   borderRadius: "980px",
@@ -229,7 +229,7 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
                   fontWeight: 600,
                 }}
                 onMouseEnter={(e) => { if (loading === null) (e.currentTarget as HTMLButtonElement).style.background = "#ff5520"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#ff6b35"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-accent)"; }}
               >
                 {loading === "razorpay" ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -284,9 +284,9 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
                       borderRadius: "12px",
                       fontSize: "12px",
                       fontWeight: 600,
-                      border: byokProvider === p.id ? "1.5px solid #ff6b35" : "1px solid var(--cc-border)",
+                      border: byokProvider === p.id ? "1.5px solid var(--cc-accent)" : "1px solid var(--cc-border)",
                       background: byokProvider === p.id ? "rgba(255,107,53,0.08)" : "transparent",
-                      color: byokProvider === p.id ? "#ff6b35" : "var(--cc-text-secondary)",
+                      color: byokProvider === p.id ? "var(--cc-accent)" : "var(--cc-text-secondary)",
                     }}
                   >
                     {p.label}

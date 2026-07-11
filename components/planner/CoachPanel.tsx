@@ -44,7 +44,7 @@ const SEVERITY_STYLE: Record<
   { color: string; bg: string; icon: React.ComponentType<{ className?: string }> }
 > = {
   info: { color: "#0a84ff", bg: "rgba(10,132,255,0.10)", icon: Info },
-  nudge: { color: "#ff6b35", bg: "rgba(255,107,53,0.10)", icon: Lightbulb },
+  nudge: { color: "var(--cc-accent)", bg: "rgba(255,107,53,0.10)", icon: Lightbulb },
   warn: { color: "#ff9f0a", bg: "rgba(255,159,10,0.10)", icon: AlertTriangle },
 };
 
