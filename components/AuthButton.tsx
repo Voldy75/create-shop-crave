@@ -51,7 +51,6 @@ export function AuthButton() {
   const btnStyle: React.CSSProperties = {
     width: "100%",
     height: "48px",
-    background: "var(--cc-surface-2, #232323)",
     color: "var(--cc-text-primary, #f5f5f5)",
     border: "1px solid rgba(255,255,255,0.09)",
     borderRadius: "999px",
@@ -70,8 +69,7 @@ export function AuthButton() {
       <button
         onClick={signInWithGoogle}
         style={btnStyle}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2c2c2c"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-2, #232323)"; }}
+        className="bg-[var(--cc-surface-2,#232323)] hover:bg-[#2c2c2c]"
       >
         <GoogleIcon />
         Continue with Google
@@ -79,8 +77,7 @@ export function AuthButton() {
       <button
         onClick={signInWithGitHub}
         style={btnStyle}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2c2c2c"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-2, #232323)"; }}
+        className="bg-[var(--cc-surface-2,#232323)] hover:bg-[#2c2c2c]"
       >
         <Github className="w-5 h-5" />
         Continue with GitHub

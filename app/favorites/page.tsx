@@ -113,10 +113,7 @@ export default function FavoritesPage() {
                                             </div>
                                             <button
                                                 onClick={() => handleRemove(fav.id)}
-                                                className="p-2 rounded-full transition-colors shrink-0 ml-2"
-                                                style={{ color: "var(--cc-text-tertiary)" }}
-                                                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#ff453a"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,69,58,0.1)"; }}
-                                                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-text-tertiary)"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                                                className="p-2 rounded-full transition-colors shrink-0 ml-2 text-[var(--cc-text-tertiary)] hover:text-[#ff453a] hover:bg-[rgba(255,69,58,0.1)]"
                                                 aria-label="Remove from favorites"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -170,10 +167,7 @@ export default function FavoritesPage() {
                                             </div>
                                             <button
                                                 onClick={() => handleRemove(fav.id)}
-                                                className="p-2 rounded-full transition-colors shrink-0 ml-2"
-                                                style={{ color: "var(--cc-text-tertiary)" }}
-                                                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#ff453a"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,69,58,0.1)"; }}
-                                                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-text-tertiary)"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                                                className="p-2 rounded-full transition-colors shrink-0 ml-2 text-[var(--cc-text-tertiary)] hover:text-[#ff453a] hover:bg-[rgba(255,69,58,0.1)]"
                                                 aria-label="Remove from favorites"
                                             >
                                                 <Trash2 className="w-4 h-4" />

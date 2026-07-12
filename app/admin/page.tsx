@@ -151,10 +151,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/chat")}
-            className="p-2 rounded-full transition-colors"
-            style={{ color: "var(--cc-text-secondary)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--cc-surface-2)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            className="p-2 rounded-full transition-colors text-[var(--cc-text-secondary)] hover:bg-[var(--cc-surface-2)]"
             aria-label="Back to chat"
           >
             <ArrowLeft className="w-4 h-4" />

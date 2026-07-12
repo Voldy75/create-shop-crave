@@ -49,18 +49,11 @@ export function FavoriteButton({ type, data }: FavoriteButtonProps) {
   return (
     <button
       onClick={toggle}
-      className="p-1.5 rounded-full transition-colors"
-      style={
+      className={`p-1.5 rounded-full transition-colors ${
         isFav
-          ? { color: "#ff453a", background: "rgba(255,69,58,0.12)" }
-          : { color: "var(--cc-text-tertiary)", background: "var(--cc-surface-2)" }
-      }
-      onMouseEnter={(e) => {
-        if (!isFav) (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-3)";
-      }}
-      onMouseLeave={(e) => {
-        if (!isFav) (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-2)";
-      }}
+          ? "text-[#ff453a] bg-[rgba(255,69,58,0.12)]"
+          : "text-[var(--cc-text-tertiary)] bg-[var(--cc-surface-2)] hover:bg-[var(--cc-surface-3)]"
+      }`}
       aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
     >
       <Heart className="w-4 h-4" fill={isFav ? "currentColor" : "none"} />

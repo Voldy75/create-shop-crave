@@ -305,18 +305,15 @@ export function RecipeView({ data }: RecipeViewProps) {
                                         <button
                                             key={store.id}
                                             onClick={() => { setSelectedStore(store); setShowStoreDropdown(false); }}
-                                            className="w-full flex items-center gap-2 text-left transition-colors"
+                                            className={`w-full flex items-center gap-2 text-left transition-colors hover:bg-[var(--cc-surface-2)] ${selectedStore.id === store.id ? "bg-[var(--cc-surface-2)]" : "bg-transparent"}`}
                                             style={{
                                                 padding: "10px 14px",
                                                 fontSize: "13px",
                                                 fontWeight: selectedStore.id === store.id ? 600 : 400,
                                                 color: "var(--cc-text-primary)",
-                                                background: selectedStore.id === store.id ? "var(--cc-surface-2)" : "transparent",
                                                 border: "none",
                                                 cursor: "pointer",
                                             }}
-                                            onMouseEnter={(e) => { if (selectedStore.id !== store.id) e.currentTarget.style.background = "var(--cc-surface-2)"; }}
-                                            onMouseLeave={(e) => { if (selectedStore.id !== store.id) e.currentTarget.style.background = "transparent"; }}
                                         >
                                             <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: store.color, fontSize: "9px", fontWeight: 700, color: "#fff" }}>
                                                 {store.name[0]}

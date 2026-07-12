@@ -248,14 +248,7 @@ function PlanView({
                                         ) : (
                                             <button
                                                 onClick={() => { setEditingSlot({ day, meal }); setDishInput(""); }}
-                                                className="w-full h-full min-h-[72px] flex items-center justify-center transition-colors"
-                                                style={{
-                                                    border: "2px dashed var(--cc-border)",
-                                                    borderRadius: "8px",
-                                                    color: "var(--cc-text-tertiary)",
-                                                }}
-                                                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,107,53,0.4)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-accent)"; }}
-                                                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--cc-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-text-tertiary)"; }}
+                                                className="w-full h-full min-h-[72px] flex items-center justify-center transition-colors border-2 border-dashed rounded-[8px] border-[var(--cc-border)] text-[var(--cc-text-tertiary)] hover:border-[rgba(255,107,53,0.4)] hover:text-[var(--cc-accent)]"
                                                 aria-label={`Add ${meal} for ${day}`}
                                             >
                                                 <Plus className="w-4 h-4" />
