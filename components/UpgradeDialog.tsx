@@ -216,7 +216,7 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
               <button
                 onClick={handleRazorpay}
                 disabled={loading !== null}
-                className="w-full flex items-center justify-center gap-2 transition-all disabled:opacity-50 bg-[var(--cc-accent)] enabled:hover:bg-[#ff5520]"
+                className="w-full flex items-center justify-center gap-2 transition-all disabled:opacity-50 bg-[var(--cc-accent)] enabled:hover:bg-[var(--cc-accent-hover)]"
                 style={{
                   color: "#fff",
                   height: "48px",
