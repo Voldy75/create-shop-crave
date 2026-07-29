@@ -128,10 +128,7 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
         >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full transition-colors"
-            style={{ background: "rgba(255,255,255,0.2)" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.3)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.2)"; }}
+            className="absolute top-4 right-4 p-1.5 rounded-full transition-colors bg-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.3)]"
           >
             <X className="w-4 h-4 text-white" />
           </button>
@@ -219,17 +216,14 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
               <button
                 onClick={handleRazorpay}
                 disabled={loading !== null}
-                className="w-full flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 transition-all disabled:opacity-50 bg-[var(--cc-accent)] enabled:hover:bg-[var(--cc-accent-hover)]"
                 style={{
-                  background: "var(--cc-accent)",
                   color: "#fff",
                   height: "48px",
                   borderRadius: "980px",
                   fontSize: "15px",
                   fontWeight: 600,
                 }}
-                onMouseEnter={(e) => { if (loading === null) (e.currentTarget as HTMLButtonElement).style.background = "#ff5520"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-accent)"; }}
               >
                 {loading === "razorpay" ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

@@ -225,10 +225,7 @@ export default function ArenaPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/chat")}
-            className="p-2 rounded-full transition-colors"
-            style={{ color: "var(--cc-text-secondary)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--cc-surface-2)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            className="p-2 rounded-full transition-colors text-[var(--cc-text-secondary)] hover:bg-[var(--cc-surface-2)]"
             aria-label="Back"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -274,10 +271,7 @@ export default function ArenaPage() {
           {(leftChat.messages.length > 0 || rightChat.messages.length > 0) && (
             <button
               onClick={handleReset}
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
-              style={{ color: "var(--cc-text-secondary)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-2)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-text-primary)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "var(--cc-text-secondary)"; }}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors text-[var(--cc-text-secondary)] hover:bg-[var(--cc-surface-2)] hover:text-[var(--cc-text-primary)]"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset
             </button>

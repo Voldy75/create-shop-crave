@@ -39,10 +39,7 @@ export function ShareButton({ title, text }: ShareButtonProps) {
   return (
     <button
       onClick={handleShare}
-      className="p-1.5 rounded-full transition-colors"
-      style={{ color: "var(--cc-text-tertiary)", background: "var(--cc-surface-2)" }}
-      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-3)")}
-      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "var(--cc-surface-2)")}
+      className="p-1.5 rounded-full transition-colors text-[var(--cc-text-tertiary)] bg-[var(--cc-surface-2)] hover:bg-[var(--cc-surface-3)]"
       aria-label="Share"
     >
       <Share2 className="w-4 h-4" />
