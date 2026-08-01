@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Utensils, MapPin, Crown, ChevronRight, LogOut, Salad } from "lucide-react";
+import { Bell, Utensils, MapPin, Crown, ChevronRight, LogOut, Salad, Heart } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 
 /**
@@ -18,6 +18,9 @@ export default function ProfileTab() {
   const initials = hydrated && userName ? userName.slice(0, 2).toUpperCase() : "··";
 
   const rows: { icon: typeof Bell; label: string; sub: string; href: string }[] = [
+    // The design's tab bar is Home / Discover / Bo / Plan / Profile — Saved is
+    // not a tab. This is its entry point; without it the route is orphaned.
+    { icon: Heart, label: "Saved", sub: "Recipes and spots you kept", href: "/m/saved" },
     { icon: Bell, label: "Notifications", sub: "Daily nudge · WhatsApp · push", href: "/settings/notifications" },
     { icon: Utensils, label: "Swiggy account", sub: "Connect for ordering", href: "/settings/notifications" },
     { icon: MapPin, label: "Location", sub: location ? "Set" : "Not set", href: "/m/onboarding" },

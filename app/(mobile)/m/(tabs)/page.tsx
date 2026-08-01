@@ -3,214 +3,200 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Sparkles, MapPin, ShoppingCart, CalendarDays, Search as SearchIcon, Flame, RotateCcw } from "lucide-react";
+import { Search as SearchIcon, Mic, Bell, Flame } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { getMealLogs } from "@/lib/storage";
 import { loggingStreak } from "@/lib/nutrition";
 import { foodImage } from "@/lib/food-images";
-import { BoBowl } from "@/components/mascots";
+import { CarrotRating } from "@/components/mobile/CarrotRating";
+import { Pea, Chili, Mushroom, Broccoli } from "@/components/mascots";
 
 /**
- * meshi Home — faithful to the handoff ScreenHome (v2-screens.jsx) in the
- * --cc-* black-first system: greeting + "What's it gonna be tonight?" display,
- * a saffron "Tonight's brief" card with Cook it / Order it, a 2×2 quick-action
- * grid, a cravings carousel, and an editor's-picks list. Wired to real
- * UserContext where it makes sense; cards deep-link into the real surfaces.
+ * meshi Home — built to the Flow 2 "Home" artboard.
+ *
+ * Structure comes from the design, not from the previous screen: a greeting +
+ * streak + bell header, a prominent search field, an "Order again?" peach card,
+ * a 4-up MASCOT grid for cravings (the old version used photos here — the
+ * design deliberately uses characters, since a photo of a finished dish is the
+ * wrong signal for a mood), and two side-by-side duotone picks with a time
+ * badge and a carrot rating.
  */
 
-const QUICK = [
-  { Icon: Sparkles, t: "Chat", s: "Ask anything", href: "/m/chat" },
-  { Icon: MapPin, t: "Near me", s: "Top spots", href: "/m/chat?q=" + encodeURIComponent("Best restaurants near me right now") },
-  { Icon: ShoppingCart, t: "Order", s: "Groceries or food", href: "/m/chat?agent=1&q=" + encodeURIComponent("Order dinner for tonight") },
-  { Icon: CalendarDays, t: "This week", s: "Plan & track", href: "/m/plan" },
-];
-
+/** Cravings are moods, fronted by a mascot each — not dish photography. */
 const CRAVINGS = [
-  { l: "Comfort", cls: "ph-saffron", n: "Butter Chicken" },
-  { l: "Healthy", cls: "ph-spinach", n: "Buddha Bowl" },
-  { l: "Quick", cls: "ph-fire", n: "Maggi Hacks" },
-  { l: "Sweet", cls: "ph-rose", n: "Pavlova" },
+  { label: "Comfy", tint: "tint-green", Mascot: Pea, q: "Something comforting" },
+  { label: "Spicy", tint: "tint-peach", Mascot: Chili, q: "Something spicy" },
+  { label: "Cozy", tint: "tint-lav", Mascot: Mushroom, q: "Something cozy and slow" },
+  { label: "Fresh", tint: "tint-green", Mascot: Broccoli, q: "Something fresh and light" },
 ];
 
 const PICKS = [
-  { n: "Five 20-minute dinners", s: "5 recipes · serves 2", cls: "ph-cream" },
-  { n: "Best biryani near you", s: "8 spots · 4.6 avg", cls: "ph-saffron" },
-  { n: "Late-night soul food", s: "Open past midnight", cls: "ph-night" },
+  { name: "Green goddess bowl", mins: 25, rating: 4, duo: "duo-forest", badge: "badge-brown" },
+  { name: "Nonna's red pizza", mins: 40, rating: 5, duo: "duo-plum", badge: "badge-burnt" },
 ];
+
+function greeting(d: Date): string {
+  const h = d.getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export default function MeshiHome() {
   const router = useRouter();
   const { userName, hydrated } = useUser();
-  const [timeLabel, setTimeLabel] = useState("");
+  const [hello, setHello] = useState("Hello");
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {
-    const d = new Date();
-    setTimeLabel(
-      d.toLocaleDateString(undefined, { weekday: "long" }) +
-        " · " +
-        d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }),
-    );
+    setHello(greeting(new Date()));
     setStreak(loggingStreak(getMealLogs()));
   }, []);
 
-  const initials = hydrated && userName ? userName.slice(0, 2).toUpperCase() : "··";
+  const firstName = hydrated && userName ? userName.split(" ")[0] : "";
 
   return (
     <div className="col" style={{ height: "100%", background: "var(--m-cream)" }}>
       <div className="scroll" style={{ flex: 1 }}>
-        {/* Header */}
-        <div style={{ padding: "calc(env(safe-area-inset-top, 12px) + 8px) 18px 4px" }}>
-          <div className="hstack" style={{ justifyContent: "space-between", alignItems: "center" }}>
-            <div className="col">
-              <div className="hstack" style={{ gap: 8, alignItems: "center" }}>
-                <span className="t-cap" style={{ color: "var(--m-forest)" }}>{timeLabel}</span>
-                {streak > 0 && (
-                  <Link
-                    href="/m/plan"
-                    className="hstack"
-                    aria-label={`${streak} day logging streak`}
-                    style={{ gap: 3, alignItems: "center", textDecoration: "none", background: "var(--m-tint-green)", color: "var(--m-forest)", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}
-                  >
-                    <Flame width={12} height={12} /> {streak}
-                  </Link>
-                )}
-              </div>
-              <h1 className="t-display" style={{ marginTop: 4 }}>
-                What&apos;s it gonna<br />be tonight?
-              </h1>
-            </div>
-            <div className="hstack" style={{ gap: 8 }}>
-              <Link href="/m/search" aria-label="Search" style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--m-cream-2)", display: "grid", placeItems: "center", color: "var(--m-ink)", textDecoration: "none" }}>
-                <SearchIcon width={18} height={18} />
-              </Link>
-              <Link
-                href="/m/profile"
-                style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--m-cream-2)", display: "grid", placeItems: "center", color: "var(--m-ink)", fontWeight: 700, fontSize: 14, textDecoration: "none" }}
-              >
-                {initials}
-              </Link>
-            </div>
+        {/* Header — greeting, streak, notifications */}
+        <div
+          className="hstack"
+          style={{ padding: "calc(env(safe-area-inset-top, 12px) + 10px) 20px 4px", gap: 10 }}
+        >
+          <div className="vstack grow" style={{ gap: 0 }}>
+            <span className="t-cap">
+              {hello}
+              {firstName ? `, ${firstName}` : ""}
+            </span>
+            <span className="t-h1" style={{ fontSize: 22 }}>
+              What&rsquo;s cooking?
+            </span>
           </div>
+
+          {streak > 0 && (
+            <Link href="/m/plan" className="streak-chip" aria-label={`${streak} day logging streak`}>
+              <Flame width={18} height={18} />
+              {streak}
+            </Link>
+          )}
+
+          <Link href="/m/inbox" className="icon-btn" style={{ position: "relative" }} aria-label="Inbox">
+            <Bell width={21} height={21} />
+            <i
+              style={{
+                position: "absolute", top: 9, right: 10, width: 8, height: 8,
+                borderRadius: 9, background: "var(--m-red)",
+              }}
+            />
+          </Link>
         </div>
 
-        {/* Tonight's brief */}
-        <div style={{ padding: 18 }}>
-          {/* Bo's brief. Previously a saffron card with white-on-dark text —
-              on the cream system that rendered invisible. Now a green section
-              tint with chocolate ink, and Bo fronting the card since this is
-              the AI's voice speaking. */}
-          <div className="card tint-green" style={{ padding: 20, position: "relative", overflow: "hidden" }}>
-            <div className="hstack" style={{ gap: 8, marginBottom: 12 }}>
-              <span className="ai-orb">
-                <BoBowl width={20} height={20} />
-              </span>
-              <span className="t-micro">Tonight&apos;s brief</span>
-            </div>
-            <p className="t-h2" style={{ lineHeight: 1.3 }}>
-              Tell meshi what you&apos;re craving — get a recipe, the best nearby spots, or have it ordered for you.
-            </p>
-            <div className="hstack" style={{ gap: 8, marginTop: 16 }}>
-              <button
-                onClick={() => router.push("/m/chat?q=" + encodeURIComponent("What should I cook tonight?"))}
-                className="pill-secondary pill-sm"
-                style={{ flex: 1 }}
-              >
-                Cook it
-              </button>
-              <button
-                onClick={() => router.push("/m/chat?agent=1&q=" + encodeURIComponent("Order dinner for tonight"))}
-                className="pill-primary pill-sm"
-                style={{ flex: 1 }}
-              >
-                Order it
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 1-tap reorder — hands the agent the user's Instamart go-to items */}
-        <div style={{ padding: "0 18px 4px" }}>
+        {/* Search — the design leads with this rather than a brief card */}
+        <div style={{ padding: "12px 20px 0" }}>
           <button
-            onClick={() => router.push("/m/chat?agent=1&q=" + encodeURIComponent("Reorder my usual groceries from Swiggy Instamart using my go-to items. Confirm the cart before placing."))}
-            className="card hstack"
-            style={{ padding: 12, gap: 12, width: "100%", textAlign: "left" }}
+            className="input"
+            style={{ width: "100%", border: "none", textAlign: "left" }}
+            onClick={() => router.push("/m/search")}
           >
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--m-tint-green)", color: "var(--m-forest)", display: "grid", placeItems: "center", flexShrink: 0 }}>
-              <RotateCcw width={20} height={20} />
-            </div>
-            <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-              <span className="t-h3">Order again</span>
-              <span className="t-small">Reorder your go-to groceries on Instamart</span>
-            </div>
+            <SearchIcon width={20} height={20} style={{ color: "var(--m-ink-soft)" }} />
+            <span className="grow" style={{ color: "var(--m-ink-soft)" }}>
+              Ramen? Tacos? Feelings?
+            </span>
+            <Mic width={19} height={19} style={{ color: "var(--m-forest)" }} />
           </button>
         </div>
 
-        {/* Quick actions */}
-        <div style={{ padding: "0 18px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {QUICK.map((q) => (
-            <Link key={q.t} href={q.href} className="card" style={{ padding: 14, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, textDecoration: "none" }}>
-              <q.Icon width={20} height={20} style={{ color: "var(--m-forest)" }} />
-              <div className="col" style={{ gap: 2 }}>
-                <span className="t-h3">{q.t}</span>
-                <span className="t-small">{q.s}</span>
-              </div>
+        <div className="vstack" style={{ padding: "16px 20px 0" }}>
+          {/* Order again — hands the agent the user's go-to Instamart items */}
+          <button
+            className="card tint-peach"
+            style={{
+              boxShadow: "none", padding: "14px 16px", display: "flex",
+              alignItems: "center", gap: 14, width: "100%", textAlign: "left", border: "none",
+            }}
+            onClick={() =>
+              router.push(
+                "/m/chat?agent=1&q=" +
+                  encodeURIComponent(
+                    "Reorder my usual groceries from Swiggy Instamart using my go-to items. Confirm the cart before placing.",
+                  ),
+              )
+            }
+          >
+            <div
+              className="imgfill"
+              style={{
+                width: 64, height: 64, borderRadius: 14, flex: "none",
+                backgroundImage: `url('${foodImage("ramen") ?? ""}')`,
+              }}
+            />
+            <div className="vstack grow" style={{ gap: 2, minWidth: 0 }}>
+              <span className="t-micro" style={{ color: "var(--m-burnt)" }}>Order again?</span>
+              <span className="t-h2">Your Instamart go-tos</span>
+              <span className="t-cap">Bo will confirm the cart first</span>
+            </div>
+            <span className="pill-lime pill-sm">Reorder</span>
+          </button>
+
+          {/* Cravings — mascots, one per mood */}
+          <div className="hstack" style={{ justifyContent: "space-between", marginTop: 4 }}>
+            <span className="t-h1">Craving something?</span>
+            <Link href="/m/search" className="t-cap" style={{ color: "var(--m-forest)" }}>
+              See all
             </Link>
-          ))}
-        </div>
-
-        {/* Cravings carousel */}
-        <Section title="Cravings, right now">
-          <div className="hscroll hstack" style={{ gap: 10, padding: "0 18px" }}>
-            {CRAVINGS.map((c) => (
-              <Link
-                key={c.n}
-                href={"/m/chat?q=" + encodeURIComponent(c.n)}
-                className="ph"
-                style={{ width: 150, height: 200, borderRadius: "var(--m-r-lg)", flexShrink: 0, position: "relative", overflow: "hidden", textDecoration: "none" }}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+            {CRAVINGS.map(({ label, tint, Mascot, q }) => (
+              <button
+                key={label}
+                className={`mascot-tile ${tint}`}
+                style={{ padding: "10px 4px", border: "none" }}
+                onClick={() => router.push("/m/chat?q=" + encodeURIComponent(q))}
               >
-                <div className={`ph ${c.cls}`} style={{ position: "absolute", inset: 0, backgroundImage: foodImage(c.n) ? `url(${foodImage(c.n)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7) 100%)" }} />
-                <div style={{ position: "absolute", left: 12, top: 12 }}>
-                  <span className="chip" style={{ background: "rgba(0,0,0,0.5)", color: "#fff", borderColor: "rgba(255,255,255,0.2)", fontSize: 10, padding: "4px 9px" }}>{c.l}</span>
-                </div>
-                <div style={{ position: "absolute", left: 12, right: 12, bottom: 12, color: "#fff" }}>
-                  <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em" }}>{c.n}</div>
-                </div>
-              </Link>
+                <Mascot width={40} height={40} />
+                <span className="t-cap" style={{ color: "var(--m-ink)" }}>{label}</span>
+              </button>
             ))}
           </div>
-        </Section>
 
-        {/* Editor's picks */}
-        <Section title="Editor's picks" action="See all">
-          <div className="col" style={{ gap: 10, padding: "0 18px" }}>
-            {PICKS.map((e) => (
-              <div key={e.n} className="card hstack" style={{ padding: 10, gap: 12 }}>
-                <div className={`ph ${e.cls}`} style={{ width: 64, height: 64, borderRadius: "var(--m-r-md)", flexShrink: 0, backgroundImage: foodImage(e.n) ? `url(${foodImage(e.n)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
-                <div className="col" style={{ gap: 3 }}>
-                  <span className="t-h3">{e.n}</span>
-                  <span className="t-small">{e.s}</span>
+          {/* Editor's picks — duotone photo cards with time badge + carrots */}
+          <div className="hstack" style={{ justifyContent: "space-between", marginTop: 4 }}>
+            <span className="t-h1">Editor&rsquo;s picks</span>
+            <Link href="/m/search" className="t-cap" style={{ color: "var(--m-forest)" }}>
+              See all
+            </Link>
+          </div>
+          <div className="hstack" style={{ alignItems: "stretch", gap: 12 }}>
+            {PICKS.map((p) => (
+              <button
+                key={p.name}
+                className={`duo ${p.duo} grow`}
+                style={{ height: 210, border: "none", padding: 0 }}
+                onClick={() => router.push("/m/chat?q=" + encodeURIComponent(p.name))}
+              >
+                <div
+                  className="imgfill"
+                  style={{ position: "absolute", inset: 0, backgroundImage: `url('${foodImage(p.name) ?? ""}')` }}
+                />
+                <div
+                  className="duo-body"
+                  style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 12 }}
+                >
+                  <span className={`badge ${p.badge}`} style={{ alignSelf: "flex-start" }}>
+                    <b>{p.mins}</b>min
+                  </span>
+                  <div className="vstack" style={{ gap: 2 }}>
+                    <span style={{ font: "800 19px/1.05 var(--m-font-display)", color: "var(--m-on-deep)", textAlign: "left" }}>
+                      {p.name}
+                    </span>
+                    <CarrotRating value={p.rating} />
+                  </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
-        </Section>
-
-        <div style={{ height: 24 }} />
+        </div>
       </div>
-    </div>
-  );
-}
-
-function Section({ title, action, children }: { title: string; action?: string; children: React.ReactNode }) {
-  return (
-    <div style={{ marginTop: 22 }}>
-      <div className="hstack" style={{ justifyContent: "space-between", alignItems: "baseline", padding: "0 18px", marginBottom: 12 }}>
-        <h3 className="t-h2">{title}</h3>
-        {action && <span className="t-cap" style={{ color: "var(--m-forest)" }}>{action}</span>}
-      </div>
-      {children}
     </div>
   );
 }

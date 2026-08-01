@@ -93,7 +93,8 @@ export default function MobileRootLayout({
           color: "var(--m-ink)",
         }}
       >
-        <ThemeProvider>
+        {/* meshi is light-first; the shared provider defaults to dark for web. */}
+        <ThemeProvider defaultTheme="light">
           <UserProvider>{children}</UserProvider>
         </ThemeProvider>
       </body>

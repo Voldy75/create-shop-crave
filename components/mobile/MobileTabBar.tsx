@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CalendarDays, Heart, User } from "lucide-react";
+import { Home, Search, CalendarDays, User } from "lucide-react";
 import { BoBowl } from "@/components/mascots";
 
 /**
@@ -16,14 +16,18 @@ import { BoBowl } from "@/components/mascots";
  * matches nothing in the new system) and the `.tab-ic` pill that fills with
  * --m-tint-green when active.
  */
+/**
+ * Destinations follow the artboards: Home / Discover / Bo / Plan / Profile.
+ * Saved is deliberately NOT a tab in the design — it is reached from Profile.
+ */
 const LEFT = [
   { href: "/m", label: "Home", icon: Home, match: (p: string) => p === "/m" },
-  { href: "/m/plan", label: "Plan", icon: CalendarDays, match: (p: string) => p.startsWith("/m/plan") },
+  { href: "/m/search", label: "Discover", icon: Search, match: (p: string) => p.startsWith("/m/search") },
 ];
 
 const RIGHT = [
-  { href: "/m/saved", label: "Saved", icon: Heart, match: (p: string) => p.startsWith("/m/saved") },
-  { href: "/m/profile", label: "Me", icon: User, match: (p: string) => p.startsWith("/m/profile") },
+  { href: "/m/plan", label: "Plan", icon: CalendarDays, match: (p: string) => p.startsWith("/m/plan") },
+  { href: "/m/profile", label: "Profile", icon: User, match: (p: string) => p.startsWith("/m/profile") },
 ];
 
 export function MobileTabBar() {
