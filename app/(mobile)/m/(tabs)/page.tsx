@@ -8,6 +8,7 @@ import { useUser } from "@/app/context/UserContext";
 import { getMealLogs } from "@/lib/storage";
 import { loggingStreak } from "@/lib/nutrition";
 import { foodImage } from "@/lib/food-images";
+import { BoBowl } from "@/components/mascots";
 
 /**
  * meshi Home — faithful to the handoff ScreenHome (v2-screens.jsx) in the
@@ -56,20 +57,20 @@ export default function MeshiHome() {
   const initials = hydrated && userName ? userName.slice(0, 2).toUpperCase() : "··";
 
   return (
-    <div className="col" style={{ height: "100%", background: "var(--cc-bg)" }}>
+    <div className="col" style={{ height: "100%", background: "var(--m-cream)" }}>
       <div className="scroll" style={{ flex: 1 }}>
         {/* Header */}
         <div style={{ padding: "calc(env(safe-area-inset-top, 12px) + 8px) 18px 4px" }}>
-          <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <div className="hstack" style={{ justifyContent: "space-between", alignItems: "center" }}>
             <div className="col">
-              <div className="row" style={{ gap: 8, alignItems: "center" }}>
-                <span className="t-cap" style={{ color: "var(--cc-acc)" }}>{timeLabel}</span>
+              <div className="hstack" style={{ gap: 8, alignItems: "center" }}>
+                <span className="t-cap" style={{ color: "var(--m-forest)" }}>{timeLabel}</span>
                 {streak > 0 && (
                   <Link
                     href="/m/plan"
-                    className="row"
+                    className="hstack"
                     aria-label={`${streak} day logging streak`}
-                    style={{ gap: 3, alignItems: "center", textDecoration: "none", background: "var(--cc-acc-dim)", color: "var(--cc-acc)", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}
+                    style={{ gap: 3, alignItems: "center", textDecoration: "none", background: "var(--m-tint-green)", color: "var(--m-forest)", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}
                   >
                     <Flame width={12} height={12} /> {streak}
                   </Link>
@@ -79,13 +80,13 @@ export default function MeshiHome() {
                 What&apos;s it gonna<br />be tonight?
               </h1>
             </div>
-            <div className="row" style={{ gap: 8 }}>
-              <Link href="/m/search" aria-label="Search" style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--cc-surf-3)", display: "grid", placeItems: "center", color: "var(--cc-ink-1)", textDecoration: "none" }}>
+            <div className="hstack" style={{ gap: 8 }}>
+              <Link href="/m/search" aria-label="Search" style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--m-cream-2)", display: "grid", placeItems: "center", color: "var(--m-ink)", textDecoration: "none" }}>
                 <SearchIcon width={18} height={18} />
               </Link>
               <Link
                 href="/m/profile"
-                style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--cc-surf-3)", display: "grid", placeItems: "center", color: "var(--cc-ink-1)", fontWeight: 700, fontSize: 14, textDecoration: "none" }}
+                style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--m-cream-2)", display: "grid", placeItems: "center", color: "var(--m-ink)", fontWeight: 700, fontSize: 14, textDecoration: "none" }}
               >
                 {initials}
               </Link>
@@ -95,27 +96,32 @@ export default function MeshiHome() {
 
         {/* Tonight's brief */}
         <div style={{ padding: 18 }}>
-          <div className="card-acc" style={{ padding: 20, position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", inset: 0, opacity: 0.18, background: "radial-gradient(80% 80% at 80% 0%, #fff, transparent 60%)" }} />
-            <div className="row" style={{ gap: 8, marginBottom: 12, position: "relative" }}>
-              <span className="ai-orb" style={{ background: "rgba(255,255,255,0.95)" }} />
-              <span className="t-cap" style={{ color: "rgba(255,255,255,0.85)" }}>Tonight&apos;s brief</span>
+          {/* Bo's brief. Previously a saffron card with white-on-dark text —
+              on the cream system that rendered invisible. Now a green section
+              tint with chocolate ink, and Bo fronting the card since this is
+              the AI's voice speaking. */}
+          <div className="card tint-green" style={{ padding: 20, position: "relative", overflow: "hidden" }}>
+            <div className="hstack" style={{ gap: 8, marginBottom: 12 }}>
+              <span className="ai-orb">
+                <BoBowl width={20} height={20} />
+              </span>
+              <span className="t-micro">Tonight&apos;s brief</span>
             </div>
-            <p className="t-h2" style={{ position: "relative", lineHeight: 1.3, fontWeight: 500 }}>
+            <p className="t-h2" style={{ lineHeight: 1.3 }}>
               Tell meshi what you&apos;re craving — get a recipe, the best nearby spots, or have it ordered for you.
             </p>
-            <div className="row" style={{ gap: 8, marginTop: 16, position: "relative" }}>
+            <div className="hstack" style={{ gap: 8, marginTop: 16 }}>
               <button
                 onClick={() => router.push("/m/chat?q=" + encodeURIComponent("What should I cook tonight?"))}
-                className="pill-tonal"
-                style={{ background: "rgba(255,255,255,0.18)", color: "#fff", flex: 1, padding: "10px 14px", fontSize: 13 }}
+                className="pill-secondary pill-sm"
+                style={{ flex: 1 }}
               >
                 Cook it
               </button>
               <button
                 onClick={() => router.push("/m/chat?agent=1&q=" + encodeURIComponent("Order dinner for tonight"))}
-                className="pill-tonal"
-                style={{ background: "#fff", color: "var(--cc-acc-deep)", flex: 1, padding: "10px 14px", fontSize: 13, fontWeight: 600 }}
+                className="pill-primary pill-sm"
+                style={{ flex: 1 }}
               >
                 Order it
               </button>
@@ -127,10 +133,10 @@ export default function MeshiHome() {
         <div style={{ padding: "0 18px 4px" }}>
           <button
             onClick={() => router.push("/m/chat?agent=1&q=" + encodeURIComponent("Reorder my usual groceries from Swiggy Instamart using my go-to items. Confirm the cart before placing."))}
-            className="card row"
+            className="card hstack"
             style={{ padding: 12, gap: 12, width: "100%", textAlign: "left" }}
           >
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--cc-acc-dim)", color: "var(--cc-acc)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--m-tint-green)", color: "var(--m-forest)", display: "grid", placeItems: "center", flexShrink: 0 }}>
               <RotateCcw width={20} height={20} />
             </div>
             <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
@@ -144,7 +150,7 @@ export default function MeshiHome() {
         <div style={{ padding: "0 18px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {QUICK.map((q) => (
             <Link key={q.t} href={q.href} className="card" style={{ padding: 14, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, textDecoration: "none" }}>
-              <q.Icon width={20} height={20} style={{ color: "var(--cc-acc)" }} />
+              <q.Icon width={20} height={20} style={{ color: "var(--m-forest)" }} />
               <div className="col" style={{ gap: 2 }}>
                 <span className="t-h3">{q.t}</span>
                 <span className="t-small">{q.s}</span>
@@ -155,13 +161,13 @@ export default function MeshiHome() {
 
         {/* Cravings carousel */}
         <Section title="Cravings, right now">
-          <div className="hscroll row" style={{ gap: 10, padding: "0 18px" }}>
+          <div className="hscroll hstack" style={{ gap: 10, padding: "0 18px" }}>
             {CRAVINGS.map((c) => (
               <Link
                 key={c.n}
                 href={"/m/chat?q=" + encodeURIComponent(c.n)}
                 className="ph"
-                style={{ width: 150, height: 200, borderRadius: "var(--cc-r-lg)", flexShrink: 0, position: "relative", overflow: "hidden", textDecoration: "none" }}
+                style={{ width: 150, height: 200, borderRadius: "var(--m-r-lg)", flexShrink: 0, position: "relative", overflow: "hidden", textDecoration: "none" }}
               >
                 <div className={`ph ${c.cls}`} style={{ position: "absolute", inset: 0, backgroundImage: foodImage(c.n) ? `url(${foodImage(c.n)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7) 100%)" }} />
@@ -180,8 +186,8 @@ export default function MeshiHome() {
         <Section title="Editor's picks" action="See all">
           <div className="col" style={{ gap: 10, padding: "0 18px" }}>
             {PICKS.map((e) => (
-              <div key={e.n} className="card row" style={{ padding: 10, gap: 12 }}>
-                <div className={`ph ${e.cls}`} style={{ width: 64, height: 64, borderRadius: "var(--cc-r-md)", flexShrink: 0, backgroundImage: foodImage(e.n) ? `url(${foodImage(e.n)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
+              <div key={e.n} className="card hstack" style={{ padding: 10, gap: 12 }}>
+                <div className={`ph ${e.cls}`} style={{ width: 64, height: 64, borderRadius: "var(--m-r-md)", flexShrink: 0, backgroundImage: foodImage(e.n) ? `url(${foodImage(e.n)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
                 <div className="col" style={{ gap: 3 }}>
                   <span className="t-h3">{e.n}</span>
                   <span className="t-small">{e.s}</span>
@@ -200,9 +206,9 @@ export default function MeshiHome() {
 function Section({ title, action, children }: { title: string; action?: string; children: React.ReactNode }) {
   return (
     <div style={{ marginTop: 22 }}>
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline", padding: "0 18px", marginBottom: 12 }}>
+      <div className="hstack" style={{ justifyContent: "space-between", alignItems: "baseline", padding: "0 18px", marginBottom: 12 }}>
         <h3 className="t-h2">{title}</h3>
-        {action && <span className="t-cap" style={{ color: "var(--cc-acc)" }}>{action}</span>}
+        {action && <span className="t-cap" style={{ color: "var(--m-forest)" }}>{action}</span>}
       </div>
       {children}
     </div>

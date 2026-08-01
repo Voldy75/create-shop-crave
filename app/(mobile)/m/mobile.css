@@ -1,0 +1,145 @@
+/* ============================================================
+   meshi — MOBILE layer
+   Sits on top of design/meshi-b.css. Only adds what the shared
+   design system does not carry: layout utilities, scroll
+   containers, photo placeholders, and two type sizes the mobile
+   screens use heavily.
+
+   Everything here is expressed in --m-* tokens. If you find
+   yourself writing a hex value in this file, it belongs in
+   design/meshi-b.css instead.
+   ============================================================ */
+
+/* ---------- Minimal reset ----------
+   This tree no longer imports globals.css, which means it also lost Tailwind's
+   preflight. design/meshi-b.css assumes a reset exists but does not ship one,
+   so without this every padded element measures content-box and overflows —
+   the tab bar rendered 406px wide in a 390px viewport before this landed.
+
+   Kept deliberately small: box model, margins, and media defaults. Anything
+   more opinionated belongs in the design system, not here. */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+h1, h2, h3, h4, p, figure, blockquote { margin: 0; }
+
+img, svg, video, canvas { display: block; max-width: 100%; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+button { cursor: pointer; }
+
+a { color: inherit; text-decoration: none; }
+
+/* ---------- Layout utilities ----------
+   NOTE ON `.row`: the old mobile stylesheet defined `.row` as a plain flex
+   utility, and 89 call sites use it that way. design/meshi-b.css defines
+   `.row` as a padded, shadowed LIST ROW CARD — same name, completely
+   different thing. Converted screens must use `.hstack` (from meshi-b) for
+   flex rows and reserve `.row` for actual list rows. This file deliberately
+   does NOT redefine `.row`, so the collision surfaces loudly during
+   conversion instead of silently restyling 89 elements into cards. */
+.col { display: flex; flex-direction: column; }
+.grow-1 { flex: 1; min-width: 0; }
+
+/* ---------- Scroll containers ---------- */
+.scroll { overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.hscroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+.scroll::-webkit-scrollbar,
+.hscroll::-webkit-scrollbar { display: none; }
+.scroll { scrollbar-width: none; }
+.hscroll { scrollbar-width: none; }
+
+/* ---------- Hairline ---------- */
+.divider { height: 1px; background: var(--m-ink-faint); }
+
+/* ---------- Frosted overlay (sticky headers, tab bar backdrop) ---------- */
+.glass {
+  background: color-mix(in srgb, var(--m-cream) 78%, transparent);
+  backdrop-filter: saturate(160%) blur(20px);
+  -webkit-backdrop-filter: saturate(160%) blur(20px);
+}
+
+/* ---------- Type sizes the mobile screens rely on ----------
+   meshi-b.css ships .t-d1/.t-d2/.t-h1/.t-h2/.t-body/.t-body-soft/.t-cap/
+   .t-micro. These three fill the gaps rather than forcing every screen to
+   restructure its hierarchy during a re-skin. */
+.t-display { font: 800 34px/1.03 var(--m-font-display); letter-spacing: -.6px; color: var(--m-ink); }
+.t-h3 { font: 700 14.5px/1.25 var(--m-font-display); color: var(--m-ink); }
+.t-small { font: 600 13px/1.4 var(--m-font-body); color: var(--m-ink-soft); }
+
+/* ---------- Photo placeholders ----------
+   Used where a dish has no matching photo (lib/food-images.ts falls back to
+   these). Retinted from the old dark-first palette onto the cream system —
+   these are warm paper washes now, not night gradients. */
+.ph {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 20% 0%, var(--ph-a, var(--m-tint-peach)) 0%, transparent 60%),
+    radial-gradient(100% 100% at 100% 100%, var(--ph-b, var(--m-cream-2)) 0%, transparent 60%),
+    linear-gradient(135deg, var(--ph-c, var(--m-cream-2)), var(--ph-d, var(--m-card)));
+}
+.ph::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(75, 46, 18, .03) 0 2px, transparent 2px 14px);
+  pointer-events: none;
+}
+.ph-saffron { --ph-a: var(--m-tint-peach); --ph-b: var(--m-orange); --ph-c: var(--m-tint-peach); --ph-d: var(--m-cream-2); }
+.ph-spinach { --ph-a: var(--m-tint-green); --ph-b: var(--m-lime); --ph-c: var(--m-tint-green); --ph-d: var(--m-cream-2); }
+.ph-rose    { --ph-a: var(--m-tint-lav);   --ph-b: var(--m-plum-2); --ph-c: var(--m-tint-lav); --ph-d: var(--m-cream-2); }
+.ph-cream   { --ph-a: var(--m-cream-2);    --ph-b: var(--m-card);   --ph-c: var(--m-cream-2); --ph-d: var(--m-card); }
+.ph-fire    { --ph-a: var(--m-orange);     --ph-b: var(--m-burnt);  --ph-c: var(--m-tint-peach); --ph-d: var(--m-cream-2); }
+.ph-night   { --ph-a: var(--m-tint-lav);   --ph-b: var(--m-plum);   --ph-c: var(--m-tint-lav); --ph-d: var(--m-cream-2); }
+.ph-blue    { --ph-a: var(--m-tint-green); --ph-b: var(--m-forest); --ph-c: var(--m-tint-green); --ph-d: var(--m-cream-2); }
+
+/* ---------- Bo, the AI affordance ----------
+   Replaces the old conic-gradient "ai-orb". Bo is the brand's AI presence
+   (components/mascots/BoBowl), so the orb is now a forest ring the mascot
+   sits inside. */
+.ai-orb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--m-card);
+  box-shadow: 0 0 0 2.5px var(--m-forest);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* ---------- Map backdrop (restaurants) ---------- */
+.mapbg {
+  background:
+    linear-gradient(0deg, var(--m-tint-green) 0%, transparent 40%),
+    var(--m-cream-2);
+}
+
+/* ---------- Tab bar positioning ----------
+   meshi-b.css declares `.tabbar { position: absolute }`, which is right for the
+   design file (each screen is a fixed-height artboard) and wrong for a real
+   scrolling app — the bar scrolls away with the content and lands in the middle
+   of the page. Pin it to the viewport and honour the home indicator.
+
+   The phone column is capped at 520px by the shell, so the bar is centred
+   rather than stretched edge-to-edge on wide screens. */
+.tabbar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 520px;
+  height: calc(86px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ---------- Safe-area helpers ---------- */
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }

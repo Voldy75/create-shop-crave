@@ -46,7 +46,7 @@ export default function MobileRecipe() {
     setRecipe(getActiveRecipe() ?? SAMPLE);
   }, []);
 
-  if (!recipe) return <div style={{ minHeight: "100dvh", background: "var(--cc-bg)" }} />;
+  if (!recipe) return <div style={{ minHeight: "100dvh", background: "var(--m-cream)" }} />;
 
   const estTotal = recipe.ingredients.reduce((s, i) => s + parseNumeric(i.price), 0);
   const stats = [
@@ -62,21 +62,21 @@ export default function MobileRecipe() {
   };
 
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)", position: "relative" }}>
+    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)", position: "relative" }}>
       <div className="scroll" style={{ flex: 1, paddingBottom: 96 }}>
         {/* Hero */}
         <div className="ph ph-saffron" style={{ height: 260, position: "relative", backgroundImage: foodImage(recipe.name) ? `url(${foodImage(recipe.name)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 30%, transparent 50%, rgba(0,0,0,0.8) 100%)" }} />
-          <div className="row" style={{ position: "absolute", top: "calc(env(safe-area-inset-top,12px) + 6px)", left: 12, right: 12, justifyContent: "space-between" }}>
+          <div className="hstack" style={{ position: "absolute", top: "calc(env(safe-area-inset-top,12px) + 6px)", left: 12, right: 12, justifyContent: "space-between" }}>
             <button onClick={() => router.back()} style={iconBtn} aria-label="Back"><ChevronLeft width={20} height={20} /></button>
-            <div className="row" style={{ gap: 6 }}>
+            <div className="hstack" style={{ gap: 6 }}>
               <button style={iconBtn} aria-label="Share"><Share2 width={16} height={16} /></button>
               <button style={iconBtn} aria-label="Save"><Heart width={16} height={16} /></button>
             </div>
           </div>
           <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, color: "#fff" }}>
             {recipe.dietaryTags && recipe.dietaryTags.length > 0 && (
-              <div className="row" style={{ gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+              <div className="hstack" style={{ gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
                 {recipe.dietaryTags.slice(0, 3).map((t) => (
                   <span key={t} className="chip" style={{ background: "rgba(255,255,255,0.18)", borderColor: "transparent", color: "#fff", fontSize: 10, textTransform: "capitalize" }}>{t}</span>
                 ))}
@@ -89,7 +89,7 @@ export default function MobileRecipe() {
 
         {/* Stats */}
         {stats.length > 0 && (
-          <div className="row" style={{ padding: "14px 18px", borderBottom: "1px solid var(--cc-line)", justifyContent: "space-between" }}>
+          <div className="hstack" style={{ padding: "14px 18px", borderBottom: "1px solid var(--m-ink-faint)", justifyContent: "space-between" }}>
             {stats.map((s) => (
               <div key={s.s} className="col" style={{ alignItems: "center" }}>
                 <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.015em" }}>{s.t}</span>
@@ -101,19 +101,19 @@ export default function MobileRecipe() {
 
         {/* Ingredients */}
         <div style={{ padding: 18 }}>
-          <div className="row" style={{ justifyContent: "space-between", marginBottom: 12 }}>
+          <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 12 }}>
             <h2 className="t-h2">Ingredients</h2>
             <span className="t-small">{recipe.ingredients.length} items{estTotal > 0 ? ` · ₹${estTotal} est.` : ""}</span>
           </div>
-          <div className="col" style={{ gap: 1, background: "var(--cc-line)", borderRadius: "var(--cc-r-md)", overflow: "hidden", border: "1px solid var(--cc-line)" }}>
+          <div className="col" style={{ gap: 1, background: "var(--m-ink-faint)", borderRadius: "var(--m-r-md)", overflow: "hidden", border: "1px solid var(--m-ink-faint)" }}>
             {recipe.ingredients.map((ing) => (
-              <div key={ing.item} className="row" style={{ padding: "12px 14px", background: "var(--cc-surf-1)", gap: 10 }}>
-                <div style={{ width: 18, height: 18, borderRadius: 4, border: "1.5px solid var(--cc-line-2)", flexShrink: 0 }} />
+              <div key={ing.item} className="hstack" style={{ padding: "12px 14px", background: "var(--m-card)", gap: 10 }}>
+                <div style={{ width: 18, height: 18, borderRadius: 4, border: "1.5px solid var(--m-ink-faint)", flexShrink: 0 }} />
                 <div className="col" style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ fontSize: 14, fontWeight: 500 }}>{ing.item}</span>
                   {ing.quantity && <span className="t-small">{ing.quantity}</span>}
                 </div>
-                {ing.price && <span style={{ fontSize: 13, color: "var(--cc-ink-2)" }}>{ing.price}</span>}
+                {ing.price && <span style={{ fontSize: 13, color: "var(--m-ink-soft)" }}>{ing.price}</span>}
               </div>
             ))}
           </div>
@@ -125,8 +125,8 @@ export default function MobileRecipe() {
             <h2 className="t-h2" style={{ marginBottom: 14 }}>Steps</h2>
             <div className="col" style={{ gap: 14 }}>
               {recipe.instructions.map((s, i) => (
-                <div key={i} className="row" style={{ gap: 12, alignItems: "flex-start" }}>
-                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--cc-acc-soft)", color: "var(--cc-acc)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{i + 1}</div>
+                <div key={i} className="hstack" style={{ gap: 12, alignItems: "flex-start" }}>
+                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--m-tint-green)", color: "var(--m-forest)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{i + 1}</div>
                   <p className="t-body" style={{ flex: 1, lineHeight: 1.5 }}>{s}</p>
                 </div>
               ))}
@@ -136,15 +136,15 @@ export default function MobileRecipe() {
       </div>
 
       {/* Sticky buy bar */}
-      <div style={{ position: "fixed", left: 12, right: 12, bottom: "calc(14px + env(safe-area-inset-bottom,0px))", maxWidth: 496, margin: "0 auto", background: "#000", borderRadius: "var(--cc-r-pill)", padding: 6, display: "flex", alignItems: "center", gap: 10, boxShadow: "0 14px 40px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="row" style={{ padding: "0 14px", gap: 8, flex: 1 }}>
-          <ShoppingCart width={18} height={18} style={{ color: "var(--cc-acc)" }} />
+      <div style={{ position: "fixed", left: 12, right: 12, bottom: "calc(14px + env(safe-area-inset-bottom,0px))", maxWidth: 496, margin: "0 auto", background: "#000", borderRadius: "var(--m-r-pill)", padding: 6, display: "flex", alignItems: "center", gap: 10, boxShadow: "0 14px 40px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="hstack" style={{ padding: "0 14px", gap: 8, flex: 1 }}>
+          <ShoppingCart width={18} height={18} style={{ color: "var(--m-forest)" }} />
           <div className="col" style={{ gap: 0 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Buy ingredients</span>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>{estTotal > 0 ? `~₹${estTotal} · pantry pre-check` : "pantry pre-check"}</span>
           </div>
         </div>
-        <button onClick={buyAll} style={{ background: "var(--cc-acc)", color: "#fff", border: "none", borderRadius: "var(--cc-r-pill)", padding: "10px 18px", fontWeight: 600, fontSize: 13, fontFamily: "inherit" }}>Review</button>
+        <button onClick={buyAll} style={{ background: "var(--m-forest)", color: "#fff", border: "none", borderRadius: "var(--m-r-pill)", padding: "10px 18px", fontWeight: 600, fontSize: 13, fontFamily: "inherit" }}>Review</button>
         <a href={buildBlinkitLink(recipe.name + " ingredients")} target="_blank" rel="noopener noreferrer" style={{ display: "none" }} aria-hidden />
       </div>
     </div>

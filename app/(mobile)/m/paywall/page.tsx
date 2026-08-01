@@ -92,7 +92,7 @@ export default function MobilePaywall() {
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 200, background: "radial-gradient(80% 100% at 50% 0%, rgba(255,107,53,0.45), transparent 70%)" }} />
 
       <div style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 18px 0", position: "relative" }}>
-        <div className="row" style={{ justifyContent: "space-between" }}>
+        <div className="hstack" style={{ justifyContent: "space-between" }}>
           <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)" }} aria-label="Close"><X width={22} height={22} /></button>
           {/* Restore Purchases is MANDATORY on iOS for any app selling a
               subscription. It previously rendered as inert text with no
@@ -110,9 +110,9 @@ export default function MobilePaywall() {
       </div>
 
       <div className="scroll" style={{ flex: 1, padding: "24px 22px 0" }}>
-        <div className="row" style={{ gap: 6, marginBottom: 14 }}>
-          <Crown width={22} height={22} style={{ color: "var(--cc-acc)" }} />
-          <span className="t-cap" style={{ color: "var(--cc-acc)" }}>MESHI PRO</span>
+        <div className="hstack" style={{ gap: 6, marginBottom: 14 }}>
+          <Crown width={22} height={22} style={{ color: "var(--m-forest)" }} />
+          <span className="t-cap" style={{ color: "var(--m-forest)" }}>MESHI PRO</span>
         </div>
         <h1 className="t-display" style={{ fontSize: 36, color: "#fff" }}>
           Unlimited<br />cravings.<br /><span style={{ color: "rgba(255,255,255,0.5)" }}>One subscription.</span>
@@ -120,8 +120,8 @@ export default function MobilePaywall() {
 
         <div className="col" style={{ gap: 12, marginTop: 28 }}>
           {FEATURES.map(([t, s]) => (
-            <div key={t} className="row" style={{ gap: 12, alignItems: "flex-start" }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--cc-acc)", display: "grid", placeItems: "center", flexShrink: 0 }}><Check width={16} height={16} style={{ color: "#fff" }} /></div>
+            <div key={t} className="hstack" style={{ gap: 12, alignItems: "flex-start" }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--m-forest)", display: "grid", placeItems: "center", flexShrink: 0 }}><Check width={16} height={16} style={{ color: "#fff" }} /></div>
               <div className="col" style={{ gap: 2 }}>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>{t}</span>
                 <span className="t-small" style={{ color: "rgba(255,255,255,0.6)" }}>{s}</span>
@@ -138,12 +138,12 @@ export default function MobilePaywall() {
           {PLANS.filter((pl) => canPurchase || pl.id === "byok").map((pl) => {
             const on = plan === pl.id;
             return (
-              <button key={pl.id} onClick={() => setPlan(pl.id)} className="card" style={{ padding: 14, textAlign: "left", background: on ? "rgba(255,107,53,0.14)" : "var(--cc-surf-1)", borderColor: on ? "var(--cc-acc)" : "var(--cc-line)" }}>
-                <div className="row" style={{ justifyContent: "space-between" }}>
+              <button key={pl.id} onClick={() => setPlan(pl.id)} className="card" style={{ padding: 14, textAlign: "left", background: on ? "rgba(255,107,53,0.14)" : "var(--m-card)", borderColor: on ? "var(--m-forest)" : "var(--m-ink-faint)" }}>
+                <div className="hstack" style={{ justifyContent: "space-between" }}>
                   <div className="col" style={{ gap: 2 }}>
-                    <div className="row" style={{ gap: 6 }}>
+                    <div className="hstack" style={{ gap: 6 }}>
                       <span style={{ fontSize: 14, fontWeight: 600 }}>{pl.l}</span>
-                      {pl.best && <span className="chip" style={{ background: "var(--cc-acc)", color: "#fff", borderColor: "transparent", fontSize: 9, padding: "2px 8px" }}>BEST VALUE</span>}
+                      {pl.best && <span className="chip" style={{ background: "var(--m-forest)", color: "#fff", borderColor: "transparent", fontSize: 9, padding: "2px 8px" }}>BEST VALUE</span>}
                     </div>
                     <span className="t-small" style={{ color: "rgba(255,255,255,0.6)" }}>{pl.s}</span>
                   </div>
@@ -153,7 +153,7 @@ export default function MobilePaywall() {
             );
           })}
         </div>
-        {note && <p className="t-small" style={{ marginTop: 14, color: "var(--cc-acc)" }}>{note}</p>}
+        {note && <p className="t-small" style={{ marginTop: 14, color: "var(--m-forest)" }}>{note}</p>}
       </div>
 
       <div style={{ padding: "14px 18px calc(18px + env(safe-area-inset-bottom,0px))" }}>

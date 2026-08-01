@@ -1,31 +1,41 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
+import { Montserrat } from "next/font/google";
 
 /**
  * Root layout #2 — the mobile tree (/m/*), which the Capacitor native shell
  * loads via server.url.
  *
- * Separate from app/(web)/layout.tsx so the two surfaces own their own <html>,
- * fonts, and chrome. What this deliberately does NOT render, versus web:
- *   - <BottomNav />  — already allowlisted to web paths only, so omitting it is
- *                      behaviour-preserving; /m has its own tab bar in
- *                      app/(mobile)/m/(tabs)/layout.tsx.
+ * Phase 10: this tree now runs entirely on the meshi Kitchef design system.
+ *
+ *   design/meshi-b.css     shared tokens + components (also used by web)
+ *   app/(mobile)/m/mobile.css   mobile-only utilities meshi-b doesn't carry
+ *
+ * globals.css is deliberately NO LONGER imported here. It was kept through the
+ * root-layout split purely to avoid a visual delta during that refactor; now
+ * that the surface is being re-skinned, its Tailwind base resets and --cc-*
+ * tokens would only fight the new system.
+ *
+ * What this deliberately does NOT render, versus web:
+ *   - <BottomNav />  — allowlisted to web paths anyway; /m has its own tab bar.
  *   - <Toaster />    — nothing under /m uses sonner.
- *
- * globals.css is still imported here ON PURPOSE. /m inherited it from the old
- * shared root layout, so its base resets (focus-visible outline, scrollbar
- * styling, border defaults) are baked into how every mobile screen renders
- * today. Dropping it in this phase would cause exactly the visual delta this
- * phase exists to avoid. Phase 10 removes it when meshi.css is replaced
- * wholesale by design/meshi-b.css — that is the right moment, because both
- * files change together.
- *
- * The DM Sans font and the .cc token wrapper stay in app/(mobile)/m/layout.tsx,
- * untouched.
  */
-import "../globals.css";
+import "../../design/meshi-b.css";
+import "./m/mobile.css";
 import { UserProvider } from "../context/UserContext";
 import { ThemeProvider } from "../context/ThemeContext";
+
+/**
+ * Montserrat, self-hosted at build time by next/font. meshi-b.css expects it as
+ * --m-font-display / --m-font-body; we bind the generated family onto both so
+ * the stylesheet never has to reach for fonts.googleapis.com.
+ */
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
+  variable: "--font-montserrat",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "meshi — Crave & Create",
@@ -34,7 +44,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "meshi",
   },
 };
@@ -43,6 +53,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Matches --m-cream so the iOS status bar and rubber-band overscroll blend
+  // into the page instead of flashing white.
+  themeColor: "#FBF6E3",
 };
 
 export default function MobileRootLayout({
@@ -51,18 +64,35 @@ export default function MobileRootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={GeistSans.variable} data-theme="dark">
+    // meshi is LIGHT-FIRST: :root is the cream palette and [data-theme="dark"]
+    // is the secondary pass. This is the inverse of the old system.
+    // suppressHydrationWarning is required, not cosmetic: the anti-flash script
+    // below rewrites data-theme from localStorage BEFORE React hydrates, so the
+    // server's "light" and the client's stored value legitimately differ. Without
+    // this, React logs a hydration mismatch on every load for anyone whose theme
+    // isn't the default.
+    <html
+      lang="en"
+      className={montserrat.variable}
+      data-theme="light"
+      suppressHydrationWarning
+    >
       <head>
-        {/* Anti-flash: sets data-theme before React hydrates. Kept in sync with
-            the web root layout. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('crave_theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('crave_theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
           }}
         />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className={GeistSans.className}>
+      <body
+        style={{
+          margin: 0,
+          fontFamily: "var(--m-font-body)",
+          background: "var(--m-cream)",
+          color: "var(--m-ink)",
+        }}
+      >
         <ThemeProvider>
           <UserProvider>{children}</UserProvider>
         </ThemeProvider>

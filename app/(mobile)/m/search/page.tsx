@@ -30,24 +30,24 @@ export default function MobileSearch() {
   };
 
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)" }}>
-      <div className="row" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 6px", gap: 8 }}>
-        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--cc-ink-1)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
+    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
+      <div className="hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 6px", gap: 8 }}>
+        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--m-ink)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
         <h1 className="t-h1">Discover</h1>
       </div>
 
       <form
         onSubmit={(e) => { e.preventDefault(); go(q); }}
-        className="row"
-        style={{ margin: "8px 16px 6px", background: "var(--cc-surf-2)", borderRadius: "var(--cc-r-pill)", padding: "8px 14px", gap: 8, border: "1px solid var(--cc-line)" }}
+        className="hstack"
+        style={{ margin: "8px 16px 6px", background: "var(--m-cream-2)", borderRadius: "var(--m-r-pill)", padding: "8px 14px", gap: 8, border: "1px solid var(--m-ink-faint)" }}
       >
-        <Search width={16} height={16} style={{ color: "var(--cc-ink-3)" }} />
+        <Search width={16} height={16} style={{ color: "var(--m-ink-soft)" }} />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search recipes, restaurants…" style={{ flex: 1, background: "none", border: "none", padding: 0, fontSize: 14 }} />
       </form>
 
       <div className="scroll" style={{ flex: 1, padding: "12px 16px 90px" }}>
         {/* Featured */}
-        <button onClick={() => go("late-night food open now near me")} className="ph ph-night" style={{ display: "block", width: "100%", height: 180, borderRadius: "var(--cc-r-lg)", position: "relative", overflow: "hidden", marginTop: 4, border: "none", textAlign: "left", backgroundImage: foodImage("noodle") ? `url(${foodImage("noodle")})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
+        <button onClick={() => go("late-night food open now near me")} className="ph ph-night" style={{ display: "block", width: "100%", height: 180, borderRadius: "var(--m-r-lg)", position: "relative", overflow: "hidden", marginTop: 4, border: "none", textAlign: "left", backgroundImage: foodImage("noodle") ? `url(${foodImage("noodle")})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.8))" }} />
           <div style={{ position: "absolute", left: 16, right: 16, bottom: 14, color: "#fff" }}>
             <span className="chip" style={{ background: "rgba(255,255,255,0.18)", borderColor: "transparent", color: "#fff", fontSize: 10 }}>FEATURED</span>
@@ -60,7 +60,7 @@ export default function MobileSearch() {
           <h3 className="t-h2" style={{ marginBottom: 12 }}>Collections</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {COLLECTIONS.map((c) => (
-              <button key={c.l} onClick={() => go(c.q)} className={`ph ${c.cls}`} style={{ height: 110, borderRadius: "var(--cc-r-md)", position: "relative", overflow: "hidden", border: "none", textAlign: "left", backgroundImage: foodImage(c.img) ? `url(${foodImage(c.img)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
+              <button key={c.l} onClick={() => go(c.q)} className={`ph ${c.cls}`} style={{ height: 110, borderRadius: "var(--m-r-md)", position: "relative", overflow: "hidden", border: "none", textAlign: "left", backgroundImage: foodImage(c.img) ? `url(${foodImage(c.img)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.7))" }} />
                 <div style={{ position: "absolute", left: 12, right: 12, bottom: 10, color: "#fff", fontSize: 13, fontWeight: 600 }}>{c.l}</div>
               </button>

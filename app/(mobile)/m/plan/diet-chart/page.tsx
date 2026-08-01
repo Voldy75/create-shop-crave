@@ -74,23 +74,23 @@ export default function DietChart() {
   };
 
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)" }}>
-      <div className="row" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", gap: 8 }}>
-        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--cc-ink-1)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
+    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
+      <div className="hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", gap: 8 }}>
+        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--m-ink)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
         <h1 className="t-h1">Diet chart</h1>
       </div>
 
       <div className="scroll" style={{ flex: 1, padding: "8px 14px 40px" }}>
         {loading && (
-          <div className="col" style={{ alignItems: "center", gap: 12, paddingTop: "30vh", color: "var(--cc-ink-2)" }}>
-            <Loader2 width={28} height={28} className="animate-spin" style={{ color: "var(--cc-acc)" }} />
+          <div className="col" style={{ alignItems: "center", gap: 12, paddingTop: "30vh", color: "var(--m-ink-soft)" }}>
+            <Loader2 width={28} height={28} className="animate-spin" style={{ color: "var(--m-forest)" }} />
             <span className="t-small">Building your 7-day plan…</span>
           </div>
         )}
 
         {error && !loading && (
           <div className="col" style={{ alignItems: "center", gap: 14, paddingTop: "24vh", textAlign: "center" }}>
-            <p className="t-body" style={{ color: "var(--cc-ink-2)", maxWidth: 280 }}>{error}</p>
+            <p className="t-body" style={{ color: "var(--m-ink-soft)", maxWidth: 280 }}>{error}</p>
             <button className="pill-primary" style={{ width: "auto", padding: "12px 22px" }} onClick={generate}>Try again</button>
           </div>
         )}
@@ -98,10 +98,10 @@ export default function DietChart() {
         {chart && !loading && (
           <>
             {chart.summary && (
-              <div className="card" style={{ padding: 14, marginBottom: 12, background: "var(--cc-acc-soft)", borderColor: "var(--cc-acc-dim)" }}>
-                <div className="row" style={{ gap: 8, alignItems: "flex-start" }}>
-                  <Sparkles width={16} height={16} style={{ color: "var(--cc-acc)", flexShrink: 0, marginTop: 2 }} />
-                  <span className="t-small" style={{ color: "var(--cc-ink-1)" }}>{chart.summary}</span>
+              <div className="card" style={{ padding: 14, marginBottom: 12, background: "var(--m-tint-green)", borderColor: "var(--m-tint-green)" }}>
+                <div className="hstack" style={{ gap: 8, alignItems: "flex-start" }}>
+                  <Sparkles width={16} height={16} style={{ color: "var(--m-forest)", flexShrink: 0, marginTop: 2 }} />
+                  <span className="t-small" style={{ color: "var(--m-ink)" }}>{chart.summary}</span>
                 </div>
               </div>
             )}
@@ -110,14 +110,14 @@ export default function DietChart() {
                 const total = d.meals.reduce((s, m) => s + m.calories, 0);
                 return (
                   <div key={d.day} className="card" style={{ padding: 14 }}>
-                    <div className="row" style={{ justifyContent: "space-between", marginBottom: 8 }}>
+                    <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 8 }}>
                       <span className="t-h3">{d.day}</span>
                       <span className="t-small">{total} cal</span>
                     </div>
                     <div className="col" style={{ gap: 6 }}>
                       {d.meals.map((m) => (
-                        <div key={m.mealType} className="row" style={{ justifyContent: "space-between", gap: 8 }}>
-                          <span className="t-small" style={{ color: "var(--cc-ink-2)", textTransform: "capitalize", flex: "0 0 72px" }}>{m.mealType}</span>
+                        <div key={m.mealType} className="hstack" style={{ justifyContent: "space-between", gap: 8 }}>
+                          <span className="t-small" style={{ color: "var(--m-ink-soft)", textTransform: "capitalize", flex: "0 0 72px" }}>{m.mealType}</span>
                           <span style={{ fontSize: 13, fontWeight: 500, flex: 1, minWidth: 0 }}>{m.dish}</span>
                           <span className="t-small" style={{ fontSize: 11 }}>{m.calories}</span>
                         </div>
@@ -132,7 +132,7 @@ export default function DietChart() {
       </div>
 
       {chart && !loading && (
-        <div className="glass" style={{ position: "sticky", bottom: 0, padding: "12px 16px calc(14px + env(safe-area-inset-bottom,0px))", borderTop: "1px solid var(--cc-line)" }}>
+        <div className="glass" style={{ position: "sticky", bottom: 0, padding: "12px 16px calc(14px + env(safe-area-inset-bottom,0px))", borderTop: "1px solid var(--m-ink-faint)" }}>
           <button className="pill-primary" onClick={apply} disabled={applied}>
             {applied ? <><Check width={16} height={16} /> Applied to your plan</> : "Apply to my planner"}
           </button>

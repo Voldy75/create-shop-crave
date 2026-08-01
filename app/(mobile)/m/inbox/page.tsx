@@ -67,12 +67,12 @@ export default function MobileInbox() {
   );
 
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)" }}>
-      <div className="row" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", gap: 8 }}>
-        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--cc-ink-1)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
+    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
+      <div className="hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", gap: 8 }}>
+        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--m-ink)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
         <h1 className="t-h1">Inbox</h1>
       </div>
-      <div className="hscroll row" style={{ gap: 6, padding: "4px 14px 10px" }}>
+      <div className="hscroll hstack" style={{ gap: 6, padding: "4px 14px 10px" }}>
         {FILTERS.map((c) => (
           <button key={c} onClick={() => setFilter(c)} className={`chip ${filter === c ? "chip-solid" : ""}`}>{c}</button>
         ))}
@@ -90,8 +90,8 @@ export default function MobileInbox() {
         )}
 
         {filtered.map((n) => (
-          <div key={n.id} className="row" style={{ padding: "14px 8px", gap: 12, borderBottom: "1px solid var(--cc-line)" }}>
-            <div className="ph ph-saffron" style={{ width: 40, height: 40, borderRadius: "var(--cc-r-md)", flexShrink: 0, display: "grid", placeItems: "center" }}>
+          <div key={n.id} className="hstack" style={{ padding: "14px 8px", gap: 12, borderBottom: "1px solid var(--m-ink-faint)" }}>
+            <div className="ph ph-saffron" style={{ width: 40, height: 40, borderRadius: "var(--m-r-md)", flexShrink: 0, display: "grid", placeItems: "center" }}>
               {n.channel === "whatsapp" ? <ShoppingCart width={16} height={16} style={{ color: "#fff" }} /> : <Sparkles width={16} height={16} style={{ color: "#fff" }} />}
             </div>
             <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
@@ -109,7 +109,7 @@ export default function MobileInbox() {
 function EmptyState({ icon, title, sub, action }: { icon: React.ReactNode; title: string; sub: string; action?: React.ReactNode }) {
   return (
     <div className="col" style={{ alignItems: "center", textAlign: "center", gap: 12, paddingTop: "20vh" }}>
-      <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--cc-surf-2)", display: "grid", placeItems: "center", color: "var(--cc-ink-3)" }}>{icon}</div>
+      <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--m-cream-2)", display: "grid", placeItems: "center", color: "var(--m-ink-soft)" }}>{icon}</div>
       <h2 className="t-h2">{title}</h2>
       <p className="t-small" style={{ maxWidth: 260 }}>{sub}</p>
       {action && <div style={{ marginTop: 4 }}>{action}</div>}

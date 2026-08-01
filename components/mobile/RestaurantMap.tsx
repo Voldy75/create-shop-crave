@@ -55,14 +55,14 @@ function FallbackMap({ pins, hasLocation }: { pins: MapPin[]; hasLocation: boole
       <div className="mapbg" style={{ position: "absolute", inset: 0 }} />
       {pins.map((p, i) => (
         <div key={p.label} style={{ position: "absolute", left: `${FALLBACK_PIN_POS[i]?.x ?? 50}%`, top: `${FALLBACK_PIN_POS[i]?.y ?? 50}%`, transform: "translate(-50%,-100%)", zIndex: 2 }}>
-          <div style={{ width: i === 0 ? 30 : 26, height: i === 0 ? 30 : 26, borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", background: i === 0 ? "var(--cc-acc)" : "var(--cc-surf-2)", border: i === 0 ? "none" : "1px solid var(--cc-line-2)", display: "grid", placeItems: "center", boxShadow: "0 4px 10px rgba(0,0,0,0.35)" }}>
-            <span style={{ transform: "rotate(45deg)", color: i === 0 ? "#fff" : "var(--cc-ink-1)", fontSize: 12, fontWeight: 700 }}>{p.label}</span>
+          <div style={{ width: i === 0 ? 30 : 26, height: i === 0 ? 30 : 26, borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", background: i === 0 ? "var(--m-forest)" : "var(--m-cream-2)", border: i === 0 ? "none" : "1px solid var(--m-ink-faint)", display: "grid", placeItems: "center", boxShadow: "0 4px 10px rgba(0,0,0,0.35)" }}>
+            <span style={{ transform: "rotate(45deg)", color: i === 0 ? "#fff" : "var(--m-ink)", fontSize: 12, fontWeight: 700 }}>{p.label}</span>
           </div>
         </div>
       ))}
       {hasLocation && (
         <div style={{ position: "absolute", left: "42%", top: "47%", zIndex: 2 }}>
-          <div style={{ width: 16, height: 16, borderRadius: "50%", background: "var(--cc-link)", border: "3px solid #fff", boxShadow: "0 0 0 8px rgba(41,151,255,0.18)" }} />
+          <div style={{ width: 16, height: 16, borderRadius: "50%", background: "var(--m-forest)", border: "3px solid #fff", boxShadow: "0 0 0 8px rgba(41,151,255,0.18)" }} />
         </div>
       )}
     </>

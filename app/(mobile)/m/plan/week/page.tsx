@@ -29,32 +29,32 @@ export default function WeeklyPlan() {
   const onTargetPct = weekTarget > 0 ? Math.round((weekTotal / weekTarget) * 100) : 0;
   const maxBar = Math.max(goals.dailyCalories * 1.2, ...perDay.map((d) => d.cal), 1);
 
-  if (!hydrated) return <div style={{ minHeight: "100dvh", background: "var(--cc-bg)" }} />;
+  if (!hydrated) return <div style={{ minHeight: "100dvh", background: "var(--m-cream)" }} />;
 
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)" }}>
-      <div className="row" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", gap: 8 }}>
-        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--cc-ink-1)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
+    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
+      <div className="hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", gap: 8 }}>
+        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--m-ink)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
         <h1 className="t-h1">This week</h1>
       </div>
 
       <div className="scroll" style={{ flex: 1, padding: "8px 14px 40px" }}>
         <div className="card" style={{ padding: 16 }}>
-          <div className="row" style={{ justifyContent: "space-between", marginBottom: 14 }}>
+          <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 14 }}>
             <div className="col">
               <span className="t-cap">LAST 7 DAYS</span>
               <span style={{ fontSize: 17, fontWeight: 700, marginTop: 2 }}>{weekTotal.toLocaleString()} / {weekTarget.toLocaleString()} cal</span>
-              <span className="t-small" style={{ fontSize: 11, color: onTargetPct <= 105 ? "var(--cc-pos)" : "var(--cc-acc)" }}>● {onTargetPct}% of target</span>
+              <span className="t-small" style={{ fontSize: 11, color: onTargetPct <= 105 ? "var(--m-lime)" : "var(--m-forest)" }}>● {onTargetPct}% of target</span>
             </div>
           </div>
-          <div className="row" style={{ alignItems: "flex-end", gap: 8, height: 96, marginTop: 8 }}>
+          <div className="hstack" style={{ alignItems: "flex-end", gap: 8, height: 96, marginTop: 8 }}>
             {perDay.map((d) => {
               const h = (d.cal / maxBar) * 100;
               const over = d.cal > goals.dailyCalories;
               const dow = DOW[new Date(d.date + "T00:00:00").getDay()];
               return (
                 <div key={d.date} className="col" style={{ flex: 1, alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
-                  <div style={{ width: "100%", height: `${Math.max(h, d.cal > 0 ? 4 : 0)}%`, minHeight: d.cal > 0 ? 4 : 0, borderRadius: 6, background: over ? "#ff453a" : "var(--cc-pos)", opacity: 0.9 }} title={`${d.cal} cal`} />
+                  <div style={{ width: "100%", height: `${Math.max(h, d.cal > 0 ? 4 : 0)}%`, minHeight: d.cal > 0 ? 4 : 0, borderRadius: 6, background: over ? "#ff453a" : "var(--m-lime)", opacity: 0.9 }} title={`${d.cal} cal`} />
                   <span className="t-cap" style={{ fontSize: 9 }}>{dow}</span>
                 </div>
               );
@@ -63,11 +63,11 @@ export default function WeeklyPlan() {
         </div>
 
         {/* Diet chart CTA */}
-        <div className="card" style={{ marginTop: 14, padding: 16, background: "var(--cc-acc-soft)", borderColor: "var(--cc-acc-dim)" }}>
-          <div className="row" style={{ gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
+        <div className="card" style={{ marginTop: 14, padding: 16, background: "var(--m-tint-green)", borderColor: "var(--m-tint-green)" }}>
+          <div className="hstack" style={{ gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
             <div className="ai-orb" style={{ marginTop: 2 }} />
             <div className="col" style={{ flex: 1 }}>
-              <span className="t-cap" style={{ color: "var(--cc-acc)" }}>AI DIET CHART</span>
+              <span className="t-cap" style={{ color: "var(--m-forest)" }}>AI DIET CHART</span>
               <span style={{ fontSize: 16, fontWeight: 700, marginTop: 2 }}>A 7-day plan, tuned to you</span>
               <span className="t-small" style={{ fontSize: 12 }}>meshi builds a week of meals from your goal + recent intake.</span>
             </div>

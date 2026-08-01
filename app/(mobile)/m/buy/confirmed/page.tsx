@@ -20,35 +20,35 @@ const STEPS = [
 export default function OrderConfirmed() {
   const router = useRouter();
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)" }}>
+    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
       <div style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 10px", display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={() => router.push("/m")} style={{ background: "none", border: "none", color: "var(--cc-ink-2)" }} aria-label="Close">✕</button>
+        <button onClick={() => router.push("/m")} style={{ background: "none", border: "none", color: "var(--m-ink-soft)" }} aria-label="Close">✕</button>
       </div>
 
       <div className="col" style={{ alignItems: "center", padding: "20px 24px 0", textAlign: "center" }}>
-        <div style={{ width: 84, height: 84, borderRadius: "50%", background: "var(--cc-pos)", display: "grid", placeItems: "center", boxShadow: "0 0 0 12px rgba(48,209,88,0.14), 0 0 0 24px rgba(48,209,88,0.07)" }}>
+        <div style={{ width: 84, height: 84, borderRadius: "50%", background: "var(--m-lime)", display: "grid", placeItems: "center", boxShadow: "0 0 0 12px rgba(48,209,88,0.14), 0 0 0 24px rgba(48,209,88,0.07)" }}>
           <Check width={44} height={44} style={{ color: "#fff" }} />
         </div>
         <h1 className="t-h1" style={{ marginTop: 22 }}>Order placed</h1>
-        <p className="t-body" style={{ color: "var(--cc-ink-2)", marginTop: 6, maxWidth: 280 }}>
+        <p className="t-body" style={{ color: "var(--m-ink-soft)", marginTop: 6, maxWidth: 280 }}>
           You&apos;ll get updates here and via notifications as it&apos;s shopped and delivered.
         </p>
       </div>
 
       <div className="scroll" style={{ flex: 1, padding: "24px 14px 12px" }}>
         <div className="card" style={{ padding: 14 }}>
-          <div className="row" style={{ justifyContent: "space-between", marginBottom: 12 }}>
+          <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 12 }}>
             <span style={{ fontSize: 13, fontWeight: 600 }}>Your order</span>
-            <span className="chip" style={{ fontSize: 10, background: "rgba(48,209,88,0.14)", color: "var(--cc-pos)", borderColor: "transparent" }}>CONFIRMED</span>
+            <span className="chip" style={{ fontSize: 10, background: "rgba(48,209,88,0.14)", color: "var(--m-lime)", borderColor: "transparent" }}>CONFIRMED</span>
           </div>
           <div style={{ position: "relative", padding: "8px 4px 0" }}>
-            <div style={{ position: "absolute", left: 12, right: 12, top: 13, height: 2, background: "var(--cc-surf-3)", borderRadius: 2 }} />
-            <div style={{ position: "absolute", left: 12, top: 13, height: 2, width: "calc((100% - 24px) / 3)", background: "var(--cc-acc)", borderRadius: 2 }} />
-            <div className="row" style={{ justifyContent: "space-between", position: "relative" }}>
+            <div style={{ position: "absolute", left: 12, right: 12, top: 13, height: 2, background: "var(--m-cream-2)", borderRadius: 2 }} />
+            <div style={{ position: "absolute", left: 12, top: 13, height: 2, width: "calc((100% - 24px) / 3)", background: "var(--m-forest)", borderRadius: 2 }} />
+            <div className="hstack" style={{ justifyContent: "space-between", position: "relative" }}>
               {STEPS.map((s) => (
                 <div key={s.l} className="col" style={{ alignItems: "center", gap: 6, width: 60 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: s.state === "active" ? "var(--cc-acc)" : "transparent", boxShadow: s.state === "active" ? "0 0 0 4px var(--cc-acc-dim)" : "none", border: s.state === "pending" ? "1.5px solid var(--cc-line-2)" : "none" }} />
-                  <span className="t-cap" style={{ fontSize: 9, textAlign: "center", lineHeight: 1.15, color: s.state === "active" ? "var(--cc-acc)" : "var(--cc-ink-4)" }}>{s.l}</span>
+                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: s.state === "active" ? "var(--m-forest)" : "transparent", boxShadow: s.state === "active" ? "0 0 0 4px var(--m-tint-green)" : "none", border: s.state === "pending" ? "1.5px solid var(--m-ink-faint)" : "none" }} />
+                  <span className="t-cap" style={{ fontSize: 9, textAlign: "center", lineHeight: 1.15, color: s.state === "active" ? "var(--m-forest)" : "var(--m-ink-faint)" }}>{s.l}</span>
                 </div>
               ))}
             </div>
@@ -57,12 +57,12 @@ export default function OrderConfirmed() {
 
         <div className="t-cap" style={{ padding: "20px 6px 8px" }}>WHILE YOU WAIT</div>
         <div className="col" style={{ gap: 8 }}>
-          <button onClick={() => router.push("/m/recipe")} className="card row" style={{ padding: 12, gap: 12, textAlign: "left" }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--cc-acc-dim)", color: "var(--cc-acc)", display: "grid", placeItems: "center", flexShrink: 0 }}><ChefHat width={20} height={20} /></div>
+          <button onClick={() => router.push("/m/recipe")} className="card hstack" style={{ padding: 12, gap: 12, textAlign: "left" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--m-tint-green)", color: "var(--m-forest)", display: "grid", placeItems: "center", flexShrink: 0 }}><ChefHat width={20} height={20} /></div>
             <div className="col" style={{ flex: 1 }}><span style={{ fontSize: 14, fontWeight: 600 }}>Review the recipe</span><span className="t-small" style={{ fontSize: 11 }}>Prep while you wait</span></div>
           </button>
-          <button onClick={() => router.push("/m/plan")} className="card row" style={{ padding: 12, gap: 12, textAlign: "left" }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--cc-acc-dim)", color: "var(--cc-acc)", display: "grid", placeItems: "center", flexShrink: 0 }}><CalendarRange width={20} height={20} /></div>
+          <button onClick={() => router.push("/m/plan")} className="card hstack" style={{ padding: 12, gap: 12, textAlign: "left" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--m-tint-green)", color: "var(--m-forest)", display: "grid", placeItems: "center", flexShrink: 0 }}><CalendarRange width={20} height={20} /></div>
             <div className="col" style={{ flex: 1 }}><span style={{ fontSize: 14, fontWeight: 600 }}>Plan the rest of your week</span><span className="t-small" style={{ fontSize: 11 }}>Tracker &amp; meal plan</span></div>
           </button>
         </div>

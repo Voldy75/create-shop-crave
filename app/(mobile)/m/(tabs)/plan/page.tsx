@@ -47,24 +47,24 @@ export default function PlanTracker() {
   const onSaved = (l: MealLog) => { setLogs((p) => [l, ...p]); setSheet(false); };
   const onDelete = (id: string) => { deleteMealLog(id); setLogs((p) => p.filter((x) => x.id !== id)); };
 
-  if (!hydrated) return <div style={{ minHeight: "100dvh", background: "var(--cc-bg)" }} />;
+  if (!hydrated) return <div style={{ minHeight: "100dvh", background: "var(--m-cream)" }} />;
 
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)" }}>
-      <div className="row" style={{ padding: "calc(env(safe-area-inset-top,12px) + 10px) 16px 4px", justifyContent: "space-between", alignItems: "center" }}>
+    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
+      <div className="hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 10px) 16px 4px", justifyContent: "space-between", alignItems: "center" }}>
         <h1 className="t-h1">Today</h1>
         <a href="/m/plan/week" className="chip" style={{ fontSize: 11, textDecoration: "none" }}>This week ›</a>
       </div>
 
       {/* Date strip */}
-      <div className="hscroll row" style={{ gap: 8, padding: "10px 14px 12px" }}>
+      <div className="hscroll hstack" style={{ gap: 8, padding: "10px 14px 12px" }}>
         {week.map((d) => {
           const [, , day] = d.split("-");
           const dow = DOW[new Date(d + "T00:00:00").getDay()];
           const on = d === selected;
           const isToday = d === today;
           return (
-            <button key={d} onClick={() => setSelected(d)} style={{ flex: "0 0 44px", textAlign: "center", padding: "8px 0", borderRadius: 14, background: on ? "var(--cc-acc)" : "var(--cc-surf-1)", color: on ? "#fff" : "var(--cc-ink-1)", border: on ? "none" : "1px solid var(--cc-line)" }}>
+            <button key={d} onClick={() => setSelected(d)} style={{ flex: "0 0 44px", textAlign: "center", padding: "8px 0", borderRadius: 14, background: on ? "var(--m-forest)" : "var(--m-card)", color: on ? "#fff" : "var(--m-ink)", border: on ? "none" : "1px solid var(--m-ink-faint)" }}>
               <div style={{ fontSize: 10, opacity: 0.7, fontWeight: 500 }}>{dow}</div>
               <div style={{ fontSize: 16, fontWeight: 700, marginTop: 2 }}>{parseInt(day, 10)}{isToday && !on ? "·" : ""}</div>
             </button>
@@ -75,24 +75,24 @@ export default function PlanTracker() {
       <div className="scroll" style={{ flex: 1, padding: "6px 14px 96px" }}>
         {/* Calorie hero */}
         <div className="card" style={{ padding: 18 }}>
-          <div className="row" style={{ gap: 16 }}>
+          <div className="hstack" style={{ gap: 16 }}>
             <Ring pct={pct} center={String(left)} sub="LEFT" over={totals.calories > goals.dailyCalories} />
             <div className="col" style={{ flex: 1, gap: 4 }}>
               <span className="t-cap">CALORIES</span>
-              <div className="row" style={{ alignItems: "baseline", gap: 6 }}>
+              <div className="hstack" style={{ alignItems: "baseline", gap: 6 }}>
                 <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>{totals.calories.toLocaleString()}</span>
                 <span className="t-small" style={{ fontSize: 12 }}>of {goals.dailyCalories.toLocaleString()}</span>
               </div>
-              <div className="row" style={{ gap: 6, marginTop: 6 }}>
-                <span className="chip" style={{ fontSize: 10, padding: "3px 8px", background: totals.calories > goals.dailyCalories ? "rgba(255,69,58,0.16)" : "rgba(48,209,88,0.14)", color: totals.calories > goals.dailyCalories ? "#ff453a" : "var(--cc-pos)", borderColor: "transparent" }}>
+              <div className="hstack" style={{ gap: 6, marginTop: 6 }}>
+                <span className="chip" style={{ fontSize: 10, padding: "3px 8px", background: totals.calories > goals.dailyCalories ? "rgba(255,69,58,0.16)" : "rgba(48,209,88,0.14)", color: totals.calories > goals.dailyCalories ? "#ff453a" : "var(--m-lime)", borderColor: "transparent" }}>
                   {totals.calories > goals.dailyCalories ? "Over" : "On track"}
                 </span>
                 <span className="chip" style={{ fontSize: 10, padding: "3px 8px" }}>{dayLogs.length} meal{dayLogs.length === 1 ? "" : "s"}</span>
               </div>
             </div>
           </div>
-          <div className="row" style={{ gap: 14, marginTop: 16 }}>
-            <MacroBar label="Protein" value={Math.round(totals.protein)} max={goals.protein} color="var(--cc-acc)" />
+          <div className="hstack" style={{ gap: 14, marginTop: 16 }}>
+            <MacroBar label="Protein" value={Math.round(totals.protein)} max={goals.protein} color="var(--m-forest)" />
             <MacroBar label="Carbs" value={Math.round(totals.carbs)} max={goals.carbs} color="#2997ff" />
             <MacroBar label="Fat" value={Math.round(totals.fat)} max={goals.fat} color="#ffd60a" />
           </div>
@@ -104,7 +104,7 @@ export default function PlanTracker() {
           <div style={{ marginTop: 8 }}>
             {dayLogs.length === 0 && (
               <div className="col" style={{ alignItems: "center", textAlign: "center", gap: 12, padding: "32px 24px" }}>
-                <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--cc-acc-dim)", color: "var(--cc-acc)", display: "grid", placeItems: "center" }}>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--m-tint-green)", color: "var(--m-forest)", display: "grid", placeItems: "center" }}>
                   <Utensils width={24} height={24} />
                 </div>
                 <div className="col" style={{ gap: 4 }}>
@@ -118,7 +118,7 @@ export default function PlanTracker() {
             )}
             {dayLogs.map((m) => (
               <div key={m.id} className="card" style={{ padding: 12, marginBottom: 8 }}>
-                <div className="row" style={{ gap: 12 }}>
+                <div className="hstack" style={{ gap: 12 }}>
                   {m.imageDataUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={m.imageDataUrl} alt="" style={{ width: 48, height: 48, borderRadius: 10, objectFit: "cover", flexShrink: 0 }} />
@@ -126,16 +126,16 @@ export default function PlanTracker() {
                     <div className="ph ph-cream" style={{ width: 48, height: 48, borderRadius: 10, flexShrink: 0 }} />
                   )}
                   <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                    <div className="row" style={{ gap: 6 }}>
+                    <div className="hstack" style={{ gap: 6 }}>
                       <span className="t-cap" style={{ fontSize: 9 }}>{m.mealType.toUpperCase()}</span>
-                      {m.source === "photo" && <span style={{ fontSize: 9, fontWeight: 700, color: "var(--cc-acc)", padding: "1px 6px", background: "var(--cc-acc-dim)", borderRadius: 3 }}>AI</span>}
+                      {m.source === "photo" && <span style={{ fontSize: 9, fontWeight: 700, color: "var(--m-forest)", padding: "1px 6px", background: "var(--m-tint-green)", borderRadius: 3 }}>AI</span>}
                     </div>
                     <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</span>
                     <span className="t-small" style={{ fontSize: 11 }}>{Math.round(m.protein)}P · {Math.round(m.carbs)}C · {Math.round(m.fat)}F</span>
                   </div>
                   <div className="col" style={{ alignItems: "flex-end" }}>
                     <span style={{ fontSize: 15, fontWeight: 700 }}>{Math.round(m.calories)}</span>
-                    <button onClick={() => onDelete(m.id)} className="t-small" style={{ fontSize: 10, background: "none", border: "none", color: "var(--cc-ink-3)" }}>remove</button>
+                    <button onClick={() => onDelete(m.id)} className="t-small" style={{ fontSize: 10, background: "none", border: "none", color: "var(--m-ink-soft)" }}>remove</button>
                   </div>
                 </div>
               </div>
@@ -145,7 +145,7 @@ export default function PlanTracker() {
       </div>
 
       {/* FAB */}
-      <button onClick={() => setSheet(true)} style={{ position: "fixed", right: 18, bottom: "calc(72px + env(safe-area-inset-bottom,0px))", width: 56, height: 56, borderRadius: "50%", background: "var(--cc-acc)", color: "#fff", border: "none", boxShadow: "0 8px 24px rgba(255,107,53,0.4)", display: "grid", placeItems: "center", zIndex: 30 }} aria-label="Log a meal">
+      <button onClick={() => setSheet(true)} style={{ position: "fixed", right: 18, bottom: "calc(72px + env(safe-area-inset-bottom,0px))", width: 56, height: 56, borderRadius: "50%", background: "var(--m-forest)", color: "#fff", border: "none", boxShadow: "0 8px 24px rgba(255,107,53,0.4)", display: "grid", placeItems: "center", zIndex: 30 }} aria-label="Log a meal">
         <Plus width={24} height={24} />
       </button>
 
@@ -159,8 +159,8 @@ function Ring({ pct, center, sub, over }: { pct: number; center: string; sub: st
   return (
     <div style={{ position: "relative", width: 88, height: 88, flexShrink: 0 }}>
       <svg width={88} height={88} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={44} cy={44} r={r} fill="none" stroke="var(--cc-surf-3)" strokeWidth={9} />
-        <circle cx={44} cy={44} r={r} fill="none" stroke={over ? "#ff453a" : "var(--cc-acc)"} strokeWidth={9} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)} />
+        <circle cx={44} cy={44} r={r} fill="none" stroke="var(--m-cream-2)" strokeWidth={9} />
+        <circle cx={44} cy={44} r={r} fill="none" stroke={over ? "#ff453a" : "var(--m-forest)"} strokeWidth={9} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)} />
       </svg>
       <div className="col" style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center" }}>
         <span style={{ fontSize: 18, fontWeight: 800 }}>{center}</span>
@@ -175,11 +175,11 @@ function MacroBar({ label, value, max, color }: { label: string; value: number; 
   const over = value > max && max > 0;
   return (
     <div className="col" style={{ flex: 1, gap: 6 }}>
-      <div className="row" style={{ justifyContent: "space-between" }}>
+      <div className="hstack" style={{ justifyContent: "space-between" }}>
         <span className="t-small" style={{ fontSize: 11 }}>{label}</span>
-        <span className="t-small" style={{ fontSize: 11, color: over ? "#ff453a" : "var(--cc-ink-2)" }}>{value}/{max}g</span>
+        <span className="t-small" style={{ fontSize: 11, color: over ? "#ff453a" : "var(--m-ink-soft)" }}>{value}/{max}g</span>
       </div>
-      <div style={{ height: 6, borderRadius: 999, background: "var(--cc-surf-3)", overflow: "hidden" }}>
+      <div style={{ height: 6, borderRadius: 999, background: "var(--m-cream-2)", overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, height: "100%", background: over ? "#ff453a" : color, borderRadius: 999 }} />
       </div>
     </div>
@@ -247,13 +247,13 @@ function LogSheet({ date, onClose, onSaved }: { date: string; onClose: () => voi
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-      <div onClick={(e) => e.stopPropagation()} className="col" style={{ width: "100%", maxWidth: 520, background: "var(--cc-surf-1)", borderRadius: "22px 22px 0 0", border: "1px solid var(--cc-line)", maxHeight: "90vh", overflowY: "auto" }}>
-        <div className="row" style={{ justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid var(--cc-line)" }}>
+      <div onClick={(e) => e.stopPropagation()} className="col" style={{ width: "100%", maxWidth: 520, background: "var(--m-card)", borderRadius: "22px 22px 0 0", border: "1px solid var(--m-ink-faint)", maxHeight: "90vh", overflowY: "auto" }}>
+        <div className="hstack" style={{ justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid var(--m-ink-faint)" }}>
           <h2 className="t-h2">Log a meal</h2>
-          <button onClick={onClose} style={{ background: "var(--cc-surf-3)", border: "none", color: "var(--cc-ink-2)", width: 30, height: 30, borderRadius: "50%", display: "grid", placeItems: "center" }}><X width={16} height={16} /></button>
+          <button onClick={onClose} style={{ background: "var(--m-cream-2)", border: "none", color: "var(--m-ink-soft)", width: 30, height: 30, borderRadius: "50%", display: "grid", placeItems: "center" }}><X width={16} height={16} /></button>
         </div>
         <div className="col" style={{ padding: 18, gap: 14 }}>
-          <div className="row hscroll" style={{ gap: 8 }}>
+          <div className="hstack hscroll" style={{ gap: 8 }}>
             {MEAL_TYPES.map((m) => (
               <button key={m} onClick={() => setMealType(m)} className={`chip ${mealType === m ? "on" : ""}`} style={{ textTransform: "capitalize" }}>{m}</button>
             ))}
@@ -273,7 +273,7 @@ function LogSheet({ date, onClose, onSaved }: { date: string; onClose: () => voi
           )}
 
           <input placeholder="Dish name" value={name} onChange={(e) => setName(e.target.value)} />
-          <div className="row" style={{ gap: 8 }}>
+          <div className="hstack" style={{ gap: 8 }}>
             <input placeholder="Cal" inputMode="numeric" value={cal} onChange={(e) => setCal(e.target.value)} />
             <input placeholder="P (g)" inputMode="numeric" value={p} onChange={(e) => setP(e.target.value)} />
             <input placeholder="C (g)" inputMode="numeric" value={c} onChange={(e) => setC(e.target.value)} />

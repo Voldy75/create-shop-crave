@@ -71,14 +71,14 @@ function ChatInner() {
   const empty = messages.length === 0;
 
   return (
-    <div className="col" style={{ height: "100dvh", background: "var(--cc-bg)" }}>
+    <div className="col" style={{ height: "100dvh", background: "var(--m-cream)" }}>
       {/* Header */}
-      <div className="glass row" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", justifyContent: "space-between", borderBottom: "1px solid var(--cc-line)", position: "sticky", top: 0, zIndex: 5 }}>
+      <div className="glass hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", justifyContent: "space-between", borderBottom: "1px solid var(--m-ink-faint)", position: "sticky", top: 0, zIndex: 5 }}>
         <span style={{ width: 36 }} />
-        <span className="row" style={{ gap: 6, fontWeight: 600 }}>
+        <span className="hstack" style={{ gap: 6, fontWeight: 600 }}>
           <span className="ai-orb" /> meshi AI{agentMode ? " · order" : ""}
         </span>
-        <button onClick={() => router.push("/m/chat")} style={{ width: 36, height: 36, borderRadius: "50%", background: "none", border: "none", color: "var(--cc-ink-2)", display: "grid", placeItems: "center" }} aria-label="New chat">
+        <button onClick={() => router.push("/m/chat")} style={{ width: 36, height: 36, borderRadius: "50%", background: "none", border: "none", color: "var(--m-ink-soft)", display: "grid", placeItems: "center" }} aria-label="New chat">
           <Plus width={22} height={22} />
         </button>
       </div>
@@ -90,7 +90,7 @@ function ChatInner() {
             <span className="ai-orb" style={{ width: 40, height: 40 }} />
             <h1 className="t-h1">What are you craving?</h1>
             <p className="t-small" style={{ maxWidth: 260 }}>A recipe with shopping links, the best nearby spots, or have meshi order it.</p>
-            <div className="row hscroll" style={{ gap: 8, marginTop: 8, maxWidth: "100%" }}>
+            <div className="hstack hscroll" style={{ gap: 8, marginTop: 8, maxWidth: "100%" }}>
               {SUGGESTIONS.map((s) => (
                 <button key={s} className="chip" onClick={() => append({ role: "user", content: s })}>{s}</button>
               ))}
@@ -102,17 +102,17 @@ function ChatInner() {
           if (m.role === "user") {
             return (
               <div key={m.id} style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-                <div style={{ maxWidth: "82%", background: "var(--cc-acc)", color: "#fff", borderRadius: "18px 18px 4px 18px", padding: "10px 14px", fontSize: 14, lineHeight: 1.45 }}>{m.content}</div>
+                <div style={{ maxWidth: "82%", background: "var(--m-forest)", color: "#fff", borderRadius: "18px 18px 4px 18px", padding: "10px 14px", fontSize: 14, lineHeight: 1.45 }}>{m.content}</div>
               </div>
             );
           }
           const { text, data } = extractResponse(m.content);
           return (
-            <div key={m.id} className="row" style={{ gap: 8, alignItems: "flex-start", marginBottom: 14 }}>
+            <div key={m.id} className="hstack" style={{ gap: 8, alignItems: "flex-start", marginBottom: 14 }}>
               <span className="ai-orb" style={{ marginTop: 2 }} />
               <div className="col" style={{ flex: 1, gap: 10, minWidth: 0 }}>
                 {text && (
-                  <div style={{ background: "var(--cc-surf-2)", borderRadius: "4px 18px 18px 18px", padding: "11px 14px", fontSize: 14, lineHeight: 1.45 }}>{text}</div>
+                  <div style={{ background: "var(--m-cream-2)", borderRadius: "4px 18px 18px 18px", padding: "11px 14px", fontSize: 14, lineHeight: 1.45 }}>{text}</div>
                 )}
                 {data?.recipe && <RecipeCard recipe={data.recipe} onOpen={onOpenRecipe} onBuy={onBuyRecipe} />}
                 {data?.restaurantSuggestion?.restaurants?.length ? <RestaurantsCard sugg={data.restaurantSuggestion} onMap={onOpenRestaurants} /> : null}
@@ -122,27 +122,27 @@ function ChatInner() {
         })}
 
         {isLoading && (
-          <div className="row" style={{ gap: 8, marginBottom: 14 }}>
+          <div className="hstack" style={{ gap: 8, marginBottom: 14 }}>
             <span className="ai-orb" style={{ marginTop: 2 }} />
-            <div style={{ background: "var(--cc-surf-2)", borderRadius: "4px 18px 18px 18px", padding: "11px 14px", fontSize: 14, color: "var(--cc-ink-3)" }}>thinking…</div>
+            <div style={{ background: "var(--m-cream-2)", borderRadius: "4px 18px 18px 18px", padding: "11px 14px", fontSize: 14, color: "var(--m-ink-soft)" }}>thinking…</div>
           </div>
         )}
         <div ref={endRef} />
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} style={{ padding: "10px 14px calc(10px + env(safe-area-inset-bottom,0px))", borderTop: "1px solid var(--cc-line)" }}>
-        <div className="row" style={{ background: "var(--cc-surf-2)", borderRadius: "var(--cc-r-pill)", padding: "6px 6px 6px 16px", gap: 6, border: "1px solid var(--cc-line)" }}>
+      <form onSubmit={handleSubmit} style={{ padding: "10px 14px calc(10px + env(safe-area-inset-bottom,0px))", borderTop: "1px solid var(--m-ink-faint)" }}>
+        <div className="hstack" style={{ background: "var(--m-cream-2)", borderRadius: "var(--m-r-pill)", padding: "6px 6px 6px 16px", gap: 6, border: "1px solid var(--m-ink-faint)" }}>
           <input
             value={input}
             onChange={handleInputChange}
             placeholder={agentMode ? "Order groceries, food, or book a table…" : "Tell me what you're craving…"}
             style={{ flex: 1, background: "none", border: "none", padding: 0, fontSize: 14 }}
           />
-          <button type="button" style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "var(--cc-surf-3)", color: "var(--cc-ink-1)", display: "grid", placeItems: "center" }} aria-label="Voice (coming soon)">
+          <button type="button" style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "var(--m-cream-2)", color: "var(--m-ink)", display: "grid", placeItems: "center" }} aria-label="Voice (coming soon)">
             <Mic width={18} height={18} />
           </button>
-          <button type="submit" disabled={!input.trim()} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: input.trim() ? "var(--cc-acc)" : "var(--cc-surf-3)", color: "#fff", display: "grid", placeItems: "center" }} aria-label="Send">
+          <button type="submit" disabled={!input.trim()} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: input.trim() ? "var(--m-forest)" : "var(--m-cream-2)", color: "#fff", display: "grid", placeItems: "center" }} aria-label="Send">
             <ArrowUp width={18} height={18} />
           </button>
         </div>
@@ -178,20 +178,20 @@ function RestaurantsCard({ sugg, onMap }: { sugg: RestaurantSuggestion; onMap: (
   const list = (sugg.restaurants ?? []).slice(0, 3);
   return (
     <button onClick={() => onMap(sugg)} className="card" style={{ padding: 12, textAlign: "left", width: "100%" }}>
-      <div className="row" style={{ justifyContent: "space-between", marginBottom: 8 }}>
+      <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 8 }}>
         <span className="t-cap">{list.length} NEAR YOU</span>
-        <span className="t-small" style={{ color: "var(--cc-acc)", fontWeight: 600 }}>Map ›</span>
+        <span className="t-small" style={{ color: "var(--m-forest)", fontWeight: 600 }}>Map ›</span>
       </div>
       {list.map((r, i) => (
-        <div key={r.name} className="row" style={{ gap: 10, padding: "8px 0", borderTop: i === 0 ? "none" : "1px solid var(--cc-line)" }}>
-          <div className="ph ph-fire" style={{ width: 40, height: 40, borderRadius: "var(--cc-r-md)", flexShrink: 0 }} />
+        <div key={r.name} className="hstack" style={{ gap: 10, padding: "8px 0", borderTop: i === 0 ? "none" : "1px solid var(--m-ink-faint)" }}>
+          <div className="ph ph-fire" style={{ width: 40, height: 40, borderRadius: "var(--m-r-md)", flexShrink: 0 }} />
           <div className="col" style={{ flex: 1, gap: 1, minWidth: 0 }}>
             <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
             <span className="t-small">{[r.area, r.priceRange].filter(Boolean).join(" · ")}</span>
           </div>
-          <div className="row" style={{ gap: 3, color: "var(--cc-acc)" }}>
+          <div className="hstack" style={{ gap: 3, color: "var(--m-forest)" }}>
             <Star width={12} height={12} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--cc-ink-1)" }}>{r.rating}</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--m-ink)" }}>{r.rating}</span>
           </div>
         </div>
       ))}

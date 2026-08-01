@@ -44,7 +44,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${generalSans.variable}`} data-theme="dark">
+    // suppressHydrationWarning: the anti-flash script below rewrites data-theme
+    // from localStorage before React hydrates, so server and client legitimately
+    // differ for anyone not on the default theme.
+    <html
+      lang="en"
+      className={`${GeistSans.variable} ${generalSans.variable}`}
+      data-theme="dark"
+      suppressHydrationWarning
+    >
       <head>
         {/* Anti-flash: sets data-theme before React hydrates */}
         <script

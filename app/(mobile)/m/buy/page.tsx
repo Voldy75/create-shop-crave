@@ -53,7 +53,7 @@ export default function BuyPrecheck() {
 
   if (!recipe) {
     return (
-      <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)", alignItems: "center", justifyContent: "center", gap: 12, padding: 24, textAlign: "center" }}>
+      <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)", alignItems: "center", justifyContent: "center", gap: 12, padding: 24, textAlign: "center" }}>
         <p className="t-body">No recipe selected.</p>
         <button className="pill-primary" style={{ width: "auto", padding: "12px 22px" }} onClick={() => router.push("/m/chat")}>Find something to cook</button>
       </div>
@@ -61,17 +61,17 @@ export default function BuyPrecheck() {
   }
 
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--cc-bg)" }}>
+    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
       {/* Header */}
-      <div className="glass row" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", justifyContent: "space-between", borderBottom: "1px solid var(--cc-line)", position: "sticky", top: 0, zIndex: 5 }}>
-        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--cc-ink-1)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
+      <div className="glass hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", justifyContent: "space-between", borderBottom: "1px solid var(--m-ink-faint)", position: "sticky", top: 0, zIndex: 5 }}>
+        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--m-ink)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
         <div className="t-h3">Buy ingredients</div>
         <span style={{ width: 22 }} />
       </div>
 
       {/* Recipe pill */}
-      <div className="row" style={{ padding: "12px 16px", gap: 10, borderBottom: "1px solid var(--cc-line)" }}>
-        <div className="ph ph-saffron" style={{ width: 44, height: 44, borderRadius: "var(--cc-r-md)", flexShrink: 0 }} />
+      <div className="hstack" style={{ padding: "12px 16px", gap: 10, borderBottom: "1px solid var(--m-ink-faint)" }}>
+        <div className="ph ph-saffron" style={{ width: 44, height: 44, borderRadius: "var(--m-r-md)", flexShrink: 0 }} />
         <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
           <span style={{ fontSize: 14, fontWeight: 600 }}>{recipe.name}</span>
           <span className="t-small">{recipe.servings ? `${recipe.servings} servings · ` : ""}{items.length} ingredients</span>
@@ -80,11 +80,11 @@ export default function BuyPrecheck() {
 
       {/* Smart check */}
       {pantryHits.length > 0 && (
-        <div className="row" style={{ margin: "12px 14px 0", padding: 12, gap: 10, background: "var(--cc-acc-soft)", borderRadius: "var(--cc-r-md)", border: "1px solid var(--cc-acc-dim)" }}>
-          <Sparkles width={18} height={18} style={{ color: "var(--cc-acc)", flexShrink: 0, marginTop: 1 }} />
+        <div className="hstack" style={{ margin: "12px 14px 0", padding: 12, gap: 10, background: "var(--m-tint-green)", borderRadius: "var(--m-r-md)", border: "1px solid var(--m-tint-green)" }}>
+          <Sparkles width={18} height={18} style={{ color: "var(--m-forest)", flexShrink: 0, marginTop: 1 }} />
           <div className="col" style={{ gap: 2 }}>
-            <span className="t-cap" style={{ color: "var(--cc-acc)" }}>SMART CHECK</span>
-            <span className="t-small" style={{ color: "var(--cc-ink-1)", lineHeight: 1.4 }}>
+            <span className="t-cap" style={{ color: "var(--m-forest)" }}>SMART CHECK</span>
+            <span className="t-small" style={{ color: "var(--m-ink)", lineHeight: 1.4 }}>
               Looks like you may already have {pantryHits.map((p) => p.item.split(" ")[0]).slice(0, 2).join(" & ")}. Skipping saves ~₹{pantrySaving}.
             </span>
           </div>
@@ -93,16 +93,16 @@ export default function BuyPrecheck() {
 
       {/* List */}
       <div className="scroll" style={{ flex: 1, padding: "14px 14px 120px" }}>
-        <div className="row" style={{ justifyContent: "space-between", marginBottom: 8, padding: "0 4px" }}>
+        <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 8, padding: "0 4px" }}>
           <span className="t-cap">{selected.length} OF {items.length} SELECTED</span>
-          <button onClick={() => setOff(new Set())} className="t-cap" style={{ background: "none", border: "none", color: "var(--cc-acc)", cursor: "pointer" }}>SELECT ALL</button>
+          <button onClick={() => setOff(new Set())} className="t-cap" style={{ background: "none", border: "none", color: "var(--m-forest)", cursor: "pointer" }}>SELECT ALL</button>
         </div>
         <div className="col" style={{ gap: 8 }}>
           {items.map((it) => {
             const on = !off.has(it.item);
             return (
-              <button key={it.item} onClick={() => toggle(it.item)} className="row" style={{ background: "var(--cc-surf-1)", borderRadius: "var(--cc-r-md)", border: "1px solid var(--cc-line)", padding: "10px 12px", gap: 10, opacity: on ? 1 : 0.55, textAlign: "left" }}>
-                <div style={{ width: 22, height: 22, borderRadius: 6, background: on ? "var(--cc-acc)" : "transparent", border: on ? "none" : "1.5px solid var(--cc-line-2)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <button key={it.item} onClick={() => toggle(it.item)} className="hstack" style={{ background: "var(--m-card)", borderRadius: "var(--m-r-md)", border: "1px solid var(--m-ink-faint)", padding: "10px 12px", gap: 10, opacity: on ? 1 : 0.55, textAlign: "left" }}>
+                <div style={{ width: 22, height: 22, borderRadius: 6, background: on ? "var(--m-forest)" : "transparent", border: on ? "none" : "1.5px solid var(--m-ink-faint)", display: "grid", placeItems: "center", flexShrink: 0 }}>
                   {on && <Check width={14} height={14} style={{ color: "#fff" }} />}
                 </div>
                 <div className="ph ph-cream" style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0 }} />
@@ -110,7 +110,7 @@ export default function BuyPrecheck() {
                   <span style={{ fontSize: 13, fontWeight: 500, textDecoration: on ? "none" : "line-through" }}>{it.item}</span>
                   {it.quantity && <span className="t-small">{it.quantity}</span>}
                 </div>
-                {it.price && <span style={{ fontSize: 13, color: "var(--cc-ink-2)" }}>{it.price}</span>}
+                {it.price && <span style={{ fontSize: 13, color: "var(--m-ink-soft)" }}>{it.price}</span>}
               </button>
             );
           })}
@@ -118,8 +118,8 @@ export default function BuyPrecheck() {
       </div>
 
       {/* Footer */}
-      <div className="glass" style={{ position: "fixed", left: 0, right: 0, bottom: 0, maxWidth: 520, margin: "0 auto", padding: "12px 16px calc(14px + env(safe-area-inset-bottom,0px))", borderTop: "1px solid var(--cc-line)" }}>
-        <div className="row" style={{ justifyContent: "space-between", marginBottom: 10 }}>
+      <div className="glass" style={{ position: "fixed", left: 0, right: 0, bottom: 0, maxWidth: 520, margin: "0 auto", padding: "12px 16px calc(14px + env(safe-area-inset-bottom,0px))", borderTop: "1px solid var(--m-ink-faint)" }}>
+        <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 10 }}>
           <span className="t-small">Estimated subtotal</span>
           <span style={{ fontSize: 16, fontWeight: 700 }}>₹{subtotal}</span>
         </div>
