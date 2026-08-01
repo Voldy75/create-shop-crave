@@ -140,6 +140,36 @@ a { color: inherit; text-decoration: none; }
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ---------- Mascot motion ----------
+   Referenced by the design's artboards. meshi-b.css ships mm-pop and
+   mm-slideup but not these, so they live here.
+   Honour prefers-reduced-motion — these are decorative. */
+@keyframes mm-ring {
+  0%   { transform: scale(.55); opacity: .65; }
+  100% { transform: scale(1.4);  opacity: 0; }
+}
+@keyframes mm-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+@keyframes mm-blink {
+  0%, 90%, 96%, 100% { transform: scaleY(1); }
+  93%                { transform: scaleY(.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="mm-ring"], [style*="mm-bob"], [style*="mm-blink"], .pill-attn {
+    animation: none !important;
+  }
+}
+
+/* ---------- Onboarding step pager ----------
+   4-segment bar: lime = completed, forest = current, faint = ahead. */
+.step-bar { display: flex; flex: 1; gap: 6px; padding: 0 10px; }
+.step-seg { flex: 1; height: 7px; border-radius: 9px; background: var(--m-ink-faint); }
+.step-seg.done { background: var(--m-lime); }
+.step-seg.now  { background: var(--m-forest); }
+
 /* ---------- Safe-area helpers ---------- */
 .safe-top { padding-top: env(safe-area-inset-top, 0px); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
