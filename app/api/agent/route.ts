@@ -1,5 +1,5 @@
 import { streamText, tool, jsonSchema } from "ai";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementUsage } from "@/lib/rate-limit";
 import { getModel, getServerModel, type Provider } from "@/lib/providers";
 import {
@@ -75,11 +75,15 @@ export async function POST(req: Request) {
     return Response.json({ error: "missing_messages" }, { status: 400 });
   }
 
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireUser();
+  if (guard instanceof Response) return guard;
+  const { user, profile } = guard;
+
+  // Must precede the BYOK branch below: BYOK skips quota entirely, so without
+  // this a restricted user just supplies their own key. This route can place
+  // real Swiggy orders, so it is the one that matters most.
+  const restricted = denyIfRestricted(profile);
+  if (restricted) return restricted;
 
   // Swiggy token gate.
   const token = await getStoredToken(user.id);

@@ -25,6 +25,11 @@ create policy "Users can read own usage"
 -- policies for anon/authenticated.
 
 -- ─── check_and_increment_usage RPC ─────────────────────────────────────────
+--
+-- SUPERSEDED: scripts/sql/admin-console.sql redefines this function to add
+-- NULL-p_limit ("unlimited") support and to fix an off-by-one where the limit
+-- never actually blocked anyone. Run admin-console.sql AFTER this file; the
+-- definition below is kept only as the historical baseline.
 
 create or replace function public.check_and_increment_usage(
   p_user_id uuid,

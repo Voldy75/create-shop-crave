@@ -1,6 +1,5 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+import { createServiceClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export interface FeatureFlag {
   id: string;
@@ -9,6 +8,10 @@ export interface FeatureFlag {
   updated_at: string;
 }
 
+// NOTE: intentionally unauthenticated for now — lib/feature-flags.ts fetches
+// this from the browser for every user. Phase 7 splits it into a public
+// GET /api/flags (anon client, RLS-governed) and an admin-only
+// /api/admin/flags, at which point this handler gets requireAdmin().
 export async function GET() {
   const svc = await createServiceClient();
   const { data, error } = await svc
@@ -22,14 +25,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!ADMIN_EMAIL || user.email !== ADMIN_EMAIL) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof Response) return guard;
 
   const body = await req.json().catch(() => null);
   if (!body?.id || typeof body.enabled !== "boolean") {
@@ -51,14 +48,8 @@ export async function PATCH(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!ADMIN_EMAIL || user.email !== ADMIN_EMAIL) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof Response) return guard;
 
   const body = await req.json().catch(() => null);
   if (!body?.id || typeof body.id !== "string") {

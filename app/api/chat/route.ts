@@ -1,5 +1,5 @@
 import { streamText } from "ai";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementUsage } from "@/lib/rate-limit";
 import { getModel, getServerModel, type Provider } from "@/lib/providers";
 
@@ -87,15 +87,14 @@ export async function POST(req: Request) {
 
   try {
     // 1. Verify Supabase session
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const guard = await requireUser();
+    if (guard instanceof Response) return guard;
+    const { user, profile } = guard;
 
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    // Must precede the BYOK branch below: BYOK skips quota entirely, so
+    // without this a restricted user just supplies their own key.
+    const restricted = denyIfRestricted(profile);
+    if (restricted) return restricted;
 
     // 2. Build context strings
     const dietaryPrefs = userContext?.dietaryPreferences?.length

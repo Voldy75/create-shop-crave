@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth-guard";
 import { getStoredToken, isExpired } from "@/lib/swiggy-mcp";
 
 export const maxDuration = 5;
@@ -11,11 +11,9 @@ export const maxDuration = 5;
  * Doesn't leak the access token to the browser — just the metadata.
  */
 export async function GET() {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireUser();
+  if (guard instanceof Response) return guard;
+  const { user } = guard;
 
   const token = await getStoredToken(user.id);
   if (!token) {
