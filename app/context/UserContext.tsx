@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { nativePlatform } from "@/lib/native-bridge";
 import {
   mergeLogs,
   pullMealLogs,
@@ -101,10 +102,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // Records web vs ios vs android against the user's profile so the admin
+    // console can answer "which platform is this user on". Fire-and-forget:
+    // a failure must never affect sign-in.
+    const pingPlatform = () => {
+      void fetch("/api/session/ping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform: nativePlatform() }),
+      }).catch(() => {});
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) syncTracker(session.user.id);
+      if (session?.user) {
+        syncTracker(session.user.id);
+        pingPlatform();
+      }
     });
 
     const {
@@ -115,6 +130,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Sync on actual sign-in only — not on every token refresh.
       if (event === "SIGNED_IN" && session?.user) {
         syncTracker(session.user.id);
+        pingPlatform();
       }
       if (event === "SIGNED_OUT") {
         lastSyncedUserId = null;

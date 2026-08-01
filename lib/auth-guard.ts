@@ -141,6 +141,21 @@ export function denyIfRestricted(profile: GuardProfile): Response | null {
  * in production today the env branch never matches and the role column is the
  * only thing that will work.
  */
+/**
+ * Server-component variant of the admin check.
+ *
+ * requireAdmin() returns a Response, which is the right shape for a route
+ * handler but useless in a layout — there you want redirect()/notFound().
+ * Use this to gate admin pages on the server so the shell never renders for a
+ * non-admin. The old gate was a client-side `user?.email ===
+ * NEXT_PUBLIC_ADMIN_EMAIL`, which is cosmetic: it hides UI but protects
+ * nothing. The API guards remain the real enforcement either way.
+ */
+export async function isAdminUser(): Promise<boolean> {
+  const guard = await requireAdmin();
+  return !(guard instanceof Response);
+}
+
 export async function requireAdmin(): Promise<GuardResult | Response> {
   const guard = await requireUser();
   if (guard instanceof Response) return guard;

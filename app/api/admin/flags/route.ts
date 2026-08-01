@@ -8,11 +8,15 @@ export interface FeatureFlag {
   updated_at: string;
 }
 
-// NOTE: intentionally unauthenticated for now — lib/feature-flags.ts fetches
-// this from the browser for every user. Phase 7 splits it into a public
-// GET /api/flags (anon client, RLS-governed) and an admin-only
-// /api/admin/flags, at which point this handler gets requireAdmin().
+/**
+ * Admin flag list — includes description and updated_at, which the public
+ * GET /api/flags deliberately omits. lib/feature-flags.ts now reads that public
+ * route, so guarding this one no longer breaks flag reads for normal users.
+ */
 export async function GET() {
+  const guard = await requireAdmin();
+  if (guard instanceof Response) return guard;
+
   const svc = await createServiceClient();
   const { data, error } = await svc
     .from("feature_flags")
