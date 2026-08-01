@@ -129,14 +129,27 @@ export async function initDeepLinks(navigate: (path: string) => void): Promise<(
   try {
     const { App } = await import("@capacitor/app");
     const handle = await App.addListener("appUrlOpen", ({ url }) => {
-      // url looks like: com.cravecreate.app://callback?code=... or https://host/path
-      try {
-        const u = new URL(url);
-        const path = `${u.pathname}${u.search}${u.hash}` || "/m";
-        navigate(path.startsWith("/") ? path : `/${path}`);
-      } catch {
-        /* unparseable url — ignore */
-      }
+      // url looks like: com.cravecreate.app://auth/callback?code=... or https://host/path
+      void (async () => {
+        // OAuth returns must be EXCHANGED, not navigated to. Treating
+        // ...://auth/callback?code=X as a route would push the user at a
+        // non-existent page and silently drop the authorization code.
+        const { isAuthCallbackUrl, completeNativeAuth } = await import("@/lib/native-auth");
+        if (isAuthCallbackUrl(url)) {
+          const { createClient } = await import("@/lib/supabase/client");
+          const ok = await completeNativeAuth(createClient(), url);
+          navigate(ok ? "/m" : "/m?error=auth_failed");
+          return;
+        }
+
+        try {
+          const u = new URL(url);
+          const path = `${u.pathname}${u.search}${u.hash}` || "/m";
+          navigate(path.startsWith("/") ? path : `/${path}`);
+        } catch {
+          /* unparseable url — ignore */
+        }
+      })();
     });
     return () => {
       handle.remove();

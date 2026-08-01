@@ -2,6 +2,7 @@
 
 import React from "react";
 import { createClient } from "@/lib/supabase/client";
+import { signInWithProvider } from "@/lib/native-auth";
 import { Github } from "lucide-react";
 
 function GoogleIcon() {
@@ -30,22 +31,16 @@ function GoogleIcon() {
 export function AuthButton() {
   const supabase = createClient();
 
+  // Routes through lib/native-auth so the native shell opens the consent
+  // screen in the system browser. Google returns `disallowed_useragent` for an
+  // embedded WebView, so calling signInWithOAuth directly here would be a dead
+  // end on iOS and Android. On web this is unchanged.
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
-      },
-    });
+    await signInWithProvider(supabase, "google");
   };
 
   const signInWithGitHub = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
-      },
-    });
+    await signInWithProvider(supabase, "github");
   };
 
   const btnStyle: React.CSSProperties = {

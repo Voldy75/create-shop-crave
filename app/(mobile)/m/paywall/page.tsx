@@ -1,17 +1,29 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Crown, Check, Loader2 } from "lucide-react";
+import {
+  fetchBillingOptions,
+  startCheckout,
+  restorePurchases,
+  type BillingOptions,
+} from "@/lib/billing";
 
 /**
- * meshi Paywall (v2-screens ScreenPaywall). Cinematic dark, feature list,
- * selectable plans (Yearly / Monthly / BYOK). Faithful conversion surface.
+ * meshi Paywall. Cinematic dark, feature list, selectable plans.
  *
- * NOTE: in-app payment completion (Razorpay checkout.js / Stripe redirect)
- * is a dedicated follow-up — the CTA creates the order via the existing
- * /api/subscribe endpoints; finishing the charge in the WebView needs the
- * provider SDK wired (tracked separately). BYOK is the free path.
+ * COMPLIANCE — read before editing the copy on this screen.
+ *
+ * Apple requires In-App Purchase for digital subscriptions (Guideline 3.1.1),
+ * and anti-steering rules forbid pointing users at an external way to pay.
+ * This screen previously rendered the literal string "finish on the web app for
+ * now", which is exactly the sentence that gets an app rejected.
+ *
+ * The paid plans are therefore shown ONLY when the platform can actually
+ * transact (see lib/billing.ts). On iOS today that is false until RevenueCat
+ * products exist, so the screen offers just the free BYOK path — compliant and
+ * shippable, instead of a purchase button that cannot complete.
  */
 
 type Plan = "yearly" | "monthly" | "byok";
@@ -35,30 +47,44 @@ export default function MobilePaywall() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
+  const [options, setOptions] = useState<BillingOptions | null>(null);
+
+  useEffect(() => {
+    void fetchBillingOptions().then(setOptions);
+  }, []);
+
+  // Until billing options load, assume no purchase is possible. Showing paid
+  // plans first and hiding them a moment later would flash non-compliant UI.
+  const canPurchase = options?.canPurchase ?? false;
+
   const start = async () => {
-    if (plan === "byok") {
+    if (plan === "byok" || !canPurchase) {
       router.push("/m/profile");
       return;
     }
     setBusy(true);
     setNote(null);
     try {
-      // Creates the order/intent server-side. Completing the charge needs the
-      // provider checkout SDK (Razorpay) / redirect (Stripe) — wired in a
-      // follow-up. For now confirm the order was created.
-      const res = await fetch("/api/subscribe/razorpay", { method: "POST" });
-      if (res.status === 401) {
-        setNote("Sign in first to upgrade.");
-      } else if (res.ok) {
-        setNote("Order created. In-app checkout is coming soon — finish on the web app for now.");
+      const result = await startCheckout(options!, plan === "yearly" ? "pro" : "pro");
+      if (result.status === "redirect") {
+        window.location.href = result.url;
+      } else if (result.status === "ok") {
+        setNote("Checkout started.");
       } else {
-        setNote("Couldn't start checkout right now.");
+        setNote(result.message);
       }
-    } catch {
-      setNote("Network error — try again.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const onRestore = async () => {
+    const result = await restorePurchases();
+    setNote(
+      result.status === "ok" || result.status === "redirect"
+        ? "Purchases restored."
+        : result.message
+    );
   };
 
   return (
@@ -68,7 +94,18 @@ export default function MobilePaywall() {
       <div style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 18px 0", position: "relative" }}>
         <div className="row" style={{ justifyContent: "space-between" }}>
           <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)" }} aria-label="Close"><X width={22} height={22} /></button>
-          <span className="t-small" style={{ color: "rgba(255,255,255,0.6)" }}>Restore</span>
+          {/* Restore Purchases is MANDATORY on iOS for any app selling a
+              subscription. It previously rendered as inert text with no
+              handler, which is a rejection in itself. */}
+          {canPurchase && (
+            <button
+              onClick={onRestore}
+              className="t-small"
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.6)" }}
+            >
+              Restore
+            </button>
+          )}
         </div>
       </div>
 
@@ -94,7 +131,11 @@ export default function MobilePaywall() {
         </div>
 
         <div className="col" style={{ gap: 10, marginTop: 28 }}>
-          {PLANS.map((pl) => {
+          {/* Paid tiers appear only where the platform can actually transact.
+              On iOS without configured StoreKit products that is false, so this
+              collapses to the free BYOK option rather than advertising a price
+              we cannot legally charge here. */}
+          {PLANS.filter((pl) => canPurchase || pl.id === "byok").map((pl) => {
             const on = plan === pl.id;
             return (
               <button key={pl.id} onClick={() => setPlan(pl.id)} className="card" style={{ padding: 14, textAlign: "left", background: on ? "rgba(255,107,53,0.14)" : "var(--cc-surf-1)", borderColor: on ? "var(--cc-acc)" : "var(--cc-line)" }}>
@@ -118,9 +159,15 @@ export default function MobilePaywall() {
       <div style={{ padding: "14px 18px calc(18px + env(safe-area-inset-bottom,0px))" }}>
         <button className="pill-primary" onClick={start} disabled={busy}>
           {busy ? <Loader2 width={16} height={16} className="animate-spin" /> : null}
-          {plan === "byok" ? "Use my own key" : "Start Pro"}
+          {plan === "byok" || !canPurchase ? "Use my own key" : "Start Pro"}
         </button>
-        <p className="t-small" style={{ textAlign: "center", marginTop: 10, color: "rgba(255,255,255,0.5)" }}>Cancel anytime · Auto-renews</p>
+        {/* "Auto-renews" would be a false claim when the only offer on screen
+            is the free bring-your-own-key path. */}
+        {canPurchase && plan !== "byok" && (
+          <p className="t-small" style={{ textAlign: "center", marginTop: 10, color: "rgba(255,255,255,0.5)" }}>
+            Cancel anytime · Auto-renews
+          </p>
+        )}
       </div>
     </div>
   );

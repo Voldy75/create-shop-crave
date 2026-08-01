@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ChevronLeft, MapPin, Check, Sparkles } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
+import { signInWithProvider } from "@/lib/native-auth";
 import { saveNutritionGoals } from "@/lib/storage";
 import { defaultGoalsFromProfile } from "@/lib/nutrition";
 import type { WeightGoal } from "@/lib/types";
@@ -63,11 +64,11 @@ export default function Onboarding() {
     next();
   };
 
+  // Native opens the consent screen in the system browser (Google rejects
+  // embedded WebViews with `disallowed_useragent`); the return arrives via the
+  // com.cravecreate.app:// deep link and NativeInit completes the session.
   const signInGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/m` },
-    });
+    await signInWithProvider(supabase, "google");
   };
 
   // ── Welcome (full-bleed) ──────────────────────────────────────────────
