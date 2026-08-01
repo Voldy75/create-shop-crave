@@ -10,6 +10,7 @@ const TABS = [
   { href: "/admin/plans", label: "Plans" },
   { href: "/admin/config", label: "Config" },
   { href: "/admin/flags", label: "Flags" },
+  { href: "/admin/mcp", label: "MCP" },
 ];
 
 export function AdminNav() {

@@ -22,7 +22,7 @@ export interface AuditEntry {
   actorUserId: string;
   /** dotted verb, e.g. "user.ban", "plan.update", "config.set" */
   action: string;
-  targetType: "user" | "plan" | "plan_price" | "config" | "flag";
+  targetType: "user" | "plan" | "plan_price" | "config" | "flag" | "mcp_provider" | "mcp_server";
   targetId?: string | null;
   before?: unknown;
   after?: unknown;
