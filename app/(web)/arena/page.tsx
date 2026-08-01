@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useChat } from "ai/react";
 import { useRouter } from "next/navigation";
-import { useUser } from "../context/UserContext";
+import { useUser } from "@/app/context/UserContext";
 import { Send, Bot, Sparkles, RotateCcw, ArrowLeft, Lock } from "lucide-react";
 import { LottiePlayer } from "@/components/LottiePlayer";
 import { RecipeView } from "@/components/RecipeView";

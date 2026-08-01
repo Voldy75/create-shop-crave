@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useUser } from "./context/UserContext";
+import { useUser } from "@/app/context/UserContext";
 import { AuthButton } from "@/components/AuthButton";
 import { MapPin, Loader2, AlertCircle, ArrowRight, Check, ChevronDown, Plus, Minus, ShoppingCart, Car, Star, Clock } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";

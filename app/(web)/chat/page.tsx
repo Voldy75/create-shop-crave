@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useChat } from "ai/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useUser } from "../context/UserContext";
+import { useUser } from "@/app/context/UserContext";
 import { Bot, Sparkles, RotateCcw, AlertCircle, Heart, Calendar, LogOut, Swords, ArrowUp, ArrowDown, Settings, ChefHat, MapPin, Leaf, Users, Timer, Store, ShoppingCart, Utensils, Package } from "lucide-react";
 import { Chip } from "@/components/cc/chip";
 import { ThemeToggle } from "@/components/ThemeToggle";

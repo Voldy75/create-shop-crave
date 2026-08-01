@@ -1,16 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import localFont from "next/font/local";
-import "./globals.css";
+import "../globals.css";
 
 const generalSans = localFont({
-  src: "./fonts/GeneralSans-Variable.woff2",
+  src: "../fonts/GeneralSans-Variable.woff2",
   variable: "--font-display",
   weight: "200 700",
   display: "swap",
 });
-import { UserProvider } from "./context/UserContext";
-import { ThemeProvider } from "./context/ThemeContext";
+import { UserProvider } from "../context/UserContext";
+import { ThemeProvider } from "../context/ThemeContext";
 import { BottomNav } from "@/components/BottomNav";
 import { Toaster } from "sonner";
 
