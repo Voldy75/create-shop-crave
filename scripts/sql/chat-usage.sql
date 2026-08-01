@@ -34,6 +34,7 @@ create or replace function public.check_and_increment_usage(
 returns json
 language plpgsql
 security definer
+set search_path = ''
 as $$
 declare
   v_count   int;
