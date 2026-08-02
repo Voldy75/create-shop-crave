@@ -4,11 +4,23 @@ import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Live Google Maps tiles for the meshi Restaurants screen, dark-styled to match
- * the --cc-* surface. Renders numbered markers + a user-location dot. Degrades
- * gracefully: with no API key, a load error, or a Google auth failure it falls
- * back to the stylized gradient backdrop + static pins (the prior look) so the
- * screen never appears broken.
+ * Live Google Maps tiles for the meshi Restaurants screen.
+ *
+ * DESIGN NOTE: the Flow 2 artboard draws an ILLUSTRATED map — hand-drawn roads
+ * and block rectangles. That is the artboard's stand-in for a live map (you
+ * cannot render Google Maps in a static design file), the same category as the
+ * `.win*` fake browser chrome. Replacing real tiles with an illustration would
+ * lose actual restaurant positions, so we keep the map and take the genuinely
+ * designed parts: the palette, and numbered teardrop pins with an active state.
+ *
+ * The style below reproduces the artboard's map colours — pale green land,
+ * cream roads, sage blocks, muted blue water.
+ *
+ * Degrades gracefully: with no API key, a load error, or a Google auth failure
+ * it falls back to a tinted backdrop with static pins, so the screen never
+ * looks broken. (Production currently hits that path: the Maps key is
+ * HTTP-referrer-restricted to the web domain. That is a Google Cloud Console
+ * fix, not a code one.)
  */
 
 export interface MapPin {
@@ -20,27 +32,51 @@ export interface MapPin {
 
 const DEFAULT_CENTER = { lat: 28.6139, lng: 77.209 }; // New Delhi (sample data origin)
 
-const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#1d1d1f" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8a8a8f" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0b0b0d" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a2a2d" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1a1a1c" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b2535" }] },
+/** Colours lifted from the artboard's illustrated map. */
+const LAND = "#E8EDDA";
+const ROAD = "#FDFBF2";
+const BLOCK = "#DCE5C4";
+const WATER = "#D3DEF0";
+const FOREST = "#1E5A34";
+const BURNT = "#C05F16";
+const ON_DEEP = "#FDF8E7";
+
+const MESHI_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: LAND }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#8A6B47" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: ROAD }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: ROAD }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#EFE8D2" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#FFFDF4" }] },
+  { featureType: "landscape.man_made", elementType: "geometry", stylers: [{ color: BLOCK }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#D6E4BC" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: WATER }] },
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
   { featureType: "transit", stylers: [{ visibility: "off" }] },
-  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#2a2a2d" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#D8D2BC" }] },
 ];
 
+/**
+ * The artboard's teardrop, verbatim: a rounded head tapering to a point, with
+ * the rank number centred in it. Active pins are burnt orange and larger so the
+ * selected spot reads at a glance against a field of forest-green ones.
+ */
 function numberedMarkerIcon(label: number, active: boolean): google.maps.Icon {
-  const fill = active ? "#ff6b35" : "#1d1d1f";
-  const stroke = "#ff6b35";
-  const text = active ? "#ffffff" : "#ff6b35";
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48"><path d="M18 0C8.06 0 0 8.06 0 18c0 12.75 16.31 28.56 17 29.21.28.26.72.26 1 0C18.69 46.56 36 30.75 36 18 36 8.06 27.94 0 18 0z" fill="${fill}" stroke="${stroke}" stroke-width="2"/><text x="18" y="23" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="${text}">${label}</text></svg>`;
+  const w = active ? 56 : 44;
+  const h = active ? 66 : 52;
+  const fill = active ? BURNT : FOREST;
+  const fontSize = active ? 21 : 17;
+  const textY = active ? 15.5 : 15;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 32 32">` +
+    `<path d="M16 30 C8 21 5.5 15.5 5.5 11.5 a10.5 10.5 0 0 1 21 0 c0 4 -2.5 9.5 -10.5 18.5 Z" fill="${fill}"/>` +
+    `<text x="16" y="${textY}" text-anchor="middle" dominant-baseline="middle" ` +
+    `font-family="Montserrat,system-ui,sans-serif" font-size="${(fontSize / w) * 32}" font-weight="800" fill="${ON_DEEP}">${label}</text>` +
+    `</svg>`;
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new google.maps.Size(36, 48),
-    anchor: new google.maps.Point(18, 48),
+    scaledSize: new google.maps.Size(w, h),
+    anchor: new google.maps.Point(w / 2, h),
   };
 }
 
@@ -48,28 +84,77 @@ const FALLBACK_PIN_POS = [
   { x: 28, y: 26 }, { x: 62, y: 40 }, { x: 45, y: 58 }, { x: 78, y: 62 }, { x: 22, y: 70 },
 ];
 
-/** Stylized backdrop used when Maps can't load — keeps the screen intentional. */
-function FallbackMap({ pins, hasLocation }: { pins: MapPin[]; hasLocation: boolean }) {
+/** Tinted backdrop used when Maps can't load — keeps the screen intentional. */
+function FallbackMap({
+  pins,
+  hasLocation,
+  activeLabel,
+  onSelect,
+}: {
+  pins: MapPin[];
+  hasLocation: boolean;
+  activeLabel: number;
+  onSelect?: (label: number) => void;
+}) {
   return (
     <>
       <div className="mapbg" style={{ position: "absolute", inset: 0 }} />
-      {pins.map((p, i) => (
-        <div key={p.label} style={{ position: "absolute", left: `${FALLBACK_PIN_POS[i]?.x ?? 50}%`, top: `${FALLBACK_PIN_POS[i]?.y ?? 50}%`, transform: "translate(-50%,-100%)", zIndex: 2 }}>
-          <div style={{ width: i === 0 ? 30 : 26, height: i === 0 ? 30 : 26, borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", background: i === 0 ? "var(--m-forest)" : "var(--m-cream-2)", border: i === 0 ? "none" : "1px solid var(--m-ink-faint)", display: "grid", placeItems: "center", boxShadow: "0 4px 10px rgba(0,0,0,0.35)" }}>
-            <span style={{ transform: "rotate(45deg)", color: i === 0 ? "#fff" : "var(--m-ink)", fontSize: 12, fontWeight: 700 }}>{p.label}</span>
-          </div>
-        </div>
-      ))}
+      {pins.map((p, i) => {
+        const active = p.label === activeLabel;
+        return (
+          <button
+            key={p.label}
+            onClick={() => onSelect?.(p.label)}
+            aria-label={p.title}
+            style={{
+              position: "absolute",
+              left: `${FALLBACK_PIN_POS[i]?.x ?? 50}%`,
+              top: `${FALLBACK_PIN_POS[i]?.y ?? 50}%`,
+              transform: "translate(-50%,-100%)",
+              zIndex: active ? 3 : 2,
+              background: "none",
+              border: "none",
+              padding: 0,
+            }}
+          >
+            <svg viewBox="0 0 32 32" width={active ? 44 : 34} height={active ? 52 : 40}>
+              <path
+                d="M16 30 C8 21 5.5 15.5 5.5 11.5 a10.5 10.5 0 0 1 21 0 c0 4 -2.5 9.5 -10.5 18.5 Z"
+                fill={active ? "var(--m-burnt)" : "var(--m-forest)"}
+              />
+              <text x="16" y="14" textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="800" fill={ON_DEEP}>
+                {p.label}
+              </text>
+            </svg>
+          </button>
+        );
+      })}
       {hasLocation && (
         <div style={{ position: "absolute", left: "42%", top: "47%", zIndex: 2 }}>
-          <div style={{ width: 16, height: 16, borderRadius: "50%", background: "var(--m-forest)", border: "3px solid #fff", boxShadow: "0 0 0 8px rgba(41,151,255,0.18)" }} />
+          <div
+            style={{
+              width: 16, height: 16, borderRadius: "50%",
+              background: "var(--m-forest)", border: `3px solid ${ON_DEEP}`,
+              boxShadow: "0 0 0 8px rgba(30,90,52,0.16)",
+            }}
+          />
         </div>
       )}
     </>
   );
 }
 
-export default function RestaurantMap({ pins, center }: { pins: MapPin[]; center: { lat: number; lng: number } | null }) {
+export default function RestaurantMap({
+  pins,
+  center,
+  activeLabel = 1,
+  onSelect,
+}: {
+  pins: MapPin[];
+  center: { lat: number; lng: number } | null;
+  activeLabel?: number;
+  onSelect?: (label: number) => void;
+}) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
   const { isLoaded, loadError } = useJsApiLoader({ id: "meshi-maps", googleMapsApiKey: apiKey });
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -94,7 +179,7 @@ export default function RestaurantMap({ pins, center }: { pins: MapPin[]; center
   }, [isLoaded, pins, mapCenter]);
 
   if (!apiKey || loadError || authFailed) {
-    return <FallbackMap pins={pins} hasLocation={!!center} />;
+    return <FallbackMap pins={pins} hasLocation={!!center} activeLabel={activeLabel} onSelect={onSelect} />;
   }
 
   if (!isLoaded) {
@@ -108,13 +193,38 @@ export default function RestaurantMap({ pins, center }: { pins: MapPin[]; center
         center={mapCenter}
         zoom={13}
         onLoad={(map) => { mapRef.current = map; }}
-        options={{ styles: DARK_MAP_STYLE, disableDefaultUI: true, clickableIcons: false, backgroundColor: "#1d1d1f", gestureHandling: "greedy" }}
+        options={{
+          styles: MESHI_MAP_STYLE,
+          disableDefaultUI: true,
+          clickableIcons: false,
+          backgroundColor: LAND,
+          gestureHandling: "greedy",
+        }}
       >
         {center && (
-          <Marker position={center} title="You" zIndex={1} icon={{ path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: "#2997ff", fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 }} />
+          <Marker
+            position={center}
+            title="You"
+            zIndex={1}
+            icon={{
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: FOREST,
+              fillOpacity: 1,
+              strokeColor: ON_DEEP,
+              strokeWeight: 3,
+            }}
+          />
         )}
         {pins.map((p) => (
-          <Marker key={p.label} position={{ lat: p.lat, lng: p.lng }} icon={numberedMarkerIcon(p.label, p.label === 1)} zIndex={p.label === 1 ? 999 : 10 + p.label} title={p.title} />
+          <Marker
+            key={p.label}
+            position={{ lat: p.lat, lng: p.lng }}
+            icon={numberedMarkerIcon(p.label, p.label === activeLabel)}
+            zIndex={p.label === activeLabel ? 999 : 10 + p.label}
+            title={p.title}
+            onClick={() => onSelect?.(p.label)}
+          />
         ))}
       </GoogleMap>
     </div>

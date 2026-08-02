@@ -2,10 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft, Search, Star, Navigation, Car, ExternalLink } from "lucide-react";
+import { ArrowLeft, Search, MapPin as PinIcon, Navigation, Car, ExternalLink } from "lucide-react";
 import { getActiveRestaurants } from "@/lib/mobile-handoff";
 import { foodImage } from "@/lib/food-images";
 import RestaurantMap, { type MapPin } from "@/components/mobile/RestaurantMap";
+import { CarrotRating } from "@/components/mobile/CarrotRating";
+import { Carrot } from "@/components/mascots";
 import { useUser } from "@/app/context/UserContext";
 import {
   buildGoogleMapsDirectionsLink,
@@ -13,15 +15,20 @@ import {
   buildSwiggyOrderLink,
   buildZomatoOrderLink,
 } from "@/lib/deeplinks";
-import type { RestaurantSuggestion, Restaurant } from "@/lib/types";
+import type { RestaurantSuggestion } from "@/lib/types";
 
 /**
- * meshi Restaurants — map-first (v2-screens ScreenRestaurantsMap): stylized
- * map backdrop with numbered pins, a "Go there / Order in" toggle, and a peek
- * sheet of restaurant cards with real deeplinks (Directions, Uber, Swiggy,
- * Zomato). Reads the restaurant suggestion handed off from chat; falls back to
- * a sample for direct visits. (Real Google Maps tiles deferred — the meshi
- * design itself uses a stylized backdrop.)
+ * meshi Restaurants — built to the Flow 2 "Restaurants" artboard.
+ *
+ * Map-first: search + filter chips floating over the map, numbered teardrop
+ * pins, and ONE detail card pinned to the bottom for the selected spot —
+ * replacing the horizontal carousel of cards the previous version used.
+ * Tapping a pin swaps the card.
+ *
+ * The artboard's illustrated map is its stand-in for live tiles; we keep the
+ * real map, restyled to the meshi palette. See components/mobile/RestaurantMap.
+ *
+ * All deeplinks (Directions, Uber, Swiggy, Zomato) are unchanged.
  */
 
 const SAMPLE: RestaurantSuggestion = {
@@ -35,103 +42,188 @@ const SAMPLE: RestaurantSuggestion = {
   ],
 };
 
+const FILTERS = ["Open now", "Under ₹₹", "4+"] as const;
+
+/** "4.6" → 5 carrots-worth of fill, rounded to the nearest whole carrot. */
+function carrotsFor(rating: string | undefined): number {
+  const n = Number(rating);
+  return Number.isFinite(n) ? Math.max(0, Math.min(5, Math.round(n))) : 4;
+}
+
 export default function MobileRestaurants() {
   const router = useRouter();
   const { location } = useUser();
   const [sugg, setSugg] = useState<RestaurantSuggestion | null>(null);
+  const [active, setActive] = useState(1);
+  const [filters, setFilters] = useState<string[]>(["Open now"]);
   const [mode, setMode] = useState<"go" | "order">("go");
 
-  useEffect(() => { setSugg(getActiveRestaurants() ?? SAMPLE); }, []);
+  useEffect(() => {
+    setSugg(getActiveRestaurants() ?? SAMPLE);
+  }, []);
 
   if (!sugg) return <div style={{ minHeight: "100dvh", background: "var(--m-cream)" }} />;
+
   const list = (sugg.restaurants ?? []).slice(0, 5);
   const pins: MapPin[] = list
-    .map((r, i) => (typeof r.lat === "number" && typeof r.lng === "number" ? { lat: r.lat, lng: r.lng, label: i + 1, title: r.name } : null))
+    .map((r, i) =>
+      typeof r.lat === "number" && typeof r.lng === "number"
+        ? { lat: r.lat, lng: r.lng, label: i + 1, title: r.name }
+        : null,
+    )
     .filter((p): p is MapPin => p !== null);
 
+  const dish = sugg.dishName ?? sugg.query;
+  const selected = list[active - 1] ?? list[0];
+
+  const hasCoords = typeof selected?.lat === "number" && typeof selected?.lng === "number";
+  const dirHref =
+    hasCoords && location
+      ? buildGoogleMapsDirectionsLink(location, { lat: selected.lat!, lng: selected.lng! })
+      : `https://www.google.com/maps/search/${encodeURIComponent(selected?.name ?? "")}`;
+  const uberHref =
+    hasCoords && location
+      ? buildUberDeepLink(location, { lat: selected.lat!, lng: selected.lng! }, selected.name)
+      : "https://m.uber.com/";
+  const swiggyHref = selected?.swiggyUrl || buildSwiggyOrderLink(dish, location?.lat, location?.lng);
+  const zomatoHref = selected?.zomatoUrl || buildZomatoOrderLink(dish, selected?.area);
+
+  const toggleFilter = (f: string) =>
+    setFilters((cur) => (cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f]));
+
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)", position: "relative" }}>
-      {/* Live map (falls back to stylized backdrop + pins without an API key) */}
-      <RestaurantMap pins={pins} center={location} />
+    <div style={{ minHeight: "100dvh", background: "var(--m-cream)", position: "relative", overflow: "hidden" }}>
+      <RestaurantMap pins={pins} center={location} activeLabel={active} onSelect={setActive} />
 
-      {/* Top controls */}
-      <div className="hstack" style={{ position: "absolute", top: "calc(env(safe-area-inset-top,12px) + 6px)", left: 12, right: 12, gap: 8, zIndex: 3 }}>
-        <button onClick={() => router.back()} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "var(--m-cream-2)", color: "var(--m-ink)", display: "grid", placeItems: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }} aria-label="Back"><ChevronLeft width={20} height={20} /></button>
-        <div className="card hstack" style={{ flex: 1, padding: "0 14px", height: 38, gap: 8 }}>
-          <Search width={16} height={16} style={{ color: "var(--m-ink-soft)" }} />
-          <span style={{ fontSize: 13, color: "var(--m-ink-soft)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sugg.dishName ?? sugg.query} near you</span>
-        </div>
-      </div>
-
-      {/* Go there / Order in toggle */}
-      <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top,12px) + 54px)", left: "50%", transform: "translateX(-50%)", background: "var(--m-cream-2)", borderRadius: "var(--m-r-pill)", padding: 4, display: "flex", gap: 2, boxShadow: "0 4px 14px rgba(0,0,0,0.25)", border: "1px solid var(--m-ink-faint)", zIndex: 3 }}>
-        {(["go", "order"] as const).map((m) => (
-          <button key={m} onClick={() => setMode(m)} style={{ background: mode === m ? "var(--m-forest)" : "transparent", color: mode === m ? "#fff" : "var(--m-ink-soft)", border: "none", borderRadius: "var(--m-r-pill)", padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>
-            {m === "go" ? "Go there" : "Order in"}
+      {/* Search + filters, floating over the map */}
+      <div
+        className="vstack"
+        style={{
+          position: "absolute",
+          top: "calc(env(safe-area-inset-top, 12px) + 8px)",
+          left: 16, right: 16, zIndex: 3, gap: 10,
+        }}
+      >
+        <div className="hstack">
+          <button className="icon-btn" onClick={() => router.back()} aria-label="Back">
+            <ArrowLeft width={20} height={20} />
           </button>
-        ))}
-      </div>
-
-      {/* Peek sheet */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, maxWidth: 520, margin: "0 auto", background: "var(--m-cream)", borderRadius: "20px 20px 0 0", borderTop: "1px solid var(--m-ink-faint)", padding: "8px 0 calc(14px + env(safe-area-inset-bottom,0px))", boxShadow: "0 -12px 30px rgba(0,0,0,0.4)", zIndex: 3 }}>
-        <div style={{ width: 38, height: 4, background: "var(--m-ink-faint)", borderRadius: 2, margin: "0 auto 8px" }} />
-        <div className="hstack" style={{ padding: "4px 16px 10px", justifyContent: "space-between" }}>
-          <span className="t-cap">{list.length} SPOTS NEAR YOU</span>
+          <div className="input grow" style={{ height: 44, boxShadow: "var(--m-shadow)", marginLeft: 10 }}>
+            <Search width={18} height={18} style={{ color: "var(--m-ink-soft)" }} />
+            <span
+              className="grow"
+              style={{ color: "var(--m-ink)", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+            >
+              {dish} near me
+            </span>
+          </div>
         </div>
-        <div className="hscroll hstack" style={{ gap: 10, padding: "0 12px" }}>
-          {list.map((r, i) => (
-            <RestaurantCard key={r.name} r={r} n={i + 1} hi={i === 0} mode={mode} dish={sugg.dishName ?? sugg.query} loc={location} />
+
+        <div className="hstack" style={{ gap: 8 }}>
+          {FILTERS.map((f) => (
+            <button
+              key={f}
+              className={`chip ${filters.includes(f) ? "chip-active" : ""}`}
+              onClick={() => toggleFilter(f)}
+              aria-pressed={filters.includes(f)}
+            >
+              {f}
+              {f === "4+" && <Carrot width={15} height={15} />}
+            </button>
           ))}
         </div>
       </div>
-    </div>
-  );
-}
 
-function Pin({ n, hi }: { n: number; hi?: boolean }) {
-  return (
-    <div style={{ width: hi ? 30 : 26, height: hi ? 30 : 26, borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", background: hi ? "var(--m-forest)" : "var(--m-cream-2)", border: hi ? "none" : "1px solid var(--m-ink-faint)", display: "grid", placeItems: "center", boxShadow: "0 4px 10px rgba(0,0,0,0.35)" }}>
-      <span style={{ transform: "rotate(45deg)", color: hi ? "#fff" : "var(--m-ink)", fontSize: 12, fontWeight: 700 }}>{n}</span>
-    </div>
-  );
-}
+      {/* Selected spot — one card, per the artboard */}
+      {selected && (
+        <div className="card" style={{ position: "absolute", bottom: 24, left: 16, right: 16, zIndex: 3 }}>
+          <div className="vstack" style={{ padding: 14, gap: 10 }}>
+            <div className="hstack" style={{ gap: 12 }}>
+              <div
+                className="imgfill"
+                style={{
+                  width: 56, height: 56, borderRadius: 14, position: "relative", flex: "none",
+                  backgroundImage: `url('${foodImage(dish) || foodImage(selected.cuisine) || ""}')`,
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute", top: -7, left: -7, width: 24, height: 24,
+                    borderRadius: "50%", background: "var(--m-burnt)", color: "var(--m-on-deep)",
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    font: "800 13px var(--m-font-display)", boxShadow: "0 0 0 2.5px var(--m-card)",
+                  }}
+                >
+                  {active}
+                </span>
+              </div>
 
-function RestaurantCard({ r, n, hi, mode, dish, loc }: { r: Restaurant; n: number; hi: boolean; mode: "go" | "order"; dish: string; loc: { lat: number; lng: number } | null }) {
-  const hasCoords = typeof r.lat === "number" && typeof r.lng === "number";
-  const dirHref = hasCoords && loc ? buildGoogleMapsDirectionsLink(loc, { lat: r.lat!, lng: r.lng! }) : `https://www.google.com/maps/search/${encodeURIComponent(r.name)}`;
-  const uberHref = hasCoords && loc ? buildUberDeepLink(loc, { lat: r.lat!, lng: r.lng! }, r.name) : "https://m.uber.com/";
-  const swiggyHref = r.swiggyUrl || buildSwiggyOrderLink(dish, loc?.lat, loc?.lng);
-  const zomatoHref = r.zomatoUrl || buildZomatoOrderLink(dish, r.area);
+              <div className="vstack grow" style={{ gap: 3, minWidth: 0 }}>
+                <span className="t-h2" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {selected.name}
+                </span>
+                <div className="hstack" style={{ gap: 6 }}>
+                  <CarrotRating value={carrotsFor(selected.rating)} size={15} />
+                  <span className="t-cap" style={{ color: "var(--m-ink)" }}>{selected.rating}</span>
+                </div>
+              </div>
 
-  return (
-    <div className="card" style={{ minWidth: 250, padding: 12, border: hi ? "1.5px solid var(--m-forest)" : "1px solid var(--m-ink-faint)" }}>
-      <div className="hstack" style={{ gap: 10 }}>
-        <div className="ph ph-saffron" style={{ width: 48, height: 48, borderRadius: "var(--m-r-md)", flexShrink: 0, position: "relative", backgroundImage: (foodImage(dish) || foodImage(r.cuisine)) ? `url(${foodImage(dish) || foodImage(r.cuisine)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
-          <div style={{ position: "absolute", left: -6, top: -6 }}><Pin n={n} hi={hi} /></div>
-        </div>
-        <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
-          <span className="t-small">{[r.area, r.cuisine].filter(Boolean).join(" · ")}</span>
-          <div className="hstack" style={{ gap: 4, marginTop: 2 }}>
-            <Star width={11} height={11} style={{ color: "var(--m-forest)" }} />
-            <span style={{ fontSize: 11, fontWeight: 600 }}>{r.rating}</span>
-            <span style={{ fontSize: 11, color: "var(--m-ink-soft)" }}>· {r.priceRange}</span>
+              <a
+                className="pill-primary pill-sm"
+                style={{ flex: "none" }}
+                href={mode === "go" ? uberHref : swiggyHref}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {mode === "go" ? "Ride" : "Order"}
+              </a>
+            </div>
+
+            <div className="hstack" style={{ gap: 6, flexWrap: "wrap" }}>
+              <span className="chip chip-tag" style={{ background: "var(--m-tint-peach)", color: "var(--m-burnt)", height: 26 }}>
+                {selected.priceRange}
+              </span>
+              <span className="chip chip-tag" style={{ background: "var(--m-tint-green)", color: "var(--m-forest)", height: 26, gap: 4 }}>
+                <PinIcon width={12} height={12} />
+                {selected.area}
+              </span>
+              {selected.cuisine && (
+                <span className="chip chip-tag" style={{ height: 26, background: "var(--m-cream-2)", color: "var(--m-ink-soft)" }}>
+                  {selected.cuisine}
+                </span>
+              )}
+            </div>
+
+            {/* Go there / Order in — decides what the primary action and the
+                secondary links below do. */}
+            <div className="hstack" style={{ gap: 6 }}>
+              {mode === "go" ? (
+                <>
+                  <a className="pill-secondary pill-sm" style={{ flex: 1 }} href={dirHref} target="_blank" rel="noopener noreferrer">
+                    <Navigation width={14} height={14} />
+                    Directions
+                  </a>
+                  <button className="pill-tonal pill-sm" style={{ flex: 1 }} onClick={() => setMode("order")}>
+                    <Car width={14} height={14} />
+                    Order in
+                  </button>
+                </>
+              ) : (
+                <>
+                  <a className="pill-secondary pill-sm" style={{ flex: 1 }} href={zomatoHref} target="_blank" rel="noopener noreferrer">
+                    Zomato
+                    <ExternalLink width={12} height={12} />
+                  </a>
+                  <button className="pill-tonal pill-sm" style={{ flex: 1 }} onClick={() => setMode("go")}>
+                    <Navigation width={14} height={14} />
+                    Go there
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="hstack" style={{ gap: 6, marginTop: 10 }}>
-        {mode === "go" ? (
-          <>
-            <a className="pill-tonal" style={{ flex: 1, padding: "8px 10px", fontSize: 12, textDecoration: "none" }} href={dirHref} target="_blank" rel="noopener noreferrer"><Navigation width={14} height={14} />Directions</a>
-            <a className="pill-primary" style={{ flex: 1, padding: "8px 10px", fontSize: 12, textDecoration: "none" }} href={uberHref} target="_blank" rel="noopener noreferrer"><Car width={14} height={14} />Uber</a>
-          </>
-        ) : (
-          <>
-            <a className="pill-tonal" style={{ flex: 1, padding: "8px 10px", fontSize: 12, textDecoration: "none" }} href={zomatoHref} target="_blank" rel="noopener noreferrer">Zomato <ExternalLink width={12} height={12} /></a>
-            <a className="pill-primary" style={{ flex: 1, padding: "8px 10px", fontSize: 12, textDecoration: "none" }} href={swiggyHref} target="_blank" rel="noopener noreferrer">Swiggy <ExternalLink width={12} height={12} /></a>
-          </>
-        )}
-      </div>
+      )}
     </div>
   );
 }
