@@ -73,7 +73,7 @@ project before the merge.
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
-| 10 meshi re-skin | in progress — 7 of 16 mobile screens rebuilt |
+| 10 meshi re-skin | in progress — 9 of 16 mobile screens rebuilt |
 
 ## Blocked on you — nothing proceeds past these
 
@@ -157,18 +157,19 @@ The file is 190KB — fetch it with `DesignSync.get_file` (project
 `bdb767d1-b7ae-42ab-b6ce-30542fa2e99f`), write it to `/tmp`, and extract single
 artboards with a script rather than loading it all into context.
 
-### Screens rebuilt to artboards (7 of 16)
+### Screens rebuilt to artboards (9 of 16)
 
 | Flow | Screens |
 |---|---|
 | 1 Onboarding | welcome, location, diet, goal |
 | 2 Home & discovery | Home, Discover (`/m/search`), Restaurants |
+| 3 Chat & recipes | chat, recipe |
 
-### Still to rebuild (9)
+### Still to rebuild (7)
 
-`chat` (6 hardcoded dark colours), `recipe` (13), `paywall` (11), `plan` (3),
-`saved` (2), `inbox` (2), `profile` (1), `buy` + `buy/platform` +
-`buy/confirmed` (1 each), `plan/week`, `plan/diet-chart`.
+`paywall` (11 hardcoded dark colours), `plan` (3), `saved` (2), `inbox` (2),
+`profile` (1), `buy` + `buy/platform` + `buy/confirmed` (1 each), `plan/week`,
+`plan/diet-chart`.
 
 They render and are navigable — tokens, fonts and layout are correct — but
 carry white-on-dark treatments that read wrong on cream.
@@ -179,6 +180,30 @@ Splash (animated Bo), Meet Bo intro, Buy 1 menu → 2 cart → 3 delivery →
 4 tracking, camera capture, Bo's verdict, notification bottom-up prompt, BYOK
 key screen, dark-mode Home. The four-step ordering journey and camera logging
 need real backend work, not just UI.
+
+### Decisions taken during Flow 3 — do not silently reverse
+
+- **The recipe artboard's carrot rating was deliberately NOT built.**
+  `RecipeData` has no rating field and nothing in the product collects one, so
+  the artboard's "4.2 (154)" would be fabricated review data on a real screen.
+  `components/mobile/CarrotRating` is built and used on Restaurants; wire it
+  here the day ratings actually exist.
+- **Artboard 7i (dark-mode dish detail) is deferred**, with the other dark-mode
+  screens. The dark token pass still has never been rendered anywhere.
+- **`lib/ingredient-mascot.ts`** maps an ingredient string to one of the 12
+  produce mascots (Bo is never an ingredient). Keyword-first, then a
+  deterministic hash — the hash matters, because a random pick would reshuffle
+  the tile grid on every re-render.
+- **The recipe servings toggle scales quantities AND per-row prices AND the
+  total.** If you touch one, touch all three or the screen contradicts itself.
+  Quantity scaling is anchored at the start of the string so "a pinch" and "to
+  taste" pass through untouched.
+- **Photo scrims live in `mobile.css`, not inline** (`.scrim-hero`,
+  `.action-fade`, `.on-photo-soft`). DESIGN.md bans hex/rgba literals in
+  `app/**` and `components/**` and does not allowlist photo overlays.
+- **`react-hooks/set-state-in-effect` fires on recipe, chat and restaurants
+  alike.** It is the tree-wide pattern for reading the `sessionStorage` handoff
+  after mount — it cannot run during SSR. Pre-existing, not a regression.
 
 ### Design system state
 
@@ -321,9 +346,17 @@ ignore those two.
 
 ## Suggested next step
 
-**Flow 3 (chat + recipe)** — the product's core loop and the heaviest colour
-debt (recipe alone has 13 hardcoded dark values). Then Flow 6 (tracking),
-Flow 7 (saved/profile/paywall), Flow 4 (buy).
+Flow 3 (chat + recipe) is **done**. Next, in order: **Flow 6 (tracking —
+`plan`, `plan/week`, `plan/diet-chart`)**, then Flow 7 (saved / profile /
+paywall — paywall carries 11 hardcoded dark values, the largest remaining
+block), then Flow 4 (buy).
+
+Method reminder: extract the flow's artboards from the mockup and build from
+the markup. The Flow 3 rebuild used
+`sed -n '<start>,<end>p' meshi-mobile.html` to cut a flow out, then split it on
+`<div class="dv-opt" id=` to get one file per artboard — cheap, and it keeps
+the 190KB file out of context. Flow line offsets are found with
+`grep -n 'dv-tname' meshi-mobile.html`.
 
 Two things that can happen in parallel and unblock more than they cost:
 
