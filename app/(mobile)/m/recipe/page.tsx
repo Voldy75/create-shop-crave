@@ -1,19 +1,30 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { ChevronLeft, Share2, Heart, ShoppingCart } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Heart, MapPin } from "lucide-react";
 import { getActiveRecipe, setActiveRecipe } from "@/lib/mobile-handoff";
+import { getFavorites, isFavorited, removeFavorite, saveFavorite } from "@/lib/storage";
 import { parseNumeric } from "@/lib/nutrition";
-import { buildBlinkitLink } from "@/lib/deeplinks";
 import { foodImage } from "@/lib/food-images";
+import { mascotComponentFor, tileTint } from "@/lib/ingredient-mascot";
 import type { RecipeData } from "@/lib/types";
 
 /**
- * meshi Recipe — editorial layout from v2-screens ScreenRecipeEditorial.
- * Full-bleed saffron hero, stats strip, ingredient list with est. prices,
- * numbered steps, sticky buy bar. Reads the recipe handed off from chat
- * (sessionStorage); falls back to a sample on direct visits.
+ * Recipe detail — built to the Flow 3 "Recipe detail" artboard (1f).
+ *
+ * The artboard is a photo hero with a cream sheet riding over it, and it makes
+ * two structural choices the previous editorial layout did not:
+ *
+ *  - Ingredients are a 4-up grid of MASCOT TILES, not a checklist. Four show;
+ *    the fourth becomes "+N more" and expands to the full priced list, so the
+ *    quantities and estimates the buy flow depends on are still reachable.
+ *  - The bottom is a three-way action row (Cook / Buy / Dine-in), which
+ *    replaces the black sticky pill — the single largest piece of hardcoded
+ *    dark styling on this screen.
+ *
+ * The servings toggle scales quantities and the price estimate, so it is a real
+ * control rather than the artboard's static 2/4 chip pair.
  */
 
 const SAMPLE: RecipeData = {
@@ -38,127 +49,346 @@ const SAMPLE: RecipeData = {
   nutritionEstimate: { calories: "520 cal", protein: "38g", carbs: "18g", fat: "32g" },
 };
 
+/** Tiles shown before the grid collapses into "+N more". */
+const TILE_SLOTS = 4;
+
+/**
+ * Scale the leading number in a quantity string ("500 g" → "250 g"). Anything
+ * without a leading number ("to taste", "a pinch") passes through untouched —
+ * doubling "a pinch" would be nonsense.
+ */
+function scaleQuantity(quantity: string | undefined, factor: number): string | undefined {
+  if (!quantity || factor === 1) return quantity;
+  return quantity.replace(/^\s*(\d+(?:\.\d+)?)/, (_, n: string) => {
+    const scaled = parseFloat(n) * factor;
+    return String(Math.round(scaled * 100) / 100);
+  });
+}
+
+/**
+ * Scale a price string ("₹180" → "₹360"). The number is not leading here, so
+ * unlike a quantity this replaces the first number anywhere in the string —
+ * keeping the currency symbol and any suffix intact. Row prices must scale with
+ * the same factor as the total, or the two disagree on screen.
+ */
+function scalePrice(price: string | undefined, factor: number): string | undefined {
+  if (!price || factor === 1) return price;
+  return price.replace(/\d+(?:\.\d+)?/, (n) => String(Math.round(parseFloat(n) * factor)));
+}
+
+/** "35 min" → "35m" for the Cook button; falls back to the raw string. */
+function shortTime(prepTime: string | undefined): string | null {
+  if (!prepTime) return null;
+  const n = prepTime.match(/\d+/);
+  return n ? `${n[0]}m` : prepTime;
+}
+
+/** Rough difficulty from step count — the artboard's "EZ" badge. */
+function difficultyFor(steps: number): string {
+  if (steps <= 4) return "EZ";
+  if (steps <= 7) return "MID";
+  return "PRO";
+}
+
 export default function MobileRecipe() {
   const router = useRouter();
   const [recipe, setRecipe] = useState<RecipeData | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [portions, setPortions] = useState(2);
+  const [showAllIngredients, setShowAllIngredients] = useState(false);
+  const [showAllSteps, setShowAllSteps] = useState(false);
 
   useEffect(() => {
-    setRecipe(getActiveRecipe() ?? SAMPLE);
+    const r = getActiveRecipe() ?? SAMPLE;
+    setRecipe(r);
+    setPortions(r.servings && r.servings > 0 ? r.servings : 2);
+    setSaved(isFavorited("recipe", r.name));
   }, []);
+
+  const basePortions = recipe?.servings && recipe.servings > 0 ? recipe.servings : 2;
+  const factor = portions / basePortions;
+
+  const estTotal = useMemo(
+    () => (recipe ? Math.round(recipe.ingredients.reduce((s, i) => s + parseNumeric(i.price) * factor, 0)) : 0),
+    [recipe, factor],
+  );
 
   if (!recipe) return <div style={{ minHeight: "100dvh", background: "var(--m-cream)" }} />;
 
-  const estTotal = recipe.ingredients.reduce((s, i) => s + parseNumeric(i.price), 0);
-  const stats = [
-    recipe.prepTime ? { t: recipe.prepTime.replace(/[^\d]/g, "") || recipe.prepTime, s: "min" } : null,
-    recipe.servings ? { t: String(recipe.servings), s: "servings" } : null,
-    recipe.nutritionEstimate?.calories ? { t: String(parseNumeric(recipe.nutritionEstimate.calories)), s: "cal" } : null,
-    recipe.nutritionEstimate?.protein ? { t: recipe.nutritionEstimate.protein, s: "protein" } : null,
-  ].filter(Boolean) as { t: string; s: string }[];
+  const img = foodImage(recipe.name);
+  const cookTime = shortTime(recipe.prepTime);
+  const kcal = recipe.nutritionEstimate?.calories;
+  const tiles = showAllIngredients ? recipe.ingredients : recipe.ingredients.slice(0, TILE_SLOTS - 1);
+  const overflow = recipe.ingredients.length - (TILE_SLOTS - 1);
+  const steps = showAllSteps ? recipe.instructions : recipe.instructions.slice(0, 1);
+
+  const toggleSave = () => {
+    if (saved) {
+      const hit = getFavorites().find((f) => f.type === "recipe" && (f.data as RecipeData).name === recipe.name);
+      if (hit) removeFavorite(hit.id);
+      setSaved(false);
+    } else {
+      saveFavorite("recipe", recipe);
+      setSaved(true);
+    }
+  };
 
   const buyAll = () => {
     setActiveRecipe(recipe);
     router.push("/m/buy");
   };
 
+  /* No cook mode exists yet, so Cook does the honest thing: opens every step. */
+  const startCooking = () => {
+    setShowAllSteps(true);
+    document.getElementById("recipe-steps")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)", position: "relative" }}>
-      <div className="scroll" style={{ flex: 1, paddingBottom: 96 }}>
-        {/* Hero */}
-        <div className="ph ph-saffron" style={{ height: 260, position: "relative", backgroundImage: foodImage(recipe.name) ? `url(${foodImage(recipe.name)})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 30%, transparent 50%, rgba(0,0,0,0.8) 100%)" }} />
-          <div className="hstack" style={{ position: "absolute", top: "calc(env(safe-area-inset-top,12px) + 6px)", left: 12, right: 12, justifyContent: "space-between" }}>
-            <button onClick={() => router.back()} style={iconBtn} aria-label="Back"><ChevronLeft width={20} height={20} /></button>
-            <div className="hstack" style={{ gap: 6 }}>
-              <button style={iconBtn} aria-label="Share"><Share2 width={16} height={16} /></button>
-              <button style={iconBtn} aria-label="Save"><Heart width={16} height={16} /></button>
-            </div>
+    <div style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
+      {/* Hero */}
+      <div
+        className={img ? "imgfill" : "ph ph-saffron"}
+        style={{
+          height: 310,
+          backgroundImage: img ? `url(${img})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          position: "relative",
+        }}
+      >
+        {/* Top-down scrim so the controls stay legible on a bright photo */}
+        <div className="scrim-hero" />
+        <div
+          className="hstack"
+          style={{
+            position: "absolute",
+            top: "calc(env(safe-area-inset-top, 12px) + 8px)",
+            left: 16,
+            right: 16,
+            justifyContent: "space-between",
+          }}
+        >
+          <button className="icon-btn" onClick={() => router.back()} aria-label="Back">
+            <ArrowLeft width={20} height={20} />
+          </button>
+          <button
+            className="icon-btn"
+            onClick={toggleSave}
+            aria-label={saved ? "Remove from saved" : "Save recipe"}
+            aria-pressed={saved}
+            style={{ color: "var(--m-red)" }}
+          >
+            <Heart width={20} height={20} fill={saved ? "currentColor" : "none"} />
+          </button>
+        </div>
+      </div>
+
+      {/* Sheet — rides 40px over the hero, per the artboard's 310/270 offset */}
+      <div
+        className="vstack"
+        style={{
+          position: "relative",
+          marginTop: -40,
+          background: "var(--m-cream)",
+          borderRadius: "32px 32px 0 0",
+          padding: "18px 22px 0",
+          gap: 14,
+        }}
+      >
+        {/* Title, rating, badges */}
+        <div className="hstack" style={{ alignItems: "flex-start", gap: 12 }}>
+          {/* The artboard carries a carrot rating here, but RecipeData has no
+              rating and nothing collects one — inventing "4.2 (154)" would put
+              fabricated review data on a real screen. Restore this the day
+              ratings exist; the CarrotRating component is already built. */}
+          <div className="vstack grow" style={{ gap: 6, minWidth: 0 }}>
+            <span className="t-d2">{recipe.name}</span>
           </div>
-          <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, color: "#fff" }}>
-            {recipe.dietaryTags && recipe.dietaryTags.length > 0 && (
-              <div className="hstack" style={{ gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-                {recipe.dietaryTags.slice(0, 3).map((t) => (
-                  <span key={t} className="chip" style={{ background: "rgba(255,255,255,0.18)", borderColor: "transparent", color: "#fff", fontSize: 10, textTransform: "capitalize" }}>{t}</span>
-                ))}
-              </div>
-            )}
-            <h1 style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.022em", lineHeight: 1.05 }}>{recipe.name}</h1>
-            {recipe.description && <p style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>{recipe.description}</p>}
+          <div className="hstack" style={{ gap: 6, flex: "none" }}>
+            {cookTime && <span className="badge badge-forest"><b>{cookTime.replace("m", "")}</b>min</span>}
+            <span className="badge badge-plum"><b>{portions}</b>ppl</span>
+            <span className="badge badge-burnt"><b>{difficultyFor(recipe.instructions.length)}</b>diff</span>
           </div>
         </div>
 
-        {/* Stats */}
-        {stats.length > 0 && (
-          <div className="hstack" style={{ padding: "14px 18px", borderBottom: "1px solid var(--m-ink-faint)", justifyContent: "space-between" }}>
-            {stats.map((s) => (
-              <div key={s.s} className="col" style={{ alignItems: "center" }}>
-                <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.015em" }}>{s.t}</span>
-                <span className="t-cap" style={{ fontSize: 9 }}>{s.s}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Tags */}
+        <div className="hstack" style={{ gap: 8, flexWrap: "wrap" }}>
+          {kcal && (
+            <span className="chip-tag chip" style={{ background: "var(--m-tint-peach)", color: "var(--m-burnt)" }}>
+              {kcal}
+            </span>
+          )}
+          {(recipe.dietaryTags ?? []).slice(0, 3).map((t, i) => (
+            <span
+              key={t}
+              className="chip-tag chip"
+              style={
+                i % 2 === 0
+                  ? undefined
+                  : { background: "var(--m-tint-lav)", color: "var(--m-plum)" }
+              }
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+
+        {recipe.description && <p className="t-body-soft">{recipe.description}</p>}
 
         {/* Ingredients */}
-        <div style={{ padding: 18 }}>
-          <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 12 }}>
-            <h2 className="t-h2">Ingredients</h2>
-            <span className="t-small">{recipe.ingredients.length} items{estTotal > 0 ? ` · ₹${estTotal} est.` : ""}</span>
-          </div>
-          <div className="col" style={{ gap: 1, background: "var(--m-ink-faint)", borderRadius: "var(--m-r-md)", overflow: "hidden", border: "1px solid var(--m-ink-faint)" }}>
-            {recipe.ingredients.map((ing) => (
-              <div key={ing.item} className="hstack" style={{ padding: "12px 14px", background: "var(--m-card)", gap: 10 }}>
-                <div style={{ width: 18, height: 18, borderRadius: 4, border: "1.5px solid var(--m-ink-faint)", flexShrink: 0 }} />
-                <div className="col" style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 14, fontWeight: 500 }}>{ing.item}</span>
-                  {ing.quantity && <span className="t-small">{ing.quantity}</span>}
-                </div>
-                {ing.price && <span style={{ fontSize: 13, color: "var(--m-ink-soft)" }}>{ing.price}</span>}
-              </div>
-            ))}
+        <div className="hstack" style={{ justifyContent: "space-between" }}>
+          <span className="t-h1">Ingredients</span>
+          <div className="hstack" style={{ gap: 0, background: "var(--m-cream-2)", borderRadius: 99, padding: 4 }}>
+            {[basePortions, basePortions * 2].map((p) => {
+              const on = portions === p;
+              return (
+                <button
+                  key={p}
+                  onClick={() => setPortions(p)}
+                  className="t-cap"
+                  aria-pressed={on}
+                  style={{
+                    padding: "4px 12px",
+                    border: "none",
+                    borderRadius: 99,
+                    background: on ? "var(--m-card)" : "transparent",
+                    boxShadow: on ? "var(--m-shadow)" : "none",
+                    color: "var(--m-ink)",
+                    fontWeight: 700,
+                  }}
+                >
+                  {p} ppl
+                </button>
+              );
+            })}
           </div>
         </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+          {tiles.map((ing, i) => {
+            const Mascot = mascotComponentFor(ing.item);
+            const qty = scaleQuantity(ing.quantity, factor);
+            return (
+              <div
+                key={ing.item}
+                className={`mascot-tile ing-tile ${tileTint(i)}`}
+                style={{ padding: "10px 4px", gap: 3 }}
+                title={[qty, ing.item].filter(Boolean).join(" ")}
+              >
+                <Mascot width={38} height={38} />
+                {qty && <span className="t-cap ing-qty">{qty}</span>}
+                <span className="t-cap ing-name">{ing.item}</span>
+              </div>
+            );
+          })}
+          {!showAllIngredients && overflow > 0 && (
+            <button
+              className={`mascot-tile ing-tile ${tileTint(TILE_SLOTS - 1)}`}
+              onClick={() => setShowAllIngredients(true)}
+              style={{ padding: "10px 4px", gap: 3, border: "none" }}
+            >
+              {(() => {
+                const Mascot = mascotComponentFor(recipe.ingredients[TILE_SLOTS - 1]?.item ?? "onion");
+                return <Mascot width={38} height={38} />;
+              })()}
+              <span className="t-cap ing-name">+{overflow} more</span>
+            </button>
+          )}
+        </div>
+
+        {/* The priced list the buy flow relies on — revealed with the full grid */}
+        {showAllIngredients && (
+          <div className="vstack" style={{ gap: 8 }}>
+            {recipe.ingredients.map((ing) => (
+              <div key={`row-${ing.item}`} className="row" style={{ padding: "10px 14px" }}>
+                <span className="t-body grow">{ing.item}</span>
+                {ing.quantity && <span className="t-cap">{scaleQuantity(ing.quantity, factor)}</span>}
+                {ing.price && (
+                  <span className="t-cap" style={{ color: "var(--m-forest)", fontWeight: 700 }}>{scalePrice(ing.price, factor)}</span>
+                )}
+              </div>
+            ))}
+            {estTotal > 0 && (
+              <span className="t-cap" style={{ alignSelf: "flex-end" }}>~₹{estTotal} estimated</span>
+            )}
+          </div>
+        )}
 
         {/* Steps */}
         {recipe.instructions.length > 0 && (
-          <div style={{ padding: "0 18px 24px" }}>
-            <h2 className="t-h2" style={{ marginBottom: 14 }}>Steps</h2>
-            <div className="col" style={{ gap: 14 }}>
-              {recipe.instructions.map((s, i) => (
-                <div key={i} className="hstack" style={{ gap: 12, alignItems: "flex-start" }}>
-                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--m-tint-green)", color: "var(--m-forest)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{i + 1}</div>
-                  <p className="t-body" style={{ flex: 1, lineHeight: 1.5 }}>{s}</p>
-                </div>
-              ))}
-            </div>
+          <div className="vstack" id="recipe-steps" style={{ gap: 10 }}>
+            <span className="t-h1">Steps</span>
+            {steps.map((s, i) => (
+              <div key={i} className="row" style={{ padding: "12px 14px", alignItems: "flex-start" }}>
+                <span
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: "var(--m-forest)",
+                    color: "var(--m-on-deep)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    font: "800 15px var(--m-font-display)",
+                    flex: "none",
+                  }}
+                >
+                  {i + 1}
+                </span>
+                <span className="t-body grow">{s}</span>
+              </div>
+            ))}
+            {!showAllSteps && recipe.instructions.length > 1 && (
+              <button
+                onClick={() => setShowAllSteps(true)}
+                className="row"
+                style={{ padding: "10px 14px", boxShadow: "none", background: "transparent", justifyContent: "center", border: "none" }}
+              >
+                <span className="t-cap" style={{ color: "var(--m-forest)", fontWeight: 700 }}>
+                  +{recipe.instructions.length - 1} more steps
+                </span>
+              </button>
+            )}
           </div>
         )}
+
+        {/* Clears the sticky action row */}
+        <div style={{ height: 86 }} />
       </div>
 
-      {/* Sticky buy bar */}
-      <div style={{ position: "fixed", left: 12, right: 12, bottom: "calc(14px + env(safe-area-inset-bottom,0px))", maxWidth: 496, margin: "0 auto", background: "#000", borderRadius: "var(--m-r-pill)", padding: 6, display: "flex", alignItems: "center", gap: 10, boxShadow: "0 14px 40px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="hstack" style={{ padding: "0 14px", gap: 8, flex: 1 }}>
-          <ShoppingCart width={18} height={18} style={{ color: "var(--m-forest)" }} />
-          <div className="col" style={{ gap: 0 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Buy ingredients</span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>{estTotal > 0 ? `~₹${estTotal} · pantry pre-check` : "pantry pre-check"}</span>
-          </div>
-        </div>
-        <button onClick={buyAll} style={{ background: "var(--m-forest)", color: "#fff", border: "none", borderRadius: "var(--m-r-pill)", padding: "10px 18px", fontWeight: 600, fontSize: 13, fontFamily: "inherit" }}>Review</button>
-        <a href={buildBlinkitLink(recipe.name + " ingredients")} target="_blank" rel="noopener noreferrer" style={{ display: "none" }} aria-hidden />
+      {/* Actions — sticky so Buy stays reachable on a long recipe */}
+      <div
+        className="action-fade"
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          margin: "0 auto",
+          maxWidth: 520,
+          display: "flex",
+          alignItems: "stretch",
+          gap: 8,
+          padding: "12px 22px calc(14px + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
+        <button className="pill-primary" style={{ flex: 1.5, padding: "0 14px" }} onClick={startCooking}>
+          Cook{cookTime ? ` · ${cookTime}` : ""}
+        </button>
+        <button className="pill-lime" style={{ flex: 1, padding: "0 14px" }} onClick={buyAll}>
+          Buy
+        </button>
+        <button
+          className="pill-plum"
+          style={{ flex: 1.4, padding: "0 14px", gap: 6 }}
+          onClick={() => router.push("/m/restaurants")}
+        >
+          <MapPin width={17} height={17} />
+          Dine-in
+        </button>
       </div>
     </div>
   );
 }
-
-const iconBtn: React.CSSProperties = {
-  width: 36,
-  height: 36,
-  borderRadius: "50%",
-  border: "none",
-  background: "rgba(0,0,0,0.5)",
-  color: "#fff",
-  display: "grid",
-  placeItems: "center",
-  backdropFilter: "blur(8px)",
-};

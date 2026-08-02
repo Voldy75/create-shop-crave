@@ -115,6 +115,45 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
 }
 
+/* ---------- Photo scrims + bottom fade ----------
+   DESIGN.md forbids hex/rgba literals in app/** and components/**, and photo
+   overlays are not on its allowlist — so the values live here, not inline.
+
+   .scrim-hero is the recipe artboard's forest-tinted top wash, which keeps the
+   back and save controls legible over a bright photo.
+   .action-fade lets content dissolve into the cream under a sticky action row
+   instead of being cut off by a hard edge. */
+.scrim-hero {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 66, 31, .45), rgba(20, 66, 31, 0) 35%);
+}
+.action-fade {
+  background: linear-gradient(180deg, rgba(251, 246, 227, 0), var(--m-cream) 42%);
+}
+[data-theme="dark"] .action-fade {
+  background: linear-gradient(180deg, rgba(36, 28, 16, 0), var(--m-cream) 42%);
+}
+/* Caption text sitting on a duotone photo — slightly recessed from the title. */
+.on-photo-soft { color: var(--m-on-deep); opacity: .85; }
+
+/* ---------- Ingredient tiles ----------
+   The recipe artboard's tile captions are short ("2 leeks"). Real ingredient
+   strings are not ("Boneless chicken thigh"), so an unclamped label grows the
+   tile to four lines and the 4-up grid loses its rhythm. Clamp the name, keep
+   the quantity on its own line, and leave the full text in the title
+   attribute. */
+.ing-tile { min-height: 104px; justify-content: flex-start; }
+.ing-tile .ing-qty { color: var(--m-ink-soft); }
+.ing-tile .ing-name {
+  color: var(--m-ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Map backdrop (restaurants) ---------- */
 .mapbg {
   background:
@@ -156,9 +195,14 @@ a { color: inherit; text-decoration: none; }
   0%, 90%, 96%, 100% { transform: scaleY(1); }
   93%                { transform: scaleY(.08); }
 }
+/* Bo's three-dot "thinking" bubble on the chat artboard. */
+@keyframes mm-dot {
+  0%, 100% { transform: translateY(0);    opacity: .45; }
+  50%      { transform: translateY(-4px); opacity: 1; }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  [style*="mm-ring"], [style*="mm-bob"], [style*="mm-blink"], .pill-attn {
+  [style*="mm-ring"], [style*="mm-bob"], [style*="mm-blink"], [style*="mm-dot"], .pill-attn {
     animation: none !important;
   }
 }

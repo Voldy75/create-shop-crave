@@ -3,20 +3,36 @@
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useChat } from "ai/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Mic, ArrowUp, Star } from "lucide-react";
+import { Plus, Camera, ArrowUp } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { setActiveRecipe, setActiveRestaurants } from "@/lib/mobile-handoff";
+import { foodImage } from "@/lib/food-images";
+import { BoBowl } from "@/components/mascots";
+import { CarrotRating } from "@/components/mobile/CarrotRating";
 import type { ChatResponse, RecipeData, RestaurantSuggestion } from "@/lib/types";
 
 /**
- * meshi AI Chat — functional, wired to /api/chat (or /api/agent when ?agent=1).
- * Reproduces the v2-screens ScreenChat: meshi bubbles, inline recipe +
- * restaurant rich cards parsed from the assistant's structured JSON, suggestion
- * chips, pill input with mic + send. Honors ?q= seed + ?agent= mode like the
- * web chat.
+ * Chat with Bo — built to the Flow 3 "Chat with Bo (AI)" artboard (1e).
+ *
+ * Bo is the counterparty, not a UI chrome element: he sits in the header with a
+ * live status line, tucks against the bottom-left of every one of his bubbles,
+ * and bobs over a three-dot bubble while thinking. The old screen used an empty
+ * `.ai-orb` ring for all three, which read as a loading spinner rather than a
+ * character.
+ *
+ * The inline recipe card is the artboard's `.duo` treatment — a photo with a
+ * burnt-orange duotone wash and the title laid over it — replacing the previous
+ * white card with a separate image block.
+ *
+ * Wiring to /api/chat (or /api/agent when ?agent=1), the ?q= seed, and the
+ * recipe/restaurant handoff are all unchanged.
  */
 
 const SUGGESTIONS = ["Butter chicken", "Healthy lunch", "Pizza near me", "20-min veg dinner"];
+
+/** Bo's header status. Idle copy comes from the artboard. */
+const STATUS_IDLE = "Ready when you are";
+const STATUS_BUSY = "Stirring ideas…";
 
 export default function MobileChatPage() {
   return (
@@ -71,26 +87,70 @@ function ChatInner() {
   const empty = messages.length === 0;
 
   return (
-    <div className="col" style={{ height: "100dvh", background: "var(--m-cream)" }}>
-      {/* Header */}
-      <div className="glass hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", justifyContent: "space-between", borderBottom: "1px solid var(--m-ink-faint)", position: "sticky", top: 0, zIndex: 5 }}>
-        <span style={{ width: 36 }} />
-        <span className="hstack" style={{ gap: 6, fontWeight: 600 }}>
-          <span className="ai-orb" /> meshi AI{agentMode ? " · order" : ""}
+    /* The artboard pins the conversation between the header and the tab bar
+       (`inset:52px 0 86px`). Fixed positioning reproduces that and keeps the
+       composer off the keyboard, so only the message list scrolls. */
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        bottom: "calc(86px + env(safe-area-inset-bottom, 0px))",
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "100%",
+        maxWidth: 520,
+        display: "flex",
+        flexDirection: "column",
+        background: "var(--m-cream)",
+      }}
+    >
+      {/* Header — Bo, his status, and a fresh-conversation control */}
+      <div
+        className="hstack"
+        style={{
+          padding: "calc(env(safe-area-inset-top, 12px) + 8px) 20px 10px",
+          borderBottom: "1.5px solid var(--m-ink-faint)",
+          flex: "none",
+        }}
+      >
+        <span
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: "50%",
+            background: "var(--m-tint-green)",
+            display: "grid",
+            placeItems: "center",
+            flex: "none",
+          }}
+        >
+          <BoBowl width={32} height={32} />
         </span>
-        <button onClick={() => router.push("/m/chat")} style={{ width: 36, height: 36, borderRadius: "50%", background: "none", border: "none", color: "var(--m-ink-soft)", display: "grid", placeItems: "center" }} aria-label="New chat">
-          <Plus width={22} height={22} />
+        <span className="vstack grow" style={{ gap: 0 }}>
+          <span className="t-h2">Bo{agentMode ? " · order" : ""}</span>
+          <span className="t-cap" style={{ color: "var(--m-forest)" }}>
+            {isLoading ? STATUS_BUSY : STATUS_IDLE}
+          </span>
+        </span>
+        <button
+          onClick={() => router.push("/m/chat")}
+          className="icon-btn"
+          aria-label="New chat"
+        >
+          <Plus width={20} height={20} />
         </button>
       </div>
 
-      {/* Messages */}
-      <div className="scroll" style={{ flex: 1, padding: "16px 14px 12px" }}>
+      {/* Conversation */}
+      <div className="scroll" style={{ flex: 1, padding: "16px 20px 12px" }}>
         {empty && (
-          <div className="col" style={{ alignItems: "center", textAlign: "center", gap: 14, paddingTop: "18vh" }}>
-            <span className="ai-orb" style={{ width: 40, height: 40 }} />
-            <h1 className="t-h1">What are you craving?</h1>
-            <p className="t-small" style={{ maxWidth: 260 }}>A recipe with shopping links, the best nearby spots, or have meshi order it.</p>
-            <div className="hstack hscroll" style={{ gap: 8, marginTop: 8, maxWidth: "100%" }}>
+          <div className="vstack" style={{ alignItems: "center", textAlign: "center", gap: 14, paddingTop: "14vh" }}>
+            <BoBowl width={72} height={72} style={{ animation: "mm-bob 2.4s ease-in-out infinite" }} />
+            <h1 className="t-d2">What are you craving?</h1>
+            <p className="t-body-soft" style={{ maxWidth: 270 }}>
+              A recipe with shopping links, the best nearby spots, or have Bo order it.
+            </p>
+            <div className="hstack" style={{ gap: 8, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
               {SUGGESTIONS.map((s) => (
                 <button key={s} className="chip" onClick={() => append({ role: "user", content: s })}>{s}</button>
               ))}
@@ -102,19 +162,35 @@ function ChatInner() {
           if (m.role === "user") {
             return (
               <div key={m.id} style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-                <div style={{ maxWidth: "82%", background: "var(--m-forest)", color: "#fff", borderRadius: "18px 18px 4px 18px", padding: "10px 14px", fontSize: 14, lineHeight: 1.45 }}>{m.content}</div>
+                <div
+                  className="t-body"
+                  style={{
+                    maxWidth: "82%",
+                    background: "var(--m-forest)",
+                    color: "var(--m-on-deep)",
+                    borderRadius: "20px 20px 6px 20px",
+                    padding: "12px 16px",
+                  }}
+                >
+                  {m.content}
+                </div>
               </div>
             );
           }
           const { text, data } = extractResponse(m.content);
           return (
-            <div key={m.id} className="hstack" style={{ gap: 8, alignItems: "flex-start", marginBottom: 14 }}>
-              <span className="ai-orb" style={{ marginTop: 2 }} />
-              <div className="col" style={{ flex: 1, gap: 10, minWidth: 0 }}>
-                {text && (
-                  <div style={{ background: "var(--m-cream-2)", borderRadius: "4px 18px 18px 18px", padding: "11px 14px", fontSize: 14, lineHeight: 1.45 }}>{text}</div>
-                )}
-                {data?.recipe && <RecipeCard recipe={data.recipe} onOpen={onOpenRecipe} onBuy={onBuyRecipe} />}
+            /* Bo tucks against the bottom-left of his own bubble stack. */
+            <div key={m.id} className="hstack" style={{ gap: 8, alignItems: "flex-end", marginBottom: 14 }}>
+              <BoBowl width={30} height={30} style={{ flex: "none" }} />
+              <div className="vstack" style={{ flex: 1, gap: 10, minWidth: 0, alignItems: "flex-start" }}>
+                {/* The artboard keeps Bo's line and his recipe suggestion in ONE
+                    bubble, so the card reads as a single utterance. Only split
+                    them when there is no recipe to carry. */}
+                {data?.recipe ? (
+                  <RecipeCard recipe={data.recipe} text={text} onOpen={onOpenRecipe} onBuy={onBuyRecipe} />
+                ) : text ? (
+                  <div className="card t-body" style={{ padding: "12px 16px", borderBottomLeftRadius: 6 }}>{text}</div>
+                ) : null}
                 {data?.restaurantSuggestion?.restaurants?.length ? <RestaurantsCard sugg={data.restaurantSuggestion} onMap={onOpenRestaurants} /> : null}
               </div>
             </div>
@@ -122,27 +198,66 @@ function ChatInner() {
         })}
 
         {isLoading && (
-          <div className="hstack" style={{ gap: 8, marginBottom: 14 }}>
-            <span className="ai-orb" style={{ marginTop: 2 }} />
-            <div style={{ background: "var(--m-cream-2)", borderRadius: "4px 18px 18px 18px", padding: "11px 14px", fontSize: 14, color: "var(--m-ink-soft)" }}>thinking…</div>
+          <div className="hstack" style={{ gap: 8, alignItems: "flex-end", marginBottom: 14 }}>
+            <BoBowl width={36} height={36} style={{ flex: "none", animation: "mm-bob 2.4s ease-in-out infinite" }} />
+            <div
+              className="card tint-green hstack"
+              style={{ boxShadow: "none", padding: "12px 16px", borderBottomLeftRadius: 6, gap: 6 }}
+              role="status"
+              aria-label="Bo is thinking"
+            >
+              {[0, 0.15, 0.3].map((d) => (
+                <span
+                  key={d}
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: "var(--m-forest)",
+                    animation: `mm-dot .9s ${d}s ease-in-out infinite`,
+                  }}
+                />
+              ))}
+            </div>
           </div>
         )}
         <div ref={endRef} />
       </div>
 
-      {/* Input */}
-      <form onSubmit={handleSubmit} style={{ padding: "10px 14px calc(10px + env(safe-area-inset-bottom,0px))", borderTop: "1px solid var(--m-ink-faint)" }}>
-        <div className="hstack" style={{ background: "var(--m-cream-2)", borderRadius: "var(--m-r-pill)", padding: "6px 6px 6px 16px", gap: 6, border: "1px solid var(--m-ink-faint)" }}>
+      {/* Composer */}
+      <form onSubmit={handleSubmit} style={{ padding: "0 20px 14px", flex: "none" }}>
+        <div className="input">
           <input
             value={input}
             onChange={handleInputChange}
-            placeholder={agentMode ? "Order groceries, food, or book a table…" : "Tell me what you're craving…"}
-            style={{ flex: 1, background: "none", border: "none", padding: 0, fontSize: 14 }}
+            placeholder={agentMode ? "Order groceries, food, or book a table…" : "Ask Bo anything edible…"}
+            style={{ flex: 1, minWidth: 0, background: "none", border: "none", padding: 0, font: "inherit", color: "inherit" }}
           />
-          <button type="button" style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "var(--m-cream-2)", color: "var(--m-ink)", display: "grid", placeItems: "center" }} aria-label="Voice (coming soon)">
-            <Mic width={18} height={18} />
+          <button
+            type="button"
+            style={{ background: "none", border: "none", padding: 0, color: "var(--m-ink-soft)", display: "grid", placeItems: "center" }}
+            aria-label="Log a meal with the camera"
+            onClick={() => router.push("/m/plan")}
+          >
+            <Camera width={19} height={19} />
           </button>
-          <button type="submit" disabled={!input.trim()} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: input.trim() ? "var(--m-forest)" : "var(--m-cream-2)", color: "#fff", display: "grid", placeItems: "center" }} aria-label="Send">
+          <button
+            type="submit"
+            disabled={!input.trim()}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: "50%",
+              border: "none",
+              background: input.trim() ? "var(--m-forest)" : "var(--m-cream-2)",
+              color: input.trim() ? "var(--m-on-deep)" : "var(--m-ink-soft)",
+              display: "grid",
+              placeItems: "center",
+              marginRight: -8,
+              flex: "none",
+            }}
+            aria-label="Send"
+          >
             <ArrowUp width={18} height={18} />
           </button>
         </div>
@@ -151,50 +266,73 @@ function ChatInner() {
   );
 }
 
-function RecipeCard({ recipe, onOpen, onBuy }: { recipe: RecipeData; onOpen: (r: RecipeData) => void; onBuy: (r: RecipeData) => void }) {
+/**
+ * Inline recipe suggestion — the artboard's duotone photo card. The image is
+ * keyless (lib/food-images); with no match the `.ph` gradient shows through the
+ * same duotone wash, so the card never renders as an empty box.
+ */
+function RecipeCard({ recipe, text, onOpen, onBuy }: { recipe: RecipeData; text?: string; onOpen: (r: RecipeData) => void; onBuy: (r: RecipeData) => void }) {
+  const img = foodImage(recipe.name);
   const nutr = recipe.nutritionEstimate;
-  const meta = [recipe.prepTime, recipe.servings ? `${recipe.servings} servings` : null, nutr?.calories].filter(Boolean).join(" · ");
+  const meta = [recipe.prepTime, recipe.servings ? `${recipe.servings} servings` : null, nutr?.calories]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-      <div className="ph ph-saffron" style={{ height: 130, position: "relative" }}>
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.6))" }} />
-        <div style={{ position: "absolute", left: 12, top: 12 }}>
-          <span className="chip" style={{ background: "rgba(0,0,0,0.55)", color: "#fff", borderColor: "transparent", fontSize: 10 }}>RECIPE</span>
-        </div>
-        <div style={{ position: "absolute", left: 14, right: 14, bottom: 12, color: "#fff" }}>
-          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.015em" }}>{recipe.name}</div>
-          {meta && <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>{meta}</div>}
+    <div className="card" style={{ padding: "12px 14px", width: "100%", borderBottomLeftRadius: 6 }}>
+      {text && <span className="t-body" style={{ display: "block", marginBottom: 10 }}>{text}</span>}
+      <div
+        className={`duo duo-orange ${img ? "" : "ph ph-saffron"}`}
+        style={{
+          height: 120,
+          borderRadius: 14,
+          backgroundImage: img ? `url(${img})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="duo-body vstack" style={{ justifyContent: "flex-end", padding: 10, gap: 2 }}>
+          <span style={{ font: "800 16px/1.05 var(--m-font-display)", color: "var(--m-on-deep)" }}>{recipe.name}</span>
+          {meta && <span className="t-cap on-photo-soft">{meta}</span>}
         </div>
       </div>
-      <div style={{ padding: 12, display: "flex", gap: 6 }}>
-        <button className="pill-tonal" style={{ flex: 1, padding: "9px 12px", fontSize: 13 }} onClick={() => onOpen(recipe)}>View recipe</button>
-        <button className="pill-primary" style={{ flex: 1, padding: "9px 12px", fontSize: 13 }} onClick={() => onBuy(recipe)}>Buy ingredients</button>
+      <div className="hstack" style={{ marginTop: 10, gap: 8 }}>
+        <button className="pill-primary pill-sm grow" onClick={() => onOpen(recipe)}>Cook it</button>
+        <button className="pill-secondary pill-sm" onClick={() => onBuy(recipe)}>Buy</button>
       </div>
     </div>
   );
 }
 
+/**
+ * Inline restaurant suggestion. No artboard covers this in-chat, so it borrows
+ * the design's `.row` list-row card and carrot ratings from the Restaurants
+ * screen rather than inventing a treatment.
+ */
 function RestaurantsCard({ sugg, onMap }: { sugg: RestaurantSuggestion; onMap: (s: RestaurantSuggestion) => void }) {
   const list = (sugg.restaurants ?? []).slice(0, 3);
   return (
-    <button onClick={() => onMap(sugg)} className="card" style={{ padding: 12, textAlign: "left", width: "100%" }}>
-      <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 8 }}>
-        <span className="t-cap">{list.length} NEAR YOU</span>
-        <span className="t-small" style={{ color: "var(--m-forest)", fontWeight: 600 }}>Map ›</span>
+    <div className="card vstack" style={{ padding: "12px 14px", width: "100%", gap: 8 }}>
+      <div className="hstack" style={{ justifyContent: "space-between" }}>
+        <span className="t-micro">{list.length} near you</span>
+        <button
+          onClick={() => onMap(sugg)}
+          className="t-cap"
+          style={{ background: "none", border: "none", padding: 0, color: "var(--m-forest)", fontWeight: 700 }}
+        >
+          Map ›
+        </button>
       </div>
-      {list.map((r, i) => (
-        <div key={r.name} className="hstack" style={{ gap: 10, padding: "8px 0", borderTop: i === 0 ? "none" : "1px solid var(--m-ink-faint)" }}>
-          <div className="ph ph-fire" style={{ width: 40, height: 40, borderRadius: "var(--m-r-md)", flexShrink: 0 }} />
-          <div className="col" style={{ flex: 1, gap: 1, minWidth: 0 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
-            <span className="t-small">{[r.area, r.priceRange].filter(Boolean).join(" · ")}</span>
+      {list.map((r) => (
+        <div key={r.name} className="row" style={{ padding: "10px 12px", gap: 10 }}>
+          <div className="ph ph-fire" style={{ width: 40, height: 40, borderRadius: "var(--m-r-tile)", flex: "none" }} />
+          <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+            <span className="t-h2" style={{ fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
+            <span className="t-cap">{[r.area, r.priceRange].filter(Boolean).join(" · ")}</span>
           </div>
-          <div className="hstack" style={{ gap: 3, color: "var(--m-forest)" }}>
-            <Star width={12} height={12} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--m-ink)" }}>{r.rating}</span>
-          </div>
+          <CarrotRating value={Math.round(Number(r.rating) || 4)} size={13} />
         </div>
       ))}
-    </button>
+    </div>
   );
 }
