@@ -14,10 +14,25 @@ That file owns sequencing. This file records state.
 
 ## Where the work lives
 
-**Everything below is on the local branch `merge/mobile-into-web`, 13 commits
-ahead of `main`, and NOTHING HAS BEEN PUSHED.** `main` is still at `ac8a8cc`.
+All of it is on **`merge/mobile-into-web`**, pushed to origin at `3910bc1` and
+tracking `origin/merge/mobile-into-web`. `main` is untouched at `ac8a8cc`, and
+both deployments still serve the old code.
+
+**There is deliberately NO open PR.** Opening one implies the branch is ready to
+merge, and Phase 5 cutover is blocked on env vars (below). Open it when those
+are set:
+
+```bash
+gh pr create --base main --head merge/mobile-into-web --web
+```
+
+**Commit counts — do not be surprised.** `git log main..HEAD` returns **35**
+commits, but only **14** are this work. The other ~21 are the mobile repo's own
+history, which arrived with the merge and now lives in this repo. That is the
+consolidation working as intended, not stray commits. The 14:
 
 ```
+3910bc1 docs: bring handoff.md up to date across all phases
 3472969 feat(design): rebuild Restaurants to the Flow 2 artboard
 1affc5f feat(design): rebuild Home + Discover to the Flow 2 artboards
 7cce503 feat(design): rebuild onboarding to the Flow 1 artboards
@@ -29,15 +44,20 @@ b171cf3 feat(admin): admin console API + UI, flags split, platform attribution
 695b7b9 feat(auth): single auth chokepoint + DB-driven quota limits
 4498bd5 chore(sql): capture 8 undocumented RPCs into source + harden execution
 773b32a refactor(app): split into (web) and (mobile) root layouts
-03174af Merge remote-tracking branch 'mobile/main'
+03174af Merge remote-tracking branch 'mobile/main'   ← brings the ~21
 ```
+
+(`4498bd5` also exists on the local branch `chore/capture-rpcs-and-harden-db`;
+it was cherry-picked here so source and DB stayed consistent. That branch is
+redundant now.)
 
 `npx tsc --noEmit` and `next build` are clean (67 routes).
 
 **Database changes ARE already applied to production Supabase**
-(`lxaaclelfhjmqrhdqzxp`) even though the code is unpushed. Schema and code are
-therefore out of sync until this branch merges — the new tables exist and are
-simply unused by the deployed app.
+(`lxaaclelfhjmqrhdqzxp`) even though this branch is not merged. Schema and code
+are therefore out of sync — the new tables exist and are simply unused by the
+deployed app. Harmless today; worth remembering if anything else touches that
+project before the merge.
 
 ## Phase status
 
@@ -301,9 +321,22 @@ ignore those two.
 
 ## Suggested next step
 
-Flow 3 (chat + recipe) — the product's core loop and the heaviest colour debt
-(recipe alone has 13 hardcoded dark values). Then Flow 6 (tracking), Flow 7
-(saved/profile/paywall), Flow 4 (buy).
+**Flow 3 (chat + recipe)** — the product's core loop and the heaviest colour
+debt (recipe alone has 13 hardcoded dark values). Then Flow 6 (tracking),
+Flow 7 (saved/profile/paywall), Flow 4 (buy).
 
-Alternatively, push this branch for review first — it is 13 commits and touches
-auth, payments, the database and the entire mobile UI.
+Two things that can happen in parallel and unblock more than they cost:
+
+- **Set `ADMIN_EMAIL`** (Vercel + `.env.local`, which still holds the
+  `your-email@gmail.com` placeholder). Until then the entire admin console
+  built in Phases 7–8 has never been seen rendered — it has only been verified
+  through API responses and the redirect. That is the largest untested surface
+  in this branch.
+- **Add `com.cravecreate.app://auth/callback`** to Supabase redirect URLs. It
+  costs a minute and de-risks the single highest-risk unverified path in the
+  whole project (native sign-in), which otherwise surfaces at TestFlight after
+  the IAP work.
+
+The branch is pushed, so review can start whenever you want — it touches auth,
+payments, the database and the entire mobile UI, and is worth a read before it
+merges.
