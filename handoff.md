@@ -73,7 +73,7 @@ project before the merge.
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
-| 10 meshi re-skin | **10b mobile DONE** (all screens + `/m/log`); 10c web NOT STARTED; 10d/10e pending |
+| 10 meshi re-skin | **10b mobile DONE**; **10c web IN PROGRESS** (foundation + sidebar landed, screens pending); 10d/10e pending |
 
 ## Blocked on you — nothing proceeds past these
 
@@ -273,6 +273,65 @@ not unbuilt.
   the running total — below the fold. Same trap applies to any screen with a
   pinned CTA over a long list.
 
+### Phase 10c (web) — what has landed, and the traps it hit
+
+**The web artboards** are `Meshi Redesign - Web.dc.html` in the same Design
+project. Nine boards: `wLa` full landing, `w1a` landing hero, `w1b` sign-in,
+`w2a` home dashboard + shell, `w3a` Bo chat workspace, `w3b` recipe detail,
+`w4a` cart, `w4b` tracker, `w5a` paywall. Extract them the same way as the
+mobile ones — split on `<div class="dv-opt" id=`.
+
+**`--cc-*` is now an ALIAS layer over `--m-*`, not a separate palette.**
+Rewriting ~50 files at once would have been unreviewable, so every `--cc-*`
+and shadcn token points at its meshi equivalent. Consequences to understand:
+
+- The whole web tree changed palette in one edit, and each screen can now be
+  restructured independently.
+- **Dark mode came free and correct** — meshi-b defines `--m-*` light-first
+  with a `[data-theme="dark"]` override, so the aliases track it. The web tree
+  in dark renders `#241c10` on `#f4e8cf`, driven entirely by meshi.
+- The old `[data-theme="light"]` token block and its rule overrides are
+  DELETED. They repainted a dark-first system with literal hexes; light is now
+  the base, so they either duplicated the base rule or actively fought it.
+- These aliases are scaffolding. 10e deletes them.
+
+**Traps hit, in order — do not rediscover:**
+
+1. **Unlayered beats layered.** `design/meshi-web.css` is unlayered, so ANY
+   rule in `@layer utilities` loses to it regardless of specificity or source
+   order. `.web-shell > .side { display: none }` sat in a layer and silently
+   lost to meshi-web's `.side { display: flex }` — the sidebar just never hid.
+   The shell block at the bottom of `globals.css` is deliberately unlayered;
+   keep new overrides of the vendored shell out of a layer.
+2. **Turbopack served a stale `globals.css` for a whole editing session.** The
+   compiled chunk still had the OLD `.glass-nav` value while other edits from
+   the same file had compiled. Restarting the dev server fixed it. If a CSS
+   change appears not to apply, check the served chunk
+   (`curl` the `/_next/static/chunks/*.css`) before debugging the rule.
+3. **Forest cannot be both the accent and a section band.** `.section-dark`
+   was tried as deep forest and put the primary CTA, the highlighted headline
+   word and the nav text all forest-on-forest. The landing artboard has no
+   dark band at all — it alternates cream against soft tints. `.section-dark`
+   is therefore no longer dark, and the name is now a misnomer; both classes
+   should disappear when the landing is rebuilt.
+4. **Breakpoints must match BottomNav.** The sidebar hides at `767.98px`
+   because `components/BottomNav.tsx` uses Tailwind's `md:hidden` (768px). It
+   was 900px first, which left 768–900 with no navigation at all. Verified at
+   600 / 780 / 1280 — exactly one navigation at each.
+5. **`app/global-not-found.tsx` needs `meshi-b.css` imported directly.** It
+   renders outside both route groups and only had `globals.css`; with `--cc-*`
+   reduced to aliases it rendered completely unstyled.
+6. **The landing had 16 near-white text literals baked into Tailwind arbitrary
+   values** (`text-[rgba(250,249,247,0.68)]`). The light-first flip made them
+   unreadable on cream. They are mapped onto the `--cc-*` text scale now, but
+   the same pattern may lurk in other screens — grep before assuming a screen
+   is theme-clean.
+
+**`components/BottomNav.tsx` stays web-only, not deleted.** It is the
+navigation below `md`, where the sidebar hides. The plan's "BottomNav becomes
+mobile-only" meant it stops being shared with the `/m` tree, which it already
+had.
+
 ### Designed screens with NO implementation (deferred by explicit decision)
 
 Splash (animated Bo), Meet Bo intro, Buy 1 menu → 2 cart → 3 delivery →
@@ -470,14 +529,21 @@ ignore those two.
 
 ## Suggested next step
 
-**Phase 10b (mobile) is done.** Next, in order:
+**Phase 10b (mobile) is done. Phase 10c (web) is started, not finished.**
+Next, in order:
 
-1. **Phase 10c — the web tree.** Not started, and now by far the largest
-   remaining block of Phase 10 — bigger than all the mobile work combined.
-   `grep -rn -- '--cc-' app components` still returns ~29 files, and
-   `design/meshi-web.css` is vendored but **still imported nowhere**. Note the
-   web shell is a RESTRUCTURE (250px sidebar + 74px topbar + 336px rail), not
-   a re-skin, and `components/BottomNav.tsx` becomes mobile-only.
+1. **Finish 10c — the per-screen web conversions.** The foundation and the
+   sidebar have landed (see the 10c section above). What remains is the actual
+   screen work, and it is still the largest block of Phase 10:
+   - **the topbar and rail**, which cannot land until each page's own sticky
+     header is removed — that is why they were held back;
+   - **the landing page** (`app/(web)/page.tsx`) against artboards `wLa`/`w1a`,
+     which also retires `.section-dark`/`.section-light`;
+   - **chat** (`w3a`), **recipe view** (`w3b`), **tracker/planner** (`w4b`),
+     **cart** (`w4a`), **paywall/UpgradeDialog** (`w5a`), **sign-in** (`w1b`);
+   - **`components/cc/*`**, still Midnight Kitchen primitives.
+   Every web page is currently phone-width inside a 1280px shell — the pages
+   have no desktop layout yet. That is the single most visible gap.
 2. **Phase 10d** — mascot motion (`Meshi Mascot Animations.dc.html`), plus the
    `#ff6b35` cleanup that still lives in `components/UpgradeDialog.tsx`'s
    Razorpay `theme.color` and `scripts/gen-resources.mjs`, and regenerating
