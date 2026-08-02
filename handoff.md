@@ -73,7 +73,7 @@ project before the merge.
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
-| 10 meshi re-skin | mobile DONE (16/16 + `/m/log`); Flow 4 buy screens and the whole web tree remain |
+| 10 meshi re-skin | **10b mobile DONE** (all screens + `/m/log`); 10c web NOT STARTED; 10d/10e pending |
 
 ## Blocked on you — nothing proceeds past these
 
@@ -164,21 +164,21 @@ artboards with a script rather than loading it all into context.
 | 1 Onboarding | welcome, location, diet, goal |
 | 2 Home & discovery | Home, Discover (`/m/search`), Restaurants |
 | 3 Chat & recipes | chat, recipe |
+| 4 Buy journey | buy, buy/platform, buy/confirmed |
 | 6 Tracking | plan, plan/week, plan/diet-chart, **`/m/log` (new)** |
 | 7 Saved & account | saved, profile, inbox, paywall |
 
-### Still to rebuild — Flow 4 only
+### Phase 10b (mobile) is COMPLETE
 
-`buy`, `buy/platform`, `buy/confirmed`. They are the last holders of hardcoded
-colour in `app/(mobile)`:
+Every mobile screen is built to its artboard. The exit check:
 
 ```bash
 grep -rn '#[0-9a-fA-F]\{3,8\}\|rgba(' "app/(mobile)" | grep -v 'mobile\.css'
 ```
 
-returns those three files plus `layout.tsx`'s `themeColor` — which is Next
-metadata, not CSS, and cannot take a variable. Add it to DESIGN.md's allowlist
-when the CI hex check lands.
+returns exactly ONE line — `layout.tsx`'s `themeColor: "#FBF6E3"`, which is
+Next metadata rather than CSS and cannot take a variable. Add it to DESIGN.md's
+allowlist when the CI hex check lands.
 
 They render and are navigable — tokens, fonts and layout are correct — but
 carry white-on-dark treatments that read wrong on cream.
@@ -247,6 +247,31 @@ Previously "defined but never rendered". `crave_theme=dark` in localStorage
 renders the whole mobile tree in dark; it looked correct on Saved and Profile
 at a glance. It has still had no deliberate review — treat it as unverified,
 not unbuilt.
+
+### Decisions taken during Flow 4
+
+- **The confirmed screen's stepper shows only `Placed`.** Artboard 4f draws
+  `Shopping` as already in progress and calls itself a "real stepper", but
+  nothing tracks order state — there is no order table and no platform reports
+  progress back. Animating it would be telemetry theatre on the one screen
+  where a user is actively waiting for information. `REACHED` is a single
+  constant in the file: drive it from real data the day tracking exists and
+  the visual is already correct.
+- **`BuyList` (lib/mobile-handoff) is new and load-bearing.** The pre-check's
+  deselection previously never left the screen — `/m/buy/platform` re-derived
+  the list from the whole recipe, so skipping "butter" still put butter in the
+  deeplink query and the estimate. If you touch either screen, keep the
+  handoff intact or the pre-check becomes decorative again.
+- **The Instamart card keeps an "or open Instamart yourself" deeplink** that
+  artboard 4e does not have. Swiggy's MCP OAuth rejects our origin (Dead End
+  1), so the agent path can fail for reasons the user cannot fix; without the
+  fallback there is no way to reach Instamart at all.
+- **Per-platform stock/price/ETA from the artboard is not built** — no
+  platform exposes it to us. The only numbers shown are ones we computed.
+- **`/m/buy` uses `height: 100dvh`, not `minHeight`.** With `minHeight` a long
+  ingredient list grows the page and pushes the Continue bar — which carries
+  the running total — below the fold. Same trap applies to any screen with a
+  pinned CTA over a long list.
 
 ### Designed screens with NO implementation (deferred by explicit decision)
 
@@ -445,22 +470,27 @@ ignore those two.
 
 ## Suggested next step
 
-Flows 1, 2, 3, 6 and 7 are **done** — the mobile re-skin is complete except
-Flow 4. Next, in order:
+**Phase 10b (mobile) is done.** Next, in order:
 
-1. **Flow 4 (buy / buy-platform / buy-confirmed)** — the last three mobile
-   screens and the last hardcoded colour in `app/(mobile)`. Artboards are in
-   Flow 4 of the mockup (`grep -n 'dv-tname' /tmp/meshi-mobile.html` for line
-   offsets).
-2. **Phase 10c — the web tree.** Not started. `grep -rn -- '--cc-' app components`
-   still returns ~29 files, and `design/meshi-web.css` is vendored but *still
-   imported nowhere*. This is now the largest remaining block of Phase 10 by
-   far, and bigger than everything done so far on mobile.
-3. **Phase 10d/10e** — mascot motion, then the CI hex check and deleting
-   `--cc-*`.
+1. **Phase 10c — the web tree.** Not started, and now by far the largest
+   remaining block of Phase 10 — bigger than all the mobile work combined.
+   `grep -rn -- '--cc-' app components` still returns ~29 files, and
+   `design/meshi-web.css` is vendored but **still imported nowhere**. Note the
+   web shell is a RESTRUCTURE (250px sidebar + 74px topbar + 336px rail), not
+   a re-skin, and `components/BottomNav.tsx` becomes mobile-only.
+2. **Phase 10d** — mascot motion (`Meshi Mascot Animations.dc.html`), plus the
+   `#ff6b35` cleanup that still lives in `components/UpgradeDialog.tsx`'s
+   Razorpay `theme.color` and `scripts/gen-resources.mjs`, and regenerating
+   `resources/*.png`.
+3. **Phase 10e** — the CI hex check and deleting `--cc-*`.
 
-Worth doing before more UI: **a real-device pass on `/m/log`**, since the
-camera path cannot be verified in the preview browser.
+Two things worth doing before more UI:
+
+- **A real-device pass on `/m/log`.** The `getUserMedia` viewfinder has never
+  run — camera access is blocked in the preview browser, so only the file
+  fallback has been exercised.
+- **A deliberate dark-mode review.** The dark token pass renders (set
+  `crave_theme=dark`), but no screen has been designed or checked against it.
 
 Method reminder: extract the flow's artboards from the mockup and build from
 the markup. The Flow 3 rebuild used
