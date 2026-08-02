@@ -137,6 +137,35 @@ a { color: inherit; text-decoration: none; }
 /* Caption text sitting on a duotone photo — slightly recessed from the title. */
 .on-photo-soft { color: var(--m-on-deep); opacity: .85; }
 
+/* ---------- `.row` + tint ----------
+   meshi-b declares the `.tint-*` helpers at line 72 and `.row` at line 144, so
+   `.row` re-declares `background: var(--m-card)` and — same specificity, later
+   wins — a `class="row tint-green"` row renders plain. The artboards use that
+   pairing to mark today's row, so restore it here with a compound selector.
+   Fixing it in the vendored design/meshi-b.css instead would put this tree out
+   of sync with the design source on the next export. */
+.row.tint-green { background: var(--m-tint-green); }
+.row.tint-lav   { background: var(--m-tint-lav); }
+.row.tint-peach { background: var(--m-tint-peach); }
+.row.tint-cream { background: var(--m-cream-2); }
+
+/* Calorie ring track — a translucent forest, per the tracker artboard. A solid
+   token would either vanish into the tint-green card or read as a white hole. */
+.cal-ring-track { stroke: rgba(30, 90, 52, .15); }
+[data-theme="dark"] .cal-ring-track { stroke: rgba(244, 232, 207, .16); }
+
+/* Dimmer behind a bottom sheet. Brown rather than black so it reads as the
+   cream system going dark, not as a generic modal overlay. */
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(36, 28, 16, .55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
 /* ---------- Ingredient tiles ----------
    The recipe artboard's tile captions are short ("2 leeks"). Real ingredient
    strings are not ("Boneless chicken thigh"), so an unclamped label grows the

@@ -2,16 +2,26 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft, Sparkles, Loader2, Check } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown } from "lucide-react";
 import { getMealLogs, getNutritionGoals, saveMealPlan, type WeekPlan, type MealSlot } from "@/lib/storage";
 import { lastNDates } from "@/lib/nutrition";
+import { mascotComponentFor } from "@/lib/ingredient-mascot";
+import { BoBowl } from "@/components/mascots";
 import { useUser } from "@/app/context/UserContext";
 import type { MealLog, NutritionGoals } from "@/lib/types";
 
 /**
- * Tracker sub-screen — AI diet chart. Calls /api/coach (mode=diet_chart) with
- * the user's recent logs + goals + dietary prefs, renders the 7-day plan, and
- * applies it to the planner (saveMealPlan), reusing the existing WeekPlan shape.
+ * Bo's diet chart — built to the Flow 6 artboard (3g).
+ *
+ * The artboard is one ROW PER DAY: weekday, the day's headline dish, a calorie
+ * caption, and an ingredient mascot — where the previous screen stacked seven
+ * cards each listing three meals. The row is the right density for scanning a
+ * week, but the per-meal detail is real data, so a row expands rather than
+ * discarding it.
+ *
+ * The header card states what the chart was actually built from (the user's
+ * goal, calorie target and dietary preferences) instead of the artboard's fixed
+ * "no peanuts, no shellfish".
  */
 
 interface Slot { mealType: "breakfast" | "lunch" | "dinner"; dish: string; calories: number; protein: number; carbs: number; fat: number }
@@ -32,21 +42,30 @@ function toSlot(s: Slot): MealSlot {
   return { dish: s.dish, recipe: { name: s.dish, description: "", ingredients: [], instructions: [], nutritionEstimate: { calories: `~${s.calories} kcal`, protein: `${s.protein}g`, carbs: `${s.carbs}g`, fat: `${s.fat}g` } } };
 }
 
+/** The day's headline: dinner is the anchor meal, per the artboard. */
+function headline(d: Day): Slot | undefined {
+  return d.meals.find((m) => m.mealType === "dinner") ?? d.meals[0];
+}
+
 export default function DietChart() {
   const router = useRouter();
   const { dietaryPreferences } = useUser();
   const [chart, setChart] = useState<ChartResponse | null>(null);
+  const [goals, setGoals] = useState<NutritionGoals | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
+  const [open, setOpen] = useState<string | null>(null);
 
   const generate = async () => {
-    const goals = getNutritionGoals();
-    if (!goals) { setError("Set your goals first (in onboarding)."); return; }
+    const g = getNutritionGoals();
+    setGoals(g);
+    if (!g) { setError("Set your goals first (in onboarding)."); return; }
     setLoading(true);
     setError(null);
+    setApplied(false);
     try {
-      const res = await fetch("/api/coach", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildPayload(getMealLogs(), goals, dietaryPreferences)) });
+      const res = await fetch("/api/coach", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildPayload(getMealLogs(), g, dietaryPreferences)) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error === "rate_limit_exceeded" ? "Daily AI limit reached." : res.status === 401 ? "Sign in to use the AI coach." : data.message || "Couldn't generate the chart.");
@@ -60,7 +79,12 @@ export default function DietChart() {
     }
   };
 
-  useEffect(() => { generate(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  /* Generate once on open. `generate` is intentionally not a dependency — it is
+     recreated every render and would re-fire the AI call in a loop. */
+  useEffect(() => {
+    generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const apply = () => {
     if (!chart) return;
@@ -74,69 +98,99 @@ export default function DietChart() {
   };
 
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
-      <div className="hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", gap: 8 }}>
-        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--m-ink)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
-        <h1 className="t-h1">Diet chart</h1>
+    <div className="vstack" style={{ minHeight: "100dvh", background: "var(--m-cream)", padding: "calc(env(safe-area-inset-top, 12px) + 8px) 20px 30px", gap: 12 }}>
+      <div className="hstack">
+        <button className="icon-btn" onClick={() => router.back()} aria-label="Back"><ArrowLeft width={20} height={20} /></button>
+        <span className="t-h1 grow" style={{ textAlign: "center", marginRight: 42 }}>Bo&rsquo;s diet chart</span>
       </div>
 
-      <div className="scroll" style={{ flex: 1, padding: "8px 14px 40px" }}>
-        {loading && (
-          <div className="col" style={{ alignItems: "center", gap: 12, paddingTop: "30vh", color: "var(--m-ink-soft)" }}>
-            <Loader2 width={28} height={28} className="animate-spin" style={{ color: "var(--m-forest)" }} />
-            <span className="t-small">Building your 7-day plan…</span>
-          </div>
-        )}
+      {loading && (
+        <div className="vstack" style={{ alignItems: "center", gap: 12, paddingTop: "28vh" }}>
+          <BoBowl width={64} height={64} style={{ animation: "mm-bob 2.4s ease-in-out infinite" }} />
+          <span className="t-body-soft">Building your 7-day plan…</span>
+        </div>
+      )}
 
-        {error && !loading && (
-          <div className="col" style={{ alignItems: "center", gap: 14, paddingTop: "24vh", textAlign: "center" }}>
-            <p className="t-body" style={{ color: "var(--m-ink-soft)", maxWidth: 280 }}>{error}</p>
-            <button className="pill-primary" style={{ width: "auto", padding: "12px 22px" }} onClick={generate}>Try again</button>
-          </div>
-        )}
-
-        {chart && !loading && (
-          <>
-            {chart.summary && (
-              <div className="card" style={{ padding: 14, marginBottom: 12, background: "var(--m-tint-green)", borderColor: "var(--m-tint-green)" }}>
-                <div className="hstack" style={{ gap: 8, alignItems: "flex-start" }}>
-                  <Sparkles width={16} height={16} style={{ color: "var(--m-forest)", flexShrink: 0, marginTop: 2 }} />
-                  <span className="t-small" style={{ color: "var(--m-ink)" }}>{chart.summary}</span>
-                </div>
-              </div>
-            )}
-            <div className="col" style={{ gap: 10 }}>
-              {chart.days.map((d) => {
-                const total = d.meals.reduce((s, m) => s + m.calories, 0);
-                return (
-                  <div key={d.day} className="card" style={{ padding: 14 }}>
-                    <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 8 }}>
-                      <span className="t-h3">{d.day}</span>
-                      <span className="t-small">{total} cal</span>
-                    </div>
-                    <div className="col" style={{ gap: 6 }}>
-                      {d.meals.map((m) => (
-                        <div key={m.mealType} className="hstack" style={{ justifyContent: "space-between", gap: 8 }}>
-                          <span className="t-small" style={{ color: "var(--m-ink-soft)", textTransform: "capitalize", flex: "0 0 72px" }}>{m.mealType}</span>
-                          <span style={{ fontSize: 13, fontWeight: 500, flex: 1, minWidth: 0 }}>{m.dish}</span>
-                          <span className="t-small" style={{ fontSize: 11 }}>{m.calories}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
+      {error && !loading && (
+        <div className="vstack" style={{ alignItems: "center", gap: 14, paddingTop: "24vh", textAlign: "center" }}>
+          <p className="t-body-soft" style={{ maxWidth: 280 }}>{error}</p>
+          <button className="pill-primary" style={{ width: "auto", padding: "0 22px" }} onClick={generate}>Try again</button>
+        </div>
+      )}
 
       {chart && !loading && (
-        <div className="glass" style={{ position: "sticky", bottom: 0, padding: "12px 16px calc(14px + env(safe-area-inset-bottom,0px))", borderTop: "1px solid var(--m-ink-faint)" }}>
-          <button className="pill-primary" onClick={apply} disabled={applied}>
-            {applied ? <><Check width={16} height={16} /> Applied to your plan</> : "Apply to my planner"}
-          </button>
-        </div>
+        <>
+          {/* What the chart was actually built from */}
+          <div className="card tint-lav hstack" style={{ boxShadow: "none", padding: "12px 16px", gap: 12 }}>
+            <BoBowl width={38} height={38} style={{ flex: "none" }} />
+            <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+              <span className="t-h2" style={{ color: "var(--m-plum)" }}>
+                Built for &ldquo;{goals?.goal ?? "maintain"}&rdquo;
+                {goals?.dailyCalories ? ` · ${goals.dailyCalories.toLocaleString()} kcal` : ""}
+              </span>
+              <span className="t-cap">
+                {dietaryPreferences.length > 0 ? dietaryPreferences.join(", ") : "No dietary restrictions set"}
+              </span>
+            </div>
+          </div>
+
+          {chart.summary && <p className="t-body-soft">{chart.summary}</p>}
+
+          {chart.days.map((d, i) => {
+            const head = headline(d);
+            const total = d.meals.reduce((s, m) => s + m.calories, 0);
+            const protein = Math.round(d.meals.reduce((s, m) => s + m.protein, 0));
+            const Mascot = mascotComponentFor(head?.dish ?? d.day);
+            const isOpen = open === d.day;
+            return (
+              <div key={d.day} className="vstack" style={{ gap: 6 }}>
+                <button
+                  onClick={() => setOpen(isOpen ? null : d.day)}
+                  aria-expanded={isOpen}
+                  className={`row ${i === 0 ? "tint-green" : ""}`}
+                  style={{ width: "100%", textAlign: "left", border: "none", ...(i === 0 ? { boxShadow: "none" } : {}) }}
+                >
+                  <span className="t-micro" style={{ width: 34, flex: "none", color: i === 0 ? "var(--m-forest)" : undefined }}>
+                    {d.day.slice(0, 3)}
+                  </span>
+                  <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+                    <span className="t-h2" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {head?.dish ?? "—"}
+                    </span>
+                    <span className="t-cap">{total.toLocaleString()} kcal · {protein}g protein</span>
+                  </div>
+                  <ChevronDown
+                    width={16}
+                    height={16}
+                    style={{ flex: "none", color: "var(--m-ink-soft)", transform: isOpen ? "rotate(180deg)" : undefined, transition: "transform .15s ease" }}
+                  />
+                  <Mascot width={28} height={28} style={{ flex: "none" }} />
+                </button>
+
+                {/* The per-meal detail the row summarises */}
+                {isOpen && (
+                  <div className="vstack" style={{ gap: 4, padding: "0 16px 4px" }}>
+                    {d.meals.map((m) => (
+                      <div key={m.mealType} className="hstack" style={{ gap: 10 }}>
+                        <span className="t-cap" style={{ width: 64, flex: "none", textTransform: "capitalize" }}>{m.mealType}</span>
+                        <span className="t-body grow" style={{ minWidth: 0 }}>{m.dish}</span>
+                        <span className="t-cap" style={{ flex: "none" }}>{m.calories}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <div className="grow" />
+          <div className="hstack" style={{ gap: 10 }}>
+            <button className="pill-secondary grow" onClick={generate}>Regenerate</button>
+            <button className="pill-primary grow" onClick={apply} disabled={applied}>
+              {applied ? <><Check width={16} height={16} /> Added</> : "Add all to plan"}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
