@@ -73,7 +73,7 @@ project before the merge.
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
-| 10 meshi re-skin | in progress — 9 of 16 mobile screens rebuilt |
+| 10 meshi re-skin | in progress — 12 of 16 mobile screens rebuilt |
 
 ## Blocked on you — nothing proceeds past these
 
@@ -157,19 +157,20 @@ The file is 190KB — fetch it with `DesignSync.get_file` (project
 `bdb767d1-b7ae-42ab-b6ce-30542fa2e99f`), write it to `/tmp`, and extract single
 artboards with a script rather than loading it all into context.
 
-### Screens rebuilt to artboards (9 of 16)
+### Screens rebuilt to artboards (12 of 16)
 
 | Flow | Screens |
 |---|---|
 | 1 Onboarding | welcome, location, diet, goal |
 | 2 Home & discovery | Home, Discover (`/m/search`), Restaurants |
 | 3 Chat & recipes | chat, recipe |
+| 6 Tracking | plan, plan/week, plan/diet-chart |
 
-### Still to rebuild (7)
+### Still to rebuild (4)
 
-`paywall` (11 hardcoded dark colours), `plan` (3), `saved` (2), `inbox` (2),
-`profile` (1), `buy` + `buy/platform` + `buy/confirmed` (1 each), `plan/week`,
-`plan/diet-chart`.
+`paywall` (11 hardcoded dark colours — the largest remaining block), `saved`
+(2), `inbox` (2), `profile` (1), `buy` + `buy/platform` + `buy/confirmed`
+(1 each).
 
 They render and are navigable — tokens, fonts and layout are correct — but
 carry white-on-dark treatments that read wrong on cream.
@@ -201,9 +202,34 @@ need real backend work, not just UI.
 - **Photo scrims live in `mobile.css`, not inline** (`.scrim-hero`,
   `.action-fade`, `.on-photo-soft`). DESIGN.md bans hex/rgba literals in
   `app/**` and `components/**` and does not allowlist photo overlays.
-- **`react-hooks/set-state-in-effect` fires on recipe, chat and restaurants
-  alike.** It is the tree-wide pattern for reading the `sessionStorage` handoff
-  after mount — it cannot run during SSR. Pre-existing, not a regression.
+- **`react-hooks/set-state-in-effect` fires on recipe, chat, restaurants and
+  both tracker screens alike.** It is the tree-wide pattern for reading the
+  `sessionStorage` / `localStorage` handoff after mount — it cannot run during
+  SSR. Pre-existing, not a regression.
+
+### Decisions taken during Flow 6
+
+- **`.row` + `.tint-*` needed a compound-selector override.** meshi-b declares
+  the tints at line 72 and `.row` at line 144, and `.row` re-declares
+  `background`. Same specificity, later wins — so `class="row tint-green"`,
+  which the artboards use to mark today's row, rendered plain. Fixed in
+  `mobile.css`, NOT in the vendored `design/meshi-b.css`, which must stay a
+  faithful copy of the design source.
+- **The Plan date strip is kept even though the artboard has no strip.** It is
+  the only route to a past day. It parks scrolled to its end because
+  `lastNDates` puts today last and today is the default selection.
+- **Week bars scale to the goal, not to the tallest bar.** Bar height therefore
+  means "how close to target"; scaling to the max would make every week look
+  the same shape regardless of the goal.
+- **The week average states how many days it covers.** "Avg 670 kcal" over a
+  7-day chart with 3 days logged is a quietly misleading number.
+- **The diet chart shows one row per day but keeps the per-meal data** behind a
+  row expansion — the artboard's density without discarding real content.
+- **Artboards 3e/3f (camera capture, Bo's verdict) remain deferred**, and
+  **1l (streak & mascot unlocks) is blocked** on the `.mascot-locked`
+  gamification question in the plan's open items. `loggingStreak` already
+  exists and now feeds the Plan tab's flame chip, so 1l is mostly a
+  product decision, not a data problem.
 
 ### Design system state
 
@@ -346,10 +372,10 @@ ignore those two.
 
 ## Suggested next step
 
-Flow 3 (chat + recipe) is **done**. Next, in order: **Flow 6 (tracking —
-`plan`, `plan/week`, `plan/diet-chart`)**, then Flow 7 (saved / profile /
-paywall — paywall carries 11 hardcoded dark values, the largest remaining
-block), then Flow 4 (buy).
+Flows 3 and 6 are **done**. Next: **Flow 7 (saved / profile / paywall)** —
+paywall carries 11 hardcoded dark values, the largest remaining block, and it
+is also the screen with App Store exposure, so re-read the three rejection
+notes above before touching it. Then Flow 4 (buy).
 
 Method reminder: extract the flow's artboards from the mockup and build from
 the markup. The Flow 3 rebuild used
