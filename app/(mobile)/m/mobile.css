@@ -149,6 +149,16 @@ a { color: inherit; text-decoration: none; }
 .row.tint-peach { background: var(--m-tint-peach); }
 .row.tint-cream { background: var(--m-cream-2); }
 
+/* Order-confirmed hero: Bo in a tinted disc with a soft lime halo. */
+.confirm-halo {
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: var(--m-tint-green);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 14px rgba(155, 207, 55, .18);
+  flex: none;
+}
+
 /* Onboarding's pulsing halo behind Bo — two translucent forest rings. */
 .bo-halo, .bo-halo-inner {
   position: absolute;
