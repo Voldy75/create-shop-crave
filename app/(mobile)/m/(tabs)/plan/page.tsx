@@ -2,15 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, Camera, Loader2 } from "lucide-react";
+import { Camera } from "lucide-react";
 import {
   getMealLogs,
   getNutritionGoals,
-  saveMealLog,
   deleteMealLog,
 } from "@/lib/storage";
 import { dayTotals, lastNDates, localDateKey, loggingStreak } from "@/lib/nutrition";
-import { isNative, captureMealPhoto } from "@/lib/native-bridge";
 import { Beet } from "@/components/mascots";
 import type { MealLog, MealType, NutritionGoals } from "@/lib/types";
 
@@ -32,7 +30,6 @@ import type { MealLog, MealType, NutritionGoals } from "@/lib/types";
  */
 
 const DEFAULT_GOALS: NutritionGoals = { dailyCalories: 2000, protein: 150, carbs: 225, fat: 56, goal: "maintain" };
-const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 const DOW = ["S", "M", "T", "W", "T", "F", "S"];
 
 /** The artboard heads each logged row with an emoji when there is no photo. */
@@ -56,7 +53,6 @@ export default function PlanTracker() {
   const [logs, setLogs] = useState<MealLog[]>([]);
   const [goals, setGoals] = useState<NutritionGoals>(DEFAULT_GOALS);
   const [selected, setSelected] = useState(localDateKey());
-  const [sheet, setSheet] = useState(false);
   const stripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -79,7 +75,6 @@ export default function PlanTracker() {
   const pct = Math.min(1, totals.calories / Math.max(1, goals.dailyCalories));
   const over = totals.calories > goals.dailyCalories;
 
-  const onSaved = (l: MealLog) => { setLogs((p) => [l, ...p]); setSheet(false); };
   const onDelete = (id: string) => { deleteMealLog(id); setLogs((p) => p.filter((x) => x.id !== id)); };
 
   if (!hydrated) return <div style={{ minHeight: "100dvh", background: "var(--m-cream)" }} />;
@@ -172,8 +167,10 @@ export default function PlanTracker() {
           </div>
         ))}
 
-        {/* The artboard's dashed capture prompt — the only logging affordance */}
-        <button onClick={() => setSheet(true)} className="row" style={{ boxShadow: "none", background: "transparent", border: "2px dashed var(--m-ink-faint)", justifyContent: "center", gap: 8 }}>
+        {/* The artboard's dashed capture prompt — the only logging affordance.
+            It opens the full camera flow (/m/log, artboards 3e + 3f) rather
+            than the old modal sheet. */}
+        <button onClick={() => router.push("/m/log")} className="row" style={{ boxShadow: "none", background: "transparent", border: "2px dashed var(--m-ink-faint)", justifyContent: "center", gap: 8 }}>
           <Camera width={18} height={18} style={{ color: "var(--m-forest)" }} />
           <span className="t-cap" style={{ color: "var(--m-forest)", fontWeight: 700 }}>
             {dayLogs.length === 0 ? "Snap a meal to log it — Bo does the math" : "Snap the next one — Bo does the math"}
@@ -193,7 +190,6 @@ export default function PlanTracker() {
         </div>
       </div>
 
-      {sheet && <LogSheet date={selected} onClose={() => setSheet(false)} onSaved={onSaved} />}
     </div>
   );
 }
@@ -247,106 +243,6 @@ function Macro({ label, value, max, tone }: { label: string; value: number; max:
       </div>
       <div className={`progress ${tone === "lime" ? "progress-lime" : ""}`}>
         <i style={{ width: `${pct}%`, background: over ? "var(--m-red)" : tone === "orange" ? "var(--m-orange)" : undefined }} />
-      </div>
-    </div>
-  );
-}
-
-function LogSheet({ date, onClose, onSaved }: { date: string; onClose: () => void; onSaved: (l: MealLog) => void }) {
-  const [mealType, setMealType] = useState<MealType>("lunch");
-  const [name, setName] = useState("");
-  const [cal, setCal] = useState("");
-  const [p, setP] = useState("");
-  const [c, setC] = useState("");
-  const [f, setF] = useState("");
-  const [analyzing, setAnalyzing] = useState(false);
-  const [img, setImg] = useState<string | null>(null);
-
-  const num = (s: string) => Math.max(0, parseInt(s || "0", 10) || 0);
-  const canSave = name.trim() && num(cal) > 0;
-
-  const save = (source: MealLog["source"]) => {
-    const saved = saveMealLog({ date, mealType, source, name: name.trim(), calories: num(cal), protein: num(p), carbs: num(c), fat: num(f), imageDataUrl: img ?? undefined });
-    onSaved(saved);
-  };
-
-  // Run a captured/selected image through /api/meals/analyze and prefill fields.
-  const analyzeDataUrl = async (dataUrl: string) => {
-    setAnalyzing(true);
-    try {
-      setImg(dataUrl);
-      const r = await fetch("/api/meals/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "photo", imageBase64: dataUrl, mealType }),
-      });
-      const data = await r.json().catch(() => ({}));
-      if (r.ok) {
-        if (data.name) setName(data.name);
-        if (data.calories) setCal(String(data.calories));
-        if (data.protein) setP(String(data.protein));
-        if (data.carbs) setC(String(data.carbs));
-        if (data.fat) setF(String(data.fat));
-      }
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
-  const onPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const dataUrl = await new Promise<string>((res, rej) => {
-      const fr = new FileReader();
-      fr.onload = () => res(fr.result as string);
-      fr.onerror = rej;
-      fr.readAsDataURL(file);
-    });
-    await analyzeDataUrl(dataUrl);
-  };
-
-  // Native camera path — opens the OS camera/library picker via Capacitor.
-  const onNativeCapture = async () => {
-    const dataUrl = await captureMealPhoto();
-    if (dataUrl) await analyzeDataUrl(dataUrl);
-  };
-
-  return (
-    <div onClick={onClose} className="sheet-scrim">
-      <div onClick={(e) => e.stopPropagation()} className="vstack" style={{ width: "100%", maxWidth: 520, background: "var(--m-cream)", borderRadius: "28px 28px 0 0", maxHeight: "90vh", overflowY: "auto", padding: "0 20px calc(20px + env(safe-area-inset-bottom, 0px))" }}>
-        <div className="hstack" style={{ justifyContent: "space-between", padding: "18px 0 14px" }}>
-          <span className="t-h1">Log a meal</span>
-          <button onClick={onClose} className="icon-btn" aria-label="Close"><X width={18} height={18} /></button>
-        </div>
-        <div className="vstack" style={{ gap: 14 }}>
-          <div className="hstack hscroll" style={{ gap: 8 }}>
-            {MEAL_TYPES.map((m) => (
-              <button key={m} onClick={() => setMealType(m)} className={`chip ${mealType === m ? "on" : ""}`} style={{ textTransform: "capitalize" }}>{m}</button>
-            ))}
-          </div>
-
-          {isNative() ? (
-            <button type="button" className="pill-secondary" disabled={analyzing} style={{ justifyContent: "center" }} onClick={onNativeCapture}>
-              {analyzing ? <Loader2 width={16} height={16} className="animate-spin" /> : <Camera width={16} height={16} />}
-              {analyzing ? "Analyzing…" : "Scan with camera / photo"}
-            </button>
-          ) : (
-            <label className="pill-secondary" style={{ cursor: "pointer", justifyContent: "center" }}>
-              {analyzing ? <Loader2 width={16} height={16} className="animate-spin" /> : <Camera width={16} height={16} />}
-              {analyzing ? "Analyzing…" : "Scan with camera / photo"}
-              <input type="file" accept="image/*" capture="environment" onChange={onPhoto} style={{ display: "none" }} />
-            </label>
-          )}
-
-          <input placeholder="Dish name" value={name} onChange={(e) => setName(e.target.value)} />
-          <div className="hstack" style={{ gap: 8 }}>
-            <input placeholder="Cal" inputMode="numeric" value={cal} onChange={(e) => setCal(e.target.value)} />
-            <input placeholder="P (g)" inputMode="numeric" value={p} onChange={(e) => setP(e.target.value)} />
-            <input placeholder="C (g)" inputMode="numeric" value={c} onChange={(e) => setC(e.target.value)} />
-            <input placeholder="F (g)" inputMode="numeric" value={f} onChange={(e) => setF(e.target.value)} />
-          </div>
-          <button className="pill-primary" disabled={!canSave} style={{ opacity: canSave ? 1 : 0.5 }} onClick={() => save(img ? "photo" : "manual")}>Log meal</button>
-        </div>
       </div>
     </div>
   );

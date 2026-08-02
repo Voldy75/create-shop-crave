@@ -183,6 +183,71 @@ a { color: inherit; text-decoration: none; }
   overflow-wrap: anywhere;
 }
 
+/* ---------- Camera logging shell ----------
+   Artboard 3e is the one screen that is dark by design in both themes — a
+   viewfinder has to be. Its values live here rather than inline because
+   DESIGN.md bans hex/rgba literals in app/** and components/**. */
+.capture-shell {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #241D15;
+}
+.capture-view { position: relative; flex: 1; overflow: hidden; background: #1A150E; }
+.capture-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* The framing guide: an inset rounded rectangle drawn purely with a ring. */
+.capture-frame {
+  position: absolute;
+  inset: 40px 30px;
+  border-radius: 28px;
+  box-shadow: 0 0 0 3px rgba(253, 248, 231, .9);
+  pointer-events: none;
+}
+.capture-busy {
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(26, 21, 14, .72);
+}
+.capture-controls {
+  flex: none;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+}
+/* The framing hint sits ON the guide ring, so it needs an opaque-enough dark
+   fill of its own — the translucent .on-dark fill lets the ring strike through
+   the text. */
+.capture-hint { background: rgba(36, 29, 21, .85) !important; color: #FDF8E7 !important; box-shadow: none !important; }
+
+/* Controls sitting on the viewfinder rather than on cream. */
+.on-dark { background: rgba(253, 248, 231, .14) !important; color: #FDF8E7 !important; box-shadow: none !important; }
+.on-dark-text { color: #FDF8E7; }
+.on-dark-dim { color: rgba(253, 248, 231, .6); padding: 0 24px; }
+.shutter {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: none;
+  background: #FDF8E7;
+  box-shadow: 0 0 0 5px rgba(253, 248, 231, .3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  cursor: pointer;
+}
+.shutter > span { width: 60px; height: 60px; border-radius: 50%; background: var(--m-forest); display: block; }
+.shutter:active > span { transform: scale(.92); }
+.shutter:disabled { opacity: .5; }
+
 /* ---------- Map backdrop (restaurants) ---------- */
 .mapbg {
   background:
