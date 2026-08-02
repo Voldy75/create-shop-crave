@@ -149,6 +149,14 @@ a { color: inherit; text-decoration: none; }
 .row.tint-peach { background: var(--m-tint-peach); }
 .row.tint-cream { background: var(--m-cream-2); }
 
+/* Onboarding's pulsing halo behind Bo — two translucent forest rings. */
+.bo-halo, .bo-halo-inner {
+  position: absolute;
+  border-radius: 50%;
+}
+.bo-halo { inset: 0; background: rgba(30, 90, 52, .10); animation: mm-ring 2.4s ease-out infinite; }
+.bo-halo-inner { inset: 18px; background: rgba(30, 90, 52, .14); }
+
 /* Calorie ring track — a translucent forest, per the tracker artboard. A solid
    token would either vanish into the tint-green card or read as a white hole. */
 .cal-ring-track { stroke: rgba(30, 90, 52, .15); }
@@ -247,6 +255,25 @@ a { color: inherit; text-decoration: none; }
 .shutter > span { width: 60px; height: 60px; border-radius: 50%; background: var(--m-forest); display: block; }
 .shutter:active > span { transform: scale(.92); }
 .shutter:disabled { opacity: .5; }
+
+/* ---------- Paywall ----------
+   Artboard 1o is a full-bleed plum screen, so like the viewfinder it is dark
+   in both themes by design. Values live here, not inline (DESIGN.md). */
+.paywall-shell { min-height: 100dvh; background: var(--m-plum); }
+.on-plum { color: var(--m-on-deep); }
+.on-plum-dim { color: rgba(253, 248, 231, .8); }
+.on-plum-faint { color: rgba(253, 248, 231, .55); }
+/* The selected offer gets the artboard's inset lime ring. */
+.offer-selected { box-shadow: inset 0 0 0 3px var(--m-lime); }
+/* The unselected offer is a translucent panel rather than a cream card. */
+.offer-muted { background: rgba(253, 248, 231, .12); box-shadow: none; }
+.paywall-close {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(253, 248, 231, .15);
+  color: var(--m-on-deep);
+  border: none;
+  display: inline-flex; align-items: center; justify-content: center;
+}
 
 /* ---------- Map backdrop (restaurants) ---------- */
 .mapbg {

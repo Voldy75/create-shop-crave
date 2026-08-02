@@ -2,8 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft, Bell, ShoppingCart, Sparkles } from "lucide-react";
+import { ArrowLeft, Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { Carrot, Broccoli, Pineapple } from "@/components/mascots";
+
+/** Matches the rotation used by the inbox preview on Profile. */
+const INBOX_MASCOTS = [Carrot, Broccoli, Pineapple];
 
 /**
  * meshi Inbox (v2-screens ScreenInbox) — wired to the real notification_log
@@ -68,13 +72,16 @@ export default function MobileInbox() {
 
   return (
     <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
-      <div className="hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 6px) 14px 8px", gap: 8 }}>
-        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--m-ink)" }} aria-label="Back"><ChevronLeft width={22} height={22} /></button>
-        <h1 className="t-h1">Inbox</h1>
+      <div className="hstack" style={{ padding: "calc(env(safe-area-inset-top,12px) + 8px) 20px 8px" }}>
+        <button className="icon-btn" onClick={() => router.back()} aria-label="Back"><ArrowLeft width={20} height={20} /></button>
+        <span className="t-h1 grow" style={{ textAlign: "center", marginRight: 42 }}>Inbox</span>
       </div>
+      {/* `chip-solid` was used for the selected filter but is defined nowhere,
+          so the active chip looked identical to the rest. meshi-b's class is
+          `chip-active`. */}
       <div className="hscroll hstack" style={{ gap: 6, padding: "4px 14px 10px" }}>
         {FILTERS.map((c) => (
-          <button key={c} onClick={() => setFilter(c)} className={`chip ${filter === c ? "chip-solid" : ""}`}>{c}</button>
+          <button key={c} onClick={() => setFilter(c)} className={`chip ${filter === c ? "chip-active" : ""}`} aria-pressed={filter === c}>{c}</button>
         ))}
       </div>
 
@@ -89,18 +96,23 @@ export default function MobileInbox() {
           <EmptyState icon={<Bell width={26} height={26} />} title="No messages yet" sub="Enable daily nudges in Settings → Notifications to start getting personalised tips." />
         )}
 
-        {filtered.map((n) => (
-          <div key={n.id} className="hstack" style={{ padding: "14px 8px", gap: 12, borderBottom: "1px solid var(--m-ink-faint)" }}>
-            <div className="ph ph-saffron" style={{ width: 40, height: 40, borderRadius: "var(--m-r-md)", flexShrink: 0, display: "grid", placeItems: "center" }}>
-              {n.channel === "whatsapp" ? <ShoppingCart width={16} height={16} style={{ color: "#fff" }} /> : <Sparkles width={16} height={16} style={{ color: "#fff" }} />}
-            </div>
-            <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>{n.payload?.title ?? "meshi"}</span>
-              <span className="t-small">{n.payload?.body ?? n.status}</span>
-            </div>
-            <span className="t-small" style={{ alignSelf: "flex-start" }}>{rel(n.sent_at)}</span>
-          </div>
-        ))}
+        {/* Rows follow artboard 1n: the design's `.row` list card with a
+            rotating mascot, not a coloured square with a lucide glyph. */}
+        <div className="vstack" style={{ gap: 12 }}>
+          {filtered.map((n, i) => {
+            const Mascot = INBOX_MASCOTS[i % INBOX_MASCOTS.length];
+            return (
+              <div key={n.id} className="row">
+                <Mascot width={34} height={34} style={{ flex: "none" }} />
+                <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+                  <span className="t-h2">{n.payload?.title ?? "meshi"}</span>
+                  <span className="t-cap">{n.payload?.body ?? n.status}</span>
+                </div>
+                <span className="t-cap" style={{ flex: "none" }}>{rel(n.sent_at)}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

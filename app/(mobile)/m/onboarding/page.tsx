@@ -213,8 +213,8 @@ export default function Onboarding() {
           }}
         >
           <div style={{ position: "relative", width: 130, height: 130 }}>
-            <span style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "rgba(30,90,52,.1)", animation: "mm-ring 2.4s ease-out infinite" }} />
-            <span style={{ position: "absolute", inset: 18, borderRadius: "50%", background: "rgba(30,90,52,.14)" }} />
+            <span className="bo-halo" />
+            <span className="bo-halo-inner" />
             <span style={{ position: "absolute", inset: 36, borderRadius: "50%", background: "var(--m-card)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Tomato width={42} height={42} style={{ animation: "mm-bob 2.4s ease-in-out infinite" }} />
             </span>

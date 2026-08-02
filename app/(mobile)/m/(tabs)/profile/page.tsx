@@ -1,90 +1,202 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Utensils, MapPin, Crown, ChevronRight, LogOut, Salad, Heart } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Settings, ChevronRight, LogOut, Sparkles, Heart, MapPin, Utensils } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
+import { createClient } from "@/lib/supabase/client";
+import { getFavorites, getMealLogs } from "@/lib/storage";
+import { loggingStreak } from "@/lib/nutrition";
+import { Tomato, Carrot, Broccoli, Pineapple } from "@/components/mascots";
 
 /**
- * Profile / Me tab — meshi ScreenSettings. Account header + grouped rows
- * linking to the real surfaces (notifications, Swiggy, dietary prefs),
- * dietary chips, and sign out. Wired to UserContext.
+ * Profile — built to the Flow 7 artboard (1n), which puts the INBOX on this
+ * screen rather than behind its own entry point. The full list stays at
+ * /m/inbox; the newest three surface here.
+ *
+ * The artboard's three stat tiles are "meals logged / recipes cooked / orders".
+ * Only the first has a data model. "Cooked" is not tracked anywhere and there
+ * is no order history table, so those two tiles become saved-recipe count and
+ * logging streak — both real, both already computed elsewhere in the app.
+ *
+ * The artboard also shows an unread dot per inbox row. notification_log has a
+ * delivery `status` but no read state, so a dot would be a fabricated unread
+ * count. Rows show their real age instead.
  */
+
+interface Row {
+  id: string;
+  channel: string;
+  sent_at: string;
+  payload: { title?: string; body?: string } | null;
+}
+
+/** Rotating mascots give the feed the artboard's texture without implying meaning. */
+const INBOX_MASCOTS = [Carrot, Broccoli, Pineapple];
+
+function rel(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return "now";
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
+
 export default function ProfileTab() {
   const router = useRouter();
-  const { user, userName, dietaryPreferences, location, signOut, hydrated } = useUser();
+  const { user, userName, location, signOut, hydrated } = useUser();
+  const supabase = createClient();
+
+  const [mealsLogged, setMealsLogged] = useState(0);
+  const [savedCount, setSavedCount] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [inbox, setInbox] = useState<Row[]>([]);
+  const [isPro, setIsPro] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const logs = getMealLogs();
+    setMealsLogged(logs.length);
+    setStreak(loggingStreak(logs));
+    setSavedCount(getFavorites().length);
+  }, []);
+
+  useEffect(() => {
+    if (!user) { setInbox([]); setIsPro(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("notification_log")
+        .select("id, channel, sent_at, payload")
+        .eq("user_id", user.id)
+        .order("sent_at", { ascending: false })
+        .limit(3);
+      if (!cancelled) setInbox((data as Row[]) ?? []);
+      try {
+        const res = await fetch("/api/subscribe/status");
+        const json = await res.json().catch(() => ({}));
+        if (!cancelled && res.ok) setIsPro(Boolean(json.isPro));
+      } catch { /* status is decoration here — a failure just hides the badge */ }
+    })();
+    return () => { cancelled = true; };
+  }, [user, supabase]);
 
   const name = hydrated && userName ? userName : "Guest";
-  const initials = hydrated && userName ? userName.slice(0, 2).toUpperCase() : "··";
-
-  const rows: { icon: typeof Bell; label: string; sub: string; href: string }[] = [
-    // The design's tab bar is Home / Discover / Bo / Plan / Profile — Saved is
-    // not a tab. This is its entry point; without it the route is orphaned.
-    { icon: Heart, label: "Saved", sub: "Recipes and spots you kept", href: "/m/saved" },
-    { icon: Bell, label: "Notifications", sub: "Daily nudge · WhatsApp · push", href: "/settings/notifications" },
-    { icon: Utensils, label: "Swiggy account", sub: "Connect for ordering", href: "/settings/notifications" },
-    { icon: MapPin, label: "Location", sub: location ? "Set" : "Not set", href: "/m/onboarding" },
-    { icon: Crown, label: "Go Pro", sub: "Unlimited AI + ordering", href: "/m/paywall" },
-  ];
+  const subtitle = [
+    streak > 0 ? `Streak ${streak}` : null,
+    savedCount > 0 ? `${savedCount} saved` : null,
+    isPro === true ? "meshi+" : isPro === false ? "Free plan" : null,
+  ].filter(Boolean).join(" · ");
 
   return (
-    <div className="col" style={{ minHeight: "100dvh", background: "var(--m-cream)" }}>
-      <div style={{ padding: "calc(env(safe-area-inset-top,12px) + 10px) 16px 8px" }}>
-        <h1 className="t-h1">Me</h1>
+    <div className="vstack" style={{ minHeight: "100dvh", background: "var(--m-cream)", padding: "calc(env(safe-area-inset-top, 12px) + 10px) 20px 0", gap: 14 }}>
+      {/* Header */}
+      <div className="hstack">
+        <span
+          style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--m-tint-peach)", display: "grid", placeItems: "center", flex: "none" }}
+        >
+          <Tomato width={44} height={44} />
+        </span>
+        <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+          <span className="t-h1" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</span>
+          <span className="t-cap">{subtitle || user?.email || "Not signed in"}</span>
+        </div>
+        <button className="icon-btn" onClick={() => router.push("/settings/notifications")} aria-label="Settings">
+          <Settings width={20} height={20} />
+        </button>
       </div>
 
-      <div className="scroll" style={{ flex: 1, padding: "8px 14px 90px" }}>
-        {/* Account header */}
-        <div className="card hstack" style={{ padding: 16, gap: 14 }}>
-          <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--m-forest)", color: "#fff", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 20, flexShrink: 0 }}>{initials}</div>
-          <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-            <span className="t-h2" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</span>
-            <span className="t-small">{user?.email ?? "Not signed in"}</span>
-          </div>
-          {!user && (
-            <button className="chip chip-solid" onClick={() => router.push("/m/onboarding")}>Sign in</button>
-          )}
-        </div>
+      {!user && hydrated && (
+        <button className="pill-primary" style={{ width: "100%" }} onClick={() => router.push("/m/onboarding")}>
+          Sign in
+        </button>
+      )}
 
-        {/* Dietary prefs */}
-        {hydrated && dietaryPreferences.length > 0 && (
-          <div style={{ marginTop: 18 }}>
-            <span className="t-cap" style={{ padding: "0 4px" }}>HOW YOU EAT</span>
-            <div className="hstack" style={{ flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-              {dietaryPreferences.map((p) => (
-                <span key={p} className="chip on" style={{ textTransform: "capitalize" }}><Salad width={12} height={12} />{p}</span>
-              ))}
-            </div>
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+        <Stat tint="tint-green" ink="var(--m-forest-2)" value={mealsLogged} label="meals logged" />
+        <Stat tint="tint-peach" ink="var(--m-burnt)" value={savedCount} label="saved" />
+        <Stat tint="tint-lav" ink="var(--m-plum)" value={streak} label="day streak" />
+      </div>
+
+      {/* Destinations. Not in the artboard, but the tab bar has no Saved tab —
+          this is its only entry point, and Location / Swiggy have none either.
+          Dropping them would orphan three working routes. */}
+      <div className="hstack hscroll" style={{ gap: 8 }}>
+        <button className="chip" onClick={() => router.push("/m/saved")}>
+          <Heart width={14} height={14} /> Saved
+        </button>
+        <button className="chip" onClick={() => router.push("/m/onboarding")}>
+          <MapPin width={14} height={14} /> {location ? "Location set" : "Set location"}
+        </button>
+        <button className="chip" onClick={() => router.push("/settings/notifications")}>
+          <Utensils width={14} height={14} /> Swiggy
+        </button>
+      </div>
+
+      {/* Inbox */}
+      <div className="hstack" style={{ justifyContent: "space-between" }}>
+        <span className="t-h1">Inbox</span>
+        {inbox.length > 0 && (
+          <button
+            onClick={() => router.push("/m/inbox")}
+            className="t-cap"
+            style={{ background: "none", border: "none", padding: 0, color: "var(--m-forest)", fontWeight: 700 }}
+          >
+            See all ›
+          </button>
+        )}
+      </div>
+
+      <div className="scroll vstack" style={{ flex: 1, gap: 12, paddingBottom: 12 }}>
+        {inbox.map((n, i) => {
+          const Mascot = INBOX_MASCOTS[i % INBOX_MASCOTS.length];
+          return (
+            <button key={n.id} className="row" onClick={() => router.push("/m/inbox")} style={{ width: "100%", textAlign: "left", border: "none" }}>
+              <Mascot width={34} height={34} style={{ flex: "none" }} />
+              <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+                <span className="t-h2" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.payload?.title ?? "meshi"}</span>
+                <span className="t-cap" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.payload?.body ?? n.channel}</span>
+              </div>
+              <span className="t-cap" style={{ flex: "none" }}>{rel(n.sent_at)}</span>
+            </button>
+          );
+        })}
+
+        {user && inbox.length === 0 && (
+          <div className="row" style={{ boxShadow: "none", background: "transparent", border: "2px dashed var(--m-ink-faint)", justifyContent: "center" }}>
+            <span className="t-cap">No messages yet — turn on daily nudges in Settings.</span>
           </div>
         )}
 
-        {/* Settings rows */}
-        <div className="col card" style={{ marginTop: 18, padding: 0, overflow: "hidden" }}>
-          {rows.map((r, i) => {
-            const Icon = r.icon;
-            return (
-              <Link key={r.label} href={r.href} className="hstack" style={{ padding: "14px 16px", gap: 12, borderTop: i === 0 ? "none" : "1px solid var(--m-ink-faint)", textDecoration: "none", color: "var(--m-ink)" }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: "var(--m-cream-2)", display: "grid", placeItems: "center", color: "var(--m-forest)", flexShrink: 0 }}>
-                  <Icon width={18} height={18} />
-                </div>
-                <div className="col" style={{ flex: 1, gap: 1 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600 }}>{r.label}</span>
-                  <span className="t-small" style={{ fontSize: 12 }}>{r.sub}</span>
-                </div>
-                <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)" }} />
-              </Link>
-            );
-          })}
-        </div>
+        {/* Plan */}
+        <button className="row" onClick={() => router.push("/m/paywall")} style={{ width: "100%", textAlign: "left", border: "none" }}>
+          <span className="icon-btn tint-lav" style={{ boxShadow: "none", color: "var(--m-plum)", flex: "none" }}>
+            <Sparkles width={20} height={20} />
+          </span>
+          <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+            <span className="t-h2">meshi+ · {isPro ? "manage plan" : "go unlimited"}</span>
+            <span className="t-cap">{isPro ? "You're on meshi+" : "Unlimited Bo chats, photo logging and more"}</span>
+          </div>
+          <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none" }} />
+        </button>
 
         {user && (
-          <button onClick={() => signOut()} className="pill-secondary" style={{ marginTop: 18 }}>
+          <button onClick={() => signOut()} className="pill-secondary" style={{ width: "100%", marginTop: 4 }}>
             <LogOut width={16} height={16} /> Sign out
           </button>
         )}
-
-        <p className="t-small" style={{ textAlign: "center", marginTop: 18, color: "var(--m-ink-faint)" }}>meshi</p>
       </div>
+    </div>
+  );
+}
+
+function Stat({ tint, ink, value, label }: { tint: string; ink: string; value: number; label: string }) {
+  return (
+    <div className={`card ${tint} vstack`} style={{ boxShadow: "none", padding: 12, alignItems: "center", gap: 2, minWidth: 0 }}>
+      <span style={{ font: "800 22px/1 var(--m-font-display)", color: ink }}>{value}</span>
+      <span className="t-micro">{label}</span>
     </div>
   );
 }

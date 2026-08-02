@@ -91,7 +91,7 @@ export default function MobileDiscover() {
               <br />
               {FEATURED.title[1]}
             </span>
-            <span className="t-cap" style={{ color: "rgba(253,248,231,.85)", textAlign: "left" }}>
+            <span className="t-cap on-photo-soft" style={{ textAlign: "left" }}>
               {FEATURED.sub}
             </span>
           </div>
