@@ -1,6 +1,20 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
+import { Montserrat } from "next/font/google";
+/**
+ * meshi-b.css MUST be imported here, not just globals.css. globals.css now
+ * defines --cc-* purely as aliases onto --m-*, so without the design system
+ * loaded every token on this page resolves to nothing and the 404 renders
+ * unstyled.
+ */
+import "../design/meshi-b.css";
 import "./globals.css";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-montserrat",
+  display: "swap",
+});
 
 /**
  * 404 for URLs that match NO route group.
@@ -23,8 +37,8 @@ export const metadata: Metadata = {
 
 export default function GlobalNotFound() {
   return (
-    <html lang="en" className={GeistSans.variable} data-theme="dark">
-      <body className={GeistSans.className}>
+    <html lang="en" className={montserrat.variable} data-theme="light">
+      <body className={montserrat.className}>
         <main
           style={{
             minHeight: "100dvh",
@@ -54,7 +68,7 @@ export default function GlobalNotFound() {
               padding: "0 22px",
               borderRadius: "var(--cc-radius-pill)",
               background: "var(--cc-accent)",
-              color: "#fff",
+              color: "var(--m-on-deep)",
               fontWeight: 500,
               textDecoration: "none",
             }}

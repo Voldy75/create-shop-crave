@@ -6,10 +6,14 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-system: var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, sans-serif;
-  --font-display-stack: var(--font-display), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
+  /* Phase 10c: Geist and General Sans are gone — meshi is one family. These
+     stacks stay because Tailwind and ~50 files reference them; they now
+     resolve to Montserrat. Without this the h1/h2/h3 rules below would fall
+     through to a system font, since --font-display no longer exists. */
+  --font-sans: var(--font-montserrat), system-ui, sans-serif;
+  --font-system: var(--font-montserrat), system-ui, sans-serif;
+  --font-display-stack: var(--font-montserrat), system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,81 +50,98 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Crave & Create — "Midnight Kitchen" Design System
-   General Sans display · Geist body · warm charcoal surfaces
-   · pill CTAs · glass navigation · one confident orange
+   Phase 10c — the web tree on meshi Kitchef.
+
+   "Midnight Kitchen" is retired. Rather than rewrite the --cc-* vocabulary out
+   of ~50 files in one unreviewable change, every --cc-* token is now an ALIAS
+   onto the meshi --m-* token it corresponds to. Consequences:
+
+     - The whole web tree moves onto the new palette in one edit, and each
+       screen can then be RESTRUCTURED to its artboard independently.
+     - Dark mode comes free and correct: meshi-b.css defines --m-* in :root
+       (light) and overrides them under [data-theme="dark"], so the aliases
+       follow. The old [data-theme="light"] token block that used to do this
+       job is gone — it would now fight the system it is aliasing.
+     - The orange is gone. --cc-accent is forest green. Note this does NOT
+       reach components/UpgradeDialog.tsx's Razorpay theme.color or
+       scripts/gen-resources.mjs, which bake #ff6b35 in places CSS variables
+       cannot reach (Phase 10d).
+
+   These aliases are scaffolding, not the destination. Phase 10e deletes them
+   once `grep -rn -- '--cc-' app components` returns zero.
    ───────────────────────────────────────────────────────────── */
 :root {
-  /* App surfaces — warm charcoal, never pure black */
-  --cc-bg:               #0c0a09;
-  --cc-surface:          #1c1917;
-  --cc-surface-2:        #292524;
-  --cc-surface-3:        #34302c;
-  --cc-surface-alt:      #faf7f4;
-  --cc-border:           rgba(250, 249, 247, 0.08);
-  --cc-border-strong:    rgba(250, 249, 247, 0.14);
+  /* Surfaces */
+  --cc-bg:               var(--m-cream);
+  --cc-surface:          var(--m-card);
+  --cc-surface-2:        var(--m-cream-2);
+  --cc-surface-3:        var(--m-cream-2);
+  --cc-surface-alt:      var(--m-ink);
+  --cc-border:           var(--m-ink-faint);
+  --cc-border-strong:    var(--m-ink-faint);
 
-  /* Text — warm white scale */
-  --cc-text-primary:     #faf9f7;
-  --cc-text-secondary:   rgba(250, 249, 247, 0.68);
-  --cc-text-tertiary:    rgba(250, 249, 247, 0.45);
+  /* Text */
+  --cc-text-primary:     var(--m-ink);
+  --cc-text-secondary:   var(--m-ink-soft);
+  --cc-text-tertiary:    var(--m-ink-soft);
 
-  /* Accent — warm orange, food-forward */
-  --cc-accent:           #ff6b35;
-  --cc-accent-hover:     #ff5520;
-  --cc-accent-dim:       rgba(255, 107, 53, 0.15);
+  /* Accent — forest green, no longer orange */
+  --cc-accent:           var(--m-forest);
+  --cc-accent-hover:     var(--m-forest-2);
+  --cc-accent-dim:       var(--m-tint-green);
 
-  /* Interactive — in-family warm tones (no borrowed blue) */
-  --cc-link:             #ffa06b;
-  --cc-link-light:       #c2410c;
-  --cc-focus:            #ff8a4d;
+  --cc-link:             var(--m-forest);
+  --cc-link-light:       var(--m-forest-2);
+  --cc-focus:            var(--m-forest);
 
-  /* Shadows — soft diffused, warm-tinted */
-  --cc-shadow-sm:        rgba(10, 6, 3, 0.25) 3px 5px 30px 0px;
-  --cc-shadow-md:        rgba(10, 6, 3, 0.4) 0px 8px 24px;
-  --cc-shadow-lg:        rgba(10, 6, 3, 0.6) 0px 16px 48px;
+  /* Shadows — meshi's are flatter and warmer than Midnight Kitchen's */
+  --cc-shadow-sm:        var(--m-shadow);
+  --cc-shadow-md:        var(--m-shadow-lift);
+  --cc-shadow-lg:        var(--m-shadow-lift);
 
   /* Radius scale */
-  --cc-radius-sm:        6px;
-  --cc-radius-md:        10px;
-  --cc-radius-lg:        14px;
-  --cc-radius-pill:      980px;
+  --cc-radius-sm:        10px;
+  --cc-radius-md:        var(--m-r-tile);
+  --cc-radius-lg:        var(--m-r-card);
+  --cc-radius-pill:      var(--m-r-pill);
 }
 
-/* shadcn/ui tokens */
+/* shadcn/ui tokens — aliased onto meshi for the same reason as --cc-* above.
+   NOTE: `--card` here is the shadcn COLOUR token, unrelated to meshi-b's
+   `.card` class. They coexist. */
 :root {
   --radius: 0.625rem;
-  --background: #0c0a09;
-  --foreground: #faf9f7;
-  --card: #1c1917;
-  --card-foreground: #faf9f7;
-  --popover: #292524;
-  --popover-foreground: #faf9f7;
-  --primary: #ff6b35;
-  --primary-foreground: #ffffff;
-  --secondary: #292524;
-  --secondary-foreground: #faf9f7;
-  --muted: #292524;
-  --muted-foreground: rgba(250, 249, 247, 0.68);
-  --accent: #34302c;
-  --accent-foreground: #faf9f7;
-  --destructive: #ff453a;
-  --border: rgba(250, 249, 247, 0.08);
-  --input: rgba(250, 249, 247, 0.08);
-  --ring: #ff6b35;
-  --chart-1: #ff6b35;
-  --chart-2: #ff9f1c;
-  --chart-3: #ffbf69;
-  --chart-4: #cbf3f0;
-  --chart-5: #2ec4b6;
-  --sidebar: #0c0a09;
-  --sidebar-foreground: #faf9f7;
-  --sidebar-primary: #ff6b35;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #292524;
-  --sidebar-accent-foreground: #faf9f7;
-  --sidebar-border: rgba(250, 249, 247, 0.08);
-  --sidebar-ring: #ff6b35;
+  --background: var(--m-cream);
+  --foreground: var(--m-ink);
+  --card: var(--m-card);
+  --card-foreground: var(--m-ink);
+  --popover: var(--m-card);
+  --popover-foreground: var(--m-ink);
+  --primary: var(--m-forest);
+  --primary-foreground: var(--m-on-deep);
+  --secondary: var(--m-cream-2);
+  --secondary-foreground: var(--m-ink);
+  --muted: var(--m-cream-2);
+  --muted-foreground: var(--m-ink-soft);
+  --accent: var(--m-tint-green);
+  --accent-foreground: var(--m-forest);
+  --destructive: var(--m-red);
+  --border: var(--m-ink-faint);
+  --input: var(--m-ink-faint);
+  --ring: var(--m-forest);
+  --chart-1: var(--m-forest);
+  --chart-2: var(--m-lime);
+  --chart-3: var(--m-orange);
+  --chart-4: var(--m-plum-2);
+  --chart-5: var(--m-burnt);
+  --sidebar: var(--m-card);
+  --sidebar-foreground: var(--m-ink);
+  --sidebar-primary: var(--m-forest);
+  --sidebar-primary-foreground: var(--m-on-deep);
+  --sidebar-accent: var(--m-tint-green);
+  --sidebar-accent-foreground: var(--m-forest);
+  --sidebar-border: var(--m-ink-faint);
+  --sidebar-ring: var(--m-forest);
 }
 
 @layer base {
@@ -149,10 +170,14 @@
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
   /* ── Glass Navigation — warm tint ── */
+  /* Was a hardcoded near-black translucent, with a light-mode override that
+     has been removed. color-mix keeps the frosted translucency while tracking
+     whichever surface the theme is on, so it is correct in both. */
   .glass-nav {
-    background: rgba(12, 10, 9, 0.8);
+    background: color-mix(in srgb, var(--m-card) 82%, transparent);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--m-ink-faint);
   }
 
   /* ── Cards ── */
@@ -283,14 +308,27 @@
   .text-link:hover { text-decoration: underline; }
   .text-price   { font-variant-numeric: tabular-nums; }
 
-  /* ── Section Backgrounds — fixed alternating bands ── */
+  /* ── Section Backgrounds — fixed alternating bands ──
+     Retoned for Phase 10c. These were literal #0c0a09 / #faf7f4, which left
+     the landing rendering near-black bands in the middle of a cream app.
+
+     The landing artboard (wLa) has NO dark band at all — it alternates cream
+     against soft tints and spends its contrast on forest CTAs. A deep band was
+     tried here first and was wrong for a specific reason worth recording:
+     forest is the ACCENT, so a forest band puts the primary button, the
+     highlighted headline word and the nav text all forest-on-forest. The
+     palette only has one strong green; a band cannot also be it.
+
+     So `.section-dark` is no longer dark — it is the quiet tint band. The name
+     is now a misnomer and both classes should disappear when
+     app/(web)/page.tsx is rebuilt to wLa. */
   .section-dark {
-    background: #0c0a09;
-    color: #faf9f7;
+    background: var(--m-cream-2);
+    color: var(--m-ink);
   }
   .section-light {
-    background: #faf7f4;
-    color: #1c1917;
+    background: var(--m-cream);
+    color: var(--m-ink);
   }
 
   /* Inside fixed bands, headlines follow the band, not the theme */
@@ -341,96 +379,31 @@
 /* ─────────────────────────────────────────────────────────────
    Light mode — warm off-white
    ───────────────────────────────────────────────────────────── */
-[data-theme="light"] {
-  --cc-bg:               #faf7f4;
-  --cc-surface:          #ffffff;
-  --cc-surface-2:        #f3efe9;
-  --cc-surface-3:        #e9e3db;
-  --cc-surface-alt:      #0c0a09;
-  --cc-border:           rgba(28, 25, 23, 0.07);
-  --cc-border-strong:    rgba(28, 25, 23, 0.13);
-  --cc-text-primary:     #1c1917;
-  --cc-text-secondary:   rgba(28, 25, 23, 0.62);
-  --cc-text-tertiary:    rgba(28, 25, 23, 0.4);
-  --cc-link:             #c2410c;
-  --cc-link-light:       #c2410c;
-  --cc-focus:            #ea580c;
-  --cc-shadow-sm:        rgba(28, 25, 23, 0.05) 0px 2px 12px;
-  --cc-shadow-md:        rgba(28, 25, 23, 0.09) 0px 8px 24px;
-  --cc-shadow-lg:        rgba(28, 25, 23, 0.13) 0px 16px 48px;
+/* The [data-theme="light"] token block that used to live here is GONE. It
+   existed to flip Midnight Kitchen from its dark :root to light. The --cc-*
+   and shadcn tokens are now aliases onto --m-*, and meshi-b.css already
+   defines those light-first with a [data-theme="dark"] override — so
+   re-declaring them here would override the very system they alias, and light
+   mode would silently stop tracking the design tokens. */
 
-  /* shadcn tokens */
-  --background:          #faf7f4;
-  --foreground:          #1c1917;
-  --card:                #ffffff;
-  --card-foreground:     #1c1917;
-  --popover:             #ffffff;
-  --popover-foreground:  #1c1917;
-  --secondary:           #f3efe9;
-  --secondary-foreground:#1c1917;
-  --muted:               #f3efe9;
-  --muted-foreground:    rgba(28, 25, 23, 0.62);
-  --accent:              #e9e3db;
-  --accent-foreground:   #1c1917;
-  --border:              rgba(28, 25, 23, 0.07);
-  --input:               rgba(28, 25, 23, 0.07);
+/* Every [data-theme="light"] RULE override that used to sit here is gone too.
+   They existed to repaint a dark-first system for light mode with literal
+   hexes. Light is now the base and the tokens are meshi's, so each of these
+   either duplicated the base rule or actively overrode it — the
+   `.section-dark` pair in particular pinned the landing hero to #1c1917 and
+   beat the retoned band above.
+
+   The one behaviour worth keeping is the scrollbar, which needs an ink-tinted
+   thumb on cream rather than the dark-mode default. */
+::-webkit-scrollbar-thumb {
+  background: var(--m-ink-faint);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--m-ink-soft);
 }
 
-[data-theme="light"] body {
-  background-color: var(--cc-bg);
-  color: var(--cc-text-primary);
-}
-
-[data-theme="light"] .glass-nav {
-  background: rgba(250, 247, 244, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-}
-
-[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: rgba(28, 25, 23, 0.14);
-}
-[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(28, 25, 23, 0.22);
-}
-
-[data-theme="light"] .btn-pill-secondary {
-  color: #1c1917;
-  border-color: rgba(28, 25, 23, 0.2);
-}
-[data-theme="light"] .btn-pill-secondary:hover {
-  background: rgba(28, 25, 23, 0.04);
-  border-color: rgba(28, 25, 23, 0.32);
-}
-/* Secondary pills on fixed dark bands stay light-on-dark in light mode */
-[data-theme="light"] .section-dark .btn-pill-secondary {
-  color: #faf9f7;
-  border-color: rgba(250, 249, 247, 0.32);
-}
-[data-theme="light"] .section-dark .btn-pill-secondary:hover {
-  background: rgba(250, 249, 247, 0.08);
-  border-color: rgba(250, 249, 247, 0.48);
-}
-
-[data-theme="light"] .chip {
-  background: #ffffff;
-  color: rgba(28, 25, 23, 0.62);
-  border-color: rgba(28, 25, 23, 0.1);
-}
-[data-theme="light"] .chip:hover {
-  background: #f3efe9;
-  color: #1c1917;
-}
-
-/* Alternating sections in light mode */
-[data-theme="light"] .section-dark {
-  background: #1c1917;
-  color: #faf9f7;
-}
-[data-theme="light"] .section-light {
-  background: #faf7f4;
-  color: #1c1917;
-}
+/* No band-specific pill override is needed any more: both bands are light, so
+   .btn-pill-secondary's own token-driven colours are correct on each. */
 
 @media (prefers-reduced-motion: reduce) {
   *,

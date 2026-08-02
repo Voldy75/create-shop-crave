@@ -273,7 +273,7 @@ export default function LandingPage() {
               Discover. <span className="text-[var(--cc-accent)]">Cook.</span> Order.
             </h1>
 
-            <p className="mx-auto max-w-[520px] text-[19px] leading-[1.4] text-[rgba(250,249,247,0.68)] md:mx-0">
+            <p className="mx-auto max-w-[520px] text-[19px] leading-[1.4] text-[var(--cc-text-secondary)] md:mx-0">
               Tell us what you&apos;re craving. We&apos;ll find a recipe with ingredient delivery, or the best nearby restaurant with a ride booked &mdash; all from one conversation.
             </p>
 
@@ -396,13 +396,13 @@ export default function LandingPage() {
               </div>
               <div className="flex justify-start">
                 <div className="max-w-[90%] rounded-[4px_16px_16px_16px] bg-[rgba(28,25,23,0.92)] px-4 py-3 shadow-[var(--cc-shadow-md)] backdrop-blur">
-                  <p className="text-[13px] leading-snug text-[rgba(250,249,247,0.9)]">
+                  <p className="text-[13px] leading-snug text-[var(--cc-text-primary)]">
                     Recipe ready &mdash; 45 min, 520 cal. Or Punjab Grill is 1.2 km away.
                   </p>
                   <div className="mt-2 flex gap-1.5">
                     <span className="rounded-[var(--cc-radius-pill)] bg-[var(--cc-accent)] px-2.5 py-1 text-[10px] font-bold text-white">COOK IT</span>
-                    <span className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.3)] px-2.5 py-1 text-[10px] font-bold text-[rgba(250,249,247,0.9)]">ORDER IN</span>
-                    <span className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.3)] px-2.5 py-1 text-[10px] font-bold text-[rgba(250,249,247,0.9)]">GO OUT</span>
+                    <span className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.3)] px-2.5 py-1 text-[10px] font-bold text-[var(--cc-text-primary)]">ORDER IN</span>
+                    <span className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.3)] px-2.5 py-1 text-[10px] font-bold text-[var(--cc-text-primary)]">GO OUT</span>
                   </div>
                 </div>
               </div>
@@ -417,10 +417,10 @@ export default function LandingPage() {
           transition={{ duration: 0.5, delay: 0.6 }}
           className="mt-14 flex flex-col items-center gap-2"
         >
-          <p className="text-[12px] text-[rgba(250,249,247,0.4)] tracking-[-0.01em]">
+          <p className="text-[12px] text-[var(--cc-text-tertiary)] tracking-[-0.01em]">
             Powered by Gemini &middot; Blinkit &middot; Swiggy &middot; Zomato &middot; Uber &middot; Ola
           </p>
-          <ChevronDown className="w-4 h-4 animate-bounce text-[rgba(250,249,247,0.25)]" />
+          <ChevronDown className="w-4 h-4 animate-bounce text-[var(--cc-text-tertiary)]" />
         </motion.div>
 
         {/* Auth modal overlay */}
@@ -506,7 +506,7 @@ export default function LandingPage() {
                         <path d="M12 8V4H8"/><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
                       </svg>
                     </div>
-                    <div className="rounded-[4px_18px_18px_18px] bg-[#292524] px-4 py-3 text-[15px] leading-[1.47] tracking-[-0.022em] text-[rgba(250,249,247,0.9)]">
+                    <div className="rounded-[4px_18px_18px_18px] bg-[#292524] px-4 py-3 text-[15px] leading-[1.47] tracking-[-0.022em] text-[var(--cc-text-primary)]">
                       {msg.text}
                     </div>
                   </div>
@@ -519,8 +519,8 @@ export default function LandingPage() {
                       <div className="h-1.5 w-1.5 rounded-full bg-[var(--cc-accent)]" />
                       <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-[var(--cc-accent)]">Recipe</span>
                     </div>
-                    <p className="text-[17px] font-semibold tracking-[-0.022em] text-[#faf9f7]">{msg.name}</p>
-                    <p className="mt-1 text-[12px] text-[rgba(250,249,247,0.45)]">{msg.meta}</p>
+                    <p className="text-[17px] font-semibold tracking-[-0.022em] text-[var(--cc-text-primary)]">{msg.name}</p>
+                    <p className="mt-1 text-[12px] text-[var(--cc-text-tertiary)]">{msg.meta}</p>
                     <div className="mt-3 flex gap-2">
                       {msg.tags?.map((tag) => (
                         <span key={tag} className="rounded-[var(--cc-radius-pill)] bg-[rgba(52,199,89,0.15)] px-2 py-[3px] text-[11px] text-[#34c759]">
@@ -586,10 +586,10 @@ export default function LandingPage() {
               <div className="mb-4 text-[rgba(255,107,53,0.25)]" style={{ fontFamily: "var(--font-display-stack)", fontSize: "56px", fontWeight: 600, lineHeight: 1.07 }}>
                 {step.step}
               </div>
-              <h3 className="mb-2 text-[21px] font-semibold leading-[1.19] tracking-[-0.01em] text-[#faf9f7]">
+              <h3 className="mb-2 text-[21px] font-semibold leading-[1.19] tracking-[-0.01em] text-[var(--cc-text-primary)]">
                 {step.title}
               </h3>
-              <p className="text-[14px] leading-[1.57] tracking-[-0.016em] text-[rgba(250,249,247,0.68)]">
+              <p className="text-[14px] leading-[1.57] tracking-[-0.016em] text-[var(--cc-text-secondary)]">
                 {step.desc}
               </p>
             </div>
@@ -617,20 +617,20 @@ export default function LandingPage() {
       {/* ── Platform strip — Dark band ── */}
       <section className="section-dark px-6 py-14">
         <div className="mx-auto max-w-[980px] space-y-5 text-center">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[rgba(250,249,247,0.4)]">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--cc-text-tertiary)]">
             Integrated with your favourite platforms
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {PLATFORMS.map((name) => (
               <span
                 key={name}
-                className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.14)] px-5 py-2 text-[15px] font-semibold tracking-[-0.01em] text-[rgba(250,249,247,0.75)]"
+                className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.14)] px-5 py-2 text-[15px] font-semibold tracking-[-0.01em] text-[var(--cc-text-secondary)]"
               >
                 {name}
               </span>
             ))}
           </div>
-          <p className="mx-auto max-w-[480px] text-[14px] tracking-[-0.016em] text-[rgba(250,249,247,0.45)]">
+          <p className="mx-auto max-w-[480px] text-[14px] tracking-[-0.016em] text-[var(--cc-text-tertiary)]">
             We generate deep links directly into each platform &mdash; no API keys or accounts needed on our end. Just tap and go.
           </p>
         </div>
@@ -680,7 +680,7 @@ export default function LandingPage() {
             <br />
             <span className="text-[var(--cc-accent)]">starts here.</span>
           </h2>
-          <p className="text-[17px] leading-[1.47] tracking-[-0.022em] text-[rgba(250,249,247,0.68)]">
+          <p className="text-[17px] leading-[1.47] tracking-[-0.022em] text-[var(--cc-text-secondary)]">
             Free to try. No credit card required. Just sign in with Google and start exploring.
           </p>
           <button
@@ -692,7 +692,7 @@ export default function LandingPage() {
           </button>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 pt-4">
             {["2 free requests/day", "No credit card", "Works on mobile", "Save recipes & plan meals"].map((item) => (
-              <div key={item} className="flex items-center gap-1.5 text-[12px] text-[rgba(250,249,247,0.45)]">
+              <div key={item} className="flex items-center gap-1.5 text-[12px] text-[var(--cc-text-tertiary)]">
                 <Check className="w-3 h-3 text-[var(--cc-accent)]" />
                 {item}
               </div>
