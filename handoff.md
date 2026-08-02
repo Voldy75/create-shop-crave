@@ -73,7 +73,7 @@ project before the merge.
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
-| 10 meshi re-skin | in progress — 12 of 16 mobile screens rebuilt |
+| 10 meshi re-skin | mobile DONE (16/16 + `/m/log`); Flow 4 buy screens and the whole web tree remain |
 
 ## Blocked on you — nothing proceeds past these
 
@@ -157,23 +157,96 @@ The file is 190KB — fetch it with `DesignSync.get_file` (project
 `bdb767d1-b7ae-42ab-b6ce-30542fa2e99f`), write it to `/tmp`, and extract single
 artboards with a script rather than loading it all into context.
 
-### Screens rebuilt to artboards (12 of 16)
+### Screens rebuilt to artboards (16 of 16, plus one new route)
 
 | Flow | Screens |
 |---|---|
 | 1 Onboarding | welcome, location, diet, goal |
 | 2 Home & discovery | Home, Discover (`/m/search`), Restaurants |
 | 3 Chat & recipes | chat, recipe |
-| 6 Tracking | plan, plan/week, plan/diet-chart |
+| 6 Tracking | plan, plan/week, plan/diet-chart, **`/m/log` (new)** |
+| 7 Saved & account | saved, profile, inbox, paywall |
 
-### Still to rebuild (4)
+### Still to rebuild — Flow 4 only
 
-`paywall` (11 hardcoded dark colours — the largest remaining block), `saved`
-(2), `inbox` (2), `profile` (1), `buy` + `buy/platform` + `buy/confirmed`
-(1 each).
+`buy`, `buy/platform`, `buy/confirmed`. They are the last holders of hardcoded
+colour in `app/(mobile)`:
+
+```bash
+grep -rn '#[0-9a-fA-F]\{3,8\}\|rgba(' "app/(mobile)" | grep -v 'mobile\.css'
+```
+
+returns those three files plus `layout.tsx`'s `themeColor` — which is Next
+metadata, not CSS, and cannot take a variable. Add it to DESIGN.md's allowlist
+when the CI hex check lands.
 
 They render and are navigable — tokens, fonts and layout are correct — but
 carry white-on-dark treatments that read wrong on cream.
+
+### Decisions taken during Flow 7 — and three live bugs it surfaced
+
+**The paywall was making false claims.** All fixed, but understand why before
+editing it:
+
+- It **hardcoded `₹2,990` and `₹399`** while `plan_prices` says **₹749**. The
+  screen advertised prices that do not exist. Prices now come from
+  `fetchBillingOptions()` via `formatPrice`.
+- `plan_prices` holds **one row per provider** (`₹749` razorpay / `$9` stripe
+  for the same `pro` plan), so rendering every row showed two currencies side
+  by side, both flagged "Best deal". Only `readyProviders[0]`'s rows are
+  offers now.
+- **Razorpay does not auto-renew.** `app/api/subscribe/razorpay/verify` grants
+  exactly 31 days, one-time. The screen said "Cancel anytime · Auto-renews",
+  which was simply untrue. The renewal note is derived from `interval` —
+  `one_time` says so plainly.
+- `startCheckout` was passed the literal `"pro"` for both tiers, so the user's
+  plan choice never reached checkout.
+
+**Artboard elements deliberately not built, because the feature does not exist:**
+
+- Paywall's **"Start free week"** CTA and **"Rare mascots (yes, golden
+  pineapple)"** bullet. There is no trial (checkout charges immediately) and
+  mascot unlocks are still the open `.mascot-locked` question.
+- Saved's **"Collections"** chip — no data model.
+- Profile's **"recipes cooked"** and **"orders"** tiles — nothing tracks
+  "cooked" and there is no order history table. Replaced with saved count and
+  logging streak.
+- Profile's **per-row unread dot** — `notification_log` has a delivery
+  `status` but no read state, so a dot would be a fabricated unread count.
+- Camera capture's **"Barcode"** mode and the live **"Detected: … 92%"** chip
+  (see the `/m/log` note below).
+
+**`chip-solid` was a dead class.** The inbox's selected filter used it; it is
+defined nowhere, so the active filter looked identical to the others.
+meshi-b's class is `chip-active`. Worth grepping for other invented class
+names before trusting that a state "just doesn't show".
+
+**Profile keeps Saved / Location / Swiggy entry points** even though artboard
+1n has none — the tab bar has no Saved tab, so removing them orphans three
+working routes.
+
+### `/m/log` — camera meal logging (artboards 3e + 3f)
+
+Previously deferred as "needs real backend work". It does not: `/api/meals/analyze`
+is the same endpoint `components/planner/LogMealSheet.tsx` has been using on
+web. One route, two phases.
+
+- Web uses a real `getUserMedia` viewfinder; native uses the OS camera; both
+  fall back to a file picker. **The getUserMedia path has never been exercised**
+  — camera access is blocked in the preview browser — so it needs a real-device
+  check.
+- **Manual mode is not in the artboards but is required.** `/api/meals/analyze`
+  needs a session and is quota-metered, so without a no-AI path a signed-out
+  user, or one over quota, could not log a meal at all.
+- The Plan tab's old modal `LogSheet` was deleted rather than left as a second,
+  divergent logging UI.
+
+### The dark token pass DOES render
+
+Previously "defined but never rendered". `crave_theme=dark` in localStorage
+renders the whole mobile tree in dark; it looked correct on Saved and Profile
+at a glance. It has still had no deliberate review — treat it as unverified,
+not unbuilt.
 
 ### Designed screens with NO implementation (deferred by explicit decision)
 
@@ -372,10 +445,22 @@ ignore those two.
 
 ## Suggested next step
 
-Flows 3 and 6 are **done**. Next: **Flow 7 (saved / profile / paywall)** —
-paywall carries 11 hardcoded dark values, the largest remaining block, and it
-is also the screen with App Store exposure, so re-read the three rejection
-notes above before touching it. Then Flow 4 (buy).
+Flows 1, 2, 3, 6 and 7 are **done** — the mobile re-skin is complete except
+Flow 4. Next, in order:
+
+1. **Flow 4 (buy / buy-platform / buy-confirmed)** — the last three mobile
+   screens and the last hardcoded colour in `app/(mobile)`. Artboards are in
+   Flow 4 of the mockup (`grep -n 'dv-tname' /tmp/meshi-mobile.html` for line
+   offsets).
+2. **Phase 10c — the web tree.** Not started. `grep -rn -- '--cc-' app components`
+   still returns ~29 files, and `design/meshi-web.css` is vendored but *still
+   imported nowhere*. This is now the largest remaining block of Phase 10 by
+   far, and bigger than everything done so far on mobile.
+3. **Phase 10d/10e** — mascot motion, then the CI hex check and deleting
+   `--cc-*`.
+
+Worth doing before more UI: **a real-device pass on `/m/log`**, since the
+camera path cannot be verified in the preview browser.
 
 Method reminder: extract the flow's artboards from the mockup and build from
 the markup. The Flow 3 rebuild used
