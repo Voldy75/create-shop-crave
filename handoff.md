@@ -547,11 +547,13 @@ Next, in order:
    screen work, and it is still the largest block of Phase 10:
    - **the topbar and rail**, which cannot land until each page's own sticky
      header is removed — that is why they were held back;
-   - **the landing page** (`app/(web)/page.tsx`) — its BANDS now match wLa
-     (forest strips, cream hero) and its demo chat is converted, but the
-     hero LAYOUT is still the old one: wLa's hero is a two-column split with a
-     tint-green mascot panel, an integrations chip row and a Google button.
-     `.section-dark`/`.section-light` survive as band helpers;
+   - **the landing page** (`app/(web)/page.tsx`) — nav, hero, bands and demo
+     chat now match wLa. Still old below the fold: the stats strip, features
+     rows, how-it-works, testimonials and FAQ keep their original layouts
+     (they sit on correct bands, but wLa restructures several of them —
+     e.g. its stats are lime numerals over forest, its how-it-works is
+     numbered 01/02/03). `.section-dark`/`.section-light` survive as band
+     helpers;
    - **chat** (`w3a`), **recipe view** (`w3b`), **tracker/planner** (`w4b`),
      **cart** (`w4a`), **paywall/UpgradeDialog** (`w5a`), **sign-in** (`w1b`);
    - **`components/cc/*`**, still Midnight Kitchen primitives.
