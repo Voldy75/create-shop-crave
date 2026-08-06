@@ -1,9 +1,24 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * wLa runs a four-band rhythm rather than a light/dark alternation:
+ * cream → forest → cream → cream-2 → forest → cream → plum → cream → forest.
+ * `tone` names the band directly; the deep two share `.band-deep`, which
+ * re-scopes the text/accent tokens for a saturated ground.
+ */
+type Tone = "cream" | "cream2" | "forest" | "plum";
+
+const BAND: Record<Tone, string> = {
+  cream: "band-cream",
+  cream2: "band-cream2",
+  forest: "band-forest band-deep",
+  plum: "band-plum band-deep",
+};
+
 export interface SectionProps extends React.HTMLAttributes<HTMLElement> {
-  /** Fixed background band; sections alternate on the landing page */
-  tone?: "dark" | "light";
+  /** Fixed background band, named after the artboard's own sequence */
+  tone?: Tone;
   eyebrow?: string;
   headline?: React.ReactNode;
   subtitle?: React.ReactNode;
@@ -12,7 +27,7 @@ export interface SectionProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 export function Section({
-  tone = "dark",
+  tone = "cream",
   eyebrow,
   headline,
   subtitle,
@@ -23,14 +38,10 @@ export function Section({
 }: SectionProps) {
   return (
     <section
-      className={cn(
-        tone === "dark" ? "section-dark" : "section-light",
-        "px-6 py-20 md:py-28",
-        className
-      )}
+      className={cn(BAND[tone], "px-6 py-20 md:py-28", className)}
       {...props}
     >
-      <div className={cn("mx-auto", wide ? "max-w-[1200px]" : "max-w-[980px]")}>
+      <div className={cn("mx-auto", wide ? "max-w-[1200px]" : "max-w-[1060px]")}>
         {(eyebrow || headline || subtitle) && (
           <div className="text-center space-y-3 mb-12 md:mb-16">
             {eyebrow && (

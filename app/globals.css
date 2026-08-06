@@ -308,30 +308,20 @@
   .text-link:hover { text-decoration: underline; }
   .text-price   { font-variant-numeric: tabular-nums; }
 
-  /* ── Section Backgrounds — fixed alternating bands ──
-     These were literal #0c0a09 / #faf7f4. The landing artboard (wLa) keeps the
-     same alternation but in the new palette: deep FOREST bands against cream.
+  /* ── Section bands ──
+     wLa does not alternate two tones; it runs a FOUR-band rhythm:
+       cream → forest → cream → cream-2 → forest → cream → plum → cream →
+       forest → cream-2
+     A two-value dark/light switch cannot express that, which is why the old
+     `.section-dark`/`.section-light` pair is replaced by explicit bands.
 
-     A correction worth recording, because I got it wrong once. Forest bands
-     were first tried and abandoned after the hero came out
-     forest-on-forest — the primary CTA, the accent headline word and the nav
-     all vanished into the background. The mistake was not the forest band, it
-     was WHICH section got it: in wLa the hero is CREAM, and the forest bands
-     are the stats strip, "how it works", the integrations strip and the final
-     CTA — sections whose contents are designed for a deep ground (lime
-     numerals, on-deep text, secondary buttons).
-
-     So: forest bands, and the hero is `.section-light`. Anything placed in a
-     `.section-dark` must be legible on forest — which specifically means not
-     the forest accent itself. */
-  .section-dark {
-    background: var(--m-forest);
-    color: var(--m-on-deep);
-  }
-  .section-light {
-    background: var(--m-cream);
-    color: var(--m-ink);
-  }
+     `.band-deep` carries everything the two dark bands share. Anything placed
+     on one must be legible on a saturated ground — which specifically means
+     not the forest accent itself. */
+  .band-cream  { background: var(--m-cream);   color: var(--m-ink); }
+  .band-cream2 { background: var(--m-cream-2); color: var(--m-ink); }
+  .band-forest { background: var(--m-forest);  color: var(--m-on-deep); }
+  .band-plum   { background: var(--m-plum);    color: var(--m-on-deep); }
   /* Inside a forest band the whole text scale has to flip. Rather than chase
      each rule, RE-SCOPE THE TOKENS on the band — the same aliasing trick as
      the palette move, applied locally. Everything referencing --cc-text-* or
@@ -341,7 +331,7 @@
      Accents become LIME, not forest: forest is the band, so the accent cannot
      also be it. wLa does exactly this — its on-band numerals and eyebrows are
      lime. */
-  .section-dark {
+  .band-deep {
     --cc-text-primary: var(--m-on-deep);
     --cc-text-secondary: color-mix(in srgb, var(--m-on-deep) 82%, transparent);
     --cc-text-tertiary: color-mix(in srgb, var(--m-on-deep) 62%, transparent);
@@ -355,9 +345,9 @@
   /* …but a CARD on the band is still a cream surface, so inside one the scale
      flips back. Without this, every card on a forest band renders
      cream-on-cream. */
-  .section-dark .cc-card,
-  .section-dark .cc-card-elevated,
-  .section-dark .card {
+  .band-deep .cc-card,
+  .band-deep .cc-card-elevated,
+  .band-deep .card {
     --cc-text-primary: var(--m-ink);
     --cc-text-secondary: var(--m-ink-soft);
     --cc-text-tertiary: var(--m-ink-soft);
@@ -366,23 +356,26 @@
     --cc-border: var(--m-ink-faint);
     color: var(--m-ink);
   }
-  .section-dark .text-body,
-  .section-dark .text-title {
+  .band-deep .text-body,
+  .band-deep .text-title {
     color: inherit;
   }
   /* The accent on a forest band is lime, and cream text on lime is only ~1.9:1.
      meshi's own `.pill-lime` pairs lime with deep forest text — match it. */
-  .section-dark .btn-pill-primary {
+  .band-deep .btn-pill-primary {
     color: var(--m-forest-2);
   }
 
   /* Inside fixed bands, headlines follow the band, not the theme */
-  .section-dark .headline-hero,
-  .section-dark .headline-section,
-  .section-dark .headline-tile,
-  .section-light .headline-hero,
-  .section-light .headline-section,
-  .section-light .headline-tile {
+  .band-cream .headline-hero,
+  .band-cream .headline-section,
+  .band-cream .headline-tile,
+  .band-cream2 .headline-hero,
+  .band-cream2 .headline-section,
+  .band-cream2 .headline-tile,
+  .band-deep .headline-hero,
+  .band-deep .headline-section,
+  .band-deep .headline-tile {
     color: inherit;
   }
 
@@ -459,6 +452,33 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ── meshi type classes on a deep band — UNLAYERED, deliberately ──
+   meshi-b.css sets an explicit colour on .t-micro/.t-cap/.t-body/.t-h1/.t-h2
+   and is unlayered, so it beats any Tailwind colour class or @layer rule on
+   those elements no matter the specificity. On a forest or plum band that
+   means ink-on-plum — the integrations eyebrow measured 2.14:1 with a
+   perfectly good `text-[var(--cc-text-secondary)]` on it that never applied.
+   These have to sit outside a layer to win. */
+.band-deep .t-micro,
+.band-deep .t-cap {
+  color: var(--cc-text-secondary);
+}
+.band-deep .t-body,
+.band-deep .t-h1,
+.band-deep .t-h2 {
+  color: var(--m-on-deep);
+}
+/* …except inside a card, which is still a cream surface. */
+.band-deep .card .t-micro,
+.band-deep .card .t-cap {
+  color: var(--m-ink-soft);
+}
+.band-deep .card .t-body,
+.band-deep .card .t-h1,
+.band-deep .card .t-h2 {
+  color: var(--m-ink);
 }
 
 /* ── Web app shell (Phase 10c) — UNLAYERED, deliberately ──
