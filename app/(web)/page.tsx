@@ -10,6 +10,7 @@ import { MapPin, Loader2, AlertCircle, ArrowRight, Check, ChevronDown, Plus, Min
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Section } from "@/components/cc/section";
 import { Chip } from "@/components/cc/chip";
+import { BoBowl } from "@/components/mascots";
 
 const DIETARY_OPTIONS = [
   "Vegetarian",
@@ -256,7 +257,11 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero — product-forward, appetite-first ── */}
-      <section className="relative overflow-hidden section-dark px-6 pt-14 pb-20 md:pt-20 md:pb-28">
+      {/* Cream, not a deep band — the hero holds the accent CTA and the accent
+          headline word, and forest-on-forest makes both disappear. This
+          matches artboard wLa, where the hero is cream and the forest bands
+          are the strips further down. */}
+      <section className="relative overflow-hidden section-light px-6 pt-14 pb-20 md:pt-20 md:pb-28">
         <div className="mx-auto grid max-w-[1100px] items-center gap-12 md:grid-cols-2">
           {/* Copy */}
           <motion.div
@@ -493,7 +498,9 @@ export default function LandingPage() {
             >
               {msg.role === "user" && (
                 <div className="flex justify-end">
-                  <div className="max-w-[85%] rounded-[18px_18px_4px_18px] bg-[var(--cc-accent)] px-4 py-3 text-[15px] leading-[1.47] tracking-[-0.022em] text-white">
+                  {/* Deeper forest, not the accent: this sits ON a forest
+                      band, so --cc-accent would be forest-on-forest. */}
+                  <div className="max-w-[85%] rounded-[18px_18px_4px_18px] bg-[var(--m-forest-2)] px-4 py-3 text-[15px] leading-[1.47] tracking-[-0.022em] text-[var(--m-on-deep)]">
                     {msg.text}
                   </div>
                 </div>
@@ -501,12 +508,13 @@ export default function LandingPage() {
               {msg.role === "ai" && (
                 <div className="flex justify-start">
                   <div className="flex max-w-[85%] gap-3">
-                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--cc-accent-dim)]">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 8V4H8"/><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
-                      </svg>
+                    {/* Bo, not a generic robot glyph — and the stroke was the
+                        retired #ff6b35 hardcoded into the SVG, where no token
+                        could reach it. */}
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--m-card)]">
+                      <BoBowl width={16} height={16} />
                     </div>
-                    <div className="rounded-[4px_18px_18px_18px] bg-[#292524] px-4 py-3 text-[15px] leading-[1.47] tracking-[-0.022em] text-[var(--cc-text-primary)]">
+                    <div className="rounded-[4px_18px_18px_18px] bg-[var(--m-card)] px-4 py-3 text-[15px] leading-[1.47] tracking-[-0.022em] text-[var(--m-ink)]">
                       {msg.text}
                     </div>
                   </div>
@@ -514,16 +522,16 @@ export default function LandingPage() {
               )}
               {msg.role === "recipe" && (
                 <div className="flex justify-start">
-                  <div className="ml-9 w-full max-w-[85%] rounded-xl border border-[rgba(250,249,247,0.08)] bg-[#292524] p-4">
+                  <div className="ml-9 w-full max-w-[85%] rounded-xl border border-[var(--m-ink-faint)] bg-[var(--m-card)] p-4">
                     <div className="mb-2 flex items-center gap-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-[var(--cc-accent)]" />
-                      <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-[var(--cc-accent)]">Recipe</span>
+                      <div className="h-1.5 w-1.5 rounded-full bg-[var(--m-forest)]" />
+                      <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-[var(--m-forest)]">Recipe</span>
                     </div>
-                    <p className="text-[17px] font-semibold tracking-[-0.022em] text-[var(--cc-text-primary)]">{msg.name}</p>
-                    <p className="mt-1 text-[12px] text-[var(--cc-text-tertiary)]">{msg.meta}</p>
+                    <p className="text-[17px] font-semibold tracking-[-0.022em] text-[var(--m-ink)]">{msg.name}</p>
+                    <p className="mt-1 text-[12px] text-[var(--m-ink-soft)]">{msg.meta}</p>
                     <div className="mt-3 flex gap-2">
                       {msg.tags?.map((tag) => (
-                        <span key={tag} className="rounded-[var(--cc-radius-pill)] bg-[rgba(52,199,89,0.15)] px-2 py-[3px] text-[11px] text-[#34c759]">
+                        <span key={tag} className="rounded-[var(--cc-radius-pill)] bg-[var(--m-tint-green)] px-2 py-[3px] text-[11px] text-[var(--m-forest)]">
                           {tag}
                         </span>
                       ))}

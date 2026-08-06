@@ -195,7 +195,7 @@
   /* ── Apple Pill CTA — Primary (filled orange) ── */
   .btn-pill-primary {
     background: var(--cc-accent);
-    color: #ffffff;
+    color: var(--m-on-deep);
     border-radius: var(--cc-radius-pill);
     padding: 12px 24px;
     font-weight: 400;
@@ -309,26 +309,71 @@
   .text-price   { font-variant-numeric: tabular-nums; }
 
   /* ── Section Backgrounds — fixed alternating bands ──
-     Retoned for Phase 10c. These were literal #0c0a09 / #faf7f4, which left
-     the landing rendering near-black bands in the middle of a cream app.
+     These were literal #0c0a09 / #faf7f4. The landing artboard (wLa) keeps the
+     same alternation but in the new palette: deep FOREST bands against cream.
 
-     The landing artboard (wLa) has NO dark band at all — it alternates cream
-     against soft tints and spends its contrast on forest CTAs. A deep band was
-     tried here first and was wrong for a specific reason worth recording:
-     forest is the ACCENT, so a forest band puts the primary button, the
-     highlighted headline word and the nav text all forest-on-forest. The
-     palette only has one strong green; a band cannot also be it.
+     A correction worth recording, because I got it wrong once. Forest bands
+     were first tried and abandoned after the hero came out
+     forest-on-forest — the primary CTA, the accent headline word and the nav
+     all vanished into the background. The mistake was not the forest band, it
+     was WHICH section got it: in wLa the hero is CREAM, and the forest bands
+     are the stats strip, "how it works", the integrations strip and the final
+     CTA — sections whose contents are designed for a deep ground (lime
+     numerals, on-deep text, secondary buttons).
 
-     So `.section-dark` is no longer dark — it is the quiet tint band. The name
-     is now a misnomer and both classes should disappear when
-     app/(web)/page.tsx is rebuilt to wLa. */
+     So: forest bands, and the hero is `.section-light`. Anything placed in a
+     `.section-dark` must be legible on forest — which specifically means not
+     the forest accent itself. */
   .section-dark {
-    background: var(--m-cream-2);
-    color: var(--m-ink);
+    background: var(--m-forest);
+    color: var(--m-on-deep);
   }
   .section-light {
     background: var(--m-cream);
     color: var(--m-ink);
+  }
+  /* Inside a forest band the whole text scale has to flip. Rather than chase
+     each rule, RE-SCOPE THE TOKENS on the band — the same aliasing trick as
+     the palette move, applied locally. Everything referencing --cc-text-* or
+     --cc-accent, whether a utility class or a Tailwind arbitrary value,
+     follows automatically.
+
+     Accents become LIME, not forest: forest is the band, so the accent cannot
+     also be it. wLa does exactly this — its on-band numerals and eyebrows are
+     lime. */
+  .section-dark {
+    --cc-text-primary: var(--m-on-deep);
+    --cc-text-secondary: color-mix(in srgb, var(--m-on-deep) 82%, transparent);
+    --cc-text-tertiary: color-mix(in srgb, var(--m-on-deep) 62%, transparent);
+    --cc-accent: var(--m-lime);
+    --cc-accent-hover: var(--m-lime);
+    --cc-accent-dim: color-mix(in srgb, var(--m-lime) 22%, transparent);
+    --cc-link: var(--m-lime);
+    --cc-border: color-mix(in srgb, var(--m-on-deep) 18%, transparent);
+    --cc-border-strong: color-mix(in srgb, var(--m-on-deep) 28%, transparent);
+  }
+  /* …but a CARD on the band is still a cream surface, so inside one the scale
+     flips back. Without this, every card on a forest band renders
+     cream-on-cream. */
+  .section-dark .cc-card,
+  .section-dark .cc-card-elevated,
+  .section-dark .card {
+    --cc-text-primary: var(--m-ink);
+    --cc-text-secondary: var(--m-ink-soft);
+    --cc-text-tertiary: var(--m-ink-soft);
+    --cc-accent: var(--m-forest);
+    --cc-link: var(--m-forest);
+    --cc-border: var(--m-ink-faint);
+    color: var(--m-ink);
+  }
+  .section-dark .text-body,
+  .section-dark .text-title {
+    color: inherit;
+  }
+  /* The accent on a forest band is lime, and cream text on lime is only ~1.9:1.
+     meshi's own `.pill-lime` pairs lime with deep forest text — match it. */
+  .section-dark .btn-pill-primary {
+    color: var(--m-forest-2);
   }
 
   /* Inside fixed bands, headlines follow the band, not the theme */
