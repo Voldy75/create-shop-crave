@@ -6,11 +6,23 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useUser } from "@/app/context/UserContext";
 import { AuthButton } from "@/components/AuthButton";
-import { MapPin, Loader2, AlertCircle, ArrowRight, Check, ChevronDown, Plus, Minus, ShoppingCart, Car, Star, Clock } from "lucide-react";
+import { MapPin, Loader2, AlertCircle, ArrowRight, Check, ChevronDown, Plus, Minus, ShoppingCart, Car, Star, Clock, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Section } from "@/components/cc/section";
 import { Chip } from "@/components/cc/chip";
-import { BoBowl } from "@/components/mascots";
+import { BoBowl, Carrot, Broccoli, Tomato, Mushroom } from "@/components/mascots";
+
+/**
+ * Partner brands in the hero's "plugs into" row. These hexes are the
+ * partners' own and are on DESIGN.md's allowlist — they are identity, not
+ * theme, so they do not follow the palette.
+ */
+const INTEGRATIONS = [
+  { name: "Swiggy", letter: "S", brand: "#FC8019", ink: "#ffffff" },
+  { name: "Zomato", letter: "Z", brand: "#E23744", ink: "#ffffff" },
+  { name: "Instacart", letter: "I", brand: "#0AAD0A", ink: "#ffffff" },
+  { name: "Uber", letter: "U", brand: "#000000", ink: "#ffffff" },
+] as const;
 
 const DIETARY_OPTIONS = [
   "Vegetarian",
@@ -237,19 +249,20 @@ export default function LandingPage() {
         className="glass-nav px-6 flex items-center justify-between sticky top-0 z-50"
         style={{ height: "48px" }}
       >
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md flex items-center justify-center font-semibold text-xs bg-[var(--cc-accent)] text-white">
-            C
-          </div>
-          <span className="text-[14px] text-[var(--cc-text-primary)] tracking-[-0.01em]">
-            Crave &amp; Create
+        {/* Bo and the meshi wordmark, matching wLa's nav and the sidebar the
+            signed-in app already uses. The old "C" tile was the retired
+            orange. */}
+        <div className="flex items-center gap-2.5">
+          <BoBowl width={28} height={28} />
+          <span className="text-[19px] font-extrabold tracking-[-0.6px] text-[var(--cc-text-primary)]">
+            meshi
           </span>
         </div>
         <div className="flex items-center gap-3">
           <ThemeToggle />
           <button
             onClick={() => setShowAuthCard(true)}
-            className="text-[12px] text-[var(--cc-text-primary)] bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity"
+            className="text-[13px] font-bold text-[var(--cc-text-primary)] bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity"
           >
             Sign in
           </button>
@@ -270,16 +283,20 @@ export default function LandingPage() {
             transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
             className="space-y-6 text-center md:text-left"
           >
-            <div className="inline-flex items-center gap-2 rounded-[var(--cc-radius-pill)] border border-[rgba(255,107,53,0.2)] bg-[rgba(255,107,53,0.12)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--cc-accent)]">
-              AI-Powered Food Companion
-            </div>
+            {/* The old pill was an orange-on-orange badge; wLa's is a peach
+                chip with a spark. */}
+            <span className="chip inline-flex items-center gap-2 bg-[var(--m-tint-peach)] text-[var(--m-burnt)] shadow-none">
+              <Sparkles className="h-[15px] w-[15px]" />
+              AI food buddy · now on desktop
+            </span>
 
             <h1 className="headline-hero">
-              Discover. <span className="text-[var(--cc-accent)]">Cook.</span> Order.
+              Cook what you crave.{" "}
+              <span className="text-[var(--cc-accent)]">Bo does the rest.</span>
             </h1>
 
-            <p className="mx-auto max-w-[520px] text-[19px] leading-[1.4] text-[var(--cc-text-secondary)] md:mx-0">
-              Tell us what you&apos;re craving. We&apos;ll find a recipe with ingredient delivery, or the best nearby restaurant with a ride booked &mdash; all from one conversation.
+            <p className="mx-auto max-w-[460px] text-[17px] leading-[1.45] text-[var(--cc-text-secondary)] md:mx-0">
+              Tell Bo what you&apos;re hungry for. Get a recipe with a one-tap grocery cart, or the best table nearby with a ride booked &mdash; all from one warm little kitchen on the web.
             </p>
 
             {!user && (
@@ -301,9 +318,32 @@ export default function LandingPage() {
                   className="btn-pill-secondary"
                   style={{ padding: "13px 28px", fontSize: "17px" }}
                 >
-                  See how it works
+                  Take the tour
                 </button>
               </motion.div>
+            )}
+
+            {/* "Plugs into what you already use" — the artboard's integrations
+                row. Brand colours are the partners' own and are on DESIGN.md's
+                allowlist. */}
+            {!user && (
+              <div className="flex flex-col items-center gap-2.5 pt-2 md:items-start">
+                <span className="t-micro">Plugs into what you already use</span>
+                <div className="flex flex-wrap justify-center gap-2 md:justify-start">
+                  {INTEGRATIONS.map(({ name, letter, brand, ink }) => (
+                    <span key={name} className="chip gap-2">
+                      <span
+                        className="flex h-[22px] w-[22px] items-center justify-center rounded-[7px] text-[11px] font-extrabold"
+                        style={{ background: brand, color: ink }}
+                        aria-hidden="true"
+                      >
+                        {letter}
+                      </span>
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Signed-in user card */}
@@ -377,39 +417,24 @@ export default function LandingPage() {
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
-            className="relative mx-auto w-full max-w-[480px]"
+            className="relative mx-auto w-full max-w-[520px]"
             aria-hidden="true"
           >
-            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl shadow-[var(--cc-shadow-lg)]">
-              <Image
-                src="/images/hero-curry.webp"
-                alt=""
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, 480px"
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(12,10,9,0.85)] via-[rgba(12,10,9,0.15)] to-[rgba(12,10,9,0.25)]" />
-            </div>
+            {/* wLa replaces the food photo with a tint-green panel: Bo bobbing
+                at the centre, produce scattered around him, and one card
+                quoting what he'd actually say. The photo is gone deliberately —
+                the brand leads with the character now, not the plate. */}
+            <div className="relative flex h-[420px] items-center justify-center overflow-hidden rounded-[34px] bg-[var(--m-tint-green)] md:h-[480px]">
+              <BoBowl width={220} height={220} style={{ animation: "mm-bob 2.6s ease-in-out infinite" }} />
 
-            {/* Floating chat exchange */}
-            <div className="absolute inset-x-4 bottom-4 space-y-2.5 md:inset-x-6 md:bottom-6">
-              <div className="flex justify-end">
-                <div className="max-w-[85%] rounded-[16px_16px_4px_16px] bg-[var(--cc-accent)] px-4 py-2.5 text-[13px] leading-snug text-white shadow-[var(--cc-shadow-md)]">
-                  I&apos;m craving butter chicken tonight
-                </div>
-              </div>
-              <div className="flex justify-start">
-                <div className="max-w-[90%] rounded-[4px_16px_16px_16px] bg-[rgba(28,25,23,0.92)] px-4 py-3 shadow-[var(--cc-shadow-md)] backdrop-blur">
-                  <p className="text-[13px] leading-snug text-[var(--cc-text-primary)]">
-                    Recipe ready &mdash; 45 min, 520 cal. Or Punjab Grill is 1.2 km away.
-                  </p>
-                  <div className="mt-2 flex gap-1.5">
-                    <span className="rounded-[var(--cc-radius-pill)] bg-[var(--cc-accent)] px-2.5 py-1 text-[10px] font-bold text-white">COOK IT</span>
-                    <span className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.3)] px-2.5 py-1 text-[10px] font-bold text-[var(--cc-text-primary)]">ORDER IN</span>
-                    <span className="rounded-[var(--cc-radius-pill)] border border-[rgba(250,249,247,0.3)] px-2.5 py-1 text-[10px] font-bold text-[var(--cc-text-primary)]">GO OUT</span>
-                  </div>
-                </div>
+              <span className="absolute left-[9%] top-[10%] rotate-[-10deg]"><Carrot width={68} height={68} /></span>
+              <span className="absolute right-[11%] top-[12%] rotate-[9deg]"><Broccoli width={62} height={62} /></span>
+              <span className="absolute left-[6%] top-[39%] rotate-[7deg]"><Tomato width={52} height={52} /></span>
+              <span className="absolute right-[7%] top-[41%] rotate-[-8deg]"><Mushroom width={56} height={56} /></span>
+
+              <div className="card absolute bottom-6 left-1/2 flex w-[86%] max-w-[406px] -translate-x-1/2 items-center gap-3 p-4 shadow-[var(--m-shadow-lift)]">
+                <BoBowl width={36} height={36} style={{ flex: "none" }} />
+                <span className="t-body">&ldquo;You&rsquo;ve got 620 kcal left — want a 25-min green bowl?&rdquo;</span>
               </div>
             </div>
           </motion.div>
@@ -422,9 +447,9 @@ export default function LandingPage() {
           transition={{ duration: 0.5, delay: 0.6 }}
           className="mt-14 flex flex-col items-center gap-2"
         >
-          <p className="text-[12px] text-[var(--cc-text-tertiary)] tracking-[-0.01em]">
-            Powered by Gemini &middot; Blinkit &middot; Swiggy &middot; Zomato &middot; Uber &middot; Ola
-          </p>
+          {/* The "Powered by …" line used to live here. The hero's own
+              integrations row now says the same thing with the partners'
+              actual marks, so this was the same list twice in one viewport. */}
           <ChevronDown className="w-4 h-4 animate-bounce text-[var(--cc-text-tertiary)]" />
         </motion.div>
 
