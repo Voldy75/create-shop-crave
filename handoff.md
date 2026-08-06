@@ -308,20 +308,30 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
    the same file had compiled. Restarting the dev server fixed it. If a CSS
    change appears not to apply, check the served chunk
    (`curl` the `/_next/static/chunks/*.css`) before debugging the rule.
-3. **Forest cannot be both the accent and a section band.** `.section-dark`
-   was tried as deep forest and put the primary CTA, the highlighted headline
-   word and the nav text all forest-on-forest. The landing artboard has no
-   dark band at all — it alternates cream against soft tints. `.section-dark`
-   is therefore no longer dark, and the name is now a misnomer; both classes
-   should disappear when the landing is rebuilt.
-4. **Breakpoints must match BottomNav.** The sidebar hides at `767.98px`
+3. **Forest bands work; the hero is not one of them.** `.section-dark` IS
+   deep forest — wLa uses `--m-forest` full-bleed three times (stats strip,
+   how-it-works, final CTA) plus `--m-plum` once. An earlier note here claimed
+   the artboard had no dark band; that was wrong. What fails is putting a
+   forest band behind the HERO, which holds the accent CTA and the accent
+   headline word — both vanish. In wLa the hero is cream.
+   To make a band work, **re-scope the tokens on it** rather than chasing
+   rules: `.section-dark` redefines `--cc-text-*`/`--cc-accent` to their
+   on-deep equivalents, the accent becomes LIME (forest is the band and cannot
+   also be the accent), and cards on the band flip the scale back because a
+   card is still a cream surface.
+4. **Specificity: never flip band text with bare element selectors.**
+   `.section-dark p` (0,1,1) outranks a Tailwind colour class (0,1,0), so a
+   blanket `p, h1, h2, h3 { color: inherit }` turned every deliberately dark
+   paragraph inside a card on the band cream-on-cream. Scope such overrides to
+   utility classes.
+5. **Breakpoints must match BottomNav.** The sidebar hides at `767.98px`
    because `components/BottomNav.tsx` uses Tailwind's `md:hidden` (768px). It
    was 900px first, which left 768–900 with no navigation at all. Verified at
    600 / 780 / 1280 — exactly one navigation at each.
-5. **`app/global-not-found.tsx` needs `meshi-b.css` imported directly.** It
+6. **`app/global-not-found.tsx` needs `meshi-b.css` imported directly.** It
    renders outside both route groups and only had `globals.css`; with `--cc-*`
    reduced to aliases it rendered completely unstyled.
-6. **The landing had 16 near-white text literals baked into Tailwind arbitrary
+7. **The landing had 16 near-white text literals baked into Tailwind arbitrary
    values** (`text-[rgba(250,249,247,0.68)]`). The light-first flip made them
    unreadable on cream. They are mapped onto the `--cc-*` text scale now, but
    the same pattern may lurk in other screens — grep before assuming a screen
@@ -537,8 +547,11 @@ Next, in order:
    screen work, and it is still the largest block of Phase 10:
    - **the topbar and rail**, which cannot land until each page's own sticky
      header is removed — that is why they were held back;
-   - **the landing page** (`app/(web)/page.tsx`) against artboards `wLa`/`w1a`,
-     which also retires `.section-dark`/`.section-light`;
+   - **the landing page** (`app/(web)/page.tsx`) — its BANDS now match wLa
+     (forest strips, cream hero) and its demo chat is converted, but the
+     hero LAYOUT is still the old one: wLa's hero is a two-column split with a
+     tint-green mascot panel, an integrations chip row and a Google button.
+     `.section-dark`/`.section-light` survive as band helpers;
    - **chat** (`w3a`), **recipe view** (`w3b`), **tracker/planner** (`w4b`),
      **cart** (`w4a`), **paywall/UpgradeDialog** (`w5a`), **sign-in** (`w1b`);
    - **`components/cc/*`**, still Midnight Kitchen primitives.
