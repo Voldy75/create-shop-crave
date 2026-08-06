@@ -297,17 +297,28 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
 
 **Traps hit, in order — do not rediscover:**
 
-1. **Unlayered beats layered.** `design/meshi-web.css` is unlayered, so ANY
-   rule in `@layer utilities` loses to it regardless of specificity or source
-   order. `.web-shell > .side { display: none }` sat in a layer and silently
-   lost to meshi-web's `.side { display: flex }` — the sidebar just never hid.
-   The shell block at the bottom of `globals.css` is deliberately unlayered;
-   keep new overrides of the vendored shell out of a layer.
-2. **Turbopack served a stale `globals.css` for a whole editing session.** The
-   compiled chunk still had the OLD `.glass-nav` value while other edits from
-   the same file had compiled. Restarting the dev server fixed it. If a CSS
-   change appears not to apply, check the served chunk
-   (`curl` the `/_next/static/chunks/*.css`) before debugging the rule.
+1. **Unlayered beats layered.** BOTH vendored stylesheets are unlayered, so
+   ANY rule in `@layer utilities` loses to them regardless of specificity or
+   source order. This has now bitten twice:
+   - `.web-shell > .side { display: none }` lost to meshi-web's
+     `.side { display: flex }` — the sidebar never hid.
+   - `.band-deep .t-micro` lost to meshi-b's `.t-micro { color: ... }`, so an
+     eyebrow on the plum band rendered ink-on-plum at 2.14:1 while carrying a
+     perfectly good `text-[var(--cc-text-secondary)]` that never applied.
+   meshi-b sets an explicit colour on `.t-micro/.t-cap/.t-body/.t-h1/.t-h2`.
+   Any override of those, or of the shell, must sit OUTSIDE a layer — see the
+   unlayered block at the bottom of `globals.css`.
+2. **Turbopack serves a stale `globals.css` surprisingly often.** Twice now a
+   compiled chunk kept an OLD value while other edits from the same file had
+   compiled — once `.glass-nav`, once a whole new `.band-deep .t-micro` rule
+   that was simply absent from the bundle. Both times a dev-server restart
+   fixed it, and both times it looked exactly like a specificity bug. **Before
+   debugging any CSS rule that seems not to apply, confirm it is in the served
+   chunk:**
+
+   ```bash
+   curl -s http://localhost:3000/ | grep -oE '/_next/static/chunks/[^"]*\.css' | head -1
+   ```
 3. **Forest bands work; the hero is not one of them.** `.section-dark` IS
    deep forest — wLa uses `--m-forest` full-bleed three times (stats strip,
    how-it-works, final CTA) plus `--m-plum` once. An earlier note here claimed
@@ -336,6 +347,14 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
    unreadable on cream. They are mapped onto the `--cc-*` text scale now, but
    the same pattern may lurk in other screens — grep before assuming a screen
    is theme-clean.
+
+**Fabricated marketing content on the landing — decide before launch.** The
+three testimonials (`TESTIMONIALS` in `app/(web)/page.tsx`) are invented
+placeholder quotes with invented names, and they pre-date this work. The wLa
+conversion added carrot ratings and avatar discs, which makes them look more
+credible than they are. Replace with real quotes or delete the section before
+the landing is public. The STATS figures are marketing claims too and were not
+verified against anything.
 
 **`components/BottomNav.tsx` stays web-only, not deleted.** It is the
 navigation below `md`, where the sidebar hides. The plan's "BottomNav becomes
@@ -547,13 +566,10 @@ Next, in order:
    screen work, and it is still the largest block of Phase 10:
    - **the topbar and rail**, which cannot land until each page's own sticky
      header is removed — that is why they were held back;
-   - **the landing page** (`app/(web)/page.tsx`) — nav, hero, bands and demo
-     chat now match wLa. Still old below the fold: the stats strip, features
-     rows, how-it-works, testimonials and FAQ keep their original layouts
-     (they sit on correct bands, but wLa restructures several of them —
-     e.g. its stats are lime numerals over forest, its how-it-works is
-     numbered 01/02/03). `.section-dark`/`.section-light` survive as band
-     helpers;
+   - ~~the landing page~~ — **DONE.** All 10 bands match wLa and the sequence
+     is asserted in the browser. `.section-dark`/`.section-light` are gone,
+     replaced by `Section tone="cream|cream2|forest|plum"`. See the 10c notes
+     below for the traps.
    - **chat** (`w3a`), **recipe view** (`w3b`), **tracker/planner** (`w4b`),
      **cart** (`w4a`), **paywall/UpgradeDialog** (`w5a`), **sign-in** (`w1b`);
    - **`components/cc/*`**, still Midnight Kitchen primitives.
