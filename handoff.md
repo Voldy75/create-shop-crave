@@ -700,11 +700,43 @@ Next, in order:
      input-bar fix. **Message-sending itself was not exercised** — needs a
      real account, and touches unchanged `/api/chat` logic this pass didn't
      modify.
-   - **recipe view** (`w3b`), **tracker/planner** (`w4b`), **cart** (`w4a`),
-     **paywall/UpgradeDialog** (`w5a`) — not started. `components/RecipeView.tsx`
-     and `components/RestaurantView.tsx`, both rendered inline in chat, still
-     carry Midnight Kitchen hex (12 and 21 hardcoded values respectively) —
-     out of scope for the chat-page pass above; belongs with `w3b`.
+   - ~~recipe view~~ (`w3b`) — **DONE.** `components/RecipeView.tsx` and
+     `components/RestaurantView.tsx`, both rendered inline in chat, are off
+     Midnight Kitchen hex (were 12 and 21 hardcoded values respectively). The
+     recipe card follows w3b: a `duo-forest` photo hero with time/kcal/
+     difficulty badges and the title overlaid, a summary column with three
+     pill actions (forest "I ate this" logs to the tracker, lime "Order ·
+     ₹total" opens the Instamart agent flow, plum "Add to plan" — real
+     equivalents of the artboard's Cook/Buy/Dine-out, since web has no `/m/buy`
+     flow or dine-in booking to point at), then an ingredients card of mascot
+     tiles (reusing `lib/ingredient-mascot.ts` from the mobile build) that
+     double as per-item store links — collapsing what used to be two separate
+     ingredient lists (a summary grid and a duplicate priced list) into one.
+     `RestaurantView.tsx` has no dedicated web artboard, so it kept its
+     existing map/carousel/sort structure and was tokenized in place: card
+     shadows and the numbered-pin badge now use `--m-*`/`--m-shadow-lift`
+     instead of orange-tinted rgba, the star rating uses `--m-orange` ("carrot
+     / ratings" per DESIGN.md), filter chips use `var(--m-on-deep)` for active
+     text, and the Google Map's dark Apple-style theme + marker pin (which
+     was still drawing in the retired `#ff6b35`) is now a literal-hex-but-
+     meshi-toned cream style with forest-green pins — literal hex stays
+     correct here since it's Maps style JSON / an SVG data-URI, both allowlisted
+     in DESIGN.md, but the retired orange had no excuse. Partner brand colours
+     (Blinkit/Swiggy/Instacart/Zomato swatches, the Google-blue "you are here"
+     dot) are untouched — allowlisted. Verified: `tsc --noEmit`, `next build`
+     (69 routes) and `eslint` clean (2 pre-existing warnings, no new ones);
+     rendered both components with sample data on a temporary,
+     never-committed `/scratch-preview` route inside `(app)` (avoids the
+     auth-redirect entirely rather than bypassing it) at 1280px — confirmed
+     token colours resolve via `getComputedStyle` (forest/lime/plum pills,
+     forest badges), all 6 ingredient tiles render mascot SVGs with correct
+     per-store deep links, the store dropdown opens and switches brand
+     colours, and all 3 sample restaurant cards render with working sort
+     chips. **Not exercised**: the map itself (Maps key is
+     referrer-restricted off localhost — pre-existing blocker 5, not this
+     change) and the mobile carousel/IntersectionObserver path.
+   - **tracker/planner** (`w4b`), **cart** (`w4a`), **paywall/UpgradeDialog**
+     (`w5a`) — not started.
    - **`components/cc/*`**, still Midnight Kitchen primitives.
    Every web page is currently phone-width inside a 1280px shell — the pages
    have no desktop layout yet. That is the single most visible gap.

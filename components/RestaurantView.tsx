@@ -192,7 +192,7 @@ function RestaurantCard({
                 borderRadius: "14px",
                 overflow: "hidden",
                 transition: "border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease",
-                boxShadow: selected ? "0 8px 24px rgba(255,107,53,0.18)" : "none",
+                boxShadow: selected ? "var(--m-shadow-lift)" : "none",
                 cursor: "pointer",
                 scrollMarginTop: "12px",
             }}
@@ -219,10 +219,10 @@ function RestaurantCard({
                         height: "28px",
                         borderRadius: "50%",
                         background: "var(--cc-accent)",
-                        color: "#ffffff",
+                        color: "var(--m-on-deep)",
                         fontSize: "13px",
                         fontWeight: 700,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
+                        boxShadow: "var(--m-shadow-lift)",
                     }}
                     aria-label={`Marker ${displayNumber}`}
                 >
@@ -233,15 +233,15 @@ function RestaurantCard({
                 <div
                     className="absolute top-3 right-3 flex items-center gap-1"
                     style={{
-                        background: "rgba(0,0,0,0.85)",
+                        background: "var(--m-ink)",
                         padding: "4px 9px",
                         borderRadius: "980px",
                         fontSize: "12px",
                         fontWeight: 700,
-                        color: "#ffffff",
+                        color: "var(--m-on-deep)",
                     }}
                 >
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                    <Star className="w-3 h-3" style={{ color: "var(--m-orange)" }} fill="var(--m-orange)" />
                     {restaurant.rating}
                 </div>
             </div>
@@ -369,28 +369,32 @@ function RestaurantCard({
     );
 }
 
-// Apple-dark map style to match the app's aesthetic.
-const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
-    { elementType: "geometry", stylers: [{ color: "#1d1d1f" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#8a8a8f" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#0b0b0d" }] },
-    { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a2a2d" }] },
-    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1a1a1c" }] },
-    { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b2535" }] },
+// meshi map style — warm cream base, matching the app's light-first aesthetic.
+// Literal hex is required (Google Maps style JSON has no CSS custom-property
+// support); values are copied from design/meshi-b.css's --m-* tokens.
+const MESHI_MAP_STYLE: google.maps.MapTypeStyle[] = [
+    { elementType: "geometry", stylers: [{ color: "#FBF6E3" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#8A6B47" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#FBF6E3" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#FFFDF4" }] },
+    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#F4ECD2" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#EAF3CC" }] },
     { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
     { featureType: "transit", stylers: [{ visibility: "off" }] },
-    { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#2a2a2d" }] },
+    { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#F4ECD2" }] },
 ];
 
-// Build a data-URI SVG for a numbered pin marker.
+// Build a data-URI SVG for a numbered pin marker. Literal hex is required —
+// this is a raster-style icon string, not CSS — but the colours themselves
+// are the --m-forest / --m-ink / --m-on-deep values, not the retired orange.
 function numberedMarkerIcon(label: number, active: boolean): google.maps.Icon {
-    const fill = active ? "#ff6b35" : "#1d1d1f";
-    const stroke = active ? "#ffffff" : "#ff6b35";
-    const text = active ? "#ffffff" : "#ff6b35";
+    const fill = active ? "#1E5A34" : "#4B2E12";
+    const stroke = active ? "#FDF8E7" : "#1E5A34";
+    const text = active ? "#FDF8E7" : "#1E5A34";
     const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48">
   <path d="M18 0C8.06 0 0 8.06 0 18c0 12.75 16.31 28.56 17 29.21.28.26.72.26 1 0C18.69 46.56 36 30.75 36 18 36 8.06 27.94 0 18 0z" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
-  <circle cx="18" cy="18" r="11" fill="${active ? "#ffffff" : "transparent"}" stroke="${active ? "#ff6b35" : "transparent"}" stroke-width="0"/>
+  <circle cx="18" cy="18" r="11" fill="${active ? "#FDF8E7" : "transparent"}" stroke="${active ? "#1E5A34" : "transparent"}" stroke-width="0"/>
   <text x="18" y="23" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="${text}">${label}</text>
 </svg>`.trim();
     return {
@@ -497,11 +501,11 @@ function InteractiveRestaurantMap({
                 mapRef.current = map;
             }}
             options={{
-                styles: DARK_MAP_STYLE,
+                styles: MESHI_MAP_STYLE,
                 disableDefaultUI: true,
                 zoomControl: true,
                 clickableIcons: false,
-                backgroundColor: "#1d1d1f",
+                backgroundColor: "#FBF6E3",
                 gestureHandling: "greedy",
             }}
         >
@@ -513,7 +517,7 @@ function InteractiveRestaurantMap({
                     scale: 8,
                     fillColor: "#4285F4",
                     fillOpacity: 1,
-                    strokeColor: "#ffffff",
+                    strokeColor: "#FDF8E7",
                     strokeWeight: 2,
                 }}
                 title="You"
@@ -618,7 +622,7 @@ function FilterChips({
                                 : "1px solid var(--cc-border)",
                             background: active ? "var(--cc-accent)" : "transparent",
                             color: active
-                                ? "#ffffff"
+                                ? "var(--m-on-deep)"
                                 : disabled
                                 ? "var(--cc-text-tertiary)"
                                 : "var(--cc-text-primary)",
