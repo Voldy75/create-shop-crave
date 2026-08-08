@@ -134,3 +134,72 @@ export async function startCheckout(
 export async function restorePurchases(): Promise<CheckoutResult> {
   return { status: "unavailable", message: "Nothing to restore on this device yet." };
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Paywall presentation helpers.
+
+   These live here rather than in a screen because BOTH paywalls use them —
+   `app/(mobile)/m/paywall` and `components/UpgradeDialog` (web, artboard w5a).
+   Each one encodes a correctness fix that a paywall got wrong once already, so
+   duplicating them is how the two surfaces start making different claims about
+   the same charge.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * The offers to actually show.
+ *
+ * `plan_prices` holds ONE ROW PER PROVIDER — today ₹749 one-time (razorpay)
+ * and $9/month (stripe) for the same `pro` plan. Rendering every row put two
+ * prices in two currencies for the same thing on screen, both flagged "Best
+ * deal". Only the provider that will actually be charged is an offer; the
+ * rest are other platforms' pricing.
+ */
+export function offersFor(options: BillingOptions | null): BillingPrice[] {
+  if (!options?.canPurchase) return [];
+  const provider = options.readyProviders[0];
+  const mine = options.prices.filter((p) => p.provider === provider);
+  const rank = (i: string) => (i === "year" ? 0 : i === "month" ? 1 : 2);
+  return [...mine].sort((a, b) => rank(a.interval) - rank(b.interval));
+}
+
+export function intervalLabel(interval: string): string {
+  if (interval === "year") return "Yearly";
+  if (interval === "month") return "Monthly";
+  return "One payment";
+}
+
+/**
+ * What the user is actually agreeing to.
+ *
+ * Razorpay is a SINGLE CHARGE granting 31 days that does NOT renew — see
+ * `app/api/subscribe/razorpay/verify`, which sets `periodEnd` to +31 days and
+ * nothing reschedules it. Saying "auto-renews" or "cancel anytime" there is
+ * plainly false, and on a payment screen a false claim of that kind is both a
+ * store-review risk and a chargeback waiting to happen.
+ */
+export function renewalNote(interval: string): string {
+  if (interval === "month") return "Cancel anytime. Auto-renews monthly.";
+  if (interval === "year") return "Cancel anytime. Auto-renews yearly.";
+  return "One payment for 31 days. Does not auto-renew.";
+}
+
+/** Per-month equivalent — only meaningful for a yearly plan. */
+export function perMonth(p: BillingPrice): string | null {
+  if (p.interval !== "year") return null;
+  return `${formatPrice(Math.round(p.amount_minor / 12), p.currency)}/mo`;
+}
+
+/**
+ * Plan benefits, shared so the two paywalls sell the same product.
+ *
+ * Every line must be a thing that is actually plan-gated and actually exists.
+ * The w5a artboard's "All 4 models" is wrong (`lib/providers` has three) and
+ * the mobile artboard's "Rare mascots (yes, golden pineapple)" is an open
+ * product question (`.mascot-locked`), not a feature — neither is sold here.
+ */
+export const PLAN_FEATURES = [
+  "Unlimited Bo chats & diet charts",
+  "Photo logging with macro breakdowns",
+  "Weekly meal planner & grocery bundles",
+  "All 3 AI models + Model Arena",
+] as const;

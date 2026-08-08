@@ -682,6 +682,42 @@
   .chat-input-bar { right: 336px; }
 }
 
+/* ── Paywall (w5a) — UNLAYERED, deliberately ──
+   `.on-plum` / `.on-plum-dim` exist ONLY in app/(mobile)/m/mobile.css, which
+   app/(web) never imports. Using them here without redefining them would have
+   left the pitch panel's text at meshi-b's `.t-body { color: var(--m-ink) }` —
+   chocolate ink on a plum panel, unreadable, and silently so. That is the same
+   failure mode as `mm-bob` animating nothing for three commits, and it is the
+   THIRD time a mobile-only definition has been reached for from the web tree.
+   Before using any meshi class on web, confirm the WEB tree actually loads it.
+
+   These must also stay outside a layer: meshi-b sets an explicit colour on
+   .t-body/.t-cap, and globals.css is imported AFTER meshi-b (see
+   app/(web)/layout.tsx), so an unlayered rule of equal specificity wins on
+   source order. Inside `@layer utilities` it would lose outright. */
+.on-plum { color: var(--m-on-deep); }
+.on-plum-dim { color: color-mix(in srgb, var(--m-on-deep) 80%, transparent); }
+
+.paywall-card {
+  display: flex;
+  padding: 0;
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+}
+.paywall-pitch {
+  width: 318px;
+  flex: none;
+  background: var(--m-plum);
+  padding: 32px 26px;
+  gap: 15px;
+}
+/* Below this the two columns cannot both hold their content, so the pitch
+   stacks above the picker rather than squeezing it. */
+@media (max-width: 720px) {
+  .paywall-card { flex-direction: column; }
+  .paywall-pitch { width: 100%; padding: 24px 22px; }
+}
+
 /* ── Cart rail (w4a) — UNLAYERED, same reason as the chat rail ──
    `.rail` is `display: flex` in the unlayered meshi-web.css, so a layered
    Tailwind `hidden` would lose at every width. Below the cutoff the rail

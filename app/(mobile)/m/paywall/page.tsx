@@ -8,8 +8,12 @@ import {
   formatPrice,
   startCheckout,
   restorePurchases,
+  offersFor,
+  intervalLabel,
+  renewalNote,
+  perMonth,
+  PLAN_FEATURES,
   type BillingOptions,
-  type BillingPrice,
 } from "@/lib/billing";
 import { BoBowl, Mushroom, Beet } from "@/components/mascots";
 
@@ -39,51 +43,6 @@ import { BoBowl, Mushroom, Beet } from "@/components/mascots";
  * not a shipped feature, so selling them here would be selling something that
  * does not exist. Replaced with a benefit that is actually plan-gated.
  */
-
-const FEATURES = [
-  "Unlimited Bo chats & diet charts",
-  "Photo logging with macro breakdowns",
-  "Weekly meal planner & grocery bundles",
-];
-
-/**
- * plan_prices holds ONE ROW PER PROVIDER — today ₹749 one-time (razorpay) and
- * $9/month (stripe) for the same `pro` plan. Rendering every row side by side
- * showed the user two prices in two currencies for the same thing, both
- * flagged "Best deal". Only the provider that will actually be charged is an
- * offer; the rest are other platforms' pricing.
- */
-function offersFor(options: BillingOptions | null): BillingPrice[] {
-  if (!options?.canPurchase) return [];
-  const provider = options.readyProviders[0];
-  const mine = options.prices.filter((p) => p.provider === provider);
-  const rank = (i: string) => (i === "year" ? 0 : i === "month" ? 1 : 2);
-  return [...mine].sort((a, b) => rank(a.interval) - rank(b.interval));
-}
-
-function intervalLabel(interval: string): string {
-  if (interval === "year") return "Yearly";
-  if (interval === "month") return "Monthly";
-  return "One payment";
-}
-
-/**
- * What the user is actually agreeing to. Razorpay is a single charge that
- * grants 31 days and does NOT renew (see app/api/subscribe/razorpay/verify) —
- * saying "auto-renews" there would be plainly false, and on a subscription
- * screen that is the kind of false claim that costs a store review.
- */
-function renewalNote(interval: string): string {
-  if (interval === "month") return "Cancel anytime. Auto-renews monthly.";
-  if (interval === "year") return "Cancel anytime. Auto-renews yearly.";
-  return "One payment for 31 days. Does not auto-renew.";
-}
-
-/** Per-month equivalent, only meaningful for a yearly plan. */
-function perMonth(p: BillingPrice): string | null {
-  if (p.interval !== "year") return null;
-  return `${formatPrice(Math.round(p.amount_minor / 12), p.currency)}/mo`;
-}
 
 export default function MobilePaywall() {
   const router = useRouter();
@@ -165,7 +124,7 @@ export default function MobilePaywall() {
       </div>
 
       <div className="vstack" style={{ gap: 9, marginTop: 4 }}>
-        {FEATURES.map((f) => (
+        {PLAN_FEATURES.map((f) => (
           <div key={f} className="hstack" style={{ gap: 10 }}>
             <Check width={18} height={18} style={{ color: "var(--m-lime)", flex: "none" }} />
             <span className="t-body on-plum">{f}</span>

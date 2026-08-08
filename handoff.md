@@ -349,6 +349,18 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
    moving on** — grep `mobile.css` isn't enough; check what the WEB tree
    loads.
 
+   **This generalises beyond keyframes, and has now bitten twice.** The w5a
+   paywall reached for `.on-plum` / `.on-plum-dim`, which are also mobile-only;
+   unfixed, the pitch panel would have rendered chocolate ink on plum because
+   meshi-b's `.t-body` sets an explicit colour and nothing overrode it. Same
+   silence, same cause. **Any meshi class used on web needs checking against
+   what `app/(web)/layout.tsx` actually imports** (`meshi-b.css`,
+   `meshi-web.css`, `globals.css` — and NOT `m/mobile.css`). A quick check:
+
+   ```bash
+   grep -n '\.your-class' design/meshi-b.css design/meshi-web.css app/globals.css
+   ```
+
 4. **Forest bands work; the hero is not one of them.** `.section-dark` IS
    deep forest — wLa uses `--m-forest` full-bleed three times (stats strip,
    how-it-works, final CTA) plus `--m-plum` once. An earlier note here claimed
@@ -874,7 +886,67 @@ Next, in order:
      scroll at any width. Fresh tab: zero console errors.
      **Not exercised:** the agent handoff itself (needs a session, and Dead
      End 1 means Instamart OAuth may reject the origin regardless).
-   - **paywall/UpgradeDialog** (`w5a`) — not started.
+   - ~~paywall/UpgradeDialog~~ (`w5a`) — **DONE, and it found three MORE live
+     false claims** — the web dialog was in worse shape than the mobile paywall
+     had been, because it never went through `lib/billing` at all and called
+     the checkout endpoints directly:
+     1. **"Pay ₹749/month via Razorpay" was wrong twice over.** The price was
+        hardcoded, AND Razorpay is not monthly — `/api/billing/options` returns
+        `interval: "one_time"` for it and `subscribe/razorpay/verify` grants
+        exactly 31 days with nothing rescheduling it.
+     2. **"Pay $9/month via Stripe" was hardcoded too**, and rendering both
+        providers put ₹ and $ for the same plan side by side — the exact bug
+        the mobile paywall had already fixed with `offersFor`.
+     3. **"Cancel anytime. No hidden fees."** There is nothing to cancel on a
+        one-time charge.
+     All three now derive from `plan_prices`; the footer reads "One payment for
+     31 days. Does not auto-renew." — verified against the LIVE API response
+     (`74900 INR / one_time`), not assumed.
+     **The artboard's numbers are stale and were NOT copied**: w5a draws
+     "Yearly · ₹2,990" and "Monthly · ₹399" (neither exists in `plan_prices`),
+     "7 days free" and a **"Start free week"** CTA — there is no trial, checkout
+     charges immediately — and "All 4 models" when `lib/providers` has three.
+     **`components/UpgradeDialog.tsx`'s Razorpay `theme.color` is off the
+     retired orange** and onto `--m-forest`'s literal, which is the one
+     DESIGN.md-allowlisted place a literal belongs (third-party iframe, no CSS
+     custom properties). Checkout was the last user-facing surface still
+     wearing the old brand. **`scripts/gen-resources.mjs` and `resources/*.png`
+     deliberately still carry it** — flipping the generator without
+     regenerating the PNGs leaves source and output disagreeing, which is worse
+     than either state. Phase 10d does both as one task.
+     **The paywall helpers now live in `lib/billing`** (`offersFor`,
+     `intervalLabel`, `renewalNote`, `perMonth`, `PLAN_FEATURES`), shared with
+     `app/(mobile)/m/paywall` — each encodes a correctness fix a paywall got
+     wrong once, so duplicating them is how the two surfaces start quoting
+     different terms for the same charge.
+
+     **TRAP HIT — a THIRD instance of the `mm-bob` class of bug.**
+     `.on-plum` / `.on-plum-dim` are defined ONLY in `app/(mobile)/m/mobile.css`,
+     which `app/(web)` never imports. Using them on the plum pitch panel
+     without redefining them would have left the text at meshi-b's
+     `.t-body { color: var(--m-ink) }` — chocolate ink on plum, unreadable, and
+     silently so. Web equivalents are now in globals.css's unlayered block
+     (unlayered because meshi-b sets an explicit colour on `.t-body`/`.t-cap`,
+     and globals.css is imported AFTER meshi-b so equal specificity wins on
+     source order). **Before using any meshi class on web, confirm the WEB tree
+     actually loads it** — grep `mobile.css` is not enough.
+
+     **A second bug was introduced and caught during verification:** an inline
+     `overflow: hidden` on the card beat `.paywall-card`'s `max-height` +
+     `overflow: auto`, so on a short viewport the CTA was clipped out of reach.
+     Removed; confirmed at 680×420 that the card scrolls and the CTA is
+     reachable.
+     Verified: `tsc`, `next build` (70 routes) and `eslint` clean with zero
+     warnings. Rendered against the live billing API on a temporary,
+     never-committed `/scratch-paywall` route (removed — `grep` confirms no
+     scratch route remains): one offer not two, "One payment · ₹749",
+     "Get meshi+ · ₹749", the correct non-renewal footer, BYOK as a real third
+     row with working provider chips, stacking to one column at ≤720px, and
+     contrast on the plum panel measured by compositing alpha over the
+     background — **9.9:1** for the headline and features, **6.95:1** for the
+     sub-copy, both above AA. Fresh tab: zero console errors.
+     **Not exercised:** an actual purchase — Razorpay/Stripe checkout needs a
+     session and real keys, which blocker 1 says production has never had.
    - **`components/cc/*`**, still Midnight Kitchen primitives.
    Every web page is currently phone-width inside a 1280px shell — the pages
    have no desktop layout yet. That is the single most visible gap.

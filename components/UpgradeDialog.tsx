@@ -1,9 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { X, Sparkles, CreditCard, Key, Loader2, AlertCircle, Check } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { X, Key, Loader2, AlertCircle, Check } from "lucide-react";
 import type { Provider } from "@/lib/providers";
 import { PROVIDERS } from "@/lib/providers";
+import {
+  fetchBillingOptions,
+  formatPrice,
+  offersFor,
+  intervalLabel,
+  renewalNote,
+  perMonth,
+  PLAN_FEATURES,
+  type BillingOptions,
+} from "@/lib/billing";
+import { BoBowl, Mushroom, Beet } from "@/components/mascots";
 
 interface UpgradeDialogProps {
   onProActivated: () => void;
@@ -18,18 +29,89 @@ declare global {
   }
 }
 
+/**
+ * Paywall — artboard w5a, a modal over the app.
+ *
+ * ── THREE LIVE FALSE CLAIMS were fixed here. Read before editing the copy. ──
+ *
+ * This screen is a payment screen, so every number and every renewal promise on
+ * it has to match what the backend actually charges. It did not:
+ *
+ *  1. **"Pay ₹749/month via Razorpay" was wrong twice over.** The price was
+ *     hardcoded rather than read from DB-backed `plan_prices`, and Razorpay is
+ *     NOT monthly — `app/api/subscribe/razorpay/verify` grants exactly 31 days
+ *     once and nothing reschedules it. Prices now come from
+ *     `fetchBillingOptions()` and the renewal terms from `renewalNote()`.
+ *  2. **"Pay $9/month via Stripe" was likewise hardcoded**, and rendering both
+ *     providers put two currencies for the same plan side by side. `offersFor`
+ *     shows only the provider that will actually be charged.
+ *  3. **"Cancel anytime. No hidden fees."** There is nothing to cancel on a
+ *     one-time charge. The footer is derived from the chosen interval now.
+ *
+ * The mobile paywall fixed exactly this class of bug during its own re-skin;
+ * the helpers are shared from `lib/billing` so the two cannot drift apart
+ * again and start quoting different terms for the same charge.
+ *
+ * **The artboard's own numbers are stale and were NOT copied**: it draws
+ * "Yearly · ₹2,990" and "Monthly · ₹399", neither of which exists in
+ * `plan_prices`, plus "7 days free" and a "Start free week" CTA. **There is no
+ * trial** — checkout charges immediately — so that button would be a false
+ * promise on a payment screen. Its "All 4 models" is wrong too; `lib/providers`
+ * has three.
+ *
+ * BYOK stays a first-class third option, as w5a draws it, because it is the
+ * genuinely free path and the only one available when `canPurchase` is false.
+ */
+
+/** Razorpay renders in a third-party iframe where CSS custom properties do not
+ *  resolve, so this MUST be a literal — one of DESIGN.md's allowlisted cases.
+ *  It is `--m-forest`'s value; it was the retired Midnight Kitchen orange
+ *  until this pass, which meant the Razorpay checkout iframe was the last
+ *  user-facing surface still wearing the old brand.
+ *  NOTE for Phase 10d: `scripts/gen-resources.mjs` and `resources/*.png` still
+ *  carry that orange. They are deliberately NOT changed here — flipping the
+ *  generator without regenerating the PNGs would leave source and output
+ *  disagreeing, which is worse than either state. Do them as one task. */
+const RAZORPAY_THEME = "#1E5A34";
+
 export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDialogProps) {
-  const [tab, setTab] = useState<"upgrade" | "byok">("upgrade");
-  const [loading, setLoading] = useState<"razorpay" | "stripe" | null>(null);
+  const [options, setOptions] = useState<BillingOptions | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [mode, setMode] = useState<"plans" | "byok">("plans");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [byokProvider, setByokProvider] = useState<Provider>("gemini");
   const [byokKey, setByokKey] = useState("");
   const [byokError, setByokError] = useState<string | null>(null);
 
-  const handleRazorpay = async () => {
-    setLoading("razorpay");
+  useEffect(() => {
+    void fetchBillingOptions().then((o) => {
+      setOptions(o);
+      const first = offersFor(o)[0];
+      if (first) setSelected(`${first.plan_id}-${first.interval}`);
+    });
+  }, []);
+
+  // Until options load, assume nothing is purchasable. Showing a price and
+  // withdrawing it a moment later is worse than showing it a beat late.
+  const canPurchase = options?.canPurchase ?? false;
+  const offers = useMemo(() => offersFor(options), [options]);
+  const chosen = offers.find((o) => `${o.plan_id}-${o.interval}` === selected) ?? offers[0] ?? null;
+
+  const handleCheckout = async () => {
+    if (!chosen) return;
+    setLoading(true);
     setError(null);
     try {
+      // Provider is whatever plan_prices says will be charged, not a guess.
+      if (chosen.provider === "stripe") {
+        const res = await fetch("/api/subscribe/stripe", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Failed to create session");
+        window.location.href = data.url;
+        return;
+      }
+
       const res = await fetch("/api/subscribe/razorpay", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create order");
@@ -48,17 +130,18 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
         key: data.keyId,
         amount: data.amount,
         currency: data.currency,
-        name: "Crave & Create",
-        description: "Pro Plan — 1 month",
+        name: "meshi",
+        // 31 days, not "1 month" — the grant is one-time (see verify route).
+        description: "meshi+ — 31 days",
         order_id: data.orderId,
         prefill: { name: data.userName, email: data.userEmail },
-        theme: { color: "#ff6b35" },
+        theme: { color: RAZORPAY_THEME },
         handler: async (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
           razorpay_signature: string;
         }) => {
-          setLoading("razorpay");
+          setLoading(true);
           const verifyRes = await fetch("/api/subscribe/razorpay/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -69,29 +152,15 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
             onProActivated();
           } else {
             setError("Payment verification failed. Contact support.");
-            setLoading(null);
+            setLoading(false);
           }
         },
-        modal: { ondismiss: () => setLoading(null) },
+        modal: { ondismiss: () => setLoading(false) },
       });
       rzp.open();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
-      setLoading(null);
-    }
-  };
-
-  const handleStripe = async () => {
-    setLoading("stripe");
-    setError(null);
-    try {
-      const res = await fetch("/api/subscribe/stripe", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to create session");
-      window.location.href = data.url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-      setLoading(null);
+      setLoading(false);
     }
   };
 
@@ -106,181 +175,170 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+      style={{
+        background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)",
+        backdropFilter: "blur(8px)",
+      }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Upgrade to meshi+"
     >
       <div
-        className="w-full max-w-md overflow-hidden"
-        style={{
-          background: "var(--cc-surface)",
-          borderRadius: "20px",
-          border: "1px solid var(--cc-border)",
-          boxShadow: "var(--cc-shadow-lg, 0 25px 50px rgba(0,0,0,0.4))",
-        }}
+        className="card paywall-card"
+        /* NO inline `overflow: hidden` here — it would beat .paywall-card's
+           `overflow: auto` and clip the CTA out of reach on a short viewport.
+           `auto` still clips to the border radius. */
+        style={{ width: "100%", maxWidth: 760, boxShadow: "var(--m-shadow-lift)" }}
       >
-        {/* Header */}
-        <div
-          style={{
-            background: "linear-gradient(135deg, var(--cc-accent) 0%, #ff8c5a 100%)",
-            padding: "24px",
-            position: "relative",
-          }}
-        >
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full transition-colors bg-[rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.3)]"
-          >
-            <X className="w-4 h-4 text-white" />
-          </button>
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-5 h-5 text-white" />
-            <span style={{ fontSize: "18px", fontWeight: 700, color: "#fff" }}>
-              Upgrade to Pro
-            </span>
+        {/* ── Plum panel — the pitch ── */}
+        <div className="paywall-pitch vstack">
+          <div className="hstack" style={{ gap: 2 }}>
+            <Mushroom width={46} height={46} style={{ transform: "rotate(-12deg)" }} />
+            <BoBowl width={64} height={64} />
+            <Beet width={46} height={46} style={{ transform: "rotate(12deg)" }} />
           </div>
-          <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.8)" }}>
-            You&apos;ve used your free requests for today.
-          </p>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex" style={{ borderBottom: "1px solid var(--cc-border)" }}>
-          <button
-            onClick={() => setTab("upgrade")}
-            className="flex-1 py-3 text-sm font-medium transition-colors"
-            style={{
-              color: tab === "upgrade" ? "var(--cc-accent)" : "var(--cc-text-secondary)",
-              borderBottom: tab === "upgrade" ? "2px solid var(--cc-accent)" : "2px solid transparent",
-            }}
-          >
-            Upgrade Pro
-          </button>
-          <button
-            onClick={() => setTab("byok")}
-            className="flex-1 py-3 text-sm font-medium transition-colors"
-            style={{
-              color: tab === "byok" ? "var(--cc-accent)" : "var(--cc-text-secondary)",
-              borderBottom: tab === "byok" ? "2px solid var(--cc-accent)" : "2px solid transparent",
-            }}
-          >
-            Use Your API Key
-          </button>
-        </div>
-
-        <div style={{ padding: "24px" }}>
-          {tab === "upgrade" ? (
-            <div className="space-y-4">
-              {/* Pro benefits */}
-              <div
-                style={{
-                  background: "rgba(255,107,53,0.08)",
-                  borderRadius: "12px",
-                  padding: "16px",
-                }}
-                className="space-y-2"
-              >
-                {[
-                  "Unlimited AI requests",
-                  "All 3 AI models (Gemini, GPT-4, Claude)",
-                  "Model Arena — compare side by side",
-                  "Priority support",
-                ].map((benefit) => (
-                  <div
-                    key={benefit}
-                    className="flex items-center gap-2"
-                    style={{ fontSize: "14px", color: "var(--cc-text-primary)" }}
-                  >
-                    <Check className="w-4 h-4 shrink-0" style={{ color: "var(--cc-accent)" }} />
-                    {benefit}
-                  </div>
-                ))}
+          <span className="on-plum" style={{ font: "800 27px/1.05 var(--m-font-display)" }}>
+            Feed Bo,<br />unlock everything
+          </span>
+          <span className="t-body on-plum-dim">
+            meshi+ turns Bo into your full-time chef, dietitian and hype squad.
+          </span>
+          <div className="vstack" style={{ gap: 12, marginTop: 6 }}>
+            {PLAN_FEATURES.map((f) => (
+              <div key={f} className="hstack" style={{ gap: 10 }}>
+                <Check width={18} height={18} style={{ color: "var(--m-lime)", flex: "none" }} />
+                <span className="t-body on-plum">{f}</span>
               </div>
+            ))}
+          </div>
+        </div>
 
-              {error && (
-                <div
-                  className="flex items-center gap-2"
-                  style={{
-                    fontSize: "14px",
-                    color: "#ff453a",
-                    background: "rgba(255,69,58,0.08)",
-                    padding: "12px",
-                    borderRadius: "12px",
-                  }}
-                >
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  {error}
-                </div>
-              )}
+        {/* ── Plan picker ── */}
+        <div className="vstack grow" style={{ padding: 28, gap: 13, minWidth: 0 }}>
+          <div className="hstack" style={{ justifyContent: "space-between" }}>
+            <span className="t-d2">{mode === "plans" ? "Choose your plan" : "Use your own key"}</span>
+            <button onClick={onClose} className="icon-btn" aria-label="Close">
+              <X width={18} height={18} />
+            </button>
+          </div>
 
-              {/* Razorpay */}
-              <button
-                onClick={handleRazorpay}
-                disabled={loading !== null}
-                className="w-full flex items-center justify-center gap-2 transition-all disabled:opacity-50 bg-[var(--cc-accent)] enabled:hover:bg-[var(--cc-accent-hover)]"
-                style={{
-                  color: "#fff",
-                  height: "48px",
-                  borderRadius: "980px",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                }}
-              >
-                {loading === "razorpay" ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CreditCard className="w-4 h-4" />
-                )}
-                Pay ₹749/month via Razorpay
-              </button>
-
-              {/* Stripe */}
-              <button
-                onClick={handleStripe}
-                disabled={loading !== null}
-                className="w-full flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                style={{
-                  background: "transparent",
-                  color: "var(--cc-text-primary)",
-                  height: "48px",
-                  borderRadius: "980px",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  border: "1px solid var(--cc-border)",
-                }}
-              >
-                {loading === "stripe" ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CreditCard className="w-4 h-4" />
-                )}
-                Pay $9/month via Stripe
-              </button>
-
-              <p style={{ fontSize: "12px", textAlign: "center", color: "var(--cc-text-tertiary)" }}>
-                Cancel anytime. No hidden fees.
-              </p>
+          {error && (
+            <div
+              className="hstack"
+              style={{
+                gap: 8,
+                padding: 12,
+                borderRadius: 12,
+                background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+                color: "var(--m-red)",
+              }}
+            >
+              <AlertCircle width={16} height={16} style={{ flex: "none" }} />
+              <span className="t-cap" style={{ color: "var(--m-red)" }}>{error}</span>
             </div>
+          )}
+
+          {mode === "plans" ? (
+            <>
+              {offers.map((o) => {
+                const key = `${o.plan_id}-${o.interval}`;
+                const on = chosen ? `${chosen.plan_id}-${chosen.interval}` === key : false;
+                const pm = perMonth(o);
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setSelected(key)}
+                    aria-pressed={on}
+                    className="card hstack"
+                    style={{
+                      padding: "16px 18px",
+                      gap: 12,
+                      width: "100%",
+                      textAlign: "left",
+                      border: "none",
+                      background: on ? "var(--m-card)" : "var(--m-cream-2)",
+                      boxShadow: on ? "inset 0 0 0 3px var(--m-lime)" : "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+                      <span className="t-h2">
+                        {intervalLabel(o.interval)} · {formatPrice(o.amount_minor, o.currency)}
+                      </span>
+                      <span className="t-cap" style={on ? { color: "var(--m-forest)" } : undefined}>
+                        {pm ?? "Everything on the left, unlocked"}
+                      </span>
+                    </div>
+                    {/* "Best deal" only means anything when there is more than one. */}
+                    {on && offers.length > 1 && <span className="chip-tag chip" style={{ flex: "none" }}>Best deal</span>}
+                  </button>
+                );
+              })}
+
+              {/* BYOK is a real plan row in w5a, and it is the only option at
+                  all when the platform cannot transact. */}
+              <button
+                onClick={() => setMode("byok")}
+                className="card hstack"
+                style={{
+                  padding: "16px 18px",
+                  gap: 12,
+                  width: "100%",
+                  textAlign: "left",
+                  border: "none",
+                  background: "var(--m-cream-2)",
+                  boxShadow: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+                  <span className="t-h2">Bring your own key</span>
+                  <span className="t-cap">Free — your key, your quota</span>
+                </div>
+                <span className="chip" style={{ flex: "none" }}>Set up</span>
+              </button>
+
+              {/* The artboard's CTA is "Start free week". There is no trial in
+                  this product — checkout charges immediately — so the button
+                  states the actual amount instead. */}
+              <button
+                className="pill-lime"
+                style={{ width: "100%", marginTop: 4 }}
+                onClick={canPurchase && chosen ? handleCheckout : () => setMode("byok")}
+                disabled={loading}
+              >
+                {loading && <Loader2 width={16} height={16} className="animate-spin" />}
+                {canPurchase && chosen
+                  ? `Get meshi+ · ${formatPrice(chosen.amount_minor, chosen.currency)}`
+                  : "Use my own key"}
+              </button>
+
+              <span className="t-cap" style={{ textAlign: "center" }}>
+                {canPurchase && chosen
+                  ? renewalNote(chosen.interval)
+                  : "No card needed. Bo will pretend not to be sad."}
+              </span>
+            </>
           ) : (
-            <div className="space-y-4">
-              <p style={{ fontSize: "14px", color: "var(--cc-text-secondary)" }}>
+            <>
+              <p className="t-body-soft">
                 Already have an API key? Use it for unlimited requests — your key, your quota.
               </p>
 
-              {/* Provider selector */}
               <div className="grid grid-cols-3 gap-2">
                 {PROVIDERS.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => setByokProvider(p.id)}
-                    className="transition-all text-center"
+                    aria-pressed={byokProvider === p.id}
+                    className="chip"
                     style={{
-                      padding: "10px",
-                      borderRadius: "12px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      border: byokProvider === p.id ? "1.5px solid var(--cc-accent)" : "1px solid var(--cc-border)",
-                      background: byokProvider === p.id ? "rgba(255,107,53,0.08)" : "transparent",
-                      color: byokProvider === p.id ? "var(--cc-accent)" : "var(--cc-text-secondary)",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      background: byokProvider === p.id ? "var(--m-lime)" : "var(--m-card)",
+                      color: byokProvider === p.id ? "var(--m-forest-2)" : "var(--m-ink)",
+                      boxShadow: byokProvider === p.id ? "none" : undefined,
                     }}
                   >
                     {p.label}
@@ -288,50 +346,37 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
                 ))}
               </div>
 
-              <div className="space-y-1">
-                <div className="relative">
-                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "var(--cc-text-tertiary)" }} />
-                  <input
-                    value={byokKey}
-                    onChange={(e) => { setByokKey(e.target.value); setByokError(null); }}
-                    placeholder={PROVIDERS.find((p) => p.id === byokProvider)?.keyPlaceholder ?? "API Key"}
-                    type="password"
-                    className="w-full outline-none"
-                    style={{
-                      paddingLeft: "40px",
-                      height: "44px",
-                      borderRadius: "12px",
-                      border: "1px solid var(--cc-border)",
-                      background: "var(--cc-surface-2)",
-                      color: "var(--cc-text-primary)",
-                      fontSize: "14px",
-                    }}
-                  />
-                </div>
-                {byokError && (
-                  <p style={{ fontSize: "12px", color: "#ff453a", marginLeft: "4px" }}>{byokError}</p>
-                )}
+              <div className="input" style={{ gap: 10 }}>
+                <Key width={16} height={16} style={{ color: "var(--m-ink-soft)", flex: "none" }} />
+                <input
+                  value={byokKey}
+                  onChange={(e) => { setByokKey(e.target.value); setByokError(null); }}
+                  placeholder={PROVIDERS.find((p) => p.id === byokProvider)?.keyPlaceholder ?? "API Key"}
+                  type="password"
+                  className="grow"
+                  style={{ background: "none", border: "none", outline: "none", color: "var(--m-ink)", font: "600 15px var(--m-font-body)" }}
+                />
               </div>
+              {byokError && <span className="t-cap" style={{ color: "var(--m-red)" }}>{byokError}</span>}
 
-              <button
-                onClick={handleBYOKSave}
-                className="w-full flex items-center justify-center gap-2 transition-all"
-                style={{
-                  background: "var(--cc-text-primary)",
-                  color: "var(--cc-bg)",
-                  height: "44px",
-                  borderRadius: "980px",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                }}
-              >
-                Use This Key
+              <button className="pill-primary" style={{ width: "100%" }} onClick={handleBYOKSave}>
+                Use this key
               </button>
 
-              <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)" }}>
-                Your key is stored locally and never sent to our servers (except to the AI provider on each request).
-              </p>
-            </div>
+              {offers.length > 0 && (
+                <button
+                  onClick={() => setMode("plans")}
+                  className="wlink"
+                  style={{ background: "none", border: "none", justifyContent: "center", width: "100%" }}
+                >
+                  Back to plans
+                </button>
+              )}
+
+              <span className="t-cap" style={{ textAlign: "center" }}>
+                Stored in this browser, never on our servers — it goes only to the AI provider on each request.
+              </span>
+            </>
           )}
         </div>
       </div>
