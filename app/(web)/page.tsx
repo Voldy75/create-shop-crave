@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useUser } from "@/app/context/UserContext";
 import { AuthButton } from "@/components/AuthButton";
-import { MapPin, Loader2, AlertCircle, ArrowRight, Check, ChevronDown, Plus, Minus, ShoppingCart, Sparkles, MessageCircle, LineChart } from "lucide-react";
+import { MapPin, Loader2, AlertCircle, ArrowRight, Check, ChevronDown, Plus, Minus, ShoppingCart, ShoppingBag, Sparkles, MessageCircle, LineChart } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Section } from "@/components/cc/section";
 import { Chip } from "@/components/cc/chip";
@@ -559,16 +559,59 @@ export default function LandingPage() {
       {/* ── How it works — forest band, lime numerals (wLa) ── */}
       <Section tone="forest" eyebrow="How it works" headline={<>Three steps. That&apos;s it.</>}>
         <div id="how-it-works" className="grid gap-10 md:grid-cols-3">
-          {HOW_IT_WORKS.map((step) => (
-            <div key={step.step} className="flex flex-col gap-2">
-              <BoBowl width={50} height={50} style={{ animation: "mm-bob 2.4s ease-in-out infinite" }} />
+          {/* Per-step vignette inside .hiw-mascot, exactly as wLa draws it:
+              01 — Bo with a thinking bubble (three staggered dots)
+              02 — Bo with a twinkling spark and a carrot popping in and out
+              03 — Bo with a lime delivery badge sliding across
+              None of .hiw-step/.hiw-mascot/.hiw-bubble/.hiw-badge or the
+              mm-bob/mm-dot/mm-twinkle/mm-poploop/mm-deliver keyframes exist in
+              the vendored meshi-b.css or meshi-web.css — they are only in the
+              .dc.html's own inline <style>, so they are ported into
+              globals.css rather than assumed to already work. mm-bob in
+              particular had no keyframe anywhere in the web tree until this
+              change, so Bo has been static everywhere on this page (hero,
+              demo chat, closing CTA too) despite the `animation` prop being
+              set the whole time. */}
+          {HOW_IT_WORKS.map((step, i) => (
+            <div key={step.step} className="hiw-step flex flex-col gap-2" style={{ animationDelay: `${i * 0.1 + 0.02}s` }}>
+              <div className="hiw-mascot">
+                <BoBowl width={50} height={50} style={{ animation: "mm-bob 2.4s ease-in-out infinite" }} />
+                {i === 0 && (
+                  <span className="hiw-bubble" aria-hidden="true">
+                    <i style={{ animation: "mm-dot 1s ease-in-out infinite" }} />
+                    <i style={{ animation: "mm-dot 1s .16s ease-in-out infinite" }} />
+                    <i style={{ animation: "mm-dot 1s .32s ease-in-out infinite" }} />
+                  </span>
+                )}
+                {i === 1 && (
+                  <>
+                    <Sparkles
+                      width={18}
+                      height={18}
+                      aria-hidden="true"
+                      style={{ position: "absolute", top: 9, right: 12, color: "var(--m-lime)", animation: "mm-twinkle 1.6s ease-in-out infinite" }}
+                    />
+                    <Carrot
+                      width={26}
+                      height={26}
+                      aria-hidden="true"
+                      style={{ position: "absolute", bottom: 6, left: 7, animation: "mm-poploop 2.6s ease-in-out infinite" }}
+                    />
+                  </>
+                )}
+                {i === 2 && (
+                  <span className="hiw-badge" aria-hidden="true" style={{ animation: "mm-deliver 2.6s ease-in-out infinite" }}>
+                    <ShoppingBag width={18} height={18} style={{ color: "var(--m-forest-2)" }} />
+                  </span>
+                )}
+              </div>
               {/* The numeral was rgba(255,107,53,0.25) — the retired orange,
                   baked into a Tailwind arbitrary value. */}
-              <span className="text-[58px] font-extrabold leading-none tracking-[-1px] text-[color-mix(in_srgb,var(--m-lime)_32%,transparent)]">
+              <span className="hiw-num text-[58px] font-extrabold leading-none tracking-[-1px] text-[color-mix(in_srgb,var(--m-lime)_32%,transparent)]">
                 {step.step}
               </span>
               <span className="text-[21px] font-bold text-[var(--m-on-deep)]">{step.title}</span>
-              <span className="h-[3px] w-11 rounded-sm bg-[var(--m-lime)]" aria-hidden="true" />
+              <span className="hiw-bar" aria-hidden="true" />
               <p className="text-[14.5px] font-semibold leading-[1.55] text-[var(--cc-text-secondary)]">
                 {step.desc}
               </p>
