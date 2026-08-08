@@ -395,33 +395,42 @@ export default function LandingPage() {
           <ChevronDown className="w-4 h-4 animate-bounce text-[var(--cc-text-tertiary)]" />
         </motion.div>
 
-        {/* Auth modal overlay */}
+        {/* Auth modal — built to the "Sign in" artboard (w1b).
+
+            w1b is a full standalone page (meshi.app/signin) with a full-bleed
+            forest background. There is no dedicated /signin ROUTE in this
+            app — every "Sign in" trigger (nav, hero, both CTAs) opens this
+            same overlay, and unauthenticated visits to app routes redirect to
+            "/" (see app/(web)/(app)/chat/page.tsx), not to a signin path. So
+            this stays a modal rather than inventing a page nothing links to;
+            what moves to w1b is the CARD — the Bo circle, headline, and
+            provider buttons. The scrim is forest-tinted rather than a plain
+            black overlay, matching the sheet-scrim pattern already used on
+            mobile bottom sheets. */}
         {showAuthCard && !user && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ background: "rgba(12,10,9,0.6)", backdropFilter: "blur(8px)" }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)", backdropFilter: "blur(8px)" }}
             onClick={(e) => { if (e.target === e.currentTarget) setShowAuthCard(false); }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="relative w-full max-w-sm rounded-2xl bg-[var(--cc-surface)] p-7 text-left shadow-[var(--cc-shadow-lg)]"
+              className="card relative flex w-full max-w-[440px] flex-col items-center gap-[13px] p-[34px] text-center md:p-[38px]"
+              style={{ boxShadow: "var(--m-shadow-lift)" }}
             >
-              <button
-                onClick={() => setShowAuthCard(false)}
-                className="absolute top-3 right-3 rounded-full p-1.5 text-[var(--cc-text-tertiary)] transition-colors hover:bg-[var(--cc-surface-2)]"
-                aria-label="Close"
-              >
-                <Plus className="w-4 h-4 rotate-45" />
+              <button onClick={() => setShowAuthCard(false)} className="icon-btn absolute right-4 top-4" aria-label="Close">
+                <Plus width={16} height={16} style={{ transform: "rotate(45deg)" }} />
               </button>
-              <div className="space-y-5">
-                <div className="space-y-1">
-                  <p className="text-label">Get started</p>
-                  <p className="text-[14px] text-[var(--cc-text-tertiary)] tracking-[-0.016em]">
-                    2 free requests per day. Bring your own key for unlimited use.
-                  </p>
-                </div>
+
+              <div className="flex h-[104px] w-[104px] items-center justify-center rounded-full" style={{ background: "var(--m-tint-green)" }}>
+                <BoBowl width={72} height={72} />
+              </div>
+              <span className="t-d1">Welcome back</span>
+              <span className="t-body-soft">Sign in and Bo picks up right where you left off — streak, plan and all.</span>
+
+              <div style={{ width: "100%", marginTop: 6 }}>
                 <AuthButton />
               </div>
             </motion.div>
