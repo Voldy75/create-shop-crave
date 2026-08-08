@@ -299,22 +299,26 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
 
 1. **Unlayered beats layered.** BOTH vendored stylesheets are unlayered, so
    ANY rule in `@layer utilities` loses to them regardless of specificity or
-   source order. This has now bitten twice:
+   source order. This has now bitten three times:
    - `.web-shell > .side { display: none }` lost to meshi-web's
      `.side { display: flex }` — the sidebar never hid.
    - `.band-deep .t-micro` lost to meshi-b's `.t-micro { color: ... }`, so an
      eyebrow on the plum band rendered ink-on-plum at 2.14:1 while carrying a
      perfectly good `text-[var(--cc-text-secondary)]` that never applied.
+   - Chat's `.chat-input-bar { right: 336px }` and `.chat-rail`'s hide rule —
+     same fix, same pattern, added straight to the unlayered block this time
+     instead of losing an hour rediscovering the trap.
    meshi-b sets an explicit colour on `.t-micro/.t-cap/.t-body/.t-h1/.t-h2`.
    Any override of those, or of the shell, must sit OUTSIDE a layer — see the
    unlayered block at the bottom of `globals.css`.
-2. **Turbopack serves a stale `globals.css` surprisingly often.** Twice now a
-   compiled chunk kept an OLD value while other edits from the same file had
-   compiled — once `.glass-nav`, once a whole new `.band-deep .t-micro` rule
-   that was simply absent from the bundle. Both times a dev-server restart
-   fixed it, and both times it looked exactly like a specificity bug. **Before
-   debugging any CSS rule that seems not to apply, confirm it is in the served
-   chunk:**
+2. **Turbopack serves a stale `globals.css` surprisingly often.** Three times
+   now a compiled chunk kept an OLD value while other edits from the same file
+   had compiled — `.glass-nav`, a whole new `.band-deep .t-micro` rule that
+   was simply absent from the bundle, and chat's `.chat-input-bar { right }`
+   reading `0px` instead of `336px` via `getComputedStyle` even after the
+   source was correct. Every time a dev-server restart fixed it, and every
+   time it looked exactly like a specificity bug. **Before debugging any CSS
+   rule that seems not to apply, confirm it is in the served chunk:**
 
    ```bash
    curl -s http://localhost:3000/ | grep -oE '/_next/static/chunks/[^"]*\.css' | head -1
@@ -638,8 +642,63 @@ Next, in order:
      modal now match w1b's CARD (Bo circle, "Welcome back", provider stack).
      Stayed a modal, not a new route — see the 10c decisions below for why,
      and for what the artboard shows that was deliberately not built.
-   - **chat** (`w3a`), **recipe view** (`w3b`), **tracker/planner** (`w4b`),
-     **cart** (`w4a`), **paywall/UpgradeDialog** (`w5a`);
+   - ~~chat~~ (`w3a`) — **DONE.** `app/(web)/(app)/chat/page.tsx`'s old sticky
+     header (brand mark, avatar dropdown with Saved/Planner/Arena/Settings/
+     theme/sign-out, usage badge) is replaced by w3a's topbar — this was the
+     page the topbar work was held back for, since the sidebar (AppShell)
+     already covers that nav. **Not fully redundant — a real gap, not fixed
+     here.** Sign-out still works, one click further (Settings nav item →
+     `/settings`'s `AccountSection`, which has the real `signOut()`), but
+     theme toggle has no home anywhere in the logged-in app: `components/
+     ThemeToggle.tsx` only appears on the pre-auth landing nav, and AppShell's
+     `.side-acct` is a static display, not a clickable menu. Giving it one is
+     future work, not silently claimed as done — see chat/page.tsx's top
+     comment for the same note in situ. Message bubbles, the typing
+     indicator (Lottie stays for streaming; a real `.card`+`mm-dot` pulse
+     backs pre-first-token loading), and the input pill are restyled onto
+     meshi. A new "From this chat" rail tracks the most recent recipe live
+     from `messages` and offers a real Instamart deeplink for its
+     ingredients — not the artboard's "Missing 1 item" priced agent-cart row,
+     which nothing on web actually computes (that is mobile-only, see
+     `/m/buy`). The model picker shows the REAL active model (Gemini by
+     default, or your BYOK provider) and opens the real `ApiKeyDialog` on
+     click rather than faking a live switch — there is no in-place model
+     switching in this product, and "Grok" is not a supported provider
+     anywhere in the codebase, so it is not rendered (same category as
+     sign-in's dropped "Continue with Apple"). Camera/mic icons from the
+     artboard's input bar are also dropped — no attach or voice capability
+     exists in `/api/chat` to back them. The Pro upsell price (₹749) was
+     checked against `UpgradeDialog`'s real Razorpay amount before writing
+     it, not copied from the artboard's stale ₹399 — the mobile paywall work
+     found and fixed exactly that class of bug once already.
+
+     **Two bugs found and fixed while building** (see the 10c traps below for
+     the general pattern both belong to): the fixed input bar's `right-0`
+     didn't know about the new rail, so its gradient background painted over
+     the rail's bottom card and clipped the "Go Pro" button —
+     `.chat-input-bar` unlayered override at the same 1100px breakpoint
+     `.chat-rail` hides at fixed it. And the page root used `h-screen`, which
+     used to be the true viewport root; nested inside AppShell's `.main` now,
+     that sized against the full viewport a second time inside an
+     already-constrained flex slot — changed to `h-full`.
+
+     Verified: `tsc --noEmit` and `next build` clean (69 routes); eslint's 5
+     findings confirmed identical to the unmodified original file via
+     `git stash` comparison, plus one new instance of a "Compilation Skipped"
+     category the original already had two of, unfixed — no new class of
+     problem. Chat requires a real session, so verification used a
+     **temporary, never-committed** local bypass of the auth redirect
+     (confirmed removed via `grep` before committing) — checked at 1280 and
+     375px: topbar, the real `ApiKeyDialog` opening from the model picker,
+     empty-state greeting/suggestions, input, and the rail including the
+     input-bar fix. **Message-sending itself was not exercised** — needs a
+     real account, and touches unchanged `/api/chat` logic this pass didn't
+     modify.
+   - **recipe view** (`w3b`), **tracker/planner** (`w4b`), **cart** (`w4a`),
+     **paywall/UpgradeDialog** (`w5a`) — not started. `components/RecipeView.tsx`
+     and `components/RestaurantView.tsx`, both rendered inline in chat, still
+     carry Midnight Kitchen hex (12 and 21 hardcoded values respectively) —
+     out of scope for the chat-page pass above; belongs with `w3b`.
    - **`components/cc/*`**, still Midnight Kitchen primitives.
    Every web page is currently phone-width inside a 1280px shell — the pages
    have no desktop layout yet. That is the single most visible gap.

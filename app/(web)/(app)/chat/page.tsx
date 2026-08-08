@@ -26,11 +26,18 @@ import type { RecipeData, RestaurantSuggestion } from "@/lib/types";
  * The old page carried its own sticky header with the brand mark, an avatar
  * dropdown (Saved / Planner / Arena / Settings / theme / sign out) and a
  * usage badge — all of it now redundant with components/web/AppShell.tsx's
- * sidebar, which already has that nav and account block. This is the page
- * Phase 10c's topbar work was held back for: the artboard's 74px topbar
- * REPLACES this header rather than stacking on top of it. Theme toggle and
- * sign out — the two real actions the old avatar menu had that the sidebar
- * didn't — moved to AppShell's account block instead of vanishing.
+ * sidebar, which already has that nav. This is the page Phase 10c's topbar
+ * work was held back for: the artboard's 74px topbar REPLACES this header
+ * rather than stacking on top of it.
+ *
+ * NOT fully redundant, though — flagged rather than fixed silently. Sign out
+ * still works (AppShell's Settings nav item routes to /settings, whose
+ * AccountSection has the real signOut() call), but it takes one more click
+ * than the old dropdown did. Theme toggle has no home in the logged-in app at
+ * all right now — components/ThemeToggle.tsx only appears on the pre-auth
+ * landing nav (app/(web)/page.tsx), not in AppShell or /settings. AppShell's
+ * `.side-acct` block is a static avatar/name/email display, not a clickable
+ * menu trigger. Giving it one is out of scope for this pass.
  *
  * MODEL PICKER — real, but not a live in-place switch. The artboard's `.seg`
  * shows Gemini/GPT-4o/Claude/Grok as if clicking one instantly switches
