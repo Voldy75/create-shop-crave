@@ -14,10 +14,16 @@ That file owns sequencing. This file records state.
 
 ## Where the work lives
 
-All of it is on **`merge/mobile-into-web`**, tracking
-`origin/merge/mobile-into-web` but currently **24 commits ahead of it,
-unpushed** (origin is still at `0aa72a6`; local `HEAD` is `d2662d9`). `main` is
-untouched at `ac8a8cc`, and both deployments still serve the old code.
+All of it is on **`merge/mobile-into-web`**, which is **fully pushed** —
+local `HEAD` and `origin/merge/mobile-into-web` are both at `038c555`, 0 ahead
+/ 0 behind, working tree clean. `main` is untouched at `ac8a8cc` (local and
+origin), and both deployments still serve the old code.
+
+**"Pushed" is not "shipped."** Nothing here reaches a user until Phase 5
+merges to `main`. The branch existing on the remote only means it is backed up
+and reviewable. An earlier version of this section said "unpushed" and caused
+exactly this confusion — if you are wondering whether the work is safe, run
+`git status` rather than trusting this paragraph.
 
 **There is deliberately NO open PR.** Opening one implies the branch is ready to
 merge, and Phase 5 cutover is blocked on env vars (below). Open it when those
@@ -28,7 +34,7 @@ gh pr create --base main --head merge/mobile-into-web --web
 ```
 
 **Commit counts — do not be surprised.** `git log main..HEAD` now returns
-**60** commits. The itemized 14 below cover only through the merge
+**62** commits. The itemized 14 below cover only through the merge
 consolidation (`3910bc1`); everything after that is Phase 10c screen-by-screen
 design work (landing, sign-in, chat — see the Phase 10c section further down
 for that history in detail, or `git log 3910bc1..HEAD --oneline` for the raw
@@ -491,11 +497,21 @@ need real backend work, not just UI.
 ### Design system state
 
 - `design/meshi-b.css` — shared tokens/components, consumed by both trees
-- `design/meshi-web.css` — desktop shell layer, **not yet imported anywhere**
+- `design/meshi-web.css` — desktop shell layer, **imported by
+  `app/(web)/layout.tsx`** (it landed with the 10c foundation)
 - `app/(mobile)/m/mobile.css` — mobile-only utilities meshi-b lacks
 - `components/mascots/*` — 13 mascots + lookup map
-- **Mobile tree is fully off `--cc-*` (grep returns zero). Web tree still uses
-  it across 29 files** — the web re-skin has not started.
+- **Mobile tree is fully off `--cc-*`** — the only hit is a comment in
+  `app/(mobile)/layout.tsx` explaining the split, not a token reference.
+- **`--cc-*` is still named in 52 files** — 22 under `app/(web)`, 27 under
+  `components/`, plus `app/globals.css` (78 definitions),
+  `app/global-not-found.tsx`, and the mobile comment above. That count is NOT a
+  progress bar for 10c: since `--cc-*` became an alias layer over `--m-*`, a
+  screen can be fully rebuilt to its artboard and still name alias tokens.
+  Chat, for instance, is converted and greps zero; the landing is converted and
+  still names 25. The count only goes to zero in **10e**, which deletes the
+  aliases. Judge 10c screen-by-screen against the artboard list above, not by
+  this number.
 
 ### Traps already hit — do not rediscover
 
