@@ -1,6 +1,6 @@
 # Handoff — Crave & Create (web + mobile, unified)
 
-Last updated: 2026-08-02. Written for a session with zero prior context.
+Last updated: 2026-08-08. Written for a session with zero prior context.
 Supersedes the two separate handoffs that lived in the web and mobile repos.
 
 ## Goal
@@ -14,9 +14,10 @@ That file owns sequencing. This file records state.
 
 ## Where the work lives
 
-All of it is on **`merge/mobile-into-web`**, pushed to origin at `3910bc1` and
-tracking `origin/merge/mobile-into-web`. `main` is untouched at `ac8a8cc`, and
-both deployments still serve the old code.
+All of it is on **`merge/mobile-into-web`**, tracking
+`origin/merge/mobile-into-web` but currently **24 commits ahead of it,
+unpushed** (origin is still at `0aa72a6`; local `HEAD` is `d2662d9`). `main` is
+untouched at `ac8a8cc`, and both deployments still serve the old code.
 
 **There is deliberately NO open PR.** Opening one implies the branch is ready to
 merge, and Phase 5 cutover is blocked on env vars (below). Open it when those
@@ -26,10 +27,15 @@ are set:
 gh pr create --base main --head merge/mobile-into-web --web
 ```
 
-**Commit counts — do not be surprised.** `git log main..HEAD` returns **35**
-commits, but only **14** are this work. The other ~21 are the mobile repo's own
-history, which arrived with the merge and now lives in this repo. That is the
-consolidation working as intended, not stray commits. The 14:
+**Commit counts — do not be surprised.** `git log main..HEAD` now returns
+**60** commits. The itemized 14 below cover only through the merge
+consolidation (`3910bc1`); everything after that is Phase 10c screen-by-screen
+design work (landing, sign-in, chat — see the Phase 10c section further down
+for that history in detail, or `git log 3910bc1..HEAD --oneline` for the raw
+list). Of the original 35, only 14 were this work — the other ~21 were the
+mobile repo's own history, which arrived with the merge and now lives in this
+repo. That is the consolidation working as intended, not stray commits. The
+original 14:
 
 ```
 3910bc1 docs: bring handoff.md up to date across all phases
@@ -51,7 +57,7 @@ b171cf3 feat(admin): admin console API + UI, flags split, platform attribution
 it was cherry-picked here so source and DB stayed consistent. That branch is
 redundant now.)
 
-`npx tsc --noEmit` and `next build` are clean (67 routes).
+`npx tsc --noEmit` and `next build` are clean (69 routes).
 
 **Database changes ARE already applied to production Supabase**
 (`lxaaclelfhjmqrhdqzxp`) even though this branch is not merged. Schema and code
@@ -73,7 +79,7 @@ project before the merge.
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
-| 10 meshi re-skin | **10b mobile DONE**; **10c web IN PROGRESS** (foundation + sidebar landed, screens pending); 10d/10e pending |
+| 10 meshi re-skin | **10b mobile DONE**; **10c web IN PROGRESS** (foundation + sidebar + landing + sign-in + chat landed; recipe view, cart, tracker/planner, paywall, `components/cc/*` still pending); 10d/10e pending |
 
 ## Blocked on you — nothing proceeds past these
 
