@@ -319,6 +319,20 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
    ```bash
    curl -s http://localhost:3000/ | grep -oE '/_next/static/chunks/[^"]*\.css' | head -1
    ```
+3. **`mm-bob` had no @keyframes rule anywhere in the web tree — Bo was
+   static on every screen that used it, for three commits, and nothing in the
+   verification process caught it.** meshi-b.css ships `mm-pop` and
+   `mm-slideup` but not `mm-bob`/`mm-dot` — those exist only in the MOBILE
+   tree's `mobile.css`, which `app/(web)` never imports. An `animation-name`
+   pointing at an undefined keyframe is valid CSS that does nothing, silently
+   — no console warning, no visual sign. Found only because the user asked
+   where the how-it-works animations were, which prompted actually checking
+   `document.styleSheets` for the keyframe rather than trusting that the
+   `animation:` prop meant it worked. **If you port an artboard's `animation:`
+   property, confirm the keyframe actually resolves in the target tree before
+   moving on** — grep `mobile.css` isn't enough; check what the WEB tree
+   loads.
+
 3. **Forest bands work; the hero is not one of them.** `.section-dark` IS
    deep forest — wLa uses `--m-forest` full-bleed three times (stats strip,
    how-it-works, final CTA) plus `--m-plum` once. An earlier note here claimed
@@ -566,10 +580,13 @@ Next, in order:
    screen work, and it is still the largest block of Phase 10:
    - **the topbar and rail**, which cannot land until each page's own sticky
      header is removed — that is why they were held back;
-   - ~~the landing page~~ — **DONE.** All 10 bands match wLa and the sequence
-     is asserted in the browser. `.section-dark`/`.section-light` are gone,
-     replaced by `Section tone="cream|cream2|forest|plum"`. See the 10c notes
-     below for the traps.
+   - ~~the landing page~~ — **DONE**, including the how-it-works mascot
+     animations (mm-bob/mm-dot/mm-twinkle/mm-poploop/mm-deliver + hover
+     micro-interactions). All 10 bands match wLa and the sequence is asserted
+     in the browser. `.section-dark`/`.section-light` are gone, replaced by
+     `Section tone="cream|cream2|forest|plum"`. See the 10c notes below for
+     the traps — including a THIRD one found after this was first marked
+     done.
    - **chat** (`w3a`), **recipe view** (`w3b`), **tracker/planner** (`w4b`),
      **cart** (`w4a`), **paywall/UpgradeDialog** (`w5a`), **sign-in** (`w1b`);
    - **`components/cc/*`**, still Midnight Kitchen primitives.
