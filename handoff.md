@@ -651,8 +651,13 @@ Next, in order:
 1. **Finish 10c — the per-screen web conversions.** The foundation and the
    sidebar have landed (see the 10c section above). What remains is the actual
    screen work, and it is still the largest block of Phase 10:
-   - **the topbar and rail**, which cannot land until each page's own sticky
-     header is removed — that is why they were held back;
+   - **the topbar**, which could not land until each page's own sticky header
+     was removed — that is why it was held back. It now ships per-screen, as
+     part of the conversion that deletes that page's header: chat (w3a) and
+     planner (w4b) both have it. Remaining pages still carry their own
+     headers, so this stays open until they convert. **The 336px right rail
+     is still per-screen too** — chat has one ("From this chat"); no other
+     screen does, and w4b does not draw one;
    - ~~the landing page~~ — **DONE**, including the how-it-works mascot
      animations (mm-bob/mm-dot/mm-twinkle/mm-poploop/mm-deliver + hover
      micro-interactions). All 10 bands match wLa and the sequence is asserted
@@ -751,8 +756,59 @@ Next, in order:
      chips. **Not exercised**: the map itself (Maps key is
      referrer-restricted off localhost — pre-existing blocker 5, not this
      change) and the mobile carousel/IntersectionObserver path.
-   - **tracker/planner** (`w4b`), **cart** (`w4a`), **paywall/UpgradeDialog**
-     (`w5a`) — not started.
+   - ~~tracker/planner~~ (`w4b`) — **DONE.** `app/(web)/(app)/planner/page.tsx`
+     loses its own sticky header (back-arrow to /chat + title) for w4b's
+     topbar — the same swap chat made for w3a, and the second of the two pages
+     the topbar work was held back for. `TrackerView` is now the artboard's
+     two-up (`.tracker-grid`: calorie ring + macros | week chart) over a
+     full-width meals card. `CalorieRing` keeps SVG rather than the artboard's
+     conic-gradient (same silhouette at 150/19, but an arc can animate and a
+     conic-gradient cannot) and its centre now reads CONSUMED — "780 of 2,000"
+     — with remaining as the headline beside it, so each number appears once.
+     `MacroBars` moved onto meshi's `.progress` with the artboard's
+     lime/orange/plum tones, matching the mobile plan tab's `Macro` helper so
+     a nutrient is the same colour on both surfaces. `WeeklyChart` uses
+     meshi-web's `.bar` and **scales to the goal, not the tallest bar** — the
+     mobile week-screen decision, carried over so the same data doesn't tell
+     two stories. `MealLogList` is flat and ordered by meal type (the artboard
+     puts the type in the row title, which is the same information in less
+     space; the per-group kcal subtotal goes because the ring already is the
+     day total) with ingredient mascots standing in where there's no photo.
+     **Artboard elements deliberately not built:** the topbar's SEARCH FIELD
+     (it would have nowhere to go — Discover is /m-only, which is exactly why
+     AppShell's sidebar omits it) and the bell's UNREAD DOT (`notification_log`
+     has a delivery status but no read state, so a dot would be a fabricated
+     count — same call the mobile profile row made). **Kept despite not being
+     drawn:** the Goals gear (nothing else sets the targets every number here
+     is measured against) and the week/month toggle (the month calendar is the
+     only route to a day older than seven).
+     `HistoryCalendar`'s intensity ramp was the last thing on this screen
+     still painting the retired orange — it now ramps tint-green → lime →
+     forest, with red still reserved for over-goal; it also returns bg and fg
+     together instead of re-deriving the text colour by string-comparing the
+     background, which broke silently the moment a value was edited.
+     `.tracker-grid` is a NEW class rather than meshi-web's `.wgrid2`: the two
+     cards stop being readable side by side around 900px, which is ABOVE the
+     767.98px sidebar breakpoint, so reusing `.wgrid2` would have needed an
+     unlayered override of a vendored rule (trap 1) instead of a new name.
+     **`components/planner/` is now entirely free of hex/rgba literals** —
+     all 13 files, including the four (`CoachPanel`, `AddToPlanDialog`,
+     `DietChartPreview`, `PhotoCapture`) reachable from the other tabs; modal
+     scrims use the `color-mix` on `--m-forest-2` pattern the landing's auth
+     modal established.
+     Verified: `tsc`, `next build` (69 routes) and `eslint` all clean with
+     ZERO warnings. Driven in the browser at 1280 / 860 / 600 against seeded
+     logs: ring arc resolves to `--m-forest` with a dash offset matching
+     780/2000, macro fills are exactly lime/orange/plum-2, week bars are
+     forest with lime for the selected day and `--m-red` for the over-goal
+     one, the month ramp hits all four legend steps at the right thresholds,
+     the two-up collapses to one column at 900 while the sidebar holds to
+     767.98, the Plan tab's 1050px grid scrolls inside its own card rather
+     than the page, and the new "Log now" row opens the sheet with **dinner**
+     pre-selected. Fresh tab: zero console errors or warnings.
+     **Not exercised:** actually saving a log through the sheet (the AI paths
+     need a session and quota) and the Coach tab's generate calls.
+   - **cart** (`w4a`), **paywall/UpgradeDialog** (`w5a`) — not started.
    - **`components/cc/*`**, still Midnight Kitchen primitives.
    Every web page is currently phone-width inside a 1280px shell — the pages
    have no desktop layout yet. That is the single most visible gap.

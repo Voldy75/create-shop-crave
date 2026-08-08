@@ -50,7 +50,7 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+      style={{ background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)", backdropFilter: "blur(8px)" }}
       onClick={onClose}
     >
       <div
@@ -105,7 +105,7 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
                     fontSize: "11px",
                     fontWeight: 600,
                     background: day === d ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                    color: day === d ? "#fff" : "var(--cc-text-secondary)",
+                    color: day === d ? "var(--m-on-deep)" : "var(--cc-text-secondary)",
                     border: day === d ? "1px solid var(--cc-accent)" : "1px solid var(--cc-border)",
                     borderRadius: "8px",
                   }}
@@ -127,7 +127,7 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
                     fontSize: "12px",
                     fontWeight: 600,
                     background: mealType === mt ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                    color: mealType === mt ? "#fff" : "var(--cc-text-secondary)",
+                    color: mealType === mt ? "var(--m-on-deep)" : "var(--cc-text-secondary)",
                     border:
                       mealType === mt ? "1px solid var(--cc-accent)" : "1px solid var(--cc-border)",
                     borderRadius: "980px",
@@ -143,8 +143,8 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
             <div
               className="px-3 py-2.5"
               style={{
-                background: "rgba(255,159,10,0.10)",
-                border: "1px solid rgba(255,159,10,0.30)",
+                background: "var(--m-tint-peach)",
+                border: "1.5px solid color-mix(in srgb, var(--m-burnt) 32%, transparent)",
                 borderRadius: "10px",
                 color: "var(--cc-text-secondary)",
                 fontSize: "12px",

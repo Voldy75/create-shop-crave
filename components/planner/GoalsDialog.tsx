@@ -66,7 +66,7 @@ export function GoalsDialog({ open, initial, onClose, onSave }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+      style={{ background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)", backdropFilter: "blur(8px)" }}
       onClick={onClose}
     >
       <div
@@ -296,7 +296,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
         fontSize: "13px",
         fontWeight: 600,
         background: active ? "var(--cc-accent)" : "var(--cc-surface-2)",
-        color: active ? "#ffffff" : "var(--cc-text-secondary)",
+        color: active ? "var(--m-on-deep)" : "var(--cc-text-secondary)",
         borderRadius: "980px",
         border: active ? "1px solid var(--cc-accent)" : "1px solid var(--cc-border)",
       }}

@@ -43,9 +43,9 @@ const SEVERITY_STYLE: Record<
   Insight["severity"],
   { color: string; bg: string; icon: React.ComponentType<{ className?: string }> }
 > = {
-  info: { color: "#0a84ff", bg: "rgba(10,132,255,0.10)", icon: Info },
-  nudge: { color: "var(--cc-accent)", bg: "rgba(255,107,53,0.10)", icon: Lightbulb },
-  warn: { color: "#ff9f0a", bg: "rgba(255,159,10,0.10)", icon: AlertTriangle },
+  info: { color: "var(--m-plum)", bg: "var(--m-tint-lav)", icon: Info },
+  nudge: { color: "var(--m-forest)", bg: "var(--m-tint-green)", icon: Lightbulb },
+  warn: { color: "var(--m-burnt)", bg: "var(--m-tint-peach)", icon: AlertTriangle },
 };
 
 // Sort priority: lower = earlier. warn first so users see action items above the fold.
@@ -278,10 +278,10 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
           <div
             className="flex items-start gap-2 p-3"
             style={{
-              background: "rgba(255,69,58,0.08)",
-              border: "1px solid rgba(255,69,58,0.3)",
+              background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+              border: "1.5px solid color-mix(in srgb, var(--m-red) 32%, transparent)",
               borderRadius: "10px",
-              color: "#ff453a",
+              color: "var(--m-red)",
               marginBottom: "12px",
             }}
           >
@@ -305,7 +305,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
                 fontSize: "13px",
                 fontWeight: 600,
                 background: dataReady ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                color: dataReady ? "#fff" : "var(--cc-text-tertiary)",
+                color: dataReady ? "var(--m-on-deep)" : "var(--cc-text-tertiary)",
                 borderRadius: "980px",
                 cursor: dataReady ? "pointer" : "not-allowed",
               }}
@@ -409,10 +409,10 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
           <div
             className="flex items-start gap-2 p-3"
             style={{
-              background: "rgba(255,69,58,0.08)",
-              border: "1px solid rgba(255,69,58,0.3)",
+              background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+              border: "1.5px solid color-mix(in srgb, var(--m-red) 32%, transparent)",
               borderRadius: "10px",
-              color: "#ff453a",
+              color: "var(--m-red)",
               marginBottom: "12px",
             }}
           >
@@ -430,7 +430,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               fontSize: "13px",
               fontWeight: 600,
               background: chartLoading ? "var(--cc-surface-2)" : "var(--cc-accent)",
-              color: chartLoading ? "var(--cc-text-tertiary)" : "#fff",
+              color: chartLoading ? "var(--cc-text-tertiary)" : "var(--m-on-deep)",
               borderRadius: "980px",
               cursor: chartLoading ? "not-allowed" : "pointer",
             }}

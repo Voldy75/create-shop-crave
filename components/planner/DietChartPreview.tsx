@@ -112,7 +112,7 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+      style={{ background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)", backdropFilter: "blur(8px)" }}
       onClick={onClose}
     >
       <div
@@ -280,7 +280,7 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
                 fontSize: "13px",
                 fontWeight: 600,
                 background: applying ? "var(--cc-surface-2)" : "var(--cc-accent)",
-                color: applying ? "var(--cc-text-tertiary)" : "#fff",
+                color: applying ? "var(--cc-text-tertiary)" : "var(--m-on-deep)",
                 borderRadius: "980px",
                 cursor: applying ? "not-allowed" : "pointer",
               }}

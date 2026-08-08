@@ -267,7 +267,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+      style={{ background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)", backdropFilter: "blur(8px)" }}
       onClick={onClose}
     >
       <div
@@ -360,7 +360,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                     fontSize: "12px",
                     fontWeight: 600,
                     background: mealType === mt ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                    color: mealType === mt ? "#fff" : "var(--cc-text-secondary)",
+                    color: mealType === mt ? "var(--m-on-deep)" : "var(--cc-text-secondary)",
                     border: mealType === mt ? "1px solid var(--cc-accent)" : "1px solid var(--cc-border)",
                     borderRadius: "980px",
                   }}
@@ -456,7 +456,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                     fontSize: "13px",
                     fontWeight: 600,
                     background: searchQuery.trim() && !analyzing ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                    color: searchQuery.trim() && !analyzing ? "#fff" : "var(--cc-text-tertiary)",
+                    color: searchQuery.trim() && !analyzing ? "var(--m-on-deep)" : "var(--cc-text-tertiary)",
                     borderRadius: "10px",
                     cursor: searchQuery.trim() && !analyzing ? "pointer" : "not-allowed",
                   }}
@@ -524,10 +524,10 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
             <div
               className="flex items-start gap-2 p-3"
               style={{
-                background: "rgba(255,69,58,0.08)",
-                border: "1px solid rgba(255,69,58,0.3)",
+                background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+                border: "1.5px solid color-mix(in srgb, var(--m-red) 32%, transparent)",
                 borderRadius: "10px",
-                color: "#ff453a",
+                color: "var(--m-red)",
               }}
             >
               <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -538,10 +538,10 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
             <div
               className="flex items-start gap-2 p-3"
               style={{
-                background: "rgba(255,159,10,0.08)",
-                border: "1px solid rgba(255,159,10,0.3)",
+                background: "color-mix(in srgb, var(--m-burnt) 10%, transparent)",
+                border: "1.5px solid color-mix(in srgb, var(--m-burnt) 32%, transparent)",
                 borderRadius: "10px",
-                color: "#ff9f0a",
+                color: "var(--m-burnt)",
               }}
             >
               <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -622,7 +622,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
               fontSize: "13px",
               fontWeight: 600,
               background: canSave ? "var(--cc-accent)" : "var(--cc-surface-2)",
-              color: canSave ? "#ffffff" : "var(--cc-text-tertiary)",
+              color: canSave ? "var(--m-on-deep)" : "var(--cc-text-tertiary)",
               borderRadius: "980px",
               cursor: canSave ? "pointer" : "not-allowed",
             }}

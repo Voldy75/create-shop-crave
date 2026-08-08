@@ -70,8 +70,8 @@ export function PhotoCapture({ imageDataUrl, onChange, disabled }: Props) {
           disabled={disabled}
           className="absolute top-2 right-2 p-1.5 rounded-full"
           style={{
-            background: "rgba(0,0,0,0.6)",
-            color: "#fff",
+            background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)",
+            color: "var(--m-on-deep)",
             backdropFilter: "blur(8px)",
           }}
           aria-label="Remove photo"
@@ -119,7 +119,7 @@ export function PhotoCapture({ imageDataUrl, onChange, disabled }: Props) {
         </button>
       </div>
       {err && (
-        <p style={{ fontSize: "11px", color: "#ff453a" }}>{err}</p>
+        <p className="t-cap" style={{ color: "var(--m-red)" }}>{err}</p>
       )}
       <input
         ref={cameraRef}

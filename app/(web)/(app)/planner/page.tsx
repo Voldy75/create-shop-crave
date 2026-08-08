@@ -2,8 +2,9 @@
 
 import React, { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ShoppingCart, Plus, X, ChefHat, ExternalLink, Bell } from "lucide-react";
-import { getMealPlan, saveMealPlan, type WeekPlan, type MealSlot } from "@/lib/storage";
+import { ShoppingCart, Plus, X, ChefHat, ExternalLink, Bell } from "lucide-react";
+import { getMealPlan, getMealLogs, saveMealPlan, type WeekPlan, type MealSlot } from "@/lib/storage";
+import { loggingStreak } from "@/lib/nutrition";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { PlannerTabs, type PlannerTab } from "@/components/planner/PlannerTabs";
 import { TrackerView } from "@/components/planner/TrackerView";
@@ -15,14 +16,38 @@ const MEALS = ["breakfast", "lunch", "dinner", "snack"] as const;
 
 type MealType = typeof MEALS[number];
 
+const TAB_TITLE: Record<PlannerTab, string> = {
+  plan: "Your week",
+  tracker: "Your day",
+  coach: "Coach",
+};
+
 export default function PlannerPage() {
     return (
-        <Suspense fallback={<div style={{ minHeight: "100vh", background: "var(--cc-bg)" }} />}>
+        <Suspense fallback={<div style={{ minHeight: "100dvh", background: "var(--m-cream)" }} />}>
             <PlannerPageInner />
         </Suspense>
     );
 }
 
+/**
+ * Planner — built to artboard w4b (the tracker tab is what w4b draws).
+ *
+ * The old page-level sticky header is GONE: it carried a back arrow to /chat
+ * and the page title, both of which the AppShell sidebar now covers. This is
+ * the w4b topbar in its place — the same swap the chat page made for w3a.
+ *
+ * Two topbar elements from the artboard are deliberately not built:
+ *   - **The search field.** It would have nowhere to go. Discover is an /m-only
+ *     route, which is exactly why AppShell's sidebar omits it too; a search box
+ *     that cannot search is worse than no search box.
+ *   - **The bell's unread dot.** `notification_log` records a delivery status
+ *     but no read state, so a dot would be a fabricated unread count. The bell
+ *     itself is real and opens notification settings.
+ *
+ * The streak chip IS real — `loggingStreak` over the same logs the tracker
+ * reads, and the same helper the mobile home and plan tabs use.
+ */
 function PlannerPageInner() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -33,11 +58,17 @@ function PlannerPageInner() {
     const autoOpenLog = searchParams?.get("log") === "1";
     const [activeTab, setActiveTab] = useState<PlannerTab>(initialTab);
     const [plan, setPlan] = useState<WeekPlan>({});
+    const [streak, setStreak] = useState(0);
     const [editingSlot, setEditingSlot] = useState<{ day: string; meal: MealType } | null>(null);
     const [dishInput, setDishInput] = useState("");
 
     useEffect(() => {
+        // localStorage read after mount — cannot run during SSR. Same tree-wide
+        // pattern the tracker and every /m screen use.
+        /* eslint-disable react-hooks/set-state-in-effect */
         setPlan(getMealPlan());
+        setStreak(loggingStreak(getMealLogs()));
+        /* eslint-enable react-hooks/set-state-in-effect */
     }, []);
 
     const setMeal = (day: string, meal: MealType, dish: string) => {
@@ -60,35 +91,40 @@ function PlannerPageInner() {
         saveMealPlan(updated);
     };
 
-    return (
-        <div className="min-h-screen" style={{ background: "var(--cc-bg)", color: "var(--cc-text-primary)" }}>
-            <header className="glass-nav px-6 flex items-center gap-4 sticky top-0 z-10" style={{ height: "48px" }}>
-                <button
-                    onClick={() => router.push("/chat")}
-                    className="p-2 rounded-full transition-opacity hover:opacity-70"
-                    style={{ color: "var(--cc-text-secondary)" }}
-                    aria-label="Back to chat"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                </button>
-                <h1 style={{ fontSize: "14px", fontWeight: 400, color: "var(--cc-text-primary)", flex: 1 }}>
-                    Weekly Meal Planner
-                </h1>
-                <button
-                    onClick={() => router.push("/settings/notifications")}
-                    className="p-2 rounded-full transition-opacity hover:opacity-70"
-                    style={{ color: "var(--cc-text-secondary)" }}
-                    aria-label="Notification settings"
-                >
-                    <Bell className="w-5 h-5" />
-                </button>
-            </header>
+    const todayLabel = new Date().toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+    });
 
-            <main className="max-w-[1080px] mx-auto p-6 space-y-6">
-                <div className="flex justify-center sm:justify-start">
-                    <PlannerTabs active={activeTab} onChange={setActiveTab} coachEnabled />
+    return (
+        <div className="flex h-full flex-col" style={{ background: "var(--m-cream)" }}>
+            {/* ── Topbar — w4b. Replaces the old sticky header. ── */}
+            <div className="topbar" style={{ gap: 14, flexWrap: "wrap", minHeight: 74, height: "auto" }}>
+                <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+                    <span className="t-cap">{todayLabel}</span>
+                    <span className="t-d2" style={{ whiteSpace: "nowrap" }}>{TAB_TITLE[activeTab]}</span>
                 </div>
 
+                <PlannerTabs active={activeTab} onChange={setActiveTab} coachEnabled />
+
+                {streak > 0 && (
+                    <span className="streak-chip" aria-label={`${streak} day logging streak`}>
+                        🔥 {streak}
+                    </span>
+                )}
+
+                <button
+                    onClick={() => router.push("/settings/notifications")}
+                    className="icon-btn"
+                    aria-label="Notification settings"
+                    title="Notification settings"
+                >
+                    <Bell width={20} height={20} />
+                </button>
+            </div>
+
+            <main className="mbody" style={{ overflow: "auto" }} id={`planner-panel-${activeTab}`}>
                 {activeTab === "plan" && (
                     <PlanView
                         plan={plan}
@@ -143,37 +179,33 @@ function PlanView({
     const uniqueDishes = [...new Set(allDishes)];
 
     return (
-        <div className="space-y-8">
-            <div className="overflow-x-auto" style={{ borderRadius: "12px", border: "1px solid var(--cc-border)" }}>
+        <div className="vstack" style={{ gap: 18 }}>
+            <div className="card" style={{ overflowX: "auto", padding: 4 }}>
                 <div className="grid grid-cols-[100px_repeat(7,minmax(130px,1fr))] gap-0 min-w-[1050px]">
-                    <div style={{ padding: "12px", borderBottom: "1px solid var(--cc-border)" }} />
+                    <div style={{ padding: 12, borderBottom: "1.5px solid var(--m-ink-faint)" }} />
                     {DAYS.map((day) => (
-                        <div key={day}
-                            className="text-center py-3 px-2"
+                        <div
+                            key={day}
+                            className="t-micro"
                             style={{
-                                fontSize: "12px",
-                                fontWeight: 600,
-                                textTransform: "uppercase",
-                                letterSpacing: "-0.01em",
-                                color: "var(--cc-text-secondary)",
-                                borderBottom: "1px solid var(--cc-border)",
-                                borderLeft: "1px solid var(--cc-border)",
-                            }}>
+                                textAlign: "center",
+                                padding: "12px 8px",
+                                borderBottom: "1.5px solid var(--m-ink-faint)",
+                            }}
+                        >
                             {day.slice(0, 3)}
                         </div>
                     ))}
 
                     {MEALS.map((meal, mealIdx) => (
                         <React.Fragment key={meal}>
-                            <div className="flex items-center px-3 py-4"
+                            <div
+                                className="t-micro hstack"
                                 style={{
-                                    fontSize: "12px",
-                                    fontWeight: 600,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "-0.01em",
-                                    color: "var(--cc-text-tertiary)",
-                                    borderBottom: mealIdx < MEALS.length - 1 ? "1px solid var(--cc-border)" : "none",
-                                }}>
+                                    padding: "16px 12px",
+                                    borderBottom: mealIdx < MEALS.length - 1 ? "1.5px solid var(--m-ink-faint)" : "none",
+                                }}
+                            >
                                 {meal}
                             </div>
                             {DAYS.map((day) => {
@@ -181,46 +213,40 @@ function PlanView({
                                 const isEditing = editingSlot?.day === day && editingSlot?.meal === meal;
 
                                 return (
-                                    <div key={`${day}-${meal}`}
-                                        className="p-2"
+                                    <div
+                                        key={`${day}-${meal}`}
                                         style={{
-                                            borderLeft: "1px solid var(--cc-border)",
-                                            borderBottom: mealIdx < MEALS.length - 1 ? "1px solid var(--cc-border)" : "none",
-                                            minHeight: "80px",
-                                        }}>
+                                            padding: 6,
+                                            borderLeft: "1.5px solid var(--m-ink-faint)",
+                                            borderBottom: mealIdx < MEALS.length - 1 ? "1.5px solid var(--m-ink-faint)" : "none",
+                                            minHeight: 80,
+                                        }}
+                                    >
                                         {isEditing ? (
-                                            <div className="p-2 space-y-2" style={{
-                                                background: "rgba(255,107,53,0.08)",
-                                                borderRadius: "8px",
-                                            }}>
+                                            <div className="vstack tint-green" style={{ padding: 8, gap: 8, borderRadius: 12 }}>
                                                 <input
                                                     value={dishInput}
                                                     onChange={(e) => setDishInput(e.target.value)}
-                                                    placeholder="Dish name..."
-                                                    className="w-full px-2 py-1.5 outline-none"
-                                                    style={{
-                                                        fontSize: "12px",
-                                                        borderRadius: "8px",
-                                                        background: "var(--cc-surface-2)",
-                                                        color: "var(--cc-text-primary)",
-                                                        border: "1px solid var(--cc-border)",
-                                                    }}
+                                                    placeholder="Dish name…"
+                                                    className="input"
+                                                    style={{ height: 34, fontSize: 13, padding: "0 12px", width: "100%" }}
                                                     onKeyDown={(e) => {
                                                         if (e.key === "Enter" && dishInput.trim()) onSetMeal(day, meal, dishInput.trim());
                                                         if (e.key === "Escape") { setEditingSlot(null); setDishInput(""); }
                                                     }}
                                                     autoFocus
                                                 />
-                                                <div className="flex gap-1">
+                                                <div className="hstack" style={{ gap: 6 }}>
                                                     <button
-                                                        className="text-white"
-                                                        style={{ fontSize: "10px", fontWeight: 600, padding: "4px 8px", borderRadius: "980px", background: "var(--cc-accent)" }}
+                                                        className="pill-primary pill-sm"
+                                                        style={{ height: 28, padding: "0 12px", fontSize: 12 }}
                                                         onClick={() => { if (dishInput.trim()) onSetMeal(day, meal, dishInput.trim()); }}
                                                     >
                                                         Add
                                                     </button>
                                                     <button
-                                                        style={{ fontSize: "10px", fontWeight: 400, padding: "4px 8px", borderRadius: "980px", color: "var(--cc-text-secondary)" }}
+                                                        className="t-cap"
+                                                        style={{ background: "none", border: "none", cursor: "pointer" }}
                                                         onClick={() => { setEditingSlot(null); setDishInput(""); }}
                                                     >
                                                         Cancel
@@ -228,30 +254,40 @@ function PlanView({
                                                 </div>
                                             </div>
                                         ) : slot ? (
-                                            <div className="h-full group relative p-2" style={{
-                                                background: "var(--cc-surface-2)",
-                                                borderRadius: "8px",
-                                            }}>
-                                                <div className="flex items-start gap-1">
-                                                    <ChefHat className="w-3 h-3 mt-0.5 shrink-0" style={{ color: "var(--cc-accent)" }} />
-                                                    <p className="line-clamp-3" style={{ fontSize: "12px", fontWeight: 400, color: "var(--cc-text-primary)" }}>{slot.dish}</p>
+                                            <div
+                                                className="group relative tint-cream"
+                                                style={{ height: "100%", padding: 8, borderRadius: 12 }}
+                                            >
+                                                <div className="hstack" style={{ alignItems: "flex-start", gap: 6 }}>
+                                                    <ChefHat width={13} height={13} style={{ color: "var(--m-forest)", marginTop: 2, flex: "none" }} />
+                                                    <p className="t-cap line-clamp-3" style={{ color: "var(--m-ink)" }}>{slot.dish}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => onRemoveMeal(day, meal)}
-                                                    className="absolute top-1 right-1 p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    style={{ background: "var(--cc-surface-3)", color: "var(--cc-text-tertiary)" }}
-                                                    aria-label="Remove meal"
+                                                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                                    style={{ background: "none", border: "none", color: "var(--m-red)", cursor: "pointer", padding: 2 }}
+                                                    aria-label={`Remove ${meal} for ${day}`}
                                                 >
-                                                    <X className="w-3 h-3" />
+                                                    <X width={13} height={13} />
                                                 </button>
                                             </div>
                                         ) : (
                                             <button
                                                 onClick={() => { setEditingSlot({ day, meal }); setDishInput(""); }}
-                                                className="w-full h-full min-h-[72px] flex items-center justify-center transition-colors border-2 border-dashed rounded-[8px] border-[var(--cc-border)] text-[var(--cc-text-tertiary)] hover:border-[rgba(255,107,53,0.4)] hover:text-[var(--cc-accent)]"
+                                                className="hstack plan-slot-empty"
+                                                style={{
+                                                    width: "100%",
+                                                    minHeight: 72,
+                                                    justifyContent: "center",
+                                                    borderRadius: 12,
+                                                    border: "2px dashed var(--m-ink-faint)",
+                                                    background: "transparent",
+                                                    color: "var(--m-ink-soft)",
+                                                    cursor: "pointer",
+                                                }}
                                                 aria-label={`Add ${meal} for ${day}`}
                                             >
-                                                <Plus className="w-4 h-4" />
+                                                <Plus width={16} height={16} />
                                             </button>
                                         )}
                                     </div>
@@ -263,30 +299,28 @@ function PlanView({
             </div>
 
             {uniqueDishes.length > 0 && (
-                <div className="p-6" style={{ background: "var(--cc-surface)", borderRadius: "12px" }}>
-                    <div className="flex items-center gap-2" style={{ marginBottom: "4px" }}>
-                        <ShoppingCart className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
-                        <h2 style={{ fontSize: "17px", fontWeight: 600, color: "var(--cc-text-primary)" }}>Shopping List</h2>
-                        <span style={{
-                            fontSize: "12px", fontWeight: 400, padding: "2px 8px",
-                            borderRadius: "980px", background: "var(--cc-surface-2)", color: "var(--cc-text-tertiary)",
-                        }}>
-                            {uniqueDishes.length} dishes
-                        </span>
+                <div className="card" style={{ padding: 20 }}>
+                    <div className="hstack" style={{ gap: 8, marginBottom: 4 }}>
+                        <ShoppingCart width={16} height={16} style={{ color: "var(--m-forest)" }} />
+                        <span className="t-h1">Shopping list</span>
+                        <span className="chip-tag chip">{uniqueDishes.length} dishes</span>
                     </div>
-                    <p style={{ fontSize: "14px", color: "var(--cc-text-secondary)", marginBottom: "16px" }}>
+                    <p className="t-body-soft" style={{ marginBottom: 16 }}>
                         Quick-buy ingredients for your planned meals:
                     </p>
-                    <div className="space-y-3">
+                    <div className="vstack" style={{ gap: 10 }}>
                         {uniqueDishes.map((dish) => (
-                            <div key={dish} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3" style={{
-                                background: "var(--cc-surface-2)", borderRadius: "8px",
-                            }}>
-                                <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--cc-text-primary)" }}>{dish}</span>
-                                <div className="flex gap-2 flex-wrap">
-                                    <DeepLinkPill href={buildBlinkitLink(dish + " ingredients")} bg="#f8d800" textColor="#1d1d1f" label="Blinkit" />
-                                    <DeepLinkPill href={buildSwiggyInstamartLink(dish + " ingredients")} bg="#fc8019" textColor="#fff" label="Instamart" />
-                                    <DeepLinkPill href={buildInstacartLink(dish + " ingredients")} bg="#43b02a" textColor="#fff" label="Instacart" />
+                            <div
+                                key={dish}
+                                className="row"
+                                style={{ boxShadow: "none", background: "var(--m-cream)", flexWrap: "wrap", gap: 10 }}
+                            >
+                                <span className="t-h2 grow">{dish}</span>
+                                <div className="hstack" style={{ gap: 8, flexWrap: "wrap" }}>
+                                    {/* Partner brand colours — allowlisted in DESIGN.md. */}
+                                    <DeepLinkPill href={buildBlinkitLink(dish + " ingredients")} bg="#f8d800" label="Blinkit" />
+                                    <DeepLinkPill href={buildSwiggyInstamartLink(dish + " ingredients")} bg="#fc8019" label="Instamart" />
+                                    <DeepLinkPill href={buildInstacartLink(dish + " ingredients")} bg="#43b02a" label="Instacart" />
                                 </div>
                             </div>
                         ))}
@@ -295,37 +329,36 @@ function PlanView({
             )}
 
             {uniqueDishes.length === 0 && (
-                <div className="text-center" style={{ paddingTop: "64px", paddingBottom: "64px" }}>
-                    <div style={{ fontSize: "40px", marginBottom: "12px" }}>📅</div>
-                    <p style={{ fontSize: "17px", fontWeight: 600, color: "var(--cc-text-primary)" }}>Your week is empty</p>
-                    <p style={{ fontSize: "14px", color: "var(--cc-text-secondary)", marginTop: "4px" }}>
-                        Click any slot above to plan your meals for the week.
-                    </p>
+                <div className="vstack" style={{ alignItems: "center", textAlign: "center", padding: "56px 16px", gap: 4 }}>
+                    <span className="t-h1">Your week is empty</span>
+                    <span className="t-body-soft">Click any slot above to plan your meals for the week.</span>
                 </div>
             )}
         </div>
     );
 }
 
-function DeepLinkPill({ href, bg, textColor, label }: { href: string; bg: string; textColor: string; label: string }) {
+function DeepLinkPill({ href, bg, label }: { href: string; bg: string; label: string }) {
     return (
         <a
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 transition-transform active:scale-95"
+            className="hstack"
             style={{
-                fontSize: "11px",
-                fontWeight: 700,
+                gap: 6,
                 padding: "6px 12px",
-                borderRadius: "980px",
+                borderRadius: "var(--m-r-pill)",
                 background: bg,
-                color: textColor,
-                minHeight: "32px",
+                // Every partner swatch here is a light hue, so chocolate ink is
+                // the readable choice on all three.
+                color: "var(--m-ink)",
+                font: "700 11px var(--m-font-display)",
+                minHeight: 32,
             }}
         >
             {label}
-            <ExternalLink className="w-3 h-3" />
+            <ExternalLink width={12} height={12} />
         </a>
     );
 }

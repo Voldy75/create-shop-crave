@@ -523,6 +523,22 @@
   .web-shell > .side { display: none; }
 }
 
+/* ── Tracker two-up (artboard w4b) ──
+   Deliberately NOT meshi-web's `.wgrid2`, which is a hard `1fr 1fr` with no
+   collapse. The calorie ring is 150px wide before its macro column, and the
+   week chart holds seven bars; side by side they stop being readable at
+   roughly 900px — well ABOVE the 767.98px sidebar breakpoint, so reusing
+   .wgrid2 would need an unlayered override of a vendored rule rather than a
+   new class. A new class avoids that fight entirely. */
+.tracker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+@media (max-width: 900px) {
+  .tracker-grid { grid-template-columns: 1fr; }
+}
+
 /* ── Mascot motion for the web tree ──
    meshi-b.css ships mm-pop and mm-slideup but NOT mm-bob or mm-dot — those are
    only defined in the mobile tree's own mobile.css. Every `animation: mm-bob
