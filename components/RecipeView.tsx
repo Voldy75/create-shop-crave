@@ -9,6 +9,7 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { ShareButton } from "@/components/ShareButton";
 import { AddToPlanDialog } from "@/components/planner/AddToPlanDialog";
 import { setPendingMealLog } from "@/lib/storage";
+import { setActiveRecipe, setBuyList } from "@/lib/mobile-handoff";
 import { parseNumeric } from "@/lib/nutrition";
 import { foodImage } from "@/lib/food-images";
 import { mascotComponentFor, tileTint } from "@/lib/ingredient-mascot";
@@ -152,11 +153,14 @@ export function RecipeView({ data }: RecipeViewProps) {
                             className="pill-lime"
                             style={{ flex: "1 1 160px", padding: "0 18px" }}
                             onClick={() => {
-                                const ingredientList = data.ingredients.map((i) => `${i.item}${i.quantity ? ` (${i.quantity})` : ""}`).join(", ");
-                                const prompt = `Order these ingredients on Instamart for ${data.name}: ${ingredientList}. Use my saved address.`;
-                                router.push(`/chat?agent=1&q=${encodeURIComponent(prompt)}`);
+                                // Hand off to /cart rather than straight to the agent, so the
+                                // pantry pre-check happens BEFORE anything is ordered — the
+                                // same sequencing /m/buy gives the mobile tree.
+                                setActiveRecipe(data);
+                                setBuyList({ recipeName: data.name, items: data.ingredients });
+                                router.push("/cart");
                             }}
-                            aria-label="Order these ingredients on Swiggy Instamart"
+                            aria-label="Review these ingredients in your cart"
                         >
                             <Bot width={16} height={16} /> Order · ₹{estTotal}
                         </button>

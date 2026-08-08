@@ -440,10 +440,20 @@ had.
 
 ### Designed screens with NO implementation (deferred by explicit decision)
 
-Splash (animated Bo), Meet Bo intro, Buy 1 menu → 2 cart → 3 delivery →
-4 tracking, camera capture, Bo's verdict, notification bottom-up prompt, BYOK
-key screen, dark-mode Home. The four-step ordering journey and camera logging
-need real backend work, not just UI.
+Splash (animated Bo), Meet Bo intro, the mobile Buy 1 menu → 2 cart →
+3 delivery → 4 tracking journey, notification bottom-up prompt, BYOK key
+screen, dark-mode Home. The four-step ordering journey needs real backend
+work, not just UI — there is no orders table and no platform reports state.
+
+Two entries left this list and the text above did not follow them, which is
+worth stating so they are not "re-deferred" by a future reader:
+
+- **camera capture and Bo's verdict (3e + 3f) ARE built** — `app/(mobile)/m/log`
+  is one route with `phase: "capture" | "verdict"`. See the `/m/log` section
+  above, including the `getUserMedia` path that still needs a real-device pass.
+- **A web cart exists** at `/cart` (artboard w4a) — but it is a shopping list
+  with a subtotal and store hand-offs, NOT the mobile four-step journey and
+  NOT a checkout. See the 10c entry for exactly what was and was not built.
 
 ### Decisions taken during Flow 3 — do not silently reverse
 
@@ -808,7 +818,63 @@ Next, in order:
      pre-selected. Fresh tab: zero console errors or warnings.
      **Not exercised:** actually saving a log through the sheet (the AI paths
      need a session and quota) and the Coach tab's generate calls.
-   - **cart** (`w4a`), **paywall/UpgradeDialog** (`w5a`) — not started.
+   - ~~cart~~ (`w4a`) — **DONE, as a NEW `/cart` route**, and the one screen
+     where the artboard was deliberately not followed on content. Read this
+     before "finishing" it against w4a.
+
+     **w4a draws a complete Instamart checkout that web cannot back.** Verified
+     against the codebase, not assumed: there is no product catalogue (so no
+     photos and no brands like "Fresho"/"Milky Mist"); `Ingredient.quantity` is
+     free text ("½ cup", "1 ripe") so a −/+ STEPPER implies a unit that does
+     not exist; delivery ADDRESSES live only inside the Swiggy MCP agent's
+     `get_addresses`, which **Dead End 1** says rejects our web origin;
+     `deliveryFee` and any tipping concept return **zero grep hits** in the
+     whole repo, so the ₹49 delivery line and "Bo's tip jar" are pure
+     invention; and there is no orders table and no platform reporting state
+     back, so "Place order" and "Bo places & tracks this order for you" would
+     be a button that cannot buy and a promise that cannot be kept. Building
+     those is the same bug class the paywall already shipped once (₹2,990 /
+     ₹399 against a real ₹749). **The user chose the honest version
+     explicitly.**
+
+     So the screen takes w4a's LAYOUT — item list + 336px summary rail — with
+     only real data: ingredients from the same `mobile-handoff` BuyList /
+     ActiveRecipe the mobile flow uses, mascot tiles instead of product photos
+     (DESIGN.md's rule for ingredient-level tiles), INCLUDE/EXCLUDE rows
+     instead of steppers (also the truer interaction — the real question is
+     "do I already own this?"), a subtotal explicitly labelled an estimate
+     with the note that the store settles prices and fees, and a rail that
+     hands off rather than checks out. The Instamart card keeps a plain
+     deeplink beside "Ask Bo to order" for the same reason `/m/buy/platform`
+     does: Swiggy's OAuth can reject us for reasons the user cannot fix, and
+     without the fallback there is no route to Instamart at all.
+
+     Two knock-ons worth knowing: **`lib/pantry.ts` is new** — the pantry-staple
+     heuristic was extracted from `/m/buy` so the two surfaces cannot diverge
+     (a user deselecting "butter" on mobile and seeing it re-selected on
+     desktop would reasonably call that a bug); it is still a keyword guess
+     with no pantry table, so every row must stay togglable. And **"Groceries"
+     finally joins the AppShell sidebar** — it was omitted only because it had
+     no web route, which is now false. `.cart-rail` stacks below the list under
+     1100px rather than hiding like `.chat-rail`, because this rail holds the
+     total and the buy actions; hiding it would remove the point of the screen.
+     `RecipeView`'s lime "Order · ₹X" now routes to `/cart` instead of straight
+     to the agent, so the pantry pre-check happens BEFORE anything is ordered.
+
+     Verified: `tsc` and `next build` clean (**70 routes** — `/cart` is the
+     new one); eslint clean on every file except the pre-existing
+     `set-state-in-effect` on `/m/buy`, confirmed identical via `git stash` to
+     the untouched original. Driven at 1280/1000/600 with a seeded recipe: the
+     pantry check correctly flags butter + garam masala and states the ₹60
+     saving, deselecting chicken moves the total 390 → 210 with the chip, the
+     skipped count and the strikethrough all staying consistent, and — the
+     trap the BuyList note warns about — the store deeplinks contain **exactly
+     the kept items with zero leakage** of the three deselected ones. The rail
+     stacks full-width under 1100 with the CTA still visible and no horizontal
+     scroll at any width. Fresh tab: zero console errors.
+     **Not exercised:** the agent handoff itself (needs a session, and Dead
+     End 1 means Instamart OAuth may reject the origin regardless).
+   - **paywall/UpgradeDialog** (`w5a`) — not started.
    - **`components/cc/*`**, still Midnight Kitchen primitives.
    Every web page is currently phone-width inside a 1280px shell — the pages
    have no desktop layout yet. That is the single most visible gap.

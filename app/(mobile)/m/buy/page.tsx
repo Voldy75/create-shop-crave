@@ -6,6 +6,7 @@ import { ArrowLeft, Check } from "lucide-react";
 import { getActiveRecipe, setBuyList } from "@/lib/mobile-handoff";
 import { parseNumeric } from "@/lib/nutrition";
 import { mascotComponentFor, tileTint } from "@/lib/ingredient-mascot";
+import { looksPantry } from "@/lib/pantry";
 import { foodImage } from "@/lib/food-images";
 import { BoBowl } from "@/components/mascots";
 import type { RecipeData } from "@/lib/types";
@@ -22,16 +23,10 @@ import type { RecipeData } from "@/lib/types";
  * mapping the recipe screen uses, so an ingredient looks like itself
  * everywhere.
  *
- * Pantry detection is a heuristic over common staples — there is no pantry
- * table. That is why the copy says "probably" and every row stays togglable.
+ * Pantry detection is a heuristic over common staples (lib/pantry.ts, shared
+ * with the web cart) — there is no pantry table. That is why the copy says
+ * "probably" and every row stays togglable.
  */
-
-const PANTRY_STAPLES = ["butter", "garam masala", "salt", "oil", "sugar", "pepper", "ginger-garlic", "flour"];
-
-function looksPantry(name: string): boolean {
-  const n = name.toLowerCase();
-  return PANTRY_STAPLES.some((s) => n.includes(s));
-}
 
 export default function BuyPrecheck() {
   const router = useRouter();

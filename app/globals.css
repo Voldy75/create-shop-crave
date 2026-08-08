@@ -681,3 +681,24 @@
 @media (min-width: 1100.02px) {
   .chat-input-bar { right: 336px; }
 }
+
+/* ── Cart rail (w4a) — UNLAYERED, same reason as the chat rail ──
+   `.rail` is `display: flex` in the unlayered meshi-web.css, so a layered
+   Tailwind `hidden` would lose at every width. Below the cutoff the rail
+   becomes a normal block under the item list rather than disappearing —
+   unlike chat's rail, this one holds the total and the buy actions, so
+   hiding it would remove the point of the screen. */
+@media (max-width: 1100px) {
+  .cart-rail {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--m-ink-faint);
+  }
+  .cart-page {
+    flex-direction: column;
+    overflow: auto;
+  }
+  .cart-page > div {
+    overflow: visible;
+  }
+}
