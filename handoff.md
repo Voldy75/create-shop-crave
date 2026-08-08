@@ -333,7 +333,7 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
    moving on** — grep `mobile.css` isn't enough; check what the WEB tree
    loads.
 
-3. **Forest bands work; the hero is not one of them.** `.section-dark` IS
+4. **Forest bands work; the hero is not one of them.** `.section-dark` IS
    deep forest — wLa uses `--m-forest` full-bleed three times (stats strip,
    how-it-works, final CTA) plus `--m-plum` once. An earlier note here claimed
    the artboard had no dark band; that was wrong. What fails is putting a
@@ -344,23 +344,43 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
    on-deep equivalents, the accent becomes LIME (forest is the band and cannot
    also be the accent), and cards on the band flip the scale back because a
    card is still a cream surface.
-4. **Specificity: never flip band text with bare element selectors.**
+5. **Specificity: never flip band text with bare element selectors.**
    `.section-dark p` (0,1,1) outranks a Tailwind colour class (0,1,0), so a
    blanket `p, h1, h2, h3 { color: inherit }` turned every deliberately dark
    paragraph inside a card on the band cream-on-cream. Scope such overrides to
    utility classes.
-5. **Breakpoints must match BottomNav.** The sidebar hides at `767.98px`
+6. **Breakpoints must match BottomNav.** The sidebar hides at `767.98px`
    because `components/BottomNav.tsx` uses Tailwind's `md:hidden` (768px). It
    was 900px first, which left 768–900 with no navigation at all. Verified at
    600 / 780 / 1280 — exactly one navigation at each.
-6. **`app/global-not-found.tsx` needs `meshi-b.css` imported directly.** It
+7. **`app/global-not-found.tsx` needs `meshi-b.css` imported directly.** It
    renders outside both route groups and only had `globals.css`; with `--cc-*`
    reduced to aliases it rendered completely unstyled.
-7. **The landing had 16 near-white text literals baked into Tailwind arbitrary
+8. **The landing had 16 near-white text literals baked into Tailwind arbitrary
    values** (`text-[rgba(250,249,247,0.68)]`). The light-first flip made them
    unreadable on cream. They are mapped onto the `--cc-*` text scale now, but
    the same pattern may lurk in other screens — grep before assuming a screen
    is theme-clean.
+9. **The Browser-pane test harness has its own quirks — don't mistake them for
+   code bugs, but don't dismiss real signals either.** All hit while verifying
+   the landing and sign-in:
+   - `scrollIntoView()` / hash-nav sometimes desyncs the harness's screenshot
+     compositor — the page renders a blank flat colour even though JS reads
+     correct layout and `opacity: 1`. `computer{action:"scroll_to", ref:...}`
+     against an element ref from `read_page` was reliable every time raw
+     coordinates or JS scrolling were not.
+   - `read_console_messages` accumulates across the TAB's lifetime, not the
+     current load — an old error (e.g. from a stale HMR cycle) keeps
+     reappearing after a clean reload. A genuinely fresh `tabs_create` +
+     `navigate` is the only reliable way to tell a live error from history.
+   - Setting a controlled `<input>`'s `.value` via raw JS does not update
+     React state — use `form_input` (dispatches real input events) for any
+     field with an `onChange` handler, or the click on its submit button will
+     see the old (empty) state.
+   - The synthetic `computer{action:"hover"}` does not reliably register
+     `:hover` (`element.matches(':hover')` stayed false at coordinates
+     confirmed inside the element's bounding box) — hover-only CSS needs a
+     real-cursor check outside this harness.
 
 **Fabricated marketing content on the landing — decide before launch.** The
 three testimonials (`TESTIMONIALS` in `app/(web)/page.tsx`) are invented
@@ -369,6 +389,33 @@ conversion added carrot ratings and avatar discs, which makes them look more
 credible than they are. Replace with real quotes or delete the section before
 the landing is public. The STATS figures are marketing claims too and were not
 verified against anything.
+
+**Sign-in has no dedicated route, and that is deliberate, not unfinished.**
+Every "Sign in" trigger (nav, hero, both CTAs) opens the same modal on
+`app/(web)/page.tsx`; unauthenticated visits to app routes redirect to `/`
+(see `app/(web)/(app)/chat/page.tsx`'s `router.replace("/")`), never to a
+`/signin` path. The w1b artboard draws sign-in as a full standalone page —
+that became the modal's CARD content, not a new route. If a dedicated route
+ever becomes worth building (deep-linkable, shareable), the card content in
+`app/(web)/page.tsx`'s auth-modal block is already built to lift out wholesale.
+
+**`OAuthProvider` is `"google" | "github"` only — Apple is not almost-there,
+it is unsupported at the type level.** No Apple Services ID is configured in
+Supabase either. The w1b artboard's "Continue with Apple" button is not
+rendered anywhere. If Apple sign-in is ever wanted, it needs the type widened
+in `lib/native-auth.ts`, a Supabase dashboard registration, AND — since native
+sign-in already routes through the system browser — the same
+`com.cravecreate.app://auth/callback` redirect entry blocker #3 above already
+requires for Google.
+
+**Magic-link email (`signInWithOtp`) is real, verified against the live
+Supabase backend, but email DELIVERY is not verified.** Two addresses were
+submitted through the actual form (an obviously-fake one, then one on the
+reserved `.invalid` TLD) and both correctly surfaced Supabase's own validation
+error — proving the call reaches Supabase and the response renders correctly.
+What was deliberately NOT tested: sending to a real inbox, which would need
+the project's email/SMTP configuration to actually be checked (same category
+of gap as blocker 1's `ADMIN_EMAIL` — infrastructure, not code).
 
 **`components/BottomNav.tsx` stays web-only, not deleted.** It is the
 navigation below `md`, where the sidebar hides. The plan's "BottomNav becomes
@@ -587,8 +634,12 @@ Next, in order:
      `Section tone="cream|cream2|forest|plum"`. See the 10c notes below for
      the traps — including a THIRD one found after this was first marked
      done.
+   - ~~sign-in~~ — **DONE.** `components/AuthButton.tsx` + the landing's auth
+     modal now match w1b's CARD (Bo circle, "Welcome back", provider stack).
+     Stayed a modal, not a new route — see the 10c decisions below for why,
+     and for what the artboard shows that was deliberately not built.
    - **chat** (`w3a`), **recipe view** (`w3b`), **tracker/planner** (`w4b`),
-     **cart** (`w4a`), **paywall/UpgradeDialog** (`w5a`), **sign-in** (`w1b`);
+     **cart** (`w4a`), **paywall/UpgradeDialog** (`w5a`);
    - **`components/cc/*`**, still Midnight Kitchen primitives.
    Every web page is currently phone-width inside a 1280px shell — the pages
    have no desktop layout yet. That is the single most visible gap.
