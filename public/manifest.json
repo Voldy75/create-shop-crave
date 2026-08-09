@@ -4,8 +4,8 @@
   "description": "Your personal AI food companion — recipes, ingredients, restaurants, rides.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0f0f",
-  "theme_color": "#ff6b35",
+  "background_color": "#FBF6E3",
+  "theme_color": "#FBF6E3",
   "orientation": "portrait",
   "icons": [
     {

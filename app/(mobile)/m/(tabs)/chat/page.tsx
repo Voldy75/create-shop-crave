@@ -214,7 +214,7 @@ function ChatInner() {
                     height: 7,
                     borderRadius: "50%",
                     background: "var(--m-forest)",
-                    animation: `mm-dot .9s ${d}s ease-in-out infinite`,
+                    animation: `mm-dot-soft .9s ${d}s ease-in-out infinite`,
                   }}
                 />
               ))}

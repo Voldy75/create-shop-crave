@@ -20,6 +20,7 @@ import { Montserrat } from "next/font/google";
  *   - <Toaster />    — nothing under /m uses sonner.
  */
 import "../../design/meshi-b.css";
+import "../../design/meshi-motion.css";
 import "./m/mobile.css";
 import { UserProvider } from "../context/UserContext";
 import { ThemeProvider } from "../context/ThemeContext";

@@ -21,6 +21,7 @@ import { Montserrat } from "next/font/google";
  */
 import "../../design/meshi-b.css";
 import "../../design/meshi-web.css";
+import "../../design/meshi-motion.css";
 import "../globals.css";
 
 /** Bound onto meshi-b's --m-font-display / --m-font-body, as in the mobile tree. */

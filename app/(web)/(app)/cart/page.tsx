@@ -106,7 +106,7 @@ export default function CartPage() {
           </div>
         </div>
         <div className="vstack" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 14, padding: 24, textAlign: "center" }}>
-          <BoBowl width={72} height={72} />
+          <BoBowl width={72} height={72} className="mm-idle-bo-bowl" />
           <span className="t-h1">Nothing to buy yet</span>
           <span className="t-body-soft" style={{ maxWidth: 300 }}>
             Ask Bo for a recipe, then send its ingredients here.

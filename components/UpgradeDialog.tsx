@@ -68,10 +68,9 @@ declare global {
  *  It is `--m-forest`'s value; it was the retired Midnight Kitchen orange
  *  until this pass, which meant the Razorpay checkout iframe was the last
  *  user-facing surface still wearing the old brand.
- *  NOTE for Phase 10d: `scripts/gen-resources.mjs` and `resources/*.png` still
- *  carry that orange. They are deliberately NOT changed here — flipping the
- *  generator without regenerating the PNGs would leave source and output
- *  disagreeing, which is worse than either state. Do them as one task. */
+ *  Phase 10d finished the rest of that cleanup — `scripts/gen-resources.mjs`
+ *  (with `resources/*.png` regenerated in the same commit), the `assets` npm
+ *  script, and `public/manifest.json`. The orange is now gone repo-wide. */
 const RAZORPAY_THEME = "#1E5A34";
 
 export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDialogProps) {
@@ -130,7 +129,11 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
         key: data.keyId,
         amount: data.amount,
         currency: data.currency,
-        name: "meshi",
+        // Names BOTH brands on purpose: the app titles itself "meshi" but the
+        // account and this repo are still "Crave & Create". A card statement
+        // showing only "meshi" is an unrecognised descriptor — a chargeback
+        // waiting to happen. Matches app/(mobile)/layout.tsx's title.
+        name: "meshi — Crave & Create",
         // 31 days, not "1 month" — the grant is one-time (see verify route).
         description: "meshi+ — 31 days",
         order_id: data.orderId,
@@ -193,10 +196,21 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
       >
         {/* ── Plum panel — the pitch ── */}
         <div className="paywall-pitch vstack">
+          {/* Idle loops from the mascot kit (artboard 1a): mushroom squash-hops,
+              Bo bobs, beet bounces — three different moves and durations, so
+              the trio reads as characters rather than one mechanical wave.
+
+              The static tilt sits on a WRAPPER, not the svg: every idle move
+              animates `transform`, so a `transform: rotate()` on the same
+              element would simply be overwritten by the animation. */}
           <div className="hstack" style={{ gap: 2 }}>
-            <Mushroom width={46} height={46} style={{ transform: "rotate(-12deg)" }} />
-            <BoBowl width={64} height={64} />
-            <Beet width={46} height={46} style={{ transform: "rotate(12deg)" }} />
+            <span style={{ display: "inline-flex", transform: "rotate(-12deg)" }}>
+              <Mushroom width={46} height={46} className="mm-idle-mushroom" />
+            </span>
+            <BoBowl width={64} height={64} className="mm-idle-bo-bowl" />
+            <span style={{ display: "inline-flex", transform: "rotate(12deg)" }}>
+              <Beet width={46} height={46} className="mm-idle-beet" />
+            </span>
           </div>
           <span className="on-plum" style={{ font: "800 27px/1.05 var(--m-font-display)" }}>
             Feed Bo,<br />unlock everything

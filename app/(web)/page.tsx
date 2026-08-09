@@ -482,8 +482,8 @@ export default function LandingPage() {
               {msg.role === "ai" && (
                 <div className="flex items-start gap-3">
                   {/* Bo in a tint disc, per wLa. The glyph here used to be a
-                      generic robot with stroke="#ff6b35" hardcoded — a colour
-                      no token could reach. */}
+                      generic robot with the retired orange hardcoded as a
+                      stroke — a colour no token could reach. */}
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--m-tint-green)]">
                     <BoBowl width={28} height={28} />
                   </span>

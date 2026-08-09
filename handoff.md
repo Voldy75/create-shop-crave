@@ -94,7 +94,7 @@ project before the merge.
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
-| 10 meshi re-skin | **10b mobile DONE**; **10c web DONE** (foundation, sidebar, landing, sign-in, chat, recipe, tracker/planner, cart, paywall, `components/cc/*` — all landed); **10d/10e pending** |
+| 10 meshi re-skin | **10b mobile DONE**; **10c web DONE**; **10d DONE** (motion kit + brand assets; orange gone repo-wide); **10e pending** — CI hex check + deleting `--cc-*` |
 
 ## Blocked on you — nothing proceeds past these
 
@@ -530,6 +530,8 @@ worth stating so they are not "re-deferred" by a future reader:
 - `design/meshi-b.css` — shared tokens/components, consumed by both trees
 - `design/meshi-web.css` — desktop shell layer, **imported by
   `app/(web)/layout.tsx`** (it landed with the 10c foundation)
+- `design/meshi-motion.css` — mascot motion kit (10d), imported by BOTH root
+  layouts. The only place `mm-*` keyframes should be added.
 - `app/(mobile)/m/mobile.css` — mobile-only utilities meshi-b lacks
 - `components/mascots/*` — 13 mascots + lookup map
 - **Mobile tree is fully off `--cc-*`** — the only hit is a comment in
@@ -1018,10 +1020,54 @@ Next, in order:
    there is no web board for them. They inherit the shell and the aliased
    palette, so they are on-brand, but they are not *designed*. The admin
    console is the same, plus it has never been rendered by anyone (blocker 1).
-2. **Phase 10d** — mascot motion (`Meshi Mascot Animations.dc.html`), plus the
-   `#ff6b35` cleanup that still lives in `components/UpgradeDialog.tsx`'s
-   Razorpay `theme.color` and `scripts/gen-resources.mjs`, and regenerating
-   `resources/*.png`.
+2. ~~**Phase 10d**~~ — **DONE.** Two halves:
+
+   **a) The mascot motion kit.** `design/meshi-motion.css` is new and vendored
+   from "Meshi Mascot Animations.dc.html" — 15 keyframes, per-move utilities,
+   and a per-character idle class for all 13 mascots. It is a SEPARATE file
+   because DESIGN.md requires `meshi-b.css` to stay a faithful copy of the
+   design system's own file, and these keyframes come from a different design
+   document. Both root layouts import it, so it is shared by construction.
+   `lib/mascot-motion.ts` maps `MascotName` → idle class (plus a stagger
+   helper), so callers ask for "the carrot's move" rather than remembering it
+   is a 1.6s wiggle around a 50%/88% origin.
+
+   **This consolidated a real divergence.** `mm-bob` was defined byte-identically
+   in BOTH `globals.css` and `mobile.css`; `mm-ring`/`mm-blink` were mobile-only
+   duplicates of the doc. Those are gone, replaced by the shared file. **`mm-dot`
+   was worse — the same name animated two different ways depending on which tree
+   you were in** (web: the doc's 11px hop; mobile: a 4px hop with an opacity
+   fade, tuned for the 8px dots of Bo's thinking bubble). That is the `.row`
+   mistake again. The mobile variant is now `mm-dot-soft`, local to `mobile.css`,
+   with its one consumer updated; `mm-dot` means exactly one thing repo-wide.
+   Landing-only compositions (`mm-twinkle`/`mm-poploop`/`mm-deliver`/`hiw-in`)
+   deliberately stay in `globals.css` — they are not part of the mascot kit.
+
+   Applied so far, deliberately sparingly: the paywall's mascot trio (three
+   different moves, so it reads as characters not a wave) and the cart empty
+   state. **Note a static `transform: rotate()` and an idle move cannot share
+   an element** — every move animates `transform` and simply overwrites it. The
+   paywall puts the tilt on a wrapper; do the same elsewhere.
+
+   **b) The orange is gone from the entire repo.** Beyond the Razorpay
+   `theme.color` already fixed in w5a: `scripts/gen-resources.mjs`, the `assets`
+   npm script, and — **found during this pass, and live** — `public/manifest.json`,
+   whose PWA `theme_color` was still `#ff6b35` and `background_color` still the
+   Midnight Kitchen `#0f0f0f`. Both are now cream, matching
+   `app/(mobile)/layout.tsx`'s `themeColor`.
+   The generator also stopped drawing the letter **"C"**: the mark is Bo now,
+   with path data copied verbatim from `components/mascots/BoBowl.tsx` so the
+   icon and the in-app mascot cannot drift. `resources/*.png` were regenerated
+   and committed in the same change — **they are build output; never change the
+   generator without re-running it**, or source and output disagree.
+
+   **One thing to decide (not a blocker):** the product NAME is split. The mobile
+   layout titles itself "meshi — Crave & Create", the web layout and
+   `public/manifest.json` still say "Crave & Create", and the design system is
+   "meshi" throughout. The Razorpay descriptor now names BOTH deliberately —
+   a statement line reading only "meshi" is an unrecognised descriptor and a
+   chargeback risk — but a real rename is a product call, not a design cleanup,
+   so nothing else was touched.
 3. **Phase 10e** — the CI hex check and deleting `--cc-*`.
 
 Two things worth doing before more UI:

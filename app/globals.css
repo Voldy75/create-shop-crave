@@ -62,10 +62,10 @@
        (light) and overrides them under [data-theme="dark"], so the aliases
        follow. The old [data-theme="light"] token block that used to do this
        job is gone — it would now fight the system it is aliasing.
-     - The orange is gone. --cc-accent is forest green. Note this does NOT
-       reach components/UpgradeDialog.tsx's Razorpay theme.color or
-       scripts/gen-resources.mjs, which bake #ff6b35 in places CSS variables
-       cannot reach (Phase 10d).
+     - The orange is gone. --cc-accent is forest green. Phase 10d finished the
+       job in the places CSS variables cannot reach: UpgradeDialog's Razorpay
+       theme.color, scripts/gen-resources.mjs (plus the regenerated
+       resources/*.png) and public/manifest.json.
 
    These aliases are scaffolding, not the destination. Phase 10e deletes them
    once `grep -rn -- '--cc-' app components` returns zero.
@@ -552,14 +552,10 @@
    its own (translateY only, no opacity fade), taken verbatim from the source
    .dc.html's inline <style>, which is the only place any of this block was
    ever defined. */
-@keyframes mm-bob {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-7px); }
-}
-@keyframes mm-dot {
-  0%, 100% { transform: translateY(0); }
-  35%      { transform: translateY(-11px); }
-}
+/* mm-bob and mm-dot moved to design/meshi-motion.css — they were duplicated
+   verbatim here and in the mobile tree. mm-twinkle / mm-poploop / mm-deliver
+   below stay: they are landing-page compositions, not part of the mascot kit,
+   and nothing else uses them. */
 @keyframes mm-twinkle {
   0%, 100% { transform: scale(.75) rotate(-10deg); opacity: .55; }
   50%      { transform: scale(1.15) rotate(20deg); opacity: 1; }

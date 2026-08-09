@@ -314,26 +314,21 @@ a { color: inherit; text-decoration: none; }
    Referenced by the design's artboards. meshi-b.css ships mm-pop and
    mm-slideup but not these, so they live here.
    Honour prefers-reduced-motion — these are decorative. */
-@keyframes mm-ring {
-  0%   { transform: scale(.55); opacity: .65; }
-  100% { transform: scale(1.4);  opacity: 0; }
-}
-@keyframes mm-bob {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-7px); }
-}
-@keyframes mm-blink {
-  0%, 90%, 96%, 100% { transform: scaleY(1); }
-  93%                { transform: scaleY(.08); }
-}
-/* Bo's three-dot "thinking" bubble on the chat artboard. */
-@keyframes mm-dot {
+/* mm-ring / mm-bob / mm-blink now live in design/meshi-motion.css, which both
+   trees import — they were byte-identical here and in the web tree.
+
+   mm-dot-soft is the ONE deliberate divergence and is why it got a new name.
+   The design doc's mm-dot is an 11px hop; on the 8px dots of Bo's "thinking"
+   bubble that reads as a jump rather than a pulse, so this variant travels 4px
+   and fades. Keeping both under the name `mm-dot` meant one name animated two
+   ways depending on which tree you were in — the `.row` mistake again. */
+@keyframes mm-dot-soft {
   0%, 100% { transform: translateY(0);    opacity: .45; }
   50%      { transform: translateY(-4px); opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [style*="mm-ring"], [style*="mm-bob"], [style*="mm-blink"], [style*="mm-dot"], .pill-attn {
+  [style*="mm-dot-soft"], .pill-attn {
     animation: none !important;
   }
 }

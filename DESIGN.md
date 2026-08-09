@@ -119,6 +119,13 @@ as each surface converts.
 - **Chunky sticker press.** Primary buttons sit on a hard `0 5px 0` bottom
   shadow and `translateY(4px)` on `:active`, with
   `cubic-bezier(.34,1.56,.64,1)`. This is the signature interaction; keep it.
+- **Mascot idle loops** live in `design/meshi-motion.css`. Every character has
+  ONE signature move with its own duration — Bo bobs at 2.4s, carrot wiggles at
+  1.6s, chili shakes at 0.9s. Reach for `mascotIdleClass()` in
+  `lib/mascot-motion.ts` rather than picking by hand; identical timings make a
+  row of mascots read as one mechanical wave instead of a cast.
+  **A move animates `transform`, so a static `transform: rotate()` on the same
+  element is overwritten.** Put the tilt on a wrapper (see the paywall trio).
 - `.pill-attn` — slow 2s pulse for a single hero CTA. Use sparingly.
 - `.pill-float` — bottom-anchored action that slides up.
 - Hover states are **CSS classes**, never `onMouseEnter` style mutation.
