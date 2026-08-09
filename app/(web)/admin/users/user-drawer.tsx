@@ -111,22 +111,22 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
       />
       <div
         className="relative w-full max-w-md h-full overflow-y-auto p-6 space-y-6"
-        style={{ background: "var(--cc-surface)", borderLeft: "1px solid var(--cc-border)" }}
+        style={{ background: "var(--m-card)", borderLeft: "1px solid var(--m-ink-faint)" }}
       >
         <div className="flex items-start justify-between">
           <div className="min-w-0">
-            <p className="font-bold text-lg truncate" style={{ color: "var(--cc-text-primary)" }}>
+            <p className="font-bold text-lg truncate" style={{ color: "var(--m-ink)" }}>
               {current.email ?? current.user_id}
             </p>
             {current.display_name && (
-              <p className="text-sm" style={{ color: "var(--cc-text-secondary)" }}>{current.display_name}</p>
+              <p className="text-sm" style={{ color: "var(--m-ink-soft)" }}>{current.display_name}</p>
             )}
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-1.5 rounded-full transition-colors hover:bg-[var(--cc-surface-2)]"
-            style={{ color: "var(--cc-text-secondary)" }}
+            className="p-1.5 rounded-full transition-colors hover:bg-[var(--m-cream-2)]"
+            style={{ color: "var(--m-ink-soft)" }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -168,7 +168,7 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
               value={planId ?? ""}
               onChange={(e) => setPlanId(e.target.value || null)}
               className="flex-1 px-3 py-2 text-sm rounded-lg"
-              style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+              style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
             >
               <option value="">No plan</option>
               {plans.map((p) => (
@@ -195,7 +195,7 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
               className="flex-1 px-3 py-2 text-sm rounded-lg"
-              style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+              style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
             >
               <option value="user">User</option>
               <option value="support">Support</option>
@@ -242,8 +242,8 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
           </div>
 
           {pendingStatus && (
-            <div className="mt-2 space-y-2 p-3 rounded-xl" style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)" }}>
-              <p className="text-xs" style={{ color: "var(--cc-text-secondary)" }}>
+            <div className="mt-2 space-y-2 p-3 rounded-xl" style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}>
+              <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>
                 {pendingStatus === "active"
                   ? "Restore this account to active status."
                   : `${pendingStatus === "banned" ? "Banning" : "Restricting"} requires a reason (shown in the audit log).`}
@@ -255,7 +255,7 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
                   placeholder="Reason (required)"
                   rows={3}
                   className="w-full px-3 py-2 text-sm rounded-lg resize-none"
-                  style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+                  style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
                 />
               )}
               <div className="flex gap-2">
@@ -278,8 +278,8 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-1">
-      <span style={{ color: "var(--cc-text-tertiary)" }}>{label}</span>
-      <span style={{ color: "var(--cc-text-primary)" }}>{value}</span>
+      <span style={{ color: "var(--m-ink-soft)" }}>{label}</span>
+      <span style={{ color: "var(--m-ink)" }}>{value}</span>
     </div>
   );
 }

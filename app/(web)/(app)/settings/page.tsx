@@ -37,8 +37,8 @@ export default function SettingsPage() {
 
   if (!hydrated || !user) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ background: "var(--cc-bg)" }}>
-        <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--cc-text-tertiary)" }} />
+      <div className="flex items-center justify-center h-screen" style={{ background: "var(--m-cream)" }}>
+        <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--m-ink-soft)" }} />
       </div>
     );
   }
@@ -46,7 +46,7 @@ export default function SettingsPage() {
   return (
     <div
       className="min-h-screen"
-      style={{ background: "var(--cc-bg)" }}
+      style={{ background: "var(--m-cream)" }}
     >
       {/* Header */}
       <header
@@ -55,15 +55,15 @@ export default function SettingsPage() {
       >
         <button
           onClick={() => router.back()}
-          className="p-1.5 rounded-lg transition-colors hover:bg-[var(--cc-surface-2)]"
+          className="p-1.5 rounded-lg transition-colors hover:bg-[var(--m-cream-2)]"
         >
-          <ArrowLeft className="w-4 h-4" style={{ color: "var(--cc-text-secondary)" }} />
+          <ArrowLeft className="w-4 h-4" style={{ color: "var(--m-ink-soft)" }} />
         </button>
         <h1
           style={{
             fontSize: "16px",
             fontWeight: 700,
-            color: "var(--cc-text-primary)",
+            color: "var(--m-ink)",
             letterSpacing: "-0.02em",
           }}
         >
@@ -75,8 +75,8 @@ export default function SettingsPage() {
       <div
         className="px-4 md:px-6 flex gap-1 overflow-x-auto"
         style={{
-          borderBottom: "1px solid var(--cc-border)",
-          background: "var(--cc-bg)",
+          borderBottom: "1px solid var(--m-ink-faint)",
+          background: "var(--m-cream)",
         }}
       >
         {TABS.map(({ id, label, icon: Icon }) => {
@@ -89,8 +89,8 @@ export default function SettingsPage() {
               style={{
                 fontSize: "13px",
                 fontWeight: active ? 600 : 400,
-                color: active ? "var(--cc-accent)" : "var(--cc-text-secondary)",
-                borderBottom: active ? "2px solid var(--cc-accent)" : "2px solid transparent",
+                color: active ? "var(--m-forest)" : "var(--m-ink-soft)",
+                borderBottom: active ? "2px solid var(--m-forest)" : "2px solid transparent",
                 marginBottom: "-1px",
               }}
             >

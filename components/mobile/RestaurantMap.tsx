@@ -32,6 +32,9 @@ export interface MapPin {
 
 const DEFAULT_CENTER = { lat: 28.6139, lng: 77.209 }; // New Delhi (sample data origin)
 
+// hex-ok-start: Google Maps style JSON has no CSS custom-property support —
+// DESIGN.md's allowlist. Values are the artboard's own map palette, copied
+// from design/meshi-b.css's --m-* tokens where one exists.
 /** Colours lifted from the artboard's illustrated map. */
 const LAND = "#E8EDDA";
 const ROAD = "#FDFBF2";
@@ -55,6 +58,7 @@ const MESHI_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: "transit", stylers: [{ visibility: "off" }] },
   { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#D8D2BC" }] },
 ];
+// hex-ok-end
 
 /**
  * The artboard's teardrop, verbatim: a rounded head tapering to a point, with
@@ -135,7 +139,7 @@ function FallbackMap({
             style={{
               width: 16, height: 16, borderRadius: "50%",
               background: "var(--m-forest)", border: `3px solid ${ON_DEEP}`,
-              boxShadow: "0 0 0 8px rgba(30,90,52,0.16)",
+              boxShadow: "0 0 0 8px color-mix(in srgb, var(--m-forest) 16%, transparent)",
             }}
           />
         </div>

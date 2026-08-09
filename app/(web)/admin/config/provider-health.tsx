@@ -38,18 +38,18 @@ export function ProviderHealth({ providers }: { providers: ProvidersBlock }) {
         <div
           key={c.envVar}
           className="flex items-center justify-between p-3 rounded-xl"
-          style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)" }}
+          style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}
         >
           <div>
-            <p className="text-sm" style={{ color: "var(--cc-text-primary)" }}>{c.label}</p>
-            <code className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>{c.envVar}</code>
+            <p className="text-sm" style={{ color: "var(--m-ink)" }}>{c.label}</p>
+            <code className="text-xs" style={{ color: "var(--m-ink-soft)" }}>{c.envVar}</code>
           </div>
           <StatusPill tone={c.present ? "active" : "error"}>
             {c.present ? "Present" : "Missing"}
           </StatusPill>
         </div>
       ))}
-      <p className="text-xs pt-1" style={{ color: "var(--cc-text-tertiary)" }}>
+      <p className="text-xs pt-1" style={{ color: "var(--m-ink-soft)" }}>
         Set missing values in the Vercel dashboard (Project → Settings → Environment Variables). Secrets are never
         read or written here.
       </p>

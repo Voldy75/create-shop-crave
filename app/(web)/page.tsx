@@ -177,14 +177,14 @@ export default function LandingPage() {
 
   if (!hydrated) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--cc-bg)]">
-        <Loader2 className="w-5 h-5 animate-spin text-[var(--cc-accent)]" />
+      <main className="min-h-screen flex items-center justify-center bg-[var(--m-cream)]">
+        <Loader2 className="w-5 h-5 animate-spin text-[var(--m-forest)]" />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-[var(--cc-bg)]">
+    <main className="min-h-screen flex flex-col bg-[var(--m-cream)]">
 
       {/* ── Glass Nav ── */}
       <nav
@@ -196,7 +196,7 @@ export default function LandingPage() {
             orange. */}
         <div className="flex items-center gap-2.5">
           <BoBowl width={28} height={28} />
-          <span className="text-[19px] font-extrabold tracking-[-0.6px] text-[var(--cc-text-primary)]">
+          <span className="text-[19px] font-extrabold tracking-[-0.6px] text-[var(--m-ink)]">
             meshi
           </span>
         </div>
@@ -204,7 +204,7 @@ export default function LandingPage() {
           <ThemeToggle />
           <button
             onClick={() => setShowAuthCard(true)}
-            className="text-[13px] font-bold text-[var(--cc-text-primary)] bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity"
+            className="text-[13px] font-bold text-[var(--m-ink)] bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity"
           >
             Sign in
           </button>
@@ -234,10 +234,10 @@ export default function LandingPage() {
 
             <h1 className="headline-hero">
               Cook what you crave.{" "}
-              <span className="text-[var(--cc-accent)]">Bo does the rest.</span>
+              <span className="text-[var(--m-forest)]">Bo does the rest.</span>
             </h1>
 
-            <p className="mx-auto max-w-[460px] text-[17px] leading-[1.45] text-[var(--cc-text-secondary)] md:mx-0">
+            <p className="mx-auto max-w-[460px] text-[17px] leading-[1.45] text-[var(--m-ink-soft)] md:mx-0">
               Tell Bo what you&apos;re hungry for. Get a recipe with a one-tap grocery cart, or the best table nearby with a ride booked &mdash; all from one warm little kitchen on the web.
             </p>
 
@@ -294,16 +294,16 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="mx-auto w-full max-w-sm rounded-2xl bg-[var(--cc-surface)] p-7 text-left shadow-[var(--cc-shadow-lg)] md:mx-0"
+                className="mx-auto w-full max-w-sm rounded-2xl bg-[var(--m-card)] p-7 text-left shadow-[var(--m-shadow-lift)] md:mx-0"
               >
                 <div className="space-y-5">
-                  <div className="flex items-center gap-3 rounded-xl bg-[var(--cc-surface-2)] p-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--cc-accent)] text-sm font-semibold text-white">
+                  <div className="flex items-center gap-3 rounded-xl bg-[var(--m-cream-2)] p-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--m-forest)] text-sm font-semibold text-white">
                       {(user.user_metadata?.full_name || user.email || "U")[0].toUpperCase()}
                     </div>
                     <div className="min-w-0 text-left">
-                      <p className="truncate text-[14px] font-semibold text-[var(--cc-text-primary)]">{user.user_metadata?.full_name || user.email}</p>
-                      <p className="text-[12px] text-[var(--cc-text-tertiary)]">Signed in</p>
+                      <p className="truncate text-[14px] font-semibold text-[var(--m-ink)]">{user.user_metadata?.full_name || user.email}</p>
+                      <p className="text-[12px] text-[var(--m-ink-soft)]">Signed in</p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -326,12 +326,12 @@ export default function LandingPage() {
                   <div
                     className="flex items-center gap-2 rounded-xl p-3 text-[14px]"
                     style={{
-                      background: locationError ? "rgba(255,69,58,0.08)" : "var(--cc-surface-2)",
+                      background: locationError ? "rgba(255,69,58,0.08)" : "var(--m-cream-2)",
                       border: locationError ? "1px solid rgba(255,69,58,0.2)" : "none",
                     }}
                   >
-                    <MapPin className="w-4 h-4 shrink-0" style={{ color: locationError ? "#ff453a" : "var(--cc-accent)" }} />
-                    <span style={{ color: locationError ? "#ff453a" : "var(--cc-text-secondary)" }}>
+                    <MapPin className="w-4 h-4 shrink-0" style={{ color: locationError ? "#ff453a" : "var(--m-forest)" }} />
+                    <span style={{ color: locationError ? "#ff453a" : "var(--m-ink-soft)" }}>
                       {location ? "Location ready" : locationError ? locationError : "Needed for restaurant suggestions"}
                     </span>
                   </div>
@@ -392,7 +392,7 @@ export default function LandingPage() {
           {/* The "Powered by …" line used to live here. The hero's own
               integrations row now says the same thing with the partners'
               actual marks, so this was the same list twice in one viewport. */}
-          <ChevronDown className="w-4 h-4 animate-bounce text-[var(--cc-text-tertiary)]" />
+          <ChevronDown className="w-4 h-4 animate-bounce text-[var(--m-ink-soft)]" />
         </motion.div>
 
         {/* Auth modal — built to the "Sign in" artboard (w1b).
@@ -448,7 +448,7 @@ export default function LandingPage() {
                   {s.value}
                 </span>
                 <span className="text-[14.5px] font-extrabold text-[var(--m-on-deep)]">{s.label}</span>
-                <span className="text-[12px] font-bold leading-[1.35] text-[var(--cc-text-tertiary)]">{s.desc}</span>
+                <span className="text-[12px] font-bold leading-[1.35] text-[var(--band-text-tertiary)]">{s.desc}</span>
               </div>
             ))}
           </div>
@@ -621,7 +621,7 @@ export default function LandingPage() {
               </span>
               <span className="text-[21px] font-bold text-[var(--m-on-deep)]">{step.title}</span>
               <span className="hiw-bar" aria-hidden="true" />
-              <p className="text-[14.5px] font-semibold leading-[1.55] text-[var(--cc-text-secondary)]">
+              <p className="text-[14.5px] font-semibold leading-[1.55] text-[var(--band-text-secondary)]">
                 {step.desc}
               </p>
             </div>
@@ -656,7 +656,7 @@ export default function LandingPage() {
           {/* One step brighter than wLa's eyebrow, which sits at 60% on plum
               and measures 2.1:1. Secondary takes it past 3:1 at no cost to the
               design's intent. */}
-          <p className="t-micro text-[var(--cc-text-secondary)]">
+          <p className="t-micro text-[var(--band-text-secondary)]">
             Integrated with your favourite platforms
           </p>
           {/* Wordmarks in the partners' own colours, separated by dots — the
@@ -666,7 +666,7 @@ export default function LandingPage() {
             {PLATFORM_MARKS.map(({ name, brand }, i) => (
               <Fragment key={name}>
                 {i > 0 && (
-                  <span className="h-[5px] w-[5px] rounded-full bg-[var(--cc-border-strong)]" aria-hidden="true" />
+                  <span className="h-[5px] w-[5px] rounded-full bg-[var(--band-border-strong)]" aria-hidden="true" />
                 )}
                 <span className="text-[22px] font-extrabold tracking-[-0.5px]" style={{ color: brand }}>
                   {name}
@@ -674,7 +674,7 @@ export default function LandingPage() {
               </Fragment>
             ))}
           </div>
-          <p className="mx-auto max-w-[500px] text-[14px] font-semibold leading-[1.5] text-[var(--cc-text-secondary)]">
+          <p className="mx-auto max-w-[500px] text-[14px] font-semibold leading-[1.5] text-[var(--band-text-secondary)]">
             Bo generates deep links straight into each platform &mdash; no extra accounts, no copy-pasting. Just tap and go.
           </p>
         </div>
@@ -727,9 +727,9 @@ export default function LandingPage() {
           <h2 className="headline-hero" style={{ fontSize: "clamp(32px, 5vw, 46px)" }}>
             Your next great meal
             <br />
-            <span className="text-[var(--cc-accent)]">starts here.</span>
+            <span className="text-[var(--band-accent)]">starts here.</span>
           </h2>
-          <p className="text-[17px] leading-[1.47] tracking-[-0.022em] text-[var(--cc-text-secondary)]">
+          <p className="text-[17px] leading-[1.47] tracking-[-0.022em] text-[var(--band-text-secondary)]">
             Free to try. No card required. Sign in with Google and start craving.
           </p>
           <button
@@ -741,8 +741,8 @@ export default function LandingPage() {
           </button>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 pt-4">
             {["2 free requests/day", "No credit card", "Works on mobile", "Save recipes & plan meals"].map((item) => (
-              <div key={item} className="flex items-center gap-1.5 text-[12px] text-[var(--cc-text-tertiary)]">
-                <Check className="w-3 h-3 text-[var(--cc-accent)]" />
+              <div key={item} className="flex items-center gap-1.5 text-[12px] text-[var(--band-text-tertiary)]">
+                <Check className="w-3 h-3 text-[var(--band-accent)]" />
                 {item}
               </div>
             ))}

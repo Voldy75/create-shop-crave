@@ -17,12 +17,12 @@ export function UsageBadge({ count, limit, onClick }: UsageBadgeProps) {
     ? "rgba(255,69,58,0.12)"
     : isLow
     ? "rgba(255,159,10,0.12)"
-    : "var(--cc-surface-2)";
+    : "var(--m-cream-2)";
   const color = isExhausted
     ? "#ff453a"
     : isLow
     ? "#ff9f0a"
-    : "var(--cc-text-secondary)";
+    : "var(--m-ink-soft)";
 
   return (
     <button

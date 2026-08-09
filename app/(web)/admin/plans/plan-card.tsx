@@ -86,21 +86,21 @@ export function PlanCard({ plan, onUpdated }: PlanCardProps) {
   return (
     <CCCard className="p-5 space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <code className="text-xs font-semibold" style={{ color: "var(--cc-text-tertiary)" }}>{plan.id}</code>
+        <code className="text-xs font-semibold" style={{ color: "var(--m-ink-soft)" }}>{plan.id}</code>
         <StatusPill tone={isActive ? "active" : "off"}>{isActive ? "Active" : "Inactive"}</StatusPill>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--cc-text-tertiary)" }}>
+        <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--m-ink-soft)" }}>
           Name
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="px-3 py-2 text-sm rounded-lg"
-            style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+            style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--cc-text-tertiary)" }}>
+        <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--m-ink-soft)" }}>
           Chat daily limit
           <input
             value={chatLimit}
@@ -108,13 +108,13 @@ export function PlanCard({ plan, onUpdated }: PlanCardProps) {
             placeholder="Unlimited"
             inputMode="numeric"
             className="px-3 py-2 text-sm rounded-lg"
-            style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+            style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
           />
-          <span style={{ color: "var(--cc-text-tertiary)" }}>
+          <span style={{ color: "var(--m-ink-soft)" }}>
             {chatLimit.trim() === "" ? "Unlimited" : " "}
           </span>
         </label>
-        <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--cc-text-tertiary)" }}>
+        <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--m-ink-soft)" }}>
           Photo daily limit
           <input
             value={photoLimit}
@@ -122,15 +122,15 @@ export function PlanCard({ plan, onUpdated }: PlanCardProps) {
             placeholder="Unlimited"
             inputMode="numeric"
             className="px-3 py-2 text-sm rounded-lg"
-            style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+            style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
           />
-          <span style={{ color: "var(--cc-text-tertiary)" }}>
+          <span style={{ color: "var(--m-ink-soft)" }}>
             {photoLimit.trim() === "" ? "Unlimited" : " "}
           </span>
         </label>
       </div>
 
-      <label className="flex items-center gap-2 text-sm" style={{ color: "var(--cc-text-secondary)" }}>
+      <label className="flex items-center gap-2 text-sm" style={{ color: "var(--m-ink-soft)" }}>
         <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
         Plan is active
       </label>
@@ -142,8 +142,8 @@ export function PlanCard({ plan, onUpdated }: PlanCardProps) {
         Save plan
       </CCButton>
 
-      <div className="pt-2" style={{ borderTop: "1px solid var(--cc-border)" }}>
-        <p className="text-label mb-2" style={{ color: "var(--cc-text-tertiary)" }}>Prices</p>
+      <div className="pt-2" style={{ borderTop: "1px solid var(--m-ink-faint)" }}>
+        <p className="text-label mb-2" style={{ color: "var(--m-ink-soft)" }}>Prices</p>
         <PriceEditor planId={plan.id} prices={prices} onSaved={handlePriceSaved} />
       </div>
     </CCCard>

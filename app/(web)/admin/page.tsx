@@ -19,7 +19,7 @@ interface Stats {
 
 function Sparkline({ data }: { data: DayData[] }) {
   if (data.length === 0) return (
-    <div className="h-12 rounded-lg" style={{ background: "var(--cc-surface-2)" }} />
+    <div className="h-12 rounded-lg" style={{ background: "var(--m-cream-2)" }} />
   );
   const max = Math.max(...data.map((d) => d.total), 1);
   return (
@@ -30,7 +30,7 @@ function Sparkline({ data }: { data: DayData[] }) {
           className="flex-1 rounded-sm transition-opacity hover:opacity-100"
           style={{
             height: `${Math.max(4, (d.total / max) * 100)}%`,
-            background: "var(--cc-accent)",
+            background: "var(--m-forest)",
             opacity: 0.7,
           }}
           title={`${d.usage_date}: ${d.total} requests`}
@@ -55,12 +55,12 @@ function StatCard({
   iconColor: string;
 }) {
   return (
-    <div className="p-5" style={{ background: "var(--cc-surface)", borderRadius: "12px" }}>
+    <div className="p-5" style={{ background: "var(--m-card)", borderRadius: "12px" }}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--cc-text-tertiary)", letterSpacing: "0.08em" }}>{label}</p>
-          <p className="text-3xl font-bold mt-1" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.03em" }}>{value}</p>
-          {sub && <p className="text-xs mt-0.5" style={{ color: "var(--cc-text-secondary)" }}>{sub}</p>}
+          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--m-ink-soft)", letterSpacing: "0.08em" }}>{label}</p>
+          <p className="text-3xl font-bold mt-1" style={{ color: "var(--m-ink)", letterSpacing: "-0.03em" }}>{value}</p>
+          {sub && <p className="text-xs mt-0.5" style={{ color: "var(--m-ink-soft)" }}>{sub}</p>}
         </div>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center"
           style={{ background: `${iconColor}18`, color: iconColor }}>
@@ -102,9 +102,9 @@ export default function AdminPage() {
 
   if (loading && !stats) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ background: "var(--cc-bg)" }}>
+      <div className="flex items-center justify-center h-screen" style={{ background: "var(--m-cream)" }}>
         <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: "var(--cc-accent)", borderTopColor: "transparent" }} />
+          style={{ borderColor: "var(--m-forest)", borderTopColor: "transparent" }} />
       </div>
     );
   }
@@ -116,21 +116,21 @@ export default function AdminPage() {
   const mrr = stats ? stats.proCount * 9 : 0;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--cc-bg)" }}>
+    <div className="min-h-screen" style={{ background: "var(--m-cream)" }}>
       <header className="glass-nav px-6 flex items-center justify-between sticky top-0 z-10" style={{ height: "48px" }}>
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/chat")}
-            className="p-2 rounded-full transition-colors text-[var(--cc-text-secondary)] hover:bg-[var(--cc-surface-2)]"
+            className="p-2 rounded-full transition-colors text-[var(--m-ink-soft)] hover:bg-[var(--m-cream-2)]"
             aria-label="Back to chat"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="font-bold text-lg" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+            <h1 className="font-bold text-lg" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
               Admin Dashboard
             </h1>
-            <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>
+            <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>
               Last updated: {lastRefresh.toLocaleTimeString()}
             </p>
           </div>
@@ -156,65 +156,65 @@ export default function AdminPage() {
         {/* KPI grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? 0} iconColor="#0a84ff" />
-          <StatCard icon={Zap} label="DAU" value={stats?.dau ?? 0} sub="active today" iconColor="var(--cc-accent)" />
+          <StatCard icon={Zap} label="DAU" value={stats?.dau ?? 0} sub="active today" iconColor="var(--m-forest)" />
           <StatCard icon={Crown} label="Pro Subscribers" value={stats?.proCount ?? 0} sub={`${conversionRate}% conversion`} iconColor="#ffd60a" />
           <StatCard icon={TrendingUp} label="Est. MRR" value={`$${mrr}`} sub={`₹${mrr * 84} / month`} iconColor="#34c759" />
         </div>
 
         {/* Request stats + sparkline */}
-        <div className="p-6 rounded-2xl" style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)" }}>
+        <div className="p-6 rounded-2xl" style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)" }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <BarChart2 className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
-              <h2 className="font-bold" style={{ color: "var(--cc-text-primary)" }}>AI Requests</h2>
+              <BarChart2 className="w-4 h-4" style={{ color: "var(--m-forest)" }} />
+              <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>AI Requests</h2>
             </div>
             <div className="flex gap-4 text-sm">
               <div className="text-center">
-                <p className="font-bold" style={{ color: "var(--cc-text-primary)" }}>{stats?.requestsToday ?? 0}</p>
-                <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>Today</p>
+                <p className="font-bold" style={{ color: "var(--m-ink)" }}>{stats?.requestsToday ?? 0}</p>
+                <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>Today</p>
               </div>
               <div className="text-center">
-                <p className="font-bold" style={{ color: "var(--cc-text-primary)" }}>{stats?.requestsWeek ?? 0}</p>
-                <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>This week</p>
+                <p className="font-bold" style={{ color: "var(--m-ink)" }}>{stats?.requestsWeek ?? 0}</p>
+                <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>This week</p>
               </div>
             </div>
           </div>
           <Sparkline data={stats?.dailyRequests ?? []} />
           <div className="flex justify-between mt-1">
-            <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>14 days ago</p>
-            <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>Today</p>
+            <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>14 days ago</p>
+            <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>Today</p>
           </div>
         </div>
 
         {/* Top users */}
-        <div className="p-6 rounded-2xl" style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)" }}>
-          <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: "var(--cc-text-primary)" }}>
-            <Users className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
+        <div className="p-6 rounded-2xl" style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)" }}>
+          <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: "var(--m-ink)" }}>
+            <Users className="w-4 h-4" style={{ color: "var(--m-forest)" }} />
             Top Users This Week
           </h2>
           {!stats?.topUsers?.length ? (
-            <p className="text-sm" style={{ color: "var(--cc-text-tertiary)" }}>No requests yet this week.</p>
+            <p className="text-sm" style={{ color: "var(--m-ink-soft)" }}>No requests yet this week.</p>
           ) : (
             <div className="space-y-2">
               {stats.topUsers.map((u, i) => (
                 <div key={u.user_id} className="flex items-center justify-between p-3 rounded-xl"
-                  style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)" }}>
+                  style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold w-4" style={{ color: "var(--cc-text-tertiary)" }}>{i + 1}</span>
+                    <span className="text-xs font-bold w-4" style={{ color: "var(--m-ink-soft)" }}>{i + 1}</span>
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ background: "var(--cc-accent-dim)", color: "var(--cc-accent)" }}>
+                      style={{ background: "var(--m-tint-green)", color: "var(--m-forest)" }}>
                       {u.email[0].toUpperCase()}
                     </div>
-                    <p className="text-sm font-medium" style={{ color: "var(--cc-text-primary)" }}>{u.email}</p>
+                    <p className="text-sm font-medium" style={{ color: "var(--m-ink)" }}>{u.email}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {u.is_pro && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "var(--cc-accent-dim)", color: "var(--cc-accent)", border: "1px solid rgba(255,107,53,0.25)" }}>
+                        style={{ background: "var(--m-tint-green)", color: "var(--m-forest)", border: "1px solid rgba(255,107,53,0.25)" }}>
                         Pro
                       </span>
                     )}
-                    <span className="text-sm font-bold" style={{ color: "var(--cc-text-primary)" }}>
+                    <span className="text-sm font-bold" style={{ color: "var(--m-ink)" }}>
                       {u.total_requests} req
                     </span>
                   </div>

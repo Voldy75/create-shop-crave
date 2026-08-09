@@ -119,27 +119,27 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
         onClick={(e) => e.stopPropagation()}
         className="w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto"
         style={{
-          background: "var(--cc-surface)",
+          background: "var(--m-card)",
           borderRadius: "20px 20px 0 0",
-          border: "1px solid var(--cc-border)",
+          border: "1px solid var(--m-ink-faint)",
         }}
       >
         <div
           className="sticky top-0 flex items-start justify-between px-5 py-4 z-10"
-          style={{ background: "var(--cc-surface)", borderBottom: "1px solid var(--cc-border)" }}
+          style={{ background: "var(--m-card)", borderBottom: "1px solid var(--m-ink-faint)" }}
         >
           <div>
-            <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--m-ink)" }}>
               Your 7-day plan
             </h2>
-            <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)", marginTop: "4px", lineHeight: 1.4 }}>
+            <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "4px", lineHeight: 1.4 }}>
               {summary}
             </p>
           </div>
           <button
             onClick={onClose}
             className="p-1.5 rounded-full"
-            style={{ color: "var(--cc-text-tertiary)", background: "var(--cc-surface-2)" }}
+            style={{ color: "var(--m-ink-soft)", background: "var(--m-cream-2)" }}
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -154,16 +154,16 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
                 key={d.day}
                 className="p-4"
                 style={{
-                  background: "var(--cc-surface-2)",
-                  border: "1px solid var(--cc-border)",
+                  background: "var(--m-cream-2)",
+                  border: "1px solid var(--m-ink-faint)",
                   borderRadius: "12px",
                 }}
               >
                 <div className="flex items-baseline justify-between" style={{ marginBottom: "8px" }}>
-                  <h3 style={{ fontSize: "13px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, color: "var(--m-ink)" }}>
                     {d.day}
                   </h3>
-                  <span style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
+                  <span style={{ fontSize: "11px", color: "var(--m-ink-soft)" }}>
                     {totals.cal} kcal · {totals.p}P · {totals.c}C · {totals.f}F
                   </span>
                 </div>
@@ -173,8 +173,8 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
                       key={m.mealType}
                       className="p-3"
                       style={{
-                        background: "var(--cc-surface)",
-                        border: "1px solid var(--cc-border)",
+                        background: "var(--m-card)",
+                        border: "1px solid var(--m-ink-faint)",
                         borderRadius: "10px",
                       }}
                     >
@@ -182,7 +182,7 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
                         style={{
                           fontSize: "10px",
                           fontWeight: 700,
-                          color: "var(--cc-text-tertiary)",
+                          color: "var(--m-ink-soft)",
                           textTransform: "uppercase",
                           letterSpacing: "0.04em",
                         }}
@@ -193,14 +193,14 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
                         style={{
                           fontSize: "13px",
                           fontWeight: 600,
-                          color: "var(--cc-text-primary)",
+                          color: "var(--m-ink)",
                           marginTop: "2px",
                           lineHeight: 1.3,
                         }}
                       >
                         {m.dish}
                       </p>
-                      <p style={{ fontSize: "10px", color: "var(--cc-text-tertiary)", marginTop: "4px" }}>
+                      <p style={{ fontSize: "10px", color: "var(--m-ink-soft)", marginTop: "4px" }}>
                         {m.calories} kcal
                       </p>
                     </div>
@@ -213,10 +213,10 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
 
         <div
           className="sticky bottom-0 px-5 py-4 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between"
-          style={{ background: "var(--cc-surface)", borderTop: "1px solid var(--cc-border)" }}
+          style={{ background: "var(--m-card)", borderTop: "1px solid var(--m-ink-faint)" }}
         >
           {hasExisting && (
-            <div className="flex items-center gap-2" style={{ fontSize: "11px", color: "var(--cc-text-secondary)" }}>
+            <div className="flex items-center gap-2" style={{ fontSize: "11px", color: "var(--m-ink-soft)" }}>
               <Layers className="w-3.5 h-3.5" />
               <label className="flex items-center gap-1.5">
                 <input
@@ -243,7 +243,7 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
               style={{
                 fontSize: "13px",
                 fontWeight: 600,
-                color: "var(--cc-text-secondary)",
+                color: "var(--m-ink-soft)",
                 borderRadius: "980px",
               }}
             >
@@ -279,8 +279,8 @@ export function DietChartPreview({ open, summary, days, currentPlan, onClose, on
               style={{
                 fontSize: "13px",
                 fontWeight: 600,
-                background: applying ? "var(--cc-surface-2)" : "var(--cc-accent)",
-                color: applying ? "var(--cc-text-tertiary)" : "var(--m-on-deep)",
+                background: applying ? "var(--m-cream-2)" : "var(--m-forest)",
+                color: applying ? "var(--m-ink-soft)" : "var(--m-on-deep)",
                 borderRadius: "980px",
                 cursor: applying ? "not-allowed" : "pointer",
               }}

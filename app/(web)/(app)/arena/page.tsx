@@ -43,9 +43,9 @@ function parseContent(content: string, isStreaming = false) {
 function ThinkingDots() {
   return (
     <div className="flex gap-1 p-4">
-      <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--cc-accent)" }} />
-      <div className="w-2 h-2 rounded-full animate-bounce delay-75" style={{ background: "var(--cc-accent)" }} />
-      <div className="w-2 h-2 rounded-full animate-bounce delay-150" style={{ background: "var(--cc-accent)" }} />
+      <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--m-forest)" }} />
+      <div className="w-2 h-2 rounded-full animate-bounce delay-75" style={{ background: "var(--m-forest)" }} />
+      <div className="w-2 h-2 rounded-full animate-bounce delay-150" style={{ background: "var(--m-forest)" }} />
     </div>
   );
 }
@@ -67,21 +67,21 @@ function ModelPanel({ label, modelName, accentColor, messages, isLoading }: Mode
 
   return (
     <div className="flex flex-col h-full overflow-hidden"
-      style={{ background: "var(--cc-surface)", borderRadius: "12px" }}>
+      style={{ background: "var(--m-card)", borderRadius: "12px" }}>
       {/* Panel header */}
       <div className="px-4 py-3 flex items-center gap-2"
-        style={{ borderBottom: "1px solid var(--cc-border)", background: "var(--cc-surface-2)" }}>
+        style={{ borderBottom: "1px solid var(--m-ink-faint)", background: "var(--m-cream-2)" }}>
         <Bot className="w-4 h-4" style={{ color: accentColor }} />
         <div>
           <p className="text-xs font-bold uppercase tracking-wider" style={{ color: accentColor }}>{label}</p>
-          <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>{modelName}</p>
+          <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>{modelName}</p>
         </div>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !isLoading && (
-          <div className="flex items-center justify-center h-full text-sm" style={{ color: "var(--cc-text-tertiary)" }}>
+          <div className="flex items-center justify-center h-full text-sm" style={{ color: "var(--m-ink-soft)" }}>
             Response will appear here
           </div>
         )}
@@ -96,7 +96,7 @@ function ModelPanel({ label, modelName, accentColor, messages, isLoading }: Mode
               <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                 {text && (
                   <div className="p-4 rounded-xl text-sm leading-relaxed whitespace-pre-wrap"
-                    style={{ background: "var(--cc-surface-2)", color: "var(--cc-text-primary)" }}>
+                    style={{ background: "var(--m-cream-2)", color: "var(--m-ink)" }}>
                     {text}
                   </div>
                 )}
@@ -110,7 +110,7 @@ function ModelPanel({ label, modelName, accentColor, messages, isLoading }: Mode
                     {data.type === "both" && (
                       <>
                         {data.recipe && <RecipeView data={data.recipe} />}
-                        <div className="text-center py-2 text-xs font-bold uppercase" style={{ color: "var(--cc-text-tertiary)" }}>OR</div>
+                        <div className="text-center py-2 text-xs font-bold uppercase" style={{ color: "var(--m-ink-soft)" }}>OR</div>
                         {data.restaurantSuggestion && <RestaurantView data={data.restaurantSuggestion} />}
                       </>
                     )}
@@ -185,25 +185,25 @@ export default function ArenaPage() {
 
   if (!hydrated || !proChecked) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ background: "var(--cc-bg)" }}>
-        <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--cc-accent)", borderTopColor: "transparent" }} />
+      <div className="flex items-center justify-center h-screen" style={{ background: "var(--m-cream)" }}>
+        <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--m-forest)", borderTopColor: "transparent" }} />
       </div>
     );
   }
 
   if (!isPro) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8" style={{ background: "var(--cc-bg)" }}>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8" style={{ background: "var(--m-cream)" }}>
         {/* Pikachu animation — LottieFiles */}
         <LottiePlayer
           src="/lottie/arena.lottie"
           width={200}
           height={200}
         />
-        <h1 className="text-2xl font-bold" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
           Model Arena is Pro-only
         </h1>
-        <p className="text-center max-w-sm" style={{ color: "var(--cc-text-secondary)" }}>
+        <p className="text-center max-w-sm" style={{ color: "var(--m-ink-soft)" }}>
           Compare two AI models side by side on the same food prompt. Upgrade to Pro to unlock.
         </p>
         <div className="flex gap-3">
@@ -219,37 +219,37 @@ export default function ArenaPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen" style={{ background: "var(--cc-bg)" }}>
+    <div className="flex flex-col h-screen" style={{ background: "var(--m-cream)" }}>
       {/* Header */}
       <header className="glass-nav px-6 flex items-center justify-between sticky top-0 z-10" style={{ height: "48px" }}>
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/chat")}
-            className="p-2 rounded-full transition-colors text-[var(--cc-text-secondary)] hover:bg-[var(--cc-surface-2)]"
+            className="p-2 rounded-full transition-colors text-[var(--m-ink-soft)] hover:bg-[var(--m-cream-2)]"
             aria-label="Back"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg" style={{ background: "var(--cc-accent-dim)" }}>
-              <Sparkles className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
+            <div className="p-1.5 rounded-lg" style={{ background: "var(--m-tint-green)" }}>
+              <Sparkles className="w-4 h-4" style={{ color: "var(--m-forest)" }} />
             </div>
             <div>
-              <h1 className="font-bold text-lg tracking-tight" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+              <h1 className="font-bold text-lg tracking-tight" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
                 Model Arena
               </h1>
-              <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>Same prompt, two AI models</p>
+              <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>Same prompt, two AI models</p>
             </div>
           </div>
           <span className="text-xs font-bold px-2 py-1 rounded-full"
-            style={{ background: "var(--cc-accent-dim)", color: "var(--cc-accent)", border: "1px solid rgba(255,107,53,0.25)" }}>
+            style={{ background: "var(--m-tint-green)", color: "var(--m-forest)", border: "1px solid rgba(255,107,53,0.25)" }}>
             Pro
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium" style={{ color: "var(--cc-text-tertiary)" }}>Right model:</span>
+            <span className="text-xs font-medium" style={{ color: "var(--m-ink-soft)" }}>Right model:</span>
             <div className="flex gap-1">
               {PROVIDERS.map((p) => (
                 <button
@@ -258,8 +258,8 @@ export default function ArenaPage() {
                   className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                   style={
                     rightProvider === p.id
-                      ? { background: "var(--cc-accent)", color: "#ffffff" }
-                      : { background: "var(--cc-surface-2)", color: "var(--cc-text-secondary)" }
+                      ? { background: "var(--m-forest)", color: "#ffffff" }
+                      : { background: "var(--m-cream-2)", color: "var(--m-ink-soft)" }
                   }
                 >
                   {p.label.replace("Google ", "").replace("Anthropic ", "")}
@@ -271,7 +271,7 @@ export default function ArenaPage() {
           {(leftChat.messages.length > 0 || rightChat.messages.length > 0) && (
             <button
               onClick={handleReset}
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors text-[var(--cc-text-secondary)] hover:bg-[var(--cc-surface-2)] hover:text-[var(--cc-text-primary)]"
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors text-[var(--m-ink-soft)] hover:bg-[var(--m-cream-2)] hover:text-[var(--m-ink)]"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset
             </button>
@@ -316,9 +316,9 @@ export default function ArenaPage() {
             onSubmit={handleSubmit}
             className="relative flex items-center rounded-full p-2"
             style={{
-              background: "var(--cc-surface)",
-              border: "1px solid var(--cc-border-strong)",
-              boxShadow: "var(--cc-shadow-lg)",
+              background: "var(--m-card)",
+              border: "1px solid var(--m-ink-faint)",
+              boxShadow: "var(--m-shadow-lift)",
             }}
           >
             <input
@@ -326,13 +326,13 @@ export default function ArenaPage() {
               onChange={(e) => setSharedInput(e.target.value)}
               placeholder="Ask both models the same food question..."
               className="flex-1 bg-transparent text-base px-6 py-3 outline-none"
-              style={{ color: "var(--cc-text-primary)" }}
+              style={{ color: "var(--m-ink)" }}
               disabled={isLoading}
             />
             <button
               type="submit"
               className="rounded-full w-12 h-12 shrink-0 flex items-center justify-center transition-colors disabled:opacity-50"
-              style={{ background: "var(--cc-accent)", color: "#ffffff" }}
+              style={{ background: "var(--m-forest)", color: "#ffffff" }}
               disabled={isLoading || !sharedInput.trim()}
             >
               <Send className="w-5 h-5" />

@@ -73,25 +73,25 @@ export function GoalsDialog({ open, initial, onClose, onSave }: Props) {
         onClick={(e) => e.stopPropagation()}
         className="w-full sm:max-w-lg max-h-[92vh] overflow-y-auto"
         style={{
-          background: "var(--cc-surface)",
+          background: "var(--m-card)",
           borderRadius: "20px 20px 0 0",
-          border: "1px solid var(--cc-border)",
+          border: "1px solid var(--m-ink-faint)",
         }}
       >
         <div className="sticky top-0 flex items-center justify-between px-5 py-4"
-          style={{ background: "var(--cc-surface)", borderBottom: "1px solid var(--cc-border)" }}>
+          style={{ background: "var(--m-card)", borderBottom: "1px solid var(--m-ink-faint)" }}>
           <div>
-            <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--m-ink)" }}>
               Daily goals
             </h2>
-            <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)", marginTop: "2px" }}>
+            <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "2px" }}>
               We&rsquo;ll use Mifflin–St Jeor to calculate your target.
             </p>
           </div>
           <button
             onClick={onClose}
             className="p-1.5 rounded-full"
-            style={{ color: "var(--cc-text-tertiary)", background: "var(--cc-surface-2)" }}
+            style={{ color: "var(--m-ink-soft)", background: "var(--m-cream-2)" }}
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -152,19 +152,19 @@ export function GoalsDialog({ open, initial, onClose, onSave }: Props) {
                   className="flex items-center justify-between text-left px-3 py-2.5 transition-colors"
                   style={{
                     background:
-                      profile.activity === opt.value ? "var(--cc-accent-dim)" : "var(--cc-surface-2)",
+                      profile.activity === opt.value ? "var(--m-tint-green)" : "var(--m-cream-2)",
                     border:
                       profile.activity === opt.value
-                        ? "1px solid var(--cc-accent)"
-                        : "1px solid var(--cc-border)",
+                        ? "1px solid var(--m-forest)"
+                        : "1px solid var(--m-ink-faint)",
                     borderRadius: "10px",
                   }}
                 >
                   <div>
-                    <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--cc-text-primary)" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--m-ink)" }}>
                       {opt.label}
                     </p>
-                    <p style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>{opt.sub}</p>
+                    <p style={{ fontSize: "11px", color: "var(--m-ink-soft)" }}>{opt.sub}</p>
                   </div>
                 </button>
               ))}
@@ -181,39 +181,39 @@ export function GoalsDialog({ open, initial, onClose, onSave }: Props) {
                   className="flex flex-col items-start text-left px-3 py-2.5 transition-colors"
                   style={{
                     background:
-                      profile.goal === opt.value ? "var(--cc-accent-dim)" : "var(--cc-surface-2)",
+                      profile.goal === opt.value ? "var(--m-tint-green)" : "var(--m-cream-2)",
                     border:
                       profile.goal === opt.value
-                        ? "1px solid var(--cc-accent)"
-                        : "1px solid var(--cc-border)",
+                        ? "1px solid var(--m-forest)"
+                        : "1px solid var(--m-ink-faint)",
                     borderRadius: "10px",
                   }}
                 >
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--cc-text-primary)" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--m-ink)" }}>
                     {opt.label}
                   </span>
-                  <span style={{ fontSize: "10px", color: "var(--cc-text-tertiary)" }}>{opt.sub}</span>
+                  <span style={{ fontSize: "10px", color: "var(--m-ink-soft)" }}>{opt.sub}</span>
                 </button>
               ))}
             </div>
           </Field>
 
           {/* Computed summary + override */}
-          <div className="p-4" style={{ background: "var(--cc-surface-2)", borderRadius: "12px" }}>
+          <div className="p-4" style={{ background: "var(--m-cream-2)", borderRadius: "12px" }}>
             <div className="flex items-baseline justify-between">
-              <span style={{ fontSize: "12px", color: "var(--cc-text-secondary)" }}>
+              <span style={{ fontSize: "12px", color: "var(--m-ink-soft)" }}>
                 Daily target
               </span>
-              <span style={{ fontSize: "22px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
-                {finalKcal} <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--cc-text-tertiary)" }}>kcal</span>
+              <span style={{ fontSize: "22px", fontWeight: 700, color: "var(--m-ink)" }}>
+                {finalKcal} <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--m-ink-soft)" }}>kcal</span>
               </span>
             </div>
-            <div className="flex gap-4 mt-2" style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
+            <div className="flex gap-4 mt-2" style={{ fontSize: "11px", color: "var(--m-ink-soft)" }}>
               <span>P {macros.protein}g</span>
               <span>C {macros.carbs}g</span>
               <span>F {macros.fat}g</span>
             </div>
-            <label className="flex items-center gap-2 mt-3" style={{ fontSize: "12px", color: "var(--cc-text-secondary)" }}>
+            <label className="flex items-center gap-2 mt-3" style={{ fontSize: "12px", color: "var(--m-ink-soft)" }}>
               <input
                 type="checkbox"
                 checked={useManual}
@@ -232,10 +232,10 @@ export function GoalsDialog({ open, initial, onClose, onSave }: Props) {
                 className="mt-2 px-3 py-2 w-32 outline-none"
                 style={{
                   fontSize: "13px",
-                  background: "var(--cc-surface)",
-                  border: "1px solid var(--cc-border)",
+                  background: "var(--m-card)",
+                  border: "1px solid var(--m-ink-faint)",
                   borderRadius: "8px",
-                  color: "var(--cc-text-primary)",
+                  color: "var(--m-ink)",
                 }}
               />
             )}
@@ -244,7 +244,7 @@ export function GoalsDialog({ open, initial, onClose, onSave }: Props) {
 
         <div
           className="sticky bottom-0 px-5 py-4 flex gap-2 justify-end"
-          style={{ background: "var(--cc-surface)", borderTop: "1px solid var(--cc-border)" }}
+          style={{ background: "var(--m-card)", borderTop: "1px solid var(--m-ink-faint)" }}
         >
           <button
             onClick={onClose}
@@ -252,7 +252,7 @@ export function GoalsDialog({ open, initial, onClose, onSave }: Props) {
             style={{
               fontSize: "13px",
               fontWeight: 600,
-              color: "var(--cc-text-secondary)",
+              color: "var(--m-ink-soft)",
               borderRadius: "980px",
             }}
           >
@@ -264,7 +264,7 @@ export function GoalsDialog({ open, initial, onClose, onSave }: Props) {
             style={{
               fontSize: "13px",
               fontWeight: 600,
-              background: "var(--cc-accent)",
+              background: "var(--m-forest)",
               borderRadius: "980px",
             }}
           >
@@ -279,7 +279,7 @@ export function GoalsDialog({ open, initial, onClose, onSave }: Props) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--cc-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "8px" }}>
+      <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--m-ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "8px" }}>
         {label}
       </p>
       {children}
@@ -295,10 +295,10 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       style={{
         fontSize: "13px",
         fontWeight: 600,
-        background: active ? "var(--cc-accent)" : "var(--cc-surface-2)",
-        color: active ? "var(--m-on-deep)" : "var(--cc-text-secondary)",
+        background: active ? "var(--m-forest)" : "var(--m-cream-2)",
+        color: active ? "var(--m-on-deep)" : "var(--m-ink-soft)",
         borderRadius: "980px",
-        border: active ? "1px solid var(--cc-accent)" : "1px solid var(--cc-border)",
+        border: active ? "1px solid var(--m-forest)" : "1px solid var(--m-ink-faint)",
       }}
     >
       {children}
@@ -323,7 +323,7 @@ function NumberField({
 }) {
   return (
     <div>
-      <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--cc-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "6px" }}>
+      <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--m-ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "6px" }}>
         {label}
       </p>
       <div className="relative">
@@ -338,10 +338,10 @@ function NumberField({
           style={{
             fontSize: "14px",
             fontWeight: 600,
-            background: "var(--cc-surface-2)",
-            border: "1px solid var(--cc-border)",
+            background: "var(--m-cream-2)",
+            border: "1px solid var(--m-ink-faint)",
             borderRadius: "10px",
-            color: "var(--cc-text-primary)",
+            color: "var(--m-ink)",
           }}
         />
         <span
@@ -351,7 +351,7 @@ function NumberField({
             top: "50%",
             transform: "translateY(-50%)",
             fontSize: "11px",
-            color: "var(--cc-text-tertiary)",
+            color: "var(--m-ink-soft)",
             pointerEvents: "none",
           }}
         >

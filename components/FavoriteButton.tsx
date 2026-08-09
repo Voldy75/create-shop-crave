@@ -52,7 +52,7 @@ export function FavoriteButton({ type, data }: FavoriteButtonProps) {
       className={`p-1.5 rounded-full transition-colors ${
         isFav
           ? "text-[#ff453a] bg-[rgba(255,69,58,0.12)]"
-          : "text-[var(--cc-text-tertiary)] bg-[var(--cc-surface-2)] hover:bg-[var(--cc-surface-3)]"
+          : "text-[var(--m-ink-soft)] bg-[var(--m-cream-2)] hover:bg-[var(--m-cream-2)]"
       }`}
       aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
     >

@@ -23,15 +23,15 @@ export function AccountSection() {
       <div
         className="p-4"
         style={{
-          background: "var(--cc-surface)",
-          border: "1px solid var(--cc-border)",
+          background: "var(--m-card)",
+          border: "1px solid var(--m-ink-faint)",
           borderRadius: "16px",
         }}
       >
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0"
-            style={{ background: "var(--cc-accent)", fontSize: "16px" }}
+            style={{ background: "var(--m-forest)", fontSize: "16px" }}
           >
             {userName ? userName[0].toUpperCase() : "U"}
           </div>
@@ -40,18 +40,18 @@ export function AccountSection() {
               style={{
                 fontSize: "15px",
                 fontWeight: 700,
-                color: "var(--cc-text-primary)",
+                color: "var(--m-ink)",
               }}
             >
               {userName || "User"}
             </p>
             <div className="flex items-center gap-1 mt-0.5">
-              <Mail className="w-3 h-3" style={{ color: "var(--cc-text-tertiary)" }} />
+              <Mail className="w-3 h-3" style={{ color: "var(--m-ink-soft)" }} />
               <p
                 className="truncate"
                 style={{
                   fontSize: "12px",
-                  color: "var(--cc-text-secondary)",
+                  color: "var(--m-ink-soft)",
                 }}
               >
                 {user?.email}
@@ -63,7 +63,7 @@ export function AccountSection() {
               style={{
                 fontSize: "10px",
                 fontWeight: 700,
-                color: "var(--cc-accent)",
+                color: "var(--m-forest)",
                 background: "rgba(255,107,53,0.12)",
                 padding: "2px 8px",
                 borderRadius: "980px",
@@ -83,8 +83,8 @@ export function AccountSection() {
           onClick={() => router.push("/admin")}
           className="w-full p-4 flex items-center gap-3 transition-colors"
           style={{
-            background: "var(--cc-surface)",
-            border: "1px solid var(--cc-border)",
+            background: "var(--m-card)",
+            border: "1px solid var(--m-ink-faint)",
             borderRadius: "16px",
             textAlign: "left",
           }}
@@ -96,16 +96,16 @@ export function AccountSection() {
               height: "36px",
               borderRadius: "10px",
               background: "rgba(255,107,53,0.10)",
-              color: "var(--cc-accent)",
+              color: "var(--m-forest)",
             }}
           >
             <Shield className="w-4 h-4" />
           </div>
           <div>
-            <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--cc-text-primary)" }}>
+            <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--m-ink)" }}>
               Admin Dashboard
             </p>
-            <p style={{ fontSize: "11px", color: "var(--cc-text-secondary)" }}>
+            <p style={{ fontSize: "11px", color: "var(--m-ink-soft)" }}>
               Feature flags, user stats, and analytics
             </p>
           </div>
@@ -116,12 +116,12 @@ export function AccountSection() {
       <div
         className="p-4"
         style={{
-          background: "var(--cc-surface)",
-          border: "1px solid var(--cc-border)",
+          background: "var(--m-card)",
+          border: "1px solid var(--m-ink-faint)",
           borderRadius: "16px",
         }}
       >
-        <h3 style={{ fontSize: "13px", fontWeight: 600, color: "var(--cc-text-primary)", marginBottom: "12px" }}>
+        <h3 style={{ fontSize: "13px", fontWeight: 600, color: "var(--m-ink)", marginBottom: "12px" }}>
           Account details
         </h3>
         <div className="space-y-3">
@@ -160,13 +160,13 @@ export function AccountSection() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span style={{ fontSize: "12px", color: "var(--cc-text-secondary)" }}>{label}</span>
+      <span style={{ fontSize: "12px", color: "var(--m-ink-soft)" }}>{label}</span>
       <span
         style={{
           fontSize: "12px",
           fontWeight: 500,
-          color: "var(--cc-text-primary)",
-          background: "var(--cc-surface-2)",
+          color: "var(--m-ink)",
+          background: "var(--m-cream-2)",
           padding: "2px 8px",
           borderRadius: "6px",
         }}

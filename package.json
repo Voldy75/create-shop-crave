@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:hex": "node scripts/check-hex.mjs",
+    "check:hex:report": "node scripts/check-hex.mjs --report",
     "gen:resources": "node scripts/gen-resources.mjs",
     "assets": "capacitor-assets generate --iconBackgroundColor '#1E5A34' --iconBackgroundColorDark '#1E5A34' --splashBackgroundColor '#FBF6E3' --splashBackgroundColorDark '#241C10'"
   },

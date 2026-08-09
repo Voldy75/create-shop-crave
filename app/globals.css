@@ -50,65 +50,27 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Phase 10c — the web tree on meshi Kitchef.
+   Phase 10e — the Midnight Kitchen alias layer is deleted.
 
-   "Midnight Kitchen" is retired. Rather than rewrite the --cc-* vocabulary out
-   of ~50 files in one unreviewable change, every --cc-* token is now an ALIAS
-   onto the meshi --m-* token it corresponds to. Consequences:
+   Phase 10c introduced a `cc`-prefixed set of custom properties (`cc-accent`,
+   `cc-surface`, `cc-text-primary`, and so on) as a temporary ALIAS layer onto
+   meshi's `m`-prefixed tokens, so the web tree could move onto the new
+   palette in one edit without rewriting ~50 files at once. Every call site
+   has since been converted to reference the `m`-prefixed tokens directly
+   (the repo-wide grep this file's exit criterion names now returns zero), so
+   the alias block that used to live here is gone. If you are looking for it
+   in history: it was a flat 1:1 map (`cc-accent` → `m-forest`, etc.) plus one
+   non-aliased literal, `cc-radius-sm: 10px`, which had no `m`-token
+   equivalent and is now just inlined at its one call site.
 
-     - The whole web tree moves onto the new palette in one edit, and each
-       screen can then be RESTRUCTURED to its artboard independently.
-     - Dark mode comes free and correct: meshi-b.css defines --m-* in :root
-       (light) and overrides them under [data-theme="dark"], so the aliases
-       follow. The old [data-theme="light"] token block that used to do this
-       job is gone — it would now fight the system it is aliasing.
-     - The orange is gone. --cc-accent is forest green. Phase 10d finished the
-       job in the places CSS variables cannot reach: UpgradeDialog's Razorpay
-       theme.color, scripts/gen-resources.mjs (plus the regenerated
-       resources/*.png) and public/manifest.json.
-
-   These aliases are scaffolding, not the destination. Phase 10e deletes them
-   once `grep -rn -- '--cc-' app components` returns zero.
+   The shadcn/ui block directly below survives — it is a DIFFERENT vocabulary
+   (shadcn's own component primitives, `--card`, `--primary`, etc.), not part
+   of that migration, and nothing asked for its retirement.
    ───────────────────────────────────────────────────────────── */
-:root {
-  /* Surfaces */
-  --cc-bg:               var(--m-cream);
-  --cc-surface:          var(--m-card);
-  --cc-surface-2:        var(--m-cream-2);
-  --cc-surface-3:        var(--m-cream-2);
-  --cc-surface-alt:      var(--m-ink);
-  --cc-border:           var(--m-ink-faint);
-  --cc-border-strong:    var(--m-ink-faint);
 
-  /* Text */
-  --cc-text-primary:     var(--m-ink);
-  --cc-text-secondary:   var(--m-ink-soft);
-  --cc-text-tertiary:    var(--m-ink-soft);
-
-  /* Accent — forest green, no longer orange */
-  --cc-accent:           var(--m-forest);
-  --cc-accent-hover:     var(--m-forest-2);
-  --cc-accent-dim:       var(--m-tint-green);
-
-  --cc-link:             var(--m-forest);
-  --cc-link-light:       var(--m-forest-2);
-  --cc-focus:            var(--m-forest);
-
-  /* Shadows — meshi's are flatter and warmer than Midnight Kitchen's */
-  --cc-shadow-sm:        var(--m-shadow);
-  --cc-shadow-md:        var(--m-shadow-lift);
-  --cc-shadow-lg:        var(--m-shadow-lift);
-
-  /* Radius scale */
-  --cc-radius-sm:        10px;
-  --cc-radius-md:        var(--m-r-tile);
-  --cc-radius-lg:        var(--m-r-card);
-  --cc-radius-pill:      var(--m-r-pill);
-}
-
-/* shadcn/ui tokens — aliased onto meshi for the same reason as --cc-* above.
-   NOTE: `--card` here is the shadcn COLOUR token, unrelated to meshi-b's
-   `.card` class. They coexist. */
+/* shadcn/ui tokens — aliased onto meshi for the same reason the old `cc`
+   tokens were. NOTE: `--card` here is the shadcn COLOUR token, unrelated to
+   meshi-b's `.card` class. They coexist. */
 :root {
   --radius: 0.625rem;
   --background: var(--m-cream);
@@ -148,15 +110,15 @@
   * {
     @apply border-border;
   }
-  /* Global focus ring — Apple blue */
+  /* Global focus ring */
   *:focus-visible {
-    outline: 2px solid var(--cc-focus);
+    outline: 2px solid var(--m-forest);
     outline-offset: 2px;
     border-radius: 4px;
   }
   body {
-    background-color: var(--cc-bg);
-    color: var(--cc-text-primary);
+    background-color: var(--m-cream);
+    color: var(--m-ink);
     font-family: var(--font-system);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -180,23 +142,33 @@
     border-bottom: 1px solid var(--m-ink-faint);
   }
 
-  /* ── Cards ── */
+  /* ── Cards ──
+     .cc-card / .cc-card-elevated below have no consumer anywhere in app/** or
+     components/** (confirmed by grep before this edit) — left in place rather
+     than deleted, since removing genuinely dead CSS is a different cleanup
+     than retiring the old `cc`-prefixed tokens, but converted off the names
+     being retired. */
   .cc-card {
-    background: var(--cc-surface);
-    border-radius: var(--cc-radius-md);
+    background: var(--m-card);
+    border-radius: var(--m-r-tile);
   }
 
   .cc-card-elevated {
-    background: var(--cc-surface-2);
-    border-radius: var(--cc-radius-md);
-    box-shadow: var(--cc-shadow-sm);
+    background: var(--m-cream-2);
+    border-radius: var(--m-r-tile);
+    box-shadow: var(--m-shadow);
   }
 
-  /* ── Apple Pill CTA — Primary (filled orange) ── */
+  /* ── Pill CTA — Primary ──
+     `background`/`:hover background` read --band-accent (see the band-token
+     block near .band-deep below), NOT --m-forest directly: this class renders
+     inside the landing's forest-band closing CTA (app/(web)/page.tsx), where
+     the accent must be lime — forest is the band, so it cannot also be the
+     accent on it. Everywhere else --band-accent just equals --m-forest. */
   .btn-pill-primary {
-    background: var(--cc-accent);
+    background: var(--band-accent);
     color: var(--m-on-deep);
-    border-radius: var(--cc-radius-pill);
+    border-radius: var(--m-r-pill);
     padding: 12px 24px;
     font-weight: 400;
     font-size: 17px;
@@ -206,17 +178,19 @@
     transition: background 0.15s ease, transform 0.1s ease;
   }
   .btn-pill-primary:hover {
-    background: var(--cc-accent-hover);
+    background: var(--band-accent-hover);
   }
   .btn-pill-primary:active {
     transform: scale(0.98);
   }
 
-  /* ── Apple Pill CTA — Secondary (outline) ── */
+  /* ── Pill CTA — Secondary (outline) ──
+     Never rendered inside a band-deep section today (checked) — --m-ink is
+     correct as a static value, not --band-text-primary. */
   .btn-pill-secondary {
     background: transparent;
-    color: var(--cc-text-primary);
-    border-radius: var(--cc-radius-pill);
+    color: var(--m-ink);
+    border-radius: var(--m-r-pill);
     padding: 11px 24px;
     font-weight: 400;
     font-size: 17px;
@@ -229,12 +203,12 @@
     border-color: rgba(255, 255, 255, 0.48);
   }
 
-  /* ── Apple Link Pill — "Learn more" style ── */
+  /* ── Link Pill — no consumer found; converted, not deleted (see .cc-card). ── */
   .btn-link-pill {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    color: var(--cc-link);
+    color: var(--m-forest);
     font-size: 21px;
     font-weight: 400;
     line-height: 1.19;
@@ -248,37 +222,48 @@
     text-decoration: underline;
   }
 
-  /* ── Chip — Apple filter pill ── */
+  /* ── Chip (Midnight Kitchen) ──
+     DEAD: meshi-b.css is unlayered and defines its own `.chip`, which beats
+     everything in this `@layer utilities` block regardless of specificity —
+     the trap documented near .band-deep below. Every real chip in the app
+     goes through components/cc/chip.tsx onto meshi-b's `.chip`/`.chip-active`
+     instead. Kept and converted, not deleted, for the same reason as .cc-card. */
   .chip {
-    background: var(--cc-surface-2);
-    color: var(--cc-text-secondary);
-    border-radius: var(--cc-radius-pill);
+    background: var(--m-cream-2);
+    color: var(--m-ink-soft);
+    border-radius: var(--m-r-pill);
     padding: 8px 16px;
     font-size: 14px;
     font-weight: 400;
     letter-spacing: -0.224px;
-    border: 1px solid var(--cc-border);
+    border: 1px solid var(--m-ink-faint);
     cursor: pointer;
     transition: all 0.15s ease;
   }
   .chip:hover {
-    background: var(--cc-surface-3);
-    color: var(--cc-text-primary);
+    background: var(--m-cream-2);
+    color: var(--m-ink);
   }
   .chip.active {
-    background: var(--cc-accent);
-    color: #ffffff;
-    border-color: var(--cc-accent);
+    background: var(--m-forest);
+    color: var(--m-on-deep);
+    border-color: var(--m-forest);
   }
 
-  /* ── Display Headlines — General Sans ── */
+  /* ── Display Headlines ──
+     Base `color` here is inert wherever these classes actually render: every
+     current usage sits inside SOME `.band-*` wrapper (Section always applies
+     one), and every band type overrides headline colour to `inherit` — see
+     the "Inside fixed bands, headlines follow the band" rule further down.
+     --m-ink is the correct value for the one hypothetical case of a headline
+     rendered outside any band. */
   .headline-hero {
     font-family: var(--font-display-stack);
     font-size: clamp(2.5rem, 6vw, 4rem);
     font-weight: 600;
     line-height: 1.05;
     letter-spacing: -0.02em;
-    color: var(--cc-text-primary);
+    color: var(--m-ink);
   }
 
   .headline-section {
@@ -287,7 +272,7 @@
     font-weight: 600;
     line-height: 1.10;
     letter-spacing: -0.015em;
-    color: var(--cc-text-primary);
+    color: var(--m-ink);
   }
 
   .headline-tile {
@@ -296,15 +281,17 @@
     font-weight: 500;
     line-height: 1.14;
     letter-spacing: -0.01em;
-    color: var(--cc-text-primary);
+    color: var(--m-ink);
   }
 
-  /* ── Text Scale ── */
-  .text-title   { font-size: 21px; font-weight: 700; line-height: 1.19; letter-spacing: -0.01em; color: var(--cc-text-primary); }
-  .text-body    { font-size: 17px; line-height: 1.47; letter-spacing: -0.022em; color: var(--cc-text-secondary); }
-  .text-caption { font-size: 14px; font-weight: 400; line-height: 1.29; letter-spacing: -0.016em; color: var(--cc-text-tertiary); }
-  .text-label   { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--cc-text-tertiary); }
-  .text-link    { font-size: 14px; font-weight: 400; line-height: 1.43; letter-spacing: -0.016em; color: var(--cc-link); }
+  /* ── Text Scale — .text-title/-body/-caption/-link have no consumer
+     (confirmed by grep); .text-label does (page.tsx, three admin screens),
+     never inside a band-deep section. All converted, not deleted. ── */
+  .text-title   { font-size: 21px; font-weight: 700; line-height: 1.19; letter-spacing: -0.01em; color: var(--m-ink); }
+  .text-body    { font-size: 17px; line-height: 1.47; letter-spacing: -0.022em; color: var(--m-ink-soft); }
+  .text-caption { font-size: 14px; font-weight: 400; line-height: 1.29; letter-spacing: -0.016em; color: var(--m-ink-soft); }
+  .text-label   { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--m-ink-soft); }
+  .text-link    { font-size: 14px; font-weight: 400; line-height: 1.43; letter-spacing: -0.016em; color: var(--m-forest); }
   .text-link:hover { text-decoration: underline; }
   .text-price   { font-variant-numeric: tabular-nums; }
 
@@ -318,42 +305,56 @@
      `.band-deep` carries everything the two dark bands share. Anything placed
      on one must be legible on a saturated ground — which specifically means
      not the forest accent itself. */
+  /* ── Band-scoped tokens ──
+     Phase 10c ran this mechanism on the old, now-deleted `cc`-prefixed
+     tokens, since re-scoping a custom property by ancestor selector was the
+     same trick as the alias layer, just applied locally instead of at :root.
+     That alias layer is gone, but this specific need — text/accent
+     legibility changing with the section it sits in — was never legacy; it
+     is how the landing's forest and plum bands work. It gets its OWN
+     honestly-named prefix, `--band-*`, rather than disappearing with the
+     tokens it used to borrow.
+
+     Defaults here are the light-band values, so anything using --band-* off
+     a band gets the ordinary tokens with zero extra code. */
+  :root {
+    --band-text-secondary: var(--m-ink-soft);
+    --band-text-tertiary: var(--m-ink-soft);
+    --band-border-strong: var(--m-ink-faint);
+    --band-accent: var(--m-forest);
+    --band-accent-hover: var(--m-forest-2);
+  }
+
   .band-cream  { background: var(--m-cream);   color: var(--m-ink); }
   .band-cream2 { background: var(--m-cream-2); color: var(--m-ink); }
   .band-forest { background: var(--m-forest);  color: var(--m-on-deep); }
   .band-plum   { background: var(--m-plum);    color: var(--m-on-deep); }
-  /* Inside a forest band the whole text scale has to flip. Rather than chase
-     each rule, RE-SCOPE THE TOKENS on the band — the same aliasing trick as
-     the palette move, applied locally. Everything referencing --cc-text-* or
-     --cc-accent, whether a utility class or a Tailwind arbitrary value,
-     follows automatically.
+  /* Inside a forest or plum band the whole text scale has to flip. Rather
+     than chase each rule, RE-SCOPE THE TOKENS on the band. Everything
+     referencing a --band-text-* token or --band-accent, whether a utility
+     class or a Tailwind arbitrary value, follows automatically.
 
      Accents become LIME, not forest: forest is the band, so the accent cannot
      also be it. wLa does exactly this — its on-band numerals and eyebrows are
      lime. */
   .band-deep {
-    --cc-text-primary: var(--m-on-deep);
-    --cc-text-secondary: color-mix(in srgb, var(--m-on-deep) 82%, transparent);
-    --cc-text-tertiary: color-mix(in srgb, var(--m-on-deep) 62%, transparent);
-    --cc-accent: var(--m-lime);
-    --cc-accent-hover: var(--m-lime);
-    --cc-accent-dim: color-mix(in srgb, var(--m-lime) 22%, transparent);
-    --cc-link: var(--m-lime);
-    --cc-border: color-mix(in srgb, var(--m-on-deep) 18%, transparent);
-    --cc-border-strong: color-mix(in srgb, var(--m-on-deep) 28%, transparent);
+    --band-text-secondary: color-mix(in srgb, var(--m-on-deep) 82%, transparent);
+    --band-text-tertiary: color-mix(in srgb, var(--m-on-deep) 62%, transparent);
+    --band-border-strong: color-mix(in srgb, var(--m-on-deep) 28%, transparent);
+    --band-accent: var(--m-lime);
+    --band-accent-hover: var(--m-lime);
   }
   /* …but a CARD on the band is still a cream surface, so inside one the scale
      flips back. Without this, every card on a forest band renders
-     cream-on-cream. */
-  .band-deep .cc-card,
-  .band-deep .cc-card-elevated,
+     cream-on-cream. No current content nests one, but the fix costs nothing
+     and the failure mode (silent, band-only) is exactly the kind that goes
+     unnoticed until someone adds a card to a band months from now. */
   .band-deep .card {
-    --cc-text-primary: var(--m-ink);
-    --cc-text-secondary: var(--m-ink-soft);
-    --cc-text-tertiary: var(--m-ink-soft);
-    --cc-accent: var(--m-forest);
-    --cc-link: var(--m-forest);
-    --cc-border: var(--m-ink-faint);
+    --band-text-secondary: var(--m-ink-soft);
+    --band-text-tertiary: var(--m-ink-soft);
+    --band-border-strong: var(--m-ink-faint);
+    --band-accent: var(--m-forest);
+    --band-accent-hover: var(--m-forest-2);
     color: var(--m-ink);
   }
   .band-deep .text-body,
@@ -418,9 +419,9 @@
    Light mode — warm off-white
    ───────────────────────────────────────────────────────────── */
 /* The [data-theme="light"] token block that used to live here is GONE. It
-   existed to flip Midnight Kitchen from its dark :root to light. The --cc-*
-   and shadcn tokens are now aliases onto --m-*, and meshi-b.css already
-   defines those light-first with a [data-theme="dark"] override — so
+   existed to flip Midnight Kitchen from its dark :root to light. This file's
+   tokens (and shadcn's) now reference meshi's --m-* directly, and meshi-b.css
+   already defines those light-first with a [data-theme="dark"] override — so
    re-declaring them here would override the very system they alias, and light
    mode would silently stop tracking the design tokens. */
 
@@ -459,11 +460,11 @@
    and is unlayered, so it beats any Tailwind colour class or @layer rule on
    those elements no matter the specificity. On a forest or plum band that
    means ink-on-plum — the integrations eyebrow measured 2.14:1 with a
-   perfectly good `text-[var(--cc-text-secondary)]` on it that never applied.
-   These have to sit outside a layer to win. */
+   perfectly good band-scoped text colour on it that never applied because
+   this rule wasn't yet written. These have to sit outside a layer to win. */
 .band-deep .t-micro,
 .band-deep .t-cap {
-  color: var(--cc-text-secondary);
+  color: var(--band-text-secondary);
 }
 .band-deep .t-body,
 .band-deep .t-h1,

@@ -27,10 +27,10 @@ export function AdminNav() {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "px-3 py-1.5 rounded-[var(--cc-radius-pill)] text-sm font-medium transition-colors",
+                "px-3 py-1.5 rounded-[var(--m-r-pill)] text-sm font-medium transition-colors",
                 active
-                  ? "bg-[var(--cc-accent-dim)] text-[var(--cc-accent)]"
-                  : "text-[var(--cc-text-secondary)] hover:bg-[var(--cc-surface-2)] hover:text-[var(--cc-text-primary)]"
+                  ? "bg-[var(--m-tint-green)] text-[var(--m-forest)]"
+                  : "text-[var(--m-ink-soft)] hover:bg-[var(--m-cream-2)] hover:text-[var(--m-ink)]"
               )}
             >
               {tab.label}

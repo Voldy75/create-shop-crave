@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 /**
- * meshi-b.css MUST be imported here, not just globals.css. globals.css now
- * defines --cc-* purely as aliases onto --m-*, so without the design system
- * loaded every token on this page resolves to nothing and the 404 renders
- * unstyled.
+ * meshi-b.css MUST be imported here, not just globals.css. globals.css
+ * references the meshi tokens directly (the alias layer this comment used to
+ * describe was deleted in Phase 10e), so without the design system loaded
+ * every token on this page resolves to nothing and the 404 renders unstyled.
  */
 import "../design/meshi-b.css";
 import "./globals.css";
@@ -49,13 +49,13 @@ export default function GlobalNotFound() {
             gap: 12,
             padding: 24,
             textAlign: "center",
-            background: "var(--cc-bg)",
-            color: "var(--cc-text-primary)",
+            background: "var(--m-cream)",
+            color: "var(--m-ink)",
           }}
         >
-          <p style={{ fontSize: 56, fontWeight: 700, color: "var(--cc-accent)", margin: 0 }}>404</p>
+          <p style={{ fontSize: 56, fontWeight: 700, color: "var(--m-forest)", margin: 0 }}>404</p>
           <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0 }}>Page not found</h1>
-          <p style={{ color: "var(--cc-text-secondary)", maxWidth: 380, margin: 0 }}>
+          <p style={{ color: "var(--m-ink-soft)", maxWidth: 380, margin: 0 }}>
             The page you&apos;re looking for doesn&apos;t exist or has been moved.
           </p>
           <a
@@ -66,8 +66,8 @@ export default function GlobalNotFound() {
               alignItems: "center",
               height: 44,
               padding: "0 22px",
-              borderRadius: "var(--cc-radius-pill)",
-              background: "var(--cc-accent)",
+              borderRadius: "var(--m-r-pill)",
+              background: "var(--m-forest)",
               color: "var(--m-on-deep)",
               fontWeight: 500,
               textDecoration: "none",

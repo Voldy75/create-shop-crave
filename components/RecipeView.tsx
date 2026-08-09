@@ -44,12 +44,14 @@ function getLinksForIngredient(ing: Ingredient): ShoppingLink[] {
     return [];
 }
 
-// Brand colours for grocery partners — allowlisted in DESIGN.md, not app-palette tokens.
+// hex-ok-start: brand colours for grocery partners — allowlisted in DESIGN.md,
+// not app-palette tokens.
 const STORE_OPTIONS = [
     { id: "blinkit", name: "Blinkit", color: "#f8d800", buildLink: buildBlinkitLink },
     { id: "swiggy_instamart", name: "Swiggy Instamart", color: "#fc8019", buildLink: buildSwiggyInstamartLink },
     { id: "instacart", name: "Instacart", color: "#43b02a", buildLink: buildInstacartLink },
 ];
+// hex-ok-end
 
 /** "25 min" → "25", so the hero badge can carry its own "min" suffix. */
 function cookMinutes(prepTime: string | undefined): string | null {

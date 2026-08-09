@@ -34,12 +34,12 @@ interface McpProviderRow {
 }
 
 const inputStyle = {
-  background: "var(--cc-surface-2)",
-  border: "1px solid var(--cc-border)",
-  color: "var(--cc-text-primary)",
+  background: "var(--m-cream-2)",
+  border: "1px solid var(--m-ink-faint)",
+  color: "var(--m-ink)",
 } as const;
 
-const labelStyle = { color: "var(--cc-text-tertiary)" } as const;
+const labelStyle = { color: "var(--m-ink-soft)" } as const;
 
 function TextField({
   label,
@@ -84,12 +84,12 @@ function Toggle({
       aria-label={label}
       type="button"
       className="shrink-0 relative w-10 h-6 rounded-full transition-colors"
-      style={{ background: checked ? "#34c759" : "var(--cc-surface-2)" }}
+      style={{ background: checked ? "#34c759" : "var(--m-cream-2)" }}
     >
       {busy ? (
         <Loader2
           className="w-3.5 h-3.5 absolute animate-spin"
-          style={{ top: "5px", left: checked ? "19px" : "3px", color: checked ? "#fff" : "var(--cc-text-tertiary)" }}
+          style={{ top: "5px", left: checked ? "19px" : "3px", color: checked ? "#fff" : "var(--m-ink-soft)" }}
         />
       ) : (
         <span
@@ -179,7 +179,7 @@ export default function McpAdminPage() {
     return (
       <main className="max-w-3xl mx-auto p-6">
         <div className="flex justify-center py-12">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--cc-text-tertiary)" }} />
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--m-ink-soft)" }} />
         </div>
       </main>
     );
@@ -188,7 +188,7 @@ export default function McpAdminPage() {
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="font-bold text-lg" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+        <h1 className="font-bold text-lg" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
           MCP Providers
         </h1>
       </div>
@@ -252,7 +252,7 @@ function ProviderCard({
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-bold" style={{ color: "var(--cc-text-primary)" }}>{p.name}</h2>
+            <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>{p.name}</h2>
             <code className="text-xs" style={labelStyle}>{p.id}</code>
           </div>
           <p className="text-xs mt-0.5" style={labelStyle}>
@@ -265,10 +265,10 @@ function ProviderCard({
       {/* Client-id health */}
       <div
         className="flex items-center justify-between p-3 rounded-xl"
-        style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)" }}
+        style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}
       >
         <div>
-          <p className="text-sm" style={{ color: "var(--cc-text-primary)" }}>Client ID</p>
+          <p className="text-sm" style={{ color: "var(--m-ink)" }}>Client ID</p>
           <code className="text-xs" style={labelStyle}>{p.clientIdEnv ?? "(no env var configured)"}</code>
         </div>
         <StatusPill tone={p.clientIdPresent ? "active" : "error"}>
@@ -311,8 +311,8 @@ function ProviderCard({
       </CCButton>
 
       {/* Servers */}
-      <div className="pt-2 border-t" style={{ borderColor: "var(--cc-border)" }}>
-        <h3 className="text-sm font-semibold mb-2" style={{ color: "var(--cc-text-primary)" }}>Servers</h3>
+      <div className="pt-2 border-t" style={{ borderColor: "var(--m-ink-faint)" }}>
+        <h3 className="text-sm font-semibold mb-2" style={{ color: "var(--m-ink)" }}>Servers</h3>
         <ServerList providerId={p.id} servers={p.servers} onChanged={onServersChanged} setError={setError} />
       </div>
     </CCCard>
@@ -422,10 +422,10 @@ function ServerList({
           <div
             key={s.serviceKey}
             className="p-3 rounded-xl space-y-2"
-            style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)" }}
+            style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}
           >
             <div className="flex items-center justify-between">
-              <code className="text-xs font-semibold" style={{ color: "var(--cc-text-primary)" }}>{s.serviceKey}</code>
+              <code className="text-xs font-semibold" style={{ color: "var(--m-ink)" }}>{s.serviceKey}</code>
               <div className="flex items-center gap-2">
                 <Toggle
                   checked={draft.enabled}
@@ -437,7 +437,7 @@ function ServerList({
                   disabled={busyKey === s.serviceKey}
                   aria-label={`Delete ${s.serviceKey}`}
                   className="p-1.5 rounded-lg transition-colors hover:bg-[rgba(255,69,58,0.1)] hover:text-[#ff453a]"
-                  style={{ color: "var(--cc-text-tertiary)" }}
+                  style={{ color: "var(--m-ink-soft)" }}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -463,7 +463,7 @@ function ServerList({
       {/* New server row */}
       <div
         className="p-3 rounded-xl space-y-2"
-        style={{ background: "var(--cc-surface)", border: "1px dashed var(--cc-border-strong)" }}
+        style={{ background: "var(--m-card)", border: "1px dashed var(--m-ink-faint)" }}
       >
         <div className="grid grid-cols-2 gap-2">
           <TextField label="Service key" value={newDraft.serviceKey} onChange={(v) => setNewDraft({ ...newDraft, serviceKey: v })} placeholder="food" />

@@ -142,7 +142,7 @@ export default function ConfigPage() {
     return (
       <main className="max-w-3xl mx-auto p-6">
         <div className="flex justify-center py-12">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--cc-text-tertiary)" }} />
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--m-ink-soft)" }} />
         </div>
       </main>
     );
@@ -151,7 +151,7 @@ export default function ConfigPage() {
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="font-bold text-lg" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+        <h1 className="font-bold text-lg" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
           Config
         </h1>
       </div>
@@ -167,30 +167,30 @@ export default function ConfigPage() {
 
       {/* Rate limits */}
       <CCCard className="p-5 space-y-3">
-        <h2 className="font-bold" style={{ color: "var(--cc-text-primary)" }}>Default rate limits</h2>
-        <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>
+        <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>Default rate limits</h2>
+        <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>
           Applied to users with no plan. Changes take up to ~60s to propagate across warm serverless instances
           (the config cache TTL).
         </p>
         <div className="grid grid-cols-2 gap-3 max-w-sm">
-          <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--cc-text-tertiary)" }}>
+          <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--m-ink-soft)" }}>
             Chat daily
             <input
               value={chatDaily}
               onChange={(e) => setChatDaily(e.target.value)}
               inputMode="numeric"
               className="px-3 py-2 text-sm rounded-lg"
-              style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+              style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--cc-text-tertiary)" }}>
+          <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--m-ink-soft)" }}>
             Photo daily
             <input
               value={photoDaily}
               onChange={(e) => setPhotoDaily(e.target.value)}
               inputMode="numeric"
               className="px-3 py-2 text-sm rounded-lg"
-              style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+              style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
             />
           </label>
         </div>
@@ -203,17 +203,17 @@ export default function ConfigPage() {
 
       {/* Payment providers per platform */}
       <CCCard className="p-5 space-y-4">
-        <h2 className="font-bold" style={{ color: "var(--cc-text-primary)" }}>Checkout providers by platform</h2>
+        <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>Checkout providers by platform</h2>
         {platformError && <p className="text-xs" style={{ color: "#ff453a" }}>{platformError}</p>}
         {(["web", "ios", "android"] as const).map((platform) => (
           <div key={platform} className="space-y-2">
-            <p className="text-label" style={{ color: "var(--cc-text-tertiary)" }}>{platform}</p>
+            <p className="text-label" style={{ color: "var(--m-ink-soft)" }}>{platform}</p>
             <div className="flex flex-wrap gap-3">
               {PROVIDER_OPTIONS.map((provider) => (
                 <label
                   key={provider}
                   className="flex items-center gap-1.5 text-sm"
-                  style={{ color: "var(--cc-text-secondary)" }}
+                  style={{ color: "var(--m-ink-soft)" }}
                 >
                   <input
                     type="checkbox"
@@ -239,7 +239,7 @@ export default function ConfigPage() {
 
       {/* Provider health (read-only) */}
       <CCCard className="p-5 space-y-3">
-        <h2 className="font-bold" style={{ color: "var(--cc-text-primary)" }}>Provider health</h2>
+        <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>Provider health</h2>
         {providers && <ProviderHealth providers={providers} />}
       </CCCard>
     </main>

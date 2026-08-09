@@ -62,7 +62,7 @@ export function PhotoCapture({ imageDataUrl, onChange, disabled }: Props) {
             maxHeight: "240px",
             objectFit: "cover",
             borderRadius: "12px",
-            border: "1px solid var(--cc-border)",
+            border: "1px solid var(--m-ink-faint)",
           }}
         />
         <button
@@ -90,10 +90,10 @@ export function PhotoCapture({ imageDataUrl, onChange, disabled }: Props) {
           disabled={disabled || busy}
           className="flex flex-col items-center gap-1.5 py-5 transition-colors"
           style={{
-            background: "var(--cc-surface-2)",
-            border: "1px dashed var(--cc-border-strong)",
+            background: "var(--m-cream-2)",
+            border: "1px dashed var(--m-ink-faint)",
             borderRadius: "12px",
-            color: "var(--cc-text-secondary)",
+            color: "var(--m-ink-soft)",
             opacity: disabled || busy ? 0.5 : 1,
             cursor: disabled || busy ? "not-allowed" : "pointer",
           }}
@@ -106,10 +106,10 @@ export function PhotoCapture({ imageDataUrl, onChange, disabled }: Props) {
           disabled={disabled || busy}
           className="flex flex-col items-center gap-1.5 py-5 transition-colors"
           style={{
-            background: "var(--cc-surface-2)",
-            border: "1px dashed var(--cc-border-strong)",
+            background: "var(--m-cream-2)",
+            border: "1px dashed var(--m-ink-faint)",
             borderRadius: "12px",
-            color: "var(--cc-text-secondary)",
+            color: "var(--m-ink-soft)",
             opacity: disabled || busy ? 0.5 : 1,
             cursor: disabled || busy ? "not-allowed" : "pointer",
           }}

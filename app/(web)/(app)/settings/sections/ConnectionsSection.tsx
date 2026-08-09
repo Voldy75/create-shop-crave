@@ -19,7 +19,7 @@ const SERVICES: MCPService[] = [
     name: "Swiggy",
     description: "Order food, groceries, and book tables via chat.",
     logo: "🍛",
-    color: "#fc8019",
+    color: "#fc8019", // hex-ok: Swiggy brand orange
   },
   {
     id: "instacart",
@@ -27,7 +27,7 @@ const SERVICES: MCPService[] = [
     name: "Instacart",
     description: "Shop groceries from local stores, delivered in hours.",
     logo: "🛒",
-    color: "#43b02a",
+    color: "#43b02a", // hex-ok: Instacart brand green
   },
   {
     id: "zomato",
@@ -35,7 +35,7 @@ const SERVICES: MCPService[] = [
     name: "Zomato",
     description: "Discover restaurants, order food, and book tables.",
     logo: "🍽️",
-    color: "#e23744",
+    color: "#e23744", // hex-ok: Zomato brand red
   },
 ];
 
@@ -51,7 +51,7 @@ export function ConnectionsSection({
       <div className="flex items-center justify-center py-16">
         <Loader2
           className="w-5 h-5 animate-spin"
-          style={{ color: "var(--cc-text-tertiary)" }}
+          style={{ color: "var(--m-ink-soft)" }}
         />
       </div>
     );
@@ -62,8 +62,8 @@ export function ConnectionsSection({
       <div
         className="p-4"
         style={{
-          background: "var(--cc-surface)",
-          border: "1px solid var(--cc-border)",
+          background: "var(--m-card)",
+          border: "1px solid var(--m-ink-faint)",
           borderRadius: "16px",
         }}
       >
@@ -71,7 +71,7 @@ export function ConnectionsSection({
           style={{
             fontSize: "15px",
             fontWeight: 700,
-            color: "var(--cc-text-primary)",
+            color: "var(--m-ink)",
           }}
         >
           MCP server connections
@@ -79,7 +79,7 @@ export function ConnectionsSection({
         <p
           style={{
             fontSize: "12px",
-            color: "var(--cc-text-secondary)",
+            color: "var(--m-ink-soft)",
             marginTop: "4px",
             lineHeight: 1.5,
           }}
@@ -96,8 +96,8 @@ export function ConnectionsSection({
             key={svc.id}
             className="p-4"
             style={{
-              background: "var(--cc-surface)",
-              border: "1px solid var(--cc-border)",
+              background: "var(--m-card)",
+              border: "1px solid var(--m-ink-faint)",
               borderRadius: "16px",
               opacity: enabled ? 1 : 0.55,
             }}
@@ -121,7 +121,7 @@ export function ConnectionsSection({
                     style={{
                       fontSize: "14px",
                       fontWeight: 700,
-                      color: "var(--cc-text-primary)",
+                      color: "var(--m-ink)",
                     }}
                   >
                     {svc.name}
@@ -130,10 +130,10 @@ export function ConnectionsSection({
                     style={{
                       fontSize: "10px",
                       fontWeight: 700,
-                      color: enabled ? svc.color : "var(--cc-text-tertiary)",
+                      color: enabled ? svc.color : "var(--m-ink-soft)",
                       background: enabled
                         ? `${svc.color}15`
-                        : "var(--cc-surface-2)",
+                        : "var(--m-cream-2)",
                       padding: "2px 7px",
                       borderRadius: "980px",
                       textTransform: "uppercase",
@@ -146,7 +146,7 @@ export function ConnectionsSection({
                 <p
                   style={{
                     fontSize: "11px",
-                    color: "var(--cc-text-secondary)",
+                    color: "var(--m-ink-soft)",
                     marginTop: "2px",
                   }}
                 >
@@ -174,7 +174,7 @@ export function ConnectionsSection({
                 <p
                   style={{
                     fontSize: "11px",
-                    color: "var(--cc-text-tertiary)",
+                    color: "var(--m-ink-soft)",
                     fontStyle: "italic",
                   }}
                 >

@@ -274,27 +274,27 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
         onClick={(e) => e.stopPropagation()}
         className="w-full sm:max-w-lg max-h-[92vh] overflow-y-auto"
         style={{
-          background: "var(--cc-surface)",
+          background: "var(--m-card)",
           borderRadius: "20px 20px 0 0",
-          border: "1px solid var(--cc-border)",
+          border: "1px solid var(--m-ink-faint)",
         }}
       >
         <div
           className="sticky top-0 flex items-center justify-between px-5 py-4 z-10"
-          style={{ background: "var(--cc-surface)", borderBottom: "1px solid var(--cc-border)" }}
+          style={{ background: "var(--m-card)", borderBottom: "1px solid var(--m-ink-faint)" }}
         >
           <div>
-            <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--m-ink)" }}>
               {isEditing ? "Edit meal" : "Log meal"}
             </h2>
-            <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)", marginTop: "2px" }}>
+            <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "2px" }}>
               {dayName} · {date}
             </p>
           </div>
           <button
             onClick={onClose}
             className="p-1.5 rounded-full"
-            style={{ color: "var(--cc-text-tertiary)", background: "var(--cc-surface-2)" }}
+            style={{ color: "var(--m-ink-soft)", background: "var(--m-cream-2)" }}
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -315,14 +315,14 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                   onClick={() => !lockedForAuth && setMode(id)}
                   className="flex flex-col items-center gap-1.5 py-3 px-2 transition-colors relative"
                   style={{
-                    background: active ? "var(--cc-accent-dim)" : "var(--cc-surface-2)",
-                    border: active ? "1px solid var(--cc-accent)" : "1px solid var(--cc-border)",
+                    background: active ? "var(--m-tint-green)" : "var(--m-cream-2)",
+                    border: active ? "1px solid var(--m-forest)" : "1px solid var(--m-ink-faint)",
                     borderRadius: "12px",
                     color: active
-                      ? "var(--cc-accent)"
+                      ? "var(--m-forest)"
                       : lockedForAuth
-                        ? "var(--cc-text-tertiary)"
-                        : "var(--cc-text-secondary)",
+                        ? "var(--m-ink-soft)"
+                        : "var(--m-ink-soft)",
                     opacity: lockedForAuth ? 0.55 : 1,
                     cursor: lockedForAuth ? "not-allowed" : "pointer",
                   }}
@@ -333,7 +333,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                   {lockedForAuth && (
                     <span
                       className="absolute"
-                      style={{ top: "6px", right: "6px", color: "var(--cc-text-tertiary)" }}
+                      style={{ top: "6px", right: "6px", color: "var(--m-ink-soft)" }}
                       aria-label="Sign in to unlock"
                     >
                       <Lock className="w-2.5 h-2.5" />
@@ -347,7 +347,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
 
           {/* Meal type chips */}
           <div>
-            <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--cc-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "8px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--m-ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "8px" }}>
               Meal
             </p>
             <div className="flex gap-2 flex-wrap">
@@ -359,9 +359,9 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                   style={{
                     fontSize: "12px",
                     fontWeight: 600,
-                    background: mealType === mt ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                    color: mealType === mt ? "var(--m-on-deep)" : "var(--cc-text-secondary)",
-                    border: mealType === mt ? "1px solid var(--cc-accent)" : "1px solid var(--cc-border)",
+                    background: mealType === mt ? "var(--m-forest)" : "var(--m-cream-2)",
+                    color: mealType === mt ? "var(--m-on-deep)" : "var(--m-ink-soft)",
+                    border: mealType === mt ? "1px solid var(--m-forest)" : "1px solid var(--m-ink-faint)",
                     borderRadius: "980px",
                   }}
                 >
@@ -374,13 +374,13 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
           {/* From plan */}
           {mode === "plan" && (
             <div>
-              <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--cc-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "8px" }}>
+              <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--m-ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "8px" }}>
                 Planned for {dayName.toLowerCase()}
               </p>
               {planSuggestions.length === 0 ? (
                 <div
                   className="text-center py-6 px-4"
-                  style={{ background: "var(--cc-surface-2)", borderRadius: "12px", color: "var(--cc-text-tertiary)" }}
+                  style={{ background: "var(--m-cream-2)", borderRadius: "12px", color: "var(--m-ink-soft)" }}
                 >
                   <p style={{ fontSize: "13px" }}>No meals planned for this day.</p>
                   <p style={{ fontSize: "11px", marginTop: "4px" }}>Switch to Manual to log what you ate.</p>
@@ -393,16 +393,16 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                       onClick={() => fillFromSlot(mt, slot)}
                       className="flex items-center justify-between text-left px-4 py-3 transition-colors"
                       style={{
-                        background: "var(--cc-surface-2)",
-                        border: "1px solid var(--cc-border)",
+                        background: "var(--m-cream-2)",
+                        border: "1px solid var(--m-ink-faint)",
                         borderRadius: "12px",
                       }}
                     >
                       <div>
-                        <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--cc-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--m-ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                           {mt}
                         </p>
-                        <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--cc-text-primary)", marginTop: "2px" }}>
+                        <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--m-ink)", marginTop: "2px" }}>
                           {slot.dish}
                         </p>
                       </div>
@@ -410,10 +410,10 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                         style={{
                           fontSize: "11px",
                           fontWeight: 600,
-                          color: "var(--cc-accent)",
+                          color: "var(--m-forest)",
                           padding: "4px 10px",
                           borderRadius: "980px",
-                          background: "var(--cc-accent-dim)",
+                          background: "var(--m-tint-green)",
                         }}
                       >
                         Use
@@ -428,7 +428,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
           {/* Estimate by name */}
           {mode === "search" && (
             <div className="flex flex-col gap-2">
-              <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--cc-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--m-ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                 Describe what you ate
               </p>
               <div className="flex gap-2">
@@ -439,10 +439,10 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                   className="flex-1 px-3 py-2.5 outline-none"
                   style={{
                     fontSize: "14px",
-                    background: "var(--cc-surface-2)",
-                    border: "1px solid var(--cc-border)",
+                    background: "var(--m-cream-2)",
+                    border: "1px solid var(--m-ink-faint)",
                     borderRadius: "10px",
-                    color: "var(--cc-text-primary)",
+                    color: "var(--m-ink)",
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && searchQuery.trim() && !analyzing) handleAnalyzeDish();
@@ -455,8 +455,8 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                   style={{
                     fontSize: "13px",
                     fontWeight: 600,
-                    background: searchQuery.trim() && !analyzing ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                    color: searchQuery.trim() && !analyzing ? "var(--m-on-deep)" : "var(--cc-text-tertiary)",
+                    background: searchQuery.trim() && !analyzing ? "var(--m-forest)" : "var(--m-cream-2)",
+                    color: searchQuery.trim() && !analyzing ? "var(--m-on-deep)" : "var(--m-ink-soft)",
                     borderRadius: "10px",
                     cursor: searchQuery.trim() && !analyzing ? "pointer" : "not-allowed",
                   }}
@@ -465,7 +465,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                   Estimate
                 </button>
               </div>
-              <p style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
+              <p style={{ fontSize: "11px", color: "var(--m-ink-soft)" }}>
                 AI will estimate calories and macros. Edit anything below before saving.
               </p>
             </div>
@@ -474,7 +474,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
           {/* Photo */}
           {mode === "photo" && (
             <div className="flex flex-col gap-3">
-              <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--cc-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--m-ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                 Snap or upload your plate
               </p>
               <PhotoCapture
@@ -496,7 +496,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                   style={{
                     fontSize: "13px",
                     fontWeight: 600,
-                    background: "var(--cc-accent)",
+                    background: "var(--m-forest)",
                     borderRadius: "10px",
                   }}
                 >
@@ -513,7 +513,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                   )}
                 </button>
               )}
-              <p style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
+              <p style={{ fontSize: "11px", color: "var(--m-ink-soft)" }}>
                 Photo is sent to Gemini for analysis. It is not stored on our servers.
               </p>
             </div>
@@ -552,7 +552,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
             </div>
           )}
           {!needsConfirmation && aiNotes && (
-            <p style={{ fontSize: "11px", color: "var(--cc-text-tertiary)", fontStyle: "italic" }}>
+            <p style={{ fontSize: "11px", color: "var(--m-ink-soft)", fontStyle: "italic" }}>
               {aiNotes}
             </p>
           )}
@@ -567,10 +567,10 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                 className="w-full px-3 py-2.5 outline-none"
                 style={{
                   fontSize: "14px",
-                  background: "var(--cc-surface-2)",
-                  border: "1px solid var(--cc-border)",
+                  background: "var(--m-cream-2)",
+                  border: "1px solid var(--m-ink-faint)",
                   borderRadius: "10px",
-                  color: "var(--cc-text-primary)",
+                  color: "var(--m-ink)",
                 }}
               />
             </Field>
@@ -588,10 +588,10 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                 className="w-full px-3 py-2.5 outline-none"
                 style={{
                   fontSize: "13px",
-                  background: "var(--cc-surface-2)",
-                  border: "1px solid var(--cc-border)",
+                  background: "var(--m-cream-2)",
+                  border: "1px solid var(--m-ink-faint)",
                   borderRadius: "10px",
-                  color: "var(--cc-text-primary)",
+                  color: "var(--m-ink)",
                 }}
               />
             </Field>
@@ -600,7 +600,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
 
         <div
           className="sticky bottom-0 px-5 py-4 flex gap-2 justify-end"
-          style={{ background: "var(--cc-surface)", borderTop: "1px solid var(--cc-border)" }}
+          style={{ background: "var(--m-card)", borderTop: "1px solid var(--m-ink-faint)" }}
         >
           <button
             onClick={onClose}
@@ -608,7 +608,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
             style={{
               fontSize: "13px",
               fontWeight: 600,
-              color: "var(--cc-text-secondary)",
+              color: "var(--m-ink-soft)",
               borderRadius: "980px",
             }}
           >
@@ -621,8 +621,8 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
             style={{
               fontSize: "13px",
               fontWeight: 600,
-              background: canSave ? "var(--cc-accent)" : "var(--cc-surface-2)",
-              color: canSave ? "var(--m-on-deep)" : "var(--cc-text-tertiary)",
+              background: canSave ? "var(--m-forest)" : "var(--m-cream-2)",
+              color: canSave ? "var(--m-on-deep)" : "var(--m-ink-soft)",
               borderRadius: "980px",
               cursor: canSave ? "pointer" : "not-allowed",
             }}
@@ -638,7 +638,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--cc-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "6px" }}>
+      <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--m-ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "6px" }}>
         {label}
       </p>
       {children}
@@ -659,7 +659,7 @@ function NutritionField({
 }) {
   return (
     <div>
-      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--cc-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "4px" }}>
+      <p style={{ fontSize: "10px", fontWeight: 700, color: "var(--m-ink-soft)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "4px" }}>
         {label}
       </p>
       <div className="relative">
@@ -673,10 +673,10 @@ function NutritionField({
           style={{
             fontSize: "13px",
             fontWeight: 600,
-            background: "var(--cc-surface-2)",
-            border: "1px solid var(--cc-border)",
+            background: "var(--m-cream-2)",
+            border: "1px solid var(--m-ink-faint)",
             borderRadius: "8px",
-            color: "var(--cc-text-primary)",
+            color: "var(--m-ink)",
           }}
         />
         {suffix && (
@@ -687,7 +687,7 @@ function NutritionField({
               top: "50%",
               transform: "translateY(-50%)",
               fontSize: "10px",
-              color: "var(--cc-text-tertiary)",
+              color: "var(--m-ink-soft)",
               pointerEvents: "none",
             }}
           >

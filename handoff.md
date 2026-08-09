@@ -94,7 +94,7 @@ project before the merge.
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
-| 10 meshi re-skin | **10b mobile DONE**; **10c web DONE**; **10d DONE** (motion kit + brand assets; orange gone repo-wide); **10e pending** — CI hex check + deleting `--cc-*` |
+| 10 meshi re-skin | **DONE — all of 10a–10e.** Mobile + web converted, mascot motion + brand assets shipped, `--cc-*` deleted (mechanical exit criterion verified zero), CI hex/rgba gate live. Real, tracked debt remains in screens with no artboard — see the 10e write-up below for exactly which. |
 
 ## Blocked on you — nothing proceeds past these
 
@@ -325,7 +325,21 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
      `.side { display: flex }` — the sidebar never hid.
    - `.band-deep .t-micro` lost to meshi-b's `.t-micro { color: ... }`, so an
      eyebrow on the plum band rendered ink-on-plum at 2.14:1 while carrying a
-     perfectly good `text-[var(--cc-text-secondary)]` that never applied.
+     perfectly good band-scoped text colour that never applied.
+
+     A DOCS-LEVEL VERSION OF THE SAME TRAP: an earlier draft of this exact
+     bullet quoted the literal Tailwind arbitrary-value syntax that used to be
+     on that element. Tailwind's content scanner reads markdown too and
+     doesn't know it was inside a backtick-quoted sentence describing a past
+     bug — it compiled the quoted string into a real (and, the second time,
+     build-breaking) utility rule. Two lessons, not one: quoting old
+     class-shaped strings verbatim in prose can itself trigger the scanner,
+     and the fix for that has to avoid the bracket-arbitrary-value shape
+     entirely, not just alter what's inside the brackets — merely removing
+     the leading `--` from a token name, which worked for the plain `--cc-*`
+     mentions elsewhere in this file, was not enough here because the trigger
+     was the surrounding
+     Tailwind syntax, not the token name.
    - Chat's `.chat-input-bar { right: 336px }` and `.chat-rail`'s hide rule —
      same fix, same pattern, added straight to the unlayered block this time
      instead of losing an hour rediscovering the trap.
@@ -394,7 +408,8 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
    renders outside both route groups and only had `globals.css`; with `--cc-*`
    reduced to aliases it rendered completely unstyled.
 8. **The landing had 16 near-white text literals baked into Tailwind arbitrary
-   values** (`text-[rgba(250,249,247,0.68)]`). The light-first flip made them
+   values** — a `text-` colour utility per element, each holding a literal
+   `rgba(250,249,247,0.68)`-shaped value. The light-first flip made them
    unreadable on cream. They are mapped onto the `--cc-*` text scale now, but
    the same pattern may lurk in other screens — grep before assuming a screen
    is theme-clean.
@@ -678,8 +693,10 @@ ignore those two.
 
 ## Suggested next step
 
-**Phase 10b (mobile) is done. Phase 10c (web) is started, not finished.**
-Next, in order:
+**Phase 10 (the entire meshi re-skin, 10a–10e) is done.** What follows is kept
+for its per-screen decisions and traps — read it if you're touching one of
+these screens again — not as a live task list. For what's actually next, skip
+to the end of this section.
 
 1. **Finish 10c — the per-screen web conversions.** The foundation and the
    sidebar have landed (see the 10c section above). What remains is the actual
@@ -1068,7 +1085,95 @@ Next, in order:
    a statement line reading only "meshi" is an unrecognised descriptor and a
    chargeback risk — but a real rename is a product call, not a design cleanup,
    so nothing else was touched.
-3. **Phase 10e** — the CI hex check and deleting `--cc-*`.
+3. ~~**Phase 10e**~~ — **DONE. All of Phase 10 is now complete.** Two halves:
+
+   **a) `--cc-*` is deleted.** `grep -rn -- '--cc-' app components` returns
+   zero — verified as the LITERAL mechanical criterion, not just "no CSS
+   variable references": the alias `:root` block, both `.band-deep`
+   re-scoping blocks, and every historical comment mentioning the old prefix
+   are gone or reworded. **A real prerequisite had to land first**: the
+   landing's forest/plum bands were re-scoping `--cc-text-secondary` /
+   `--cc-accent` etc. by ancestor selector so text and the accent stay legible
+   on a saturated ground (forest cannot be both the band and the accent on
+   it) — deleting the alias wholesale would have deleted that mechanism too,
+   silently breaking the eyebrow and the closing CTA on two of the landing's
+   four band types. It now has its own honestly-named, permanent tokens
+   (`--band-text-secondary`, `--band-text-tertiary`, `--band-border-strong`,
+   `--band-accent`, `--band-accent-hover`) — **not** part of the retired
+   vocabulary, don't delete these in a future cleanup. `components/cc/
+   section.tsx`'s eyebrow and `.btn-pill-primary`'s background/hover are the
+   two live consumers; both verified in the browser resolving to `--m-lime` /
+   `--m-forest-2` on the forest CTA and holding at `--m-forest` everywhere
+   else, in both themes.
+
+   The other ~800 call sites (36 files) were a straight mechanical rename —
+   `var(--cc-accent)` → `var(--m-forest)`, etc. — using the exact 1:1 map that
+   used to live in the deleted `:root` block. `--cc-radius-sm` had no `--m-*`
+   equivalent (it was a bare `10px`); it had zero real consumers, so nothing
+   to inline.
+
+   **TRAP HIT, twice, both self-inflicted this pass.** First: a CSS comment
+   containing a literal `--band-text-*/--band-accent` — meant as shorthand for
+   "either token" — has a `*/` inside it, which is COMMENT-CLOSE in CSS. No
+   nesting, no escaping. It silently ended the comment early and left prose
+   as invalid CSS; build failed with a real syntax error, not just dead
+   output. Second, worse: quoting an old class name verbatim in prose in
+   handoff.md and DESIGN.md — `text-[var(--cc-text-secondary)]`,
+   `text-[var(...)]`, `word[...]` — got picked up by TAILWIND'S CONTENT
+   SCANNER, which reads markdown and comments repo-wide, not just live JSX.
+   It compiled the quoted strings into real utility rules; one contained a
+   literal `var(...)` ellipsis, which isn't valid CSS `var()` syntax, so that
+   one was a hard, build-breaking parse error too — found only via a
+   **genuinely fresh tab** (`fetch` with `cache: 'no-store'` on the actual
+   served CSS chunk after an `rm -rf .next`), because Turbopack kept serving
+   the last-good chunk over HMR and made the page look fine while the
+   underlying build was broken. **When quoting an old class name in prose
+   anywhere in this repo — code comments, handoff.md, DESIGN.md — never
+   reproduce the bracket-arbitrary-value shape** (`word[...]`), even inside
+   backticks. Describe it instead.
+
+   **b) The CI hex/rgba gate is live** — `scripts/check-hex.mjs` +
+   `.github/workflows/design-tokens.yml`, running on any PR touching
+   `app/**`/`components/**`. Two exemption mechanisms, matching two different
+   realities:
+   - **Permanent, DESIGN.md-allowlisted literals** (Razorpay's `theme.color`,
+     both Google Maps style-JSON files, the SVG data-URI marker pin, partner
+     brand colours in `RecipeView`/`ConnectionsSection`/`AuthButton`, the one
+     `themeColor` metadata field) get an inline `// hex-ok: <why>` or a
+     `// hex-ok-start` … `// hex-ok-end` block marker, added to every one of
+     these this pass.
+   - **Real, temporary debt** — 90 lines across the screens Phase 10c never
+     had an artboard for (admin console, `/favorites`, `/arena`, `/settings`
+     + its three sections, `FavoriteButton`, `SwiggyExpiryBanner`,
+     `UsageBadge`) — is recorded in `scripts/hex-baseline.json`. The gate
+     won't newly fail on these, but the baseline is a ratchet: converting one
+     of these files should shrink it, and `--write-baseline` must never be
+     run to silence a genuinely new violation. **Verified the gate actually
+     gates**: added a throwaway `#123456` to a tracked file, confirmed the
+     script exits 1 and names the exact line, then removed it and confirmed a
+     clean exit — this was tested behaviorally, not just written and trusted.
+
+   Verified beyond the above: `tsc`, `next build` (70 routes) and `eslint`
+   clean on every touched file, confirmed identical to the last commit via
+   `git stash` (17 pre-existing findings, unchanged count). Fresh-tab console
+   clean on `/`, `/m`, and `/m/restaurants` (the last shows the pre-existing,
+   documented Maps-referrer-restriction error only). Dark mode spot-checked
+   on the forest CTA — lime stays lime, text tracks `--m-forest-2`'s own
+   per-theme value, no hardcoding needed. The 4.05:1 contrast on the STATS
+   band descriptions and 1.7:1 on the "01/02/03" ghost numerals were
+   double-checked against the last commit's source and are byte-identical
+   pre-existing values from Phase 10c's original band design — not introduced
+   here, and out of scope for a token-rename pass to silently "fix".
+
+## What's actually next
+
+Phase 10's mechanical framework (tokens, mascots, motion, the CI gate) is
+done. What's left is real design work with no artboard to build from, since
+Phase 10c never had one for these screens: **the admin console, `/favorites`,
+`/arena`, `/settings` and its three sections**, plus `FavoriteButton`,
+`SwiggyExpiryBanner`, and `UsageBadge` — `scripts/hex-baseline.json` names the
+exact 90 lines. Converting one shrinks the baseline; that file is the
+up-to-date todo list, not this paragraph.
 
 Two things worth doing before more UI:
 

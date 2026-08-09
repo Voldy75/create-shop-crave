@@ -71,7 +71,7 @@ declare global {
  *  Phase 10d finished the rest of that cleanup — `scripts/gen-resources.mjs`
  *  (with `resources/*.png` regenerated in the same commit), the `assets` npm
  *  script, and `public/manifest.json`. The orange is now gone repo-wide. */
-const RAZORPAY_THEME = "#1E5A34";
+const RAZORPAY_THEME = "#1E5A34"; // hex-ok: third-party iframe, no CSS var support
 
 export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDialogProps) {
   const [options, setOptions] = useState<BillingOptions | null>(null);

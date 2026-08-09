@@ -66,7 +66,7 @@ export function PriceEditor({ planId, prices, onSaved }: PriceEditorProps) {
   return (
     <div className="space-y-2">
       {prices.length === 0 && !showForm && (
-        <p className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>No prices configured.</p>
+        <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>No prices configured.</p>
       )}
       {prices.length > 0 && (
         <div className="overflow-x-auto">
@@ -74,7 +74,7 @@ export function PriceEditor({ planId, prices, onSaved }: PriceEditorProps) {
             <thead>
               <tr>
                 {["Platform", "Provider", "Amount", "Currency", "Interval", "Store product id", "Active"].map((h) => (
-                  <th key={h} className="text-left px-2 py-1.5 text-label" style={{ color: "var(--cc-text-tertiary)" }}>
+                  <th key={h} className="text-left px-2 py-1.5 text-label" style={{ color: "var(--m-ink-soft)" }}>
                     {h}
                   </th>
                 ))}
@@ -82,14 +82,14 @@ export function PriceEditor({ planId, prices, onSaved }: PriceEditorProps) {
             </thead>
             <tbody>
               {prices.map((p) => (
-                <tr key={`${p.plan_id}:${p.platform}:${p.provider}`} style={{ borderTop: "1px solid var(--cc-border)" }}>
-                  <td className="px-2 py-1.5" style={{ color: "var(--cc-text-primary)" }}>{p.platform}</td>
-                  <td className="px-2 py-1.5" style={{ color: "var(--cc-text-primary)" }}>{p.provider}</td>
-                  <td className="px-2 py-1.5" style={{ color: "var(--cc-text-primary)" }}>{p.amount_minor}</td>
-                  <td className="px-2 py-1.5" style={{ color: "var(--cc-text-primary)" }}>{p.currency}</td>
-                  <td className="px-2 py-1.5" style={{ color: "var(--cc-text-primary)" }}>{p.interval}</td>
-                  <td className="px-2 py-1.5" style={{ color: "var(--cc-text-secondary)" }}>{p.store_product_id ?? "—"}</td>
-                  <td className="px-2 py-1.5" style={{ color: "var(--cc-text-secondary)" }}>{p.is_active ? "Yes" : "No"}</td>
+                <tr key={`${p.plan_id}:${p.platform}:${p.provider}`} style={{ borderTop: "1px solid var(--m-ink-faint)" }}>
+                  <td className="px-2 py-1.5" style={{ color: "var(--m-ink)" }}>{p.platform}</td>
+                  <td className="px-2 py-1.5" style={{ color: "var(--m-ink)" }}>{p.provider}</td>
+                  <td className="px-2 py-1.5" style={{ color: "var(--m-ink)" }}>{p.amount_minor}</td>
+                  <td className="px-2 py-1.5" style={{ color: "var(--m-ink)" }}>{p.currency}</td>
+                  <td className="px-2 py-1.5" style={{ color: "var(--m-ink)" }}>{p.interval}</td>
+                  <td className="px-2 py-1.5" style={{ color: "var(--m-ink-soft)" }}>{p.store_product_id ?? "—"}</td>
+                  <td className="px-2 py-1.5" style={{ color: "var(--m-ink-soft)" }}>{p.is_active ? "Yes" : "No"}</td>
                 </tr>
               ))}
             </tbody>
@@ -102,14 +102,14 @@ export function PriceEditor({ planId, prices, onSaved }: PriceEditorProps) {
       )}
 
       {showForm ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 rounded-xl" style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)" }}>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 rounded-xl" style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}>
           <LabeledSelect label="Platform" value={platform} onChange={(v) => setPlatform(v as typeof platform)} options={PLATFORMS} />
           <LabeledSelect label="Provider" value={provider} onChange={(v) => setProvider(v as typeof provider)} options={PROVIDERS} />
           <LabeledSelect label="Interval" value={interval} onChange={(v) => setInterval(v as typeof interval)} options={INTERVALS} />
           <LabeledInput label="Amount (minor units)" value={amount} onChange={setAmount} placeholder="e.g. 49900" />
           <LabeledInput label="Currency" value={currency} onChange={setCurrency} placeholder="INR" />
           <LabeledInput label="Store product id" value={storeProductId} onChange={setStoreProductId} placeholder="optional" />
-          <label className="flex items-center gap-2 text-xs" style={{ color: "var(--cc-text-secondary)" }}>
+          <label className="flex items-center gap-2 text-xs" style={{ color: "var(--m-ink-soft)" }}>
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
             Active
           </label>
@@ -127,7 +127,7 @@ export function PriceEditor({ planId, prices, onSaved }: PriceEditorProps) {
         <button
           onClick={() => setShowForm(true)}
           className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors"
-          style={{ background: "var(--cc-surface-2)", color: "var(--cc-text-secondary)", border: "1px solid var(--cc-border)" }}
+          style={{ background: "var(--m-cream-2)", color: "var(--m-ink-soft)", border: "1px solid var(--m-ink-faint)" }}
         >
           <Plus className="w-3 h-3" />
           Add / update price
@@ -149,14 +149,14 @@ function LabeledInput({
   placeholder?: string;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--cc-text-tertiary)" }}>
+    <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--m-ink-soft)" }}>
       {label}
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="px-2 py-1.5 text-sm rounded-lg"
-        style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+        style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
       />
     </label>
   );
@@ -174,13 +174,13 @@ function LabeledSelect<T extends string>({
   options: readonly T[];
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--cc-text-tertiary)" }}>
+    <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--m-ink-soft)" }}>
       {label}
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="px-2 py-1.5 text-sm rounded-lg"
-        style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+        style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
       >
         {options.map((o) => (
           <option key={o} value={o}>{o}</option>

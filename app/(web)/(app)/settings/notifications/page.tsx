@@ -249,7 +249,7 @@ export default function NotificationsSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--cc-bg)", color: "var(--cc-text-primary)" }}>
+    <div className="min-h-screen" style={{ background: "var(--m-cream)", color: "var(--m-ink)" }}>
       <header
         className="glass-nav px-6 flex items-center gap-4 sticky top-0 z-10"
         style={{ height: "48px" }}
@@ -257,12 +257,12 @@ export default function NotificationsSettingsPage() {
         <button
           onClick={() => router.push("/planner")}
           className="p-2 rounded-full transition-opacity hover:opacity-70"
-          style={{ color: "var(--cc-text-secondary)" }}
+          style={{ color: "var(--m-ink-soft)" }}
           aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 style={{ fontSize: "14px", fontWeight: 400, color: "var(--cc-text-primary)" }}>
+        <h1 style={{ fontSize: "14px", fontWeight: 400, color: "var(--m-ink)" }}>
           Notifications
         </h1>
       </header>
@@ -306,9 +306,9 @@ export default function NotificationsSettingsPage() {
                       style={{
                         fontSize: "12px",
                         fontWeight: 600,
-                        background: "var(--cc-surface-2)",
-                        color: "var(--cc-text-primary)",
-                        border: "1px solid var(--cc-border)",
+                        background: "var(--m-cream-2)",
+                        color: "var(--m-ink)",
+                        border: "1px solid var(--m-ink-faint)",
                         borderRadius: "980px",
                         marginTop: "4px",
                       }}
@@ -381,15 +381,15 @@ function Intro() {
     <div
       className="p-5"
       style={{
-        background: "var(--cc-surface)",
-        border: "1px solid var(--cc-border)",
+        background: "var(--m-card)",
+        border: "1px solid var(--m-ink-faint)",
         borderRadius: "16px",
       }}
     >
-      <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+      <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--m-ink)" }}>
         Daily nudges
       </h2>
-      <p style={{ fontSize: "13px", color: "var(--cc-text-secondary)", marginTop: "6px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: "13px", color: "var(--m-ink-soft)", marginTop: "6px", lineHeight: 1.5 }}>
         Get a personalised diet suggestion at 8pm IST based on what you logged today and your goal.
         Choose any combination of channels.
       </p>
@@ -412,7 +412,7 @@ interface ChannelCardProps {
 const STATUS_TONE: Record<ChannelCardProps["tone"], { color: string; bg: string }> = {
   active: { color: "#34c759", bg: "rgba(52,199,89,0.10)" },
   pending: { color: "#ff9f0a", bg: "rgba(255,159,10,0.10)" },
-  off: { color: "var(--cc-text-tertiary)", bg: "var(--cc-surface-2)" },
+  off: { color: "var(--m-ink-soft)", bg: "var(--m-cream-2)" },
 };
 
 function ChannelCard({ icon: Icon, title, subtitle, enabled, status, tone, saving, onToggle, detail }: ChannelCardProps) {
@@ -421,8 +421,8 @@ function ChannelCard({ icon: Icon, title, subtitle, enabled, status, tone, savin
     <div
       className="p-5"
       style={{
-        background: "var(--cc-surface)",
-        border: "1px solid var(--cc-border)",
+        background: "var(--m-card)",
+        border: "1px solid var(--m-ink-faint)",
         borderRadius: "16px",
       }}
     >
@@ -433,15 +433,15 @@ function ChannelCard({ icon: Icon, title, subtitle, enabled, status, tone, savin
             width: "40px",
             height: "40px",
             borderRadius: "10px",
-            background: "var(--cc-surface-2)",
-            color: "var(--cc-text-secondary)",
+            background: "var(--m-cream-2)",
+            color: "var(--m-ink-soft)",
           }}
         >
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-3">
-            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)" }}>{title}</h3>
+            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--m-ink)" }}>{title}</h3>
             <span
               style={{
                 fontSize: "10px",
@@ -458,7 +458,7 @@ function ChannelCard({ icon: Icon, title, subtitle, enabled, status, tone, savin
               {status}
             </span>
           </div>
-          <p style={{ fontSize: "12px", color: "var(--cc-text-secondary)", marginTop: "4px", lineHeight: 1.4 }}>
+          <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "4px", lineHeight: 1.4 }}>
             {subtitle}
           </p>
         </div>
@@ -484,8 +484,8 @@ function Switch({ checked, onClick, disabled }: { checked: boolean; onClick: () 
         width: "44px",
         height: "26px",
         borderRadius: "999px",
-        background: checked ? "var(--cc-accent)" : "var(--cc-surface-2)",
-        border: "1px solid var(--cc-border)",
+        background: checked ? "var(--m-forest)" : "var(--m-cream-2)",
+        border: "1px solid var(--m-ink-faint)",
         opacity: disabled ? 0.6 : 1,
         cursor: disabled ? "wait" : "pointer",
       }}
@@ -514,12 +514,12 @@ function FreeTierNote() {
         background: "rgba(10,132,255,0.06)",
         border: "1px solid rgba(10,132,255,0.20)",
         borderRadius: "12px",
-        color: "var(--cc-text-secondary)",
+        color: "var(--m-ink-soft)",
       }}
     >
       <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#0a84ff" }} />
       <div>
-        <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--cc-text-primary)" }}>
+        <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--m-ink)" }}>
           Free-tier limits
         </p>
         <p style={{ fontSize: "11px", marginTop: "4px", lineHeight: 1.5 }}>
@@ -537,14 +537,14 @@ function SignedOutNotice() {
     <div
       className="flex flex-col items-center text-center px-6 py-16"
       style={{
-        background: "var(--cc-surface)",
-        border: "1px solid var(--cc-border)",
+        background: "var(--m-card)",
+        border: "1px solid var(--m-ink-faint)",
         borderRadius: "16px",
-        color: "var(--cc-text-secondary)",
+        color: "var(--m-ink-soft)",
       }}
     >
-      <Lock className="w-6 h-6" style={{ color: "var(--cc-text-tertiary)", marginBottom: "10px" }} />
-      <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+      <Lock className="w-6 h-6" style={{ color: "var(--m-ink-soft)", marginBottom: "10px" }} />
+      <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--m-ink)" }}>
         Sign in to manage notifications
       </h3>
       <p style={{ fontSize: "13px", marginTop: "6px", maxWidth: "340px" }}>
@@ -563,8 +563,8 @@ function SkeletonCard() {
           className="animate-pulse"
           style={{
             height: `${h}px`,
-            background: "var(--cc-surface)",
-            border: "1px solid var(--cc-border)",
+            background: "var(--m-card)",
+            border: "1px solid var(--m-ink-faint)",
             borderRadius: "16px",
           }}
         />
@@ -600,7 +600,7 @@ function WhatsAppDetail({
 }: WhatsAppDetailProps) {
   if (!sub?.whatsappEnabled) {
     return (
-      <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)" }}>
+      <p style={{ fontSize: "12px", color: "var(--m-ink-soft)" }}>
         Toggle on to add a phone and complete the WhatsApp join.
       </p>
     );
@@ -614,7 +614,7 @@ function WhatsAppDetail({
           style={{
             fontSize: "11px",
             fontWeight: 700,
-            color: "var(--cc-text-tertiary)",
+            color: "var(--m-ink-soft)",
             textTransform: "uppercase",
             letterSpacing: "0.04em",
           }}
@@ -631,10 +631,10 @@ function WhatsAppDetail({
             className="flex-1 px-3 py-2 outline-none"
             style={{
               fontSize: "13px",
-              background: "var(--cc-surface-2)",
-              border: "1px solid var(--cc-border)",
+              background: "var(--m-cream-2)",
+              border: "1px solid var(--m-ink-faint)",
               borderRadius: "10px",
-              color: "var(--cc-text-primary)",
+              color: "var(--m-ink)",
               minWidth: "0",
             }}
           />
@@ -645,8 +645,8 @@ function WhatsAppDetail({
             style={{
               fontSize: "12px",
               fontWeight: 700,
-              background: phoneInput.trim() ? "var(--cc-accent)" : "var(--cc-surface-2)",
-              color: phoneInput.trim() ? "#fff" : "var(--cc-text-tertiary)",
+              background: phoneInput.trim() ? "var(--m-forest)" : "var(--m-cream-2)",
+              color: phoneInput.trim() ? "#fff" : "var(--m-ink-soft)",
               borderRadius: "10px",
               cursor: enrollLoading ? "wait" : phoneInput.trim() ? "pointer" : "not-allowed",
             }}
@@ -654,7 +654,7 @@ function WhatsAppDetail({
             {enrollLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Continue"}
           </button>
         </div>
-        <p style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
+        <p style={{ fontSize: "11px", color: "var(--m-ink-soft)" }}>
           India default — for other countries, include the + and country code (e.g. +1...).
         </p>
       </div>
@@ -665,9 +665,9 @@ function WhatsAppDetail({
   if (sub.whatsappStatus === "pending") {
     return (
       <div className="flex flex-col gap-3 w-full">
-        <p style={{ fontSize: "12px", color: "var(--cc-text-secondary)", lineHeight: 1.5 }}>
-          Open WhatsApp on <strong style={{ color: "var(--cc-text-primary)" }}>{sub.phoneE164}</strong> and send this text to{" "}
-          <strong style={{ color: "var(--cc-text-primary)" }}>
+        <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", lineHeight: 1.5 }}>
+          Open WhatsApp on <strong style={{ color: "var(--m-ink)" }}>{sub.phoneE164}</strong> and send this text to{" "}
+          <strong style={{ color: "var(--m-ink)" }}>
             {joinInstructions?.to ?? "+1 415 523 8886"}
           </strong>
           :
@@ -676,8 +676,8 @@ function WhatsAppDetail({
           <div
             className="flex items-center justify-between gap-2 p-3"
             style={{
-              background: "var(--cc-surface-2)",
-              border: "1px dashed var(--cc-border-strong)",
+              background: "var(--m-cream-2)",
+              border: "1px dashed var(--m-ink-faint)",
               borderRadius: "10px",
             }}
           >
@@ -685,7 +685,7 @@ function WhatsAppDetail({
               style={{
                 fontFamily: "var(--font-mono, monospace)",
                 fontSize: "13px",
-                color: "var(--cc-text-primary)",
+                color: "var(--m-ink)",
               }}
             >
               {joinInstructions.text}
@@ -696,9 +696,9 @@ function WhatsAppDetail({
               style={{
                 fontSize: "11px",
                 fontWeight: 600,
-                color: "var(--cc-text-primary)",
-                background: "var(--cc-surface)",
-                border: "1px solid var(--cc-border)",
+                color: "var(--m-ink)",
+                background: "var(--m-card)",
+                border: "1px solid var(--m-ink-faint)",
                 borderRadius: "999px",
               }}
             >
@@ -712,16 +712,16 @@ function WhatsAppDetail({
             style={{
               fontSize: "12px",
               fontWeight: 600,
-              background: "var(--cc-surface-2)",
-              color: "var(--cc-text-primary)",
-              border: "1px solid var(--cc-border)",
+              background: "var(--m-cream-2)",
+              color: "var(--m-ink)",
+              border: "1px solid var(--m-ink-faint)",
               borderRadius: "980px",
             }}
           >
             Show join code
           </button>
         )}
-        <p style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
+        <p style={{ fontSize: "11px", color: "var(--m-ink-soft)" }}>
           We&apos;ll auto-detect when you join. This usually takes a few seconds.
         </p>
       </div>
@@ -732,8 +732,8 @@ function WhatsAppDetail({
   if (sub.whatsappStatus === "active") {
     return (
       <div className="flex flex-col gap-2 w-full">
-        <p style={{ fontSize: "12px", color: "var(--cc-text-secondary)" }}>
-          Connected on <strong style={{ color: "var(--cc-text-primary)" }}>{sub.phoneE164}</strong>
+        <p style={{ fontSize: "12px", color: "var(--m-ink-soft)" }}>
+          Connected on <strong style={{ color: "var(--m-ink)" }}>{sub.phoneE164}</strong>
         </p>
         <button
           onClick={onTest}
@@ -742,9 +742,9 @@ function WhatsAppDetail({
           style={{
             fontSize: "12px",
             fontWeight: 600,
-            background: "var(--cc-surface-2)",
-            color: "var(--cc-text-primary)",
-            border: "1px solid var(--cc-border)",
+            background: "var(--m-cream-2)",
+            color: "var(--m-ink)",
+            border: "1px solid var(--m-ink-faint)",
             borderRadius: "980px",
           }}
         >
@@ -784,8 +784,8 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
       <div
         className="p-5 animate-pulse"
         style={{
-          background: "var(--cc-surface)",
-          border: "1px solid var(--cc-border)",
+          background: "var(--m-card)",
+          border: "1px solid var(--m-ink-faint)",
           borderRadius: "16px",
           minHeight: "120px",
         }}
@@ -818,8 +818,8 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
     <div
       className="p-5"
       style={{
-        background: "var(--cc-surface)",
-        border: "1px solid var(--cc-border)",
+        background: "var(--m-card)",
+        border: "1px solid var(--m-ink-faint)",
         borderRadius: "16px",
       }}
     >
@@ -830,15 +830,15 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
             width: "40px",
             height: "40px",
             borderRadius: "10px",
-            background: "var(--cc-surface-2)",
-            color: "var(--cc-text-secondary)",
+            background: "var(--m-cream-2)",
+            color: "var(--m-ink-soft)",
           }}
         >
           <Utensils className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-3">
-            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--m-ink)" }}>
               Swiggy agent
             </h3>
             <span
@@ -857,7 +857,7 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
               {statusLabel}
             </span>
           </div>
-          <p style={{ fontSize: "12px", color: "var(--cc-text-secondary)", marginTop: "4px", lineHeight: 1.4 }}>
+          <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "4px", lineHeight: 1.4 }}>
             Connect your Swiggy account so the chat can order ingredients on Instamart, order food, and book DineOut tables on your behalf.
           </p>
         </div>
@@ -871,7 +871,7 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
               background: "rgba(255,159,10,0.08)",
               border: "1px solid rgba(255,159,10,0.25)",
               borderRadius: "10px",
-              color: "var(--cc-text-secondary)",
+              color: "var(--m-ink-soft)",
             }}
           >
             <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#ff9f0a" }} />
@@ -881,7 +881,7 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
                 href="https://mcp.swiggy.com/builders/access/"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "var(--cc-link)", textDecoration: "underline" }}
+                style={{ color: "var(--m-forest)", textDecoration: "underline" }}
               >
                 mcp.swiggy.com/builders/access
               </a>
@@ -897,7 +897,7 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
         )}
 
         {status.expiresAt && (
-          <p style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
+          <p style={{ fontSize: "11px", color: "var(--m-ink-soft)" }}>
             Token expires {new Date(status.expiresAt).toLocaleString()}.
           </p>
         )}
@@ -911,9 +911,9 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
               style={{
                 fontSize: "12px",
                 fontWeight: 600,
-                background: "var(--cc-surface-2)",
-                color: "var(--cc-text-primary)",
-                border: "1px solid var(--cc-border)",
+                background: "var(--m-cream-2)",
+                color: "var(--m-ink)",
+                border: "1px solid var(--m-ink-faint)",
                 borderRadius: "980px",
               }}
             >
@@ -928,8 +928,8 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
               style={{
                 fontSize: "12px",
                 fontWeight: 600,
-                background: configured ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                color: configured ? "#fff" : "var(--cc-text-tertiary)",
+                background: configured ? "var(--m-forest)" : "var(--m-cream-2)",
+                color: configured ? "#fff" : "var(--m-ink-soft)",
                 borderRadius: "980px",
                 cursor: configured && !busy ? "pointer" : "not-allowed",
               }}

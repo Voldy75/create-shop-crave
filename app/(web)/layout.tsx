@@ -8,7 +8,8 @@ import { Montserrat } from "next/font/google";
  *
  *   design/meshi-b.css    shared tokens + components (also used by mobile)
  *   design/meshi-web.css  desktop shell layer — sidebar / topbar / rail
- *   app/globals.css       Tailwind + the --cc-* aliases onto --m-*
+ *   app/globals.css       Tailwind, referencing meshi's --m-* tokens directly
+ *                         (Phase 10e deleted the alias layer this used to be)
  *
  * IMPORT ORDER MATTERS. globals.css comes last so its `@layer` rules stay
  * beneath meshi-b's unlayered ones — an unlayered rule outranks any layered
@@ -97,9 +98,9 @@ export default function RootLayout({
             position="bottom-center"
             toastOptions={{
               style: {
-                background: "var(--cc-surface-2)",
-                color: "var(--cc-text-primary)",
-                border: "1px solid var(--cc-border-strong)",
+                background: "var(--m-cream-2)",
+                color: "var(--m-ink)",
+                border: "1px solid var(--m-ink-faint)",
                 borderRadius: "980px",
                 fontSize: "14px",
                 fontWeight: 400,

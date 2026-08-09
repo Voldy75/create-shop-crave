@@ -12,8 +12,8 @@ import { Montserrat } from "next/font/google";
  *
  * globals.css is deliberately NO LONGER imported here. It was kept through the
  * root-layout split purely to avoid a visual delta during that refactor; now
- * that the surface is being re-skinned, its Tailwind base resets and --cc-*
- * tokens would only fight the new system.
+ * that the surface is re-skinned, its Tailwind base resets would only fight
+ * the new system.
  *
  * What this deliberately does NOT render, versus web:
  *   - <BottomNav />  — allowlisted to web paths anyway; /m has its own tab bar.
@@ -56,7 +56,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   // Matches --m-cream so the iOS status bar and rubber-band overscroll blend
   // into the page instead of flashing white.
-  themeColor: "#FBF6E3",
+  themeColor: "#FBF6E3", // hex-ok: Next metadata, not CSS — cannot take a variable
 };
 
 export default function MobileRootLayout({

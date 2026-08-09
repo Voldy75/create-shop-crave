@@ -26,6 +26,8 @@ import { Github, Mail, Loader2 } from "lucide-react";
  * mail in an inbox. Same category of caveat as the mobile paywall's iOS path
  * — real code against a real API, infra unverified.
  */
+// hex-ok-start: Google's official four-colour "G" mark — partner brand art,
+// the same allowlist category as Swiggy orange or Zomato red.
 function GoogleIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
@@ -36,6 +38,7 @@ function GoogleIcon() {
     </svg>
   );
 }
+// hex-ok-end
 
 export function AuthButton() {
   const supabase = createClient();
@@ -74,12 +77,14 @@ export function AuthButton() {
 
       {/* GitHub's own brand black — a partner colour on DESIGN.md's allowlist,
           the same category as Swiggy orange or Zomato red. */}
+      {/* hex-ok-start: GitHub's own brand black */}
       <button onClick={signInWithGitHub} className="pill-primary" style={{ width: "100%", gap: 10, background: "#24292F" }}>
         <span className="prov-badge" style={{ background: "var(--m-on-deep)" }}>
           <Github width={13} height={13} style={{ color: "#24292F" }} />
         </span>
         Continue with GitHub
       </button>
+      {/* hex-ok-end */}
 
       <div className="hstack" style={{ gap: 10, width: "100%", margin: "4px 0" }}>
         <i style={{ flex: 1, height: 1.5, background: "var(--m-ink-faint)" }} />

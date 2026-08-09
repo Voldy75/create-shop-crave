@@ -12,7 +12,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--cc-bg)" }}>
+    <div className="min-h-screen" style={{ background: "var(--m-cream)" }}>
       <AdminNav />
       {children}
     </div>

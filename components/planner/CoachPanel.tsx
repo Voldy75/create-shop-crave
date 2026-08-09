@@ -220,14 +220,14 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
       <div
         className="flex flex-col items-center text-center px-6 py-16"
         style={{
-          background: "var(--cc-surface)",
-          border: "1px solid var(--cc-border)",
+          background: "var(--m-card)",
+          border: "1px solid var(--m-ink-faint)",
           borderRadius: "16px",
-          color: "var(--cc-text-secondary)",
+          color: "var(--m-ink-soft)",
         }}
       >
-        <Lock className="w-6 h-6" style={{ color: "var(--cc-text-tertiary)", marginBottom: "10px" }} />
-        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+        <Lock className="w-6 h-6" style={{ color: "var(--m-ink-soft)", marginBottom: "10px" }} />
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--m-ink)" }}>
           Sign in to use Coach
         </h3>
         <p style={{ fontSize: "13px", marginTop: "6px", maxWidth: "340px" }}>
@@ -243,17 +243,17 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
       <div
         className="p-5 sm:p-6"
         style={{
-          background: "var(--cc-surface)",
-          border: "1px solid var(--cc-border)",
+          background: "var(--m-card)",
+          border: "1px solid var(--m-ink-faint)",
           borderRadius: "16px",
         }}
       >
         <div className="flex items-start justify-between gap-3" style={{ marginBottom: "12px" }}>
           <div>
-            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--m-ink)" }}>
               Insights
             </h3>
-            <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)", marginTop: "2px" }}>
+            <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "2px" }}>
               Specific observations from the last 7 days of logs.
             </p>
           </div>
@@ -262,7 +262,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               onClick={handleGenerateInsights}
               disabled={insightsLoading}
               className="p-2 rounded-full transition-colors"
-              style={{ background: "var(--cc-surface-2)", color: "var(--cc-text-secondary)" }}
+              style={{ background: "var(--m-cream-2)", color: "var(--m-ink-soft)" }}
               aria-label="Refresh insights"
             >
               {insightsLoading ? (
@@ -293,7 +293,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
         {!insights && !insightsLoading && (
           <div className="flex flex-col items-start gap-3">
             {!dataReady && (
-              <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)" }}>
+              <p style={{ fontSize: "12px", color: "var(--m-ink-soft)" }}>
                 Log a couple of meals first so Coach has something to work with.
               </p>
             )}
@@ -304,8 +304,8 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               style={{
                 fontSize: "13px",
                 fontWeight: 600,
-                background: dataReady ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                color: dataReady ? "var(--m-on-deep)" : "var(--cc-text-tertiary)",
+                background: dataReady ? "var(--m-forest)" : "var(--m-cream-2)",
+                color: dataReady ? "var(--m-on-deep)" : "var(--m-ink-soft)",
                 borderRadius: "980px",
                 cursor: dataReady ? "pointer" : "not-allowed",
               }}
@@ -322,10 +322,10 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               <div
                 className="flex items-center gap-2 px-3 py-3"
                 style={{
-                  background: "var(--cc-surface-2)",
-                  border: "1px solid var(--cc-border)",
+                  background: "var(--m-cream-2)",
+                  border: "1px solid var(--m-ink-faint)",
                   borderRadius: "12px",
-                  color: "var(--cc-text-secondary)",
+                  color: "var(--m-ink-soft)",
                 }}
               >
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -356,10 +356,10 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--m-ink)" }}>
                       {ins.title}
                     </p>
-                    <p style={{ fontSize: "12px", color: "var(--cc-text-secondary)", marginTop: "2px", lineHeight: 1.45 }}>
+                    <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "2px", lineHeight: 1.45 }}>
                       {ins.body}
                     </p>
                   </div>
@@ -370,10 +370,10 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               <div
                 className="flex items-center gap-2 px-3 py-3"
                 style={{
-                  background: "var(--cc-surface-2)",
-                  border: "1px dashed var(--cc-border-strong)",
+                  background: "var(--m-cream-2)",
+                  border: "1px dashed var(--m-ink-faint)",
                   borderRadius: "12px",
-                  color: "var(--cc-text-tertiary)",
+                  color: "var(--m-ink-soft)",
                 }}
               >
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -388,21 +388,21 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
       <div
         className="p-5 sm:p-6"
         style={{
-          background: "var(--cc-surface)",
-          border: "1px solid var(--cc-border)",
+          background: "var(--m-card)",
+          border: "1px solid var(--m-ink-faint)",
           borderRadius: "16px",
         }}
       >
         <div className="flex items-start justify-between gap-3" style={{ marginBottom: "12px" }}>
           <div>
-            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--m-ink)" }}>
               7-day diet chart
             </h3>
-            <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)", marginTop: "2px" }}>
+            <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "2px" }}>
               Personalized to your goal, dietary prefs, and recent intake. One tap to apply to the planner.
             </p>
           </div>
-          <ChefHat className="w-5 h-5" style={{ color: "var(--cc-accent)" }} />
+          <ChefHat className="w-5 h-5" style={{ color: "var(--m-forest)" }} />
         </div>
 
         {chartError && (
@@ -429,8 +429,8 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
             style={{
               fontSize: "13px",
               fontWeight: 600,
-              background: chartLoading ? "var(--cc-surface-2)" : "var(--cc-accent)",
-              color: chartLoading ? "var(--cc-text-tertiary)" : "var(--m-on-deep)",
+              background: chartLoading ? "var(--m-cream-2)" : "var(--m-forest)",
+              color: chartLoading ? "var(--m-ink-soft)" : "var(--m-on-deep)",
               borderRadius: "980px",
               cursor: chartLoading ? "not-allowed" : "pointer",
             }}
@@ -454,9 +454,9 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               style={{
                 fontSize: "13px",
                 fontWeight: 600,
-                background: "var(--cc-surface-2)",
-                color: "var(--cc-text-primary)",
-                border: "1px solid var(--cc-border)",
+                background: "var(--m-cream-2)",
+                color: "var(--m-ink)",
+                border: "1px solid var(--m-ink-faint)",
                 borderRadius: "980px",
               }}
             >

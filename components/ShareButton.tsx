@@ -39,7 +39,7 @@ export function ShareButton({ title, text }: ShareButtonProps) {
   return (
     <button
       onClick={handleShare}
-      className="p-1.5 rounded-full transition-colors text-[var(--cc-text-tertiary)] bg-[var(--cc-surface-2)] hover:bg-[var(--cc-surface-3)]"
+      className="p-1.5 rounded-full transition-colors text-[var(--m-ink-soft)] bg-[var(--m-cream-2)] hover:bg-[var(--m-cream-2)]"
       aria-label="Share"
     >
       <Share2 className="w-4 h-4" />

@@ -45,16 +45,16 @@ export function Section({
         {(eyebrow || headline || subtitle) && (
           <div className="text-center space-y-3 mb-12 md:mb-16">
             {eyebrow && (
-              /* `--cc-accent`, NOT `--m-forest`, and that is deliberate. This is
-                 the one place the alias layer is still load-bearing: `.band-deep`
-                 re-scopes `--cc-accent` to LIME on the forest and plum bands,
-                 because forest cannot be both the band and the accent on it.
-                 Hardcoding the meshi token would render the eyebrow invisible on
-                 two of the landing's four band types. When 10e deletes `--cc-*`,
-                 the band mechanism in globals.css has to move to a scoped
-                 `--m-*`-named variable FIRST — this is not a stray alias to
-                 sweep up. */
-              <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[var(--cc-accent)]">
+              /* `--band-accent`, NOT `--m-forest`. `.band-deep` re-scopes
+                 `--band-accent` to LIME on the forest and plum bands, because
+                 forest cannot be both the band and the accent on it — see
+                 globals.css's "Band-scoped tokens" block. Hardcoding the meshi
+                 token here would make the eyebrow invisible on two of the
+                 landing's four band types. This variable is NOT part of the
+                 retired Midnight Kitchen alias vocabulary; it is a live,
+                 honestly-named scoping mechanism that happened to share a
+                 prefix with it until Phase 10e separated the two. */
+              <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[var(--band-accent)]">
                 {eyebrow}
               </p>
             )}

@@ -23,19 +23,19 @@ export default function FavoritesPage() {
     const restaurants = favorites.filter((f) => f.type === "restaurant");
 
     return (
-        <div className="min-h-screen" style={{ background: "var(--cc-bg)", color: "var(--cc-text-primary)" }}>
+        <div className="min-h-screen" style={{ background: "var(--m-cream)", color: "var(--m-ink)" }}>
             <header className="glass-nav px-6 flex items-center gap-4 sticky top-0 z-10" style={{ height: "48px" }}>
                 <button
                     onClick={() => router.push("/chat")}
                     className="p-2 rounded-full transition-opacity hover:opacity-70"
-                    style={{ color: "var(--cc-text-secondary)" }}
+                    style={{ color: "var(--m-ink-soft)" }}
                     aria-label="Back to chat"
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 fill-current" style={{ color: "var(--cc-accent)" }} />
-                    <h1 style={{ fontSize: "14px", fontWeight: 400, color: "var(--cc-text-primary)" }}>Favorites</h1>
+                    <Heart className="w-4 h-4 fill-current" style={{ color: "var(--m-forest)" }} />
+                    <h1 style={{ fontSize: "14px", fontWeight: 400, color: "var(--m-ink)" }}>Favorites</h1>
                 </div>
             </header>
 
@@ -45,12 +45,12 @@ export default function FavoritesPage() {
                         <div className="space-y-4">
                             <div
                                 className="w-16 h-16 mx-auto flex items-center justify-center text-3xl"
-                                style={{ background: "var(--cc-surface-2)", borderRadius: "12px" }}
+                                style={{ background: "var(--m-cream-2)", borderRadius: "12px" }}
                             >
                                 🍽️
                             </div>
-                            <p style={{ fontSize: "21px", fontWeight: 600, color: "var(--cc-text-primary)" }}>Nothing saved yet</p>
-                            <p style={{ fontSize: "14px", maxWidth: "280px", margin: "0 auto", color: "var(--cc-text-secondary)" }}>
+                            <p style={{ fontSize: "21px", fontWeight: 600, color: "var(--m-ink)" }}>Nothing saved yet</p>
+                            <p style={{ fontSize: "14px", maxWidth: "280px", margin: "0 auto", color: "var(--m-ink-soft)" }}>
                                 Save recipes and restaurants from the chat to find them here.
                             </p>
                             <button
@@ -71,14 +71,14 @@ export default function FavoritesPage() {
                             fontWeight: 600,
                             textTransform: "uppercase",
                             letterSpacing: "-0.01em",
-                            color: "var(--cc-text-secondary)",
+                            color: "var(--m-ink-soft)",
                             marginBottom: "16px",
                         }}>
-                            <ChefHat className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
+                            <ChefHat className="w-4 h-4" style={{ color: "var(--m-forest)" }} />
                             Saved Recipes
                             <span style={{
                                 fontSize: "12px", fontWeight: 400, padding: "2px 8px",
-                                borderRadius: "980px", background: "var(--cc-surface-2)", color: "var(--cc-text-tertiary)",
+                                borderRadius: "980px", background: "var(--m-cream-2)", color: "var(--m-ink-soft)",
                             }}>
                                 {recipes.length}
                             </span>
@@ -87,16 +87,16 @@ export default function FavoritesPage() {
                             {recipes.map((fav) => {
                                 const recipe = fav.data as RecipeData;
                                 return (
-                                    <div key={fav.id} className="p-4" style={{ background: "var(--cc-surface)", borderRadius: "12px" }}>
+                                    <div key={fav.id} className="p-4" style={{ background: "var(--m-card)", borderRadius: "12px" }}>
                                         <div className="flex justify-between items-start">
                                             <div className="min-w-0 flex-1">
-                                                <h3 style={{ fontSize: "17px", fontWeight: 600, color: "var(--cc-text-primary)" }}>{recipe.name}</h3>
-                                                <p className="line-clamp-2" style={{ fontSize: "14px", marginTop: "4px", color: "var(--cc-text-secondary)" }}>{recipe.description}</p>
+                                                <h3 style={{ fontSize: "17px", fontWeight: 600, color: "var(--m-ink)" }}>{recipe.name}</h3>
+                                                <p className="line-clamp-2" style={{ fontSize: "14px", marginTop: "4px", color: "var(--m-ink-soft)" }}>{recipe.description}</p>
                                                 <div className="flex flex-wrap gap-2 mt-2">
                                                     {recipe.prepTime && (
                                                         <span style={{
                                                             fontSize: "12px", padding: "2px 8px", borderRadius: "980px",
-                                                            background: "var(--cc-surface-2)", color: "var(--cc-text-secondary)",
+                                                            background: "var(--m-cream-2)", color: "var(--m-ink-soft)",
                                                         }}>
                                                             {recipe.prepTime}
                                                         </span>
@@ -113,7 +113,7 @@ export default function FavoritesPage() {
                                             </div>
                                             <button
                                                 onClick={() => handleRemove(fav.id)}
-                                                className="p-2 rounded-full transition-colors shrink-0 ml-2 text-[var(--cc-text-tertiary)] hover:text-[#ff453a] hover:bg-[rgba(255,69,58,0.1)]"
+                                                className="p-2 rounded-full transition-colors shrink-0 ml-2 text-[var(--m-ink-soft)] hover:text-[#ff453a] hover:bg-[rgba(255,69,58,0.1)]"
                                                 aria-label="Remove from favorites"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -133,14 +133,14 @@ export default function FavoritesPage() {
                             fontWeight: 600,
                             textTransform: "uppercase",
                             letterSpacing: "-0.01em",
-                            color: "var(--cc-text-secondary)",
+                            color: "var(--m-ink-soft)",
                             marginBottom: "16px",
                         }}>
-                            <Utensils className="w-4 h-4" style={{ color: "var(--cc-accent)" }} />
+                            <Utensils className="w-4 h-4" style={{ color: "var(--m-forest)" }} />
                             Saved Restaurants
                             <span style={{
                                 fontSize: "12px", fontWeight: 400, padding: "2px 8px",
-                                borderRadius: "980px", background: "var(--cc-surface-2)", color: "var(--cc-text-tertiary)",
+                                borderRadius: "980px", background: "var(--m-cream-2)", color: "var(--m-ink-soft)",
                             }}>
                                 {restaurants.length}
                             </span>
@@ -149,17 +149,17 @@ export default function FavoritesPage() {
                             {restaurants.map((fav) => {
                                 const restaurant = fav.data as Restaurant;
                                 return (
-                                    <div key={fav.id} className="p-4" style={{ background: "var(--cc-surface)", borderRadius: "12px" }}>
+                                    <div key={fav.id} className="p-4" style={{ background: "var(--m-card)", borderRadius: "12px" }}>
                                         <div className="flex justify-between items-start">
                                             <div className="min-w-0 flex-1">
-                                                <h3 style={{ fontSize: "17px", fontWeight: 600, color: "var(--cc-text-primary)" }}>{restaurant.name}</h3>
-                                                <p style={{ fontSize: "14px", marginTop: "4px", color: "var(--cc-text-secondary)" }}>
+                                                <h3 style={{ fontSize: "17px", fontWeight: 600, color: "var(--m-ink)" }}>{restaurant.name}</h3>
+                                                <p style={{ fontSize: "14px", marginTop: "4px", color: "var(--m-ink-soft)" }}>
                                                     {restaurant.area} · {restaurant.priceRange}
                                                 </p>
                                                 {restaurant.cuisine && (
                                                     <span className="inline-block mt-2" style={{
                                                         fontSize: "12px", padding: "2px 8px", borderRadius: "980px",
-                                                        background: "var(--cc-surface-2)", color: "var(--cc-text-secondary)",
+                                                        background: "var(--m-cream-2)", color: "var(--m-ink-soft)",
                                                     }}>
                                                         {restaurant.cuisine}
                                                     </span>
@@ -167,7 +167,7 @@ export default function FavoritesPage() {
                                             </div>
                                             <button
                                                 onClick={() => handleRemove(fav.id)}
-                                                className="p-2 rounded-full transition-colors shrink-0 ml-2 text-[var(--cc-text-tertiary)] hover:text-[#ff453a] hover:bg-[rgba(255,69,58,0.1)]"
+                                                className="p-2 rounded-full transition-colors shrink-0 ml-2 text-[var(--m-ink-soft)] hover:text-[#ff453a] hover:bg-[rgba(255,69,58,0.1)]"
                                                 aria-label="Remove from favorites"
                                             >
                                                 <Trash2 className="w-4 h-4" />

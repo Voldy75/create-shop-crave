@@ -23,22 +23,49 @@ mostly Android.
 
 ## Migration status
 
-This system **replaces** the previous "Midnight Kitchen" (`--cc-*`) tokens and
-the old `app/(mobile)/m/meshi.css`. That replacement is in progress:
+**Done.** This system replaced the previous "Midnight Kitchen" (`--cc-*`)
+tokens and the old `app/(mobile)/m/meshi.css`:
 
 - ✅ Assets vendored (`design/`, `components/mascots/`)
-- ⬜ Mobile surfaces converted (`app/(mobile)/m/**`)
-- ⬜ Web surfaces converted (`app/(web)/**`)
-- ⬜ `--cc-*` retired from `app/globals.css`
+- ✅ Mobile surfaces converted (`app/(mobile)/m/**`)
+- ✅ Web surfaces converted (`app/(web)/**`)
+- ✅ `--cc-*` retired from `app/globals.css` — the alias layer is gone; every
+  call site references `--m-*` directly. Exit criterion, mechanical:
+  `grep -rn -- '--cc-' app components` returns zero (comments describing the
+  old system in history are the only remaining textual hits, and they're
+  written to avoid the literal token shape on purpose — see the note on
+  Tailwind's content scanner below).
 
-**Until the last item is done, both vocabularies exist in the repo.** They do
-not collide today only because `design/*.css` is not yet imported by either root
-layout. Do not add a global import of `meshi-b.css` before converting the
-surface that would inherit it — the two systems claim the same class names
-(`.card`, `.chip`, `.row`, `.input`, `.badge`, `.tabbar`, `.pill-primary`) and
-cannot coexist in one tree.
+**`--band-*` is a separate, still-live mechanism — do not confuse it with the
+retired aliases.** A handful of tokens (`--band-text-secondary`,
+`--band-text-tertiary`, `--band-border-strong`, `--band-accent`,
+`--band-accent-hover`) exist in `app/globals.css` so the landing's forest and
+plum bands can re-scope text/accent legibility by ancestor selector — forest
+cannot be both the band colour and the accent on it. These are not aliases
+onto `--m-*`; they're real, honestly-named CSS custom properties with their
+own default values, currently reused nowhere outside the landing. Do not
+"clean these up" as if they were leftover `--cc-*` scaffolding.
 
-Exit criterion, mechanical: `grep -rn '\-\-cc-' app components` returns zero.
+**A hex/rgba CI gate is live** (`.github/workflows/design-tokens.yml`,
+`scripts/check-hex.mjs`) enforcing the allowlist below. Genuinely allowlisted
+literals carry an inline `// hex-ok: <why>` (or `// hex-ok-start` /
+`// hex-ok-end` for a block) so the checker skips them; everything else not
+yet converted to meshi is tracked in `scripts/hex-baseline.json` as debt the
+gate won't newly fail on, but must never grow — see that file's neighbour,
+`scripts/check-hex.mjs`, for the exact rules. As of Phase 10e, real remaining
+debt lives in: the admin console, `/favorites`, `/arena`, `/settings` and its
+sections, and `FavoriteButton`/`SwiggyExpiryBanner`/`UsageBadge` — none of
+these have a web artboard, which is why Phase 10c never touched them.
+
+**A meta-trap worth knowing before you next edit this file or handoff.md:**
+Tailwind's content scanner reads markdown and code comments, not just live
+JSX — it doesn't know a bracket-arbitrary-value-shaped string is inside a
+backtick-quoted sentence describing a past bug rather than real code. Quoting
+an old Tailwind arbitrary-value class verbatim in prose can compile into a
+real, unused utility rule, and if the quoted content inside the brackets
+isn't valid CSS on its own (an ellipsis standing in for "some value", say)
+that rule can be a hard build error, not just noise. Describe old classes in
+prose without reproducing the bracket shape at all.
 
 ## Aesthetic direction
 

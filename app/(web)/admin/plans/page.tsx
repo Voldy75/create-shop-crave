@@ -31,10 +31,10 @@ export default function PlansPage() {
   return (
     <main className="max-w-4xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="font-bold text-lg" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+        <h1 className="font-bold text-lg" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
           Plans
         </h1>
-        <p className="text-xs mt-0.5" style={{ color: "var(--cc-text-tertiary)" }}>
+        <p className="text-xs mt-0.5" style={{ color: "var(--m-ink-soft)" }}>
           Leave a limit field empty to make it unlimited.
         </p>
       </div>
@@ -50,7 +50,7 @@ export default function PlansPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--cc-text-tertiary)" }} />
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--m-ink-soft)" }} />
         </div>
       ) : (
         <div className="space-y-4">

@@ -62,14 +62,14 @@ const FALLBACK_IMG =
 
 function RestaurantCardSkeleton() {
     const shimmer: React.CSSProperties = {
-        background: "var(--cc-surface-2)",
+        background: "var(--m-cream-2)",
         borderRadius: "8px",
     };
     return (
         <div
             style={{
-                background: "var(--cc-surface)",
-                border: "1px solid var(--cc-border)",
+                background: "var(--m-card)",
+                border: "1px solid var(--m-ink-faint)",
                 borderRadius: "14px",
                 overflow: "hidden",
             }}
@@ -77,7 +77,7 @@ function RestaurantCardSkeleton() {
             {/* Photo placeholder */}
             <div
                 className="aspect-[4/3] animate-pulse"
-                style={{ background: "var(--cc-surface-2)" }}
+                style={{ background: "var(--m-cream-2)" }}
             />
             {/* Body */}
             <div style={{ padding: "14px 16px 16px" }}>
@@ -106,10 +106,10 @@ function RestaurantEmptyState() {
     return (
         <div
             className="flex flex-col items-center justify-center text-center py-12 px-6"
-            style={{ color: "var(--cc-text-tertiary)" }}
+            style={{ color: "var(--m-ink-soft)" }}
         >
             <Utensils className="w-10 h-10 mb-3" style={{ opacity: 0.4 }} />
-            <p style={{ fontSize: "16px", fontWeight: 600, color: "var(--cc-text-secondary)", marginBottom: "4px" }}>
+            <p style={{ fontSize: "16px", fontWeight: 600, color: "var(--m-ink-soft)", marginBottom: "4px" }}>
                 No restaurants found
             </p>
             <p style={{ fontSize: "13px", lineHeight: 1.5, maxWidth: "260px" }}>
@@ -133,7 +133,7 @@ const labelStyle: React.CSSProperties = {
     fontWeight: 700,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-    color: "var(--cc-text-tertiary)",
+    color: "var(--m-ink-soft)",
     marginBottom: "6px",
 };
 
@@ -185,10 +185,10 @@ function RestaurantCard({
             onMouseEnter={() => onSelect(stableId)}
             onClick={() => onSelect(stableId)}
             style={{
-                background: "var(--cc-surface)",
+                background: "var(--m-card)",
                 border: selected
-                    ? "2px solid var(--cc-accent)"
-                    : "1px solid var(--cc-border)",
+                    ? "2px solid var(--m-forest)"
+                    : "1px solid var(--m-ink-faint)",
                 borderRadius: "14px",
                 overflow: "hidden",
                 transition: "border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease",
@@ -200,7 +200,7 @@ function RestaurantCard({
             {/* Thumbnail — 4:3 aspect gives photo ~60% card dominance (Sweetgreen-style) */}
             <div
                 className="aspect-[4/3] relative overflow-hidden"
-                style={{ background: "var(--cc-surface-2)" }}
+                style={{ background: "var(--m-cream-2)" }}
             >
                 <img
                     src={`https://images.unsplash.com/photo-${photoId}?w=600&h=450&fit=crop&auto=format`}
@@ -218,7 +218,7 @@ function RestaurantCard({
                         width: "28px",
                         height: "28px",
                         borderRadius: "50%",
-                        background: "var(--cc-accent)",
+                        background: "var(--m-forest)",
                         color: "var(--m-on-deep)",
                         fontSize: "13px",
                         fontWeight: 700,
@@ -255,7 +255,7 @@ function RestaurantCard({
                         fontWeight: 700,
                         lineHeight: 1.2,
                         letterSpacing: "-0.022em",
-                        color: "var(--cc-text-primary)",
+                        color: "var(--m-ink)",
                     }}
                 >
                     {restaurant.name}
@@ -264,7 +264,7 @@ function RestaurantCard({
                     style={{
                         fontSize: "13px",
                         marginTop: "2px",
-                        color: "var(--cc-text-secondary)",
+                        color: "var(--m-ink-soft)",
                     }}
                 >
                     {restaurant.area}
@@ -275,7 +275,7 @@ function RestaurantCard({
                     className="flex items-center flex-wrap gap-x-1.5"
                     style={{
                         fontSize: "12px",
-                        color: "var(--cc-text-tertiary)",
+                        color: "var(--m-ink-soft)",
                         marginTop: "8px",
                         fontWeight: 500,
                     }}
@@ -369,9 +369,9 @@ function RestaurantCard({
     );
 }
 
+// hex-ok-start: Google Maps style JSON has no CSS custom-property support —
+// DESIGN.md's allowlist. Values are copied from design/meshi-b.css's --m-* tokens.
 // meshi map style — warm cream base, matching the app's light-first aesthetic.
-// Literal hex is required (Google Maps style JSON has no CSS custom-property
-// support); values are copied from design/meshi-b.css's --m-* tokens.
 const MESHI_MAP_STYLE: google.maps.MapTypeStyle[] = [
     { elementType: "geometry", stylers: [{ color: "#FBF6E3" }] },
     { elementType: "labels.text.fill", stylers: [{ color: "#8A6B47" }] },
@@ -383,10 +383,11 @@ const MESHI_MAP_STYLE: google.maps.MapTypeStyle[] = [
     { featureType: "transit", stylers: [{ visibility: "off" }] },
     { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#F4ECD2" }] },
 ];
+// hex-ok-end
 
-// Build a data-URI SVG for a numbered pin marker. Literal hex is required —
-// this is a raster-style icon string, not CSS — but the colours themselves
-// are the --m-forest / --m-ink / --m-on-deep values, not the retired orange.
+// hex-ok-start: an SVG data-URI string — DESIGN.md's allowlist — not CSS, so
+// no custom property resolves inside it. Colours are --m-forest / --m-ink /
+// --m-on-deep's literal values, not the retired orange.
 function numberedMarkerIcon(label: number, active: boolean): google.maps.Icon {
     const fill = active ? "#1E5A34" : "#4B2E12";
     const stroke = active ? "#FDF8E7" : "#1E5A34";
@@ -403,6 +404,7 @@ function numberedMarkerIcon(label: number, active: boolean): google.maps.Icon {
         anchor: new google.maps.Point(18, 48),
     };
 }
+// hex-ok-end
 
 type MapRestaurant = Restaurant & { lat: number; lng: number };
 
@@ -484,7 +486,7 @@ function InteractiveRestaurantMap({
             <div
                 className="w-full h-full animate-pulse"
                 style={{
-                    background: "var(--cc-surface-2)",
+                    background: "var(--m-cream-2)",
                     borderRadius: "12px",
                 }}
                 aria-label="Loading map"
@@ -505,7 +507,7 @@ function InteractiveRestaurantMap({
                 disableDefaultUI: true,
                 zoomControl: true,
                 clickableIcons: false,
-                backgroundColor: "#FBF6E3",
+                backgroundColor: "#FBF6E3", // hex-ok: Maps API options, no CSS var support
                 gestureHandling: "greedy",
             }}
         >
@@ -515,10 +517,14 @@ function InteractiveRestaurantMap({
                 icon={{
                     path: google.maps.SymbolPath.CIRCLE,
                     scale: 8,
+                    // hex-ok-start: Marker icon config is a plain JS object the Maps
+                    // API renders on canvas — no CSS var support. Blue is the
+                    // universal "you are here" convention, not a brand colour.
                     fillColor: "#4285F4",
                     fillOpacity: 1,
                     strokeColor: "#FDF8E7",
                     strokeWeight: 2,
+                    // hex-ok-end
                 }}
                 title="You"
                 zIndex={1}
@@ -546,7 +552,7 @@ function MapErrorFallback({ message }: { message: string }) {
     return (
         <div
             className="flex flex-col items-center justify-center h-full p-6 text-center gap-2"
-            style={{ color: "var(--cc-text-tertiary)" }}
+            style={{ color: "var(--m-ink-soft)" }}
         >
             <AlertCircle className="w-6 h-6" />
             <p style={{ fontSize: "14px" }}>{message}</p>
@@ -618,14 +624,14 @@ function FilterChips({
                             padding: "6px 14px",
                             borderRadius: "980px",
                             border: active
-                                ? "1px solid var(--cc-accent)"
-                                : "1px solid var(--cc-border)",
-                            background: active ? "var(--cc-accent)" : "transparent",
+                                ? "1px solid var(--m-forest)"
+                                : "1px solid var(--m-ink-faint)",
+                            background: active ? "var(--m-forest)" : "transparent",
                             color: active
                                 ? "var(--m-on-deep)"
                                 : disabled
-                                ? "var(--cc-text-tertiary)"
-                                : "var(--cc-text-primary)",
+                                ? "var(--m-ink-soft)"
+                                : "var(--m-ink)",
                             cursor: disabled ? "not-allowed" : "pointer",
                             opacity: disabled ? 0.5 : 1,
                             transition: "all 160ms ease",
@@ -676,7 +682,7 @@ function RestaurantMap({
             className="relative w-full overflow-hidden h-[320px] md:h-[500px]"
             style={{
                 borderRadius: "12px",
-                background: "var(--cc-surface-2)",
+                background: "var(--m-cream-2)",
             }}
         >
             {apiKey && pins.length > 0 ? (
@@ -874,8 +880,8 @@ export function RestaurantView({ data }: RestaurantViewProps) {
         <Card
             className="w-full overflow-hidden shadow-none border-0"
             style={{
-                background: "var(--cc-surface)",
-                color: "var(--cc-text-primary)",
+                background: "var(--m-card)",
+                color: "var(--m-ink)",
                 borderRadius: "12px",
                 padding: "28px",
             }}
@@ -883,7 +889,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
             {/* Header */}
             <div style={{ marginBottom: "24px" }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: "8px" }}>
-                    <div className="flex items-center gap-2" style={{ color: "var(--cc-accent)" }}>
+                    <div className="flex items-center gap-2" style={{ color: "var(--m-forest)" }}>
                         <Utensils className="w-4 h-4" />
                         <span
                             style={{
@@ -902,8 +908,8 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                     fontWeight: 700,
                                     padding: "2px 8px",
                                     borderRadius: "980px",
-                                    background: "var(--cc-accent-dim)",
-                                    color: "var(--cc-accent)",
+                                    background: "var(--m-tint-green)",
+                                    color: "var(--m-forest)",
                                 }}
                             >
                                 {sortedEntries.length}
@@ -921,7 +927,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                         fontWeight: 600,
                         lineHeight: 1.14,
                         letterSpacing: "0.007em",
-                        color: "var(--cc-text-primary)",
+                        color: "var(--m-ink)",
                     }}
                 >
                     Restaurant Suggestions
@@ -932,7 +938,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                         fontSize: "14px",
                         lineHeight: 1.43,
                         letterSpacing: "-0.016em",
-                        color: "var(--cc-text-secondary)",
+                        color: "var(--m-ink-soft)",
                     }}
                 >
                     {data.reason}
@@ -947,7 +953,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                 router.push(`/chat?agent=1&q=${encodeURIComponent(prompt)}`);
                             }}
                             className="inline-flex items-center gap-1.5 text-white transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "#fc8019" }}
+                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "#fc8019" }} // hex-ok: Swiggy brand orange
                             aria-label="Use the agent to order via Swiggy Food"
                         >
                             <Bot className="w-3 h-3" /> Order via agent
@@ -958,7 +964,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                 router.push(`/chat?agent=1&q=${encodeURIComponent(prompt)}`);
                             }}
                             className="inline-flex items-center gap-1.5 transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "var(--cc-surface-2)", color: "var(--cc-text-primary)", border: "1px solid var(--cc-border)" }}
+                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "var(--m-cream-2)", color: "var(--m-ink)", border: "1px solid var(--m-ink-faint)" }}
                             aria-label="Use the agent to book a DineOut table"
                         >
                             <CalendarCheck className="w-3 h-3" /> Book a table
@@ -1020,13 +1026,13 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                         <span style={{
                             fontSize: "13px",
                             fontWeight: 600,
-                            color: "var(--cc-text-secondary)",
+                            color: "var(--m-ink-soft)",
                         }}>
                             {sortedEntries.length} restaurants
                         </span>
                         <span style={{
                             fontSize: "12px",
-                            color: "var(--cc-text-tertiary)",
+                            color: "var(--m-ink-soft)",
                             display: "flex",
                             alignItems: "center",
                             gap: "4px",
@@ -1073,8 +1079,8 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                     borderRadius: "3px",
                                     background:
                                         selectedStableId === entry.stableId
-                                            ? "var(--cc-accent)"
-                                            : "var(--cc-text-tertiary)",
+                                            ? "var(--m-forest)"
+                                            : "var(--m-ink-soft)",
                                     opacity: selectedStableId === entry.stableId ? 1 : 0.35,
                                     border: "none",
                                     padding: 0,
@@ -1121,8 +1127,8 @@ export function RestaurantViewSkeleton() {
         <Card
             className="w-full overflow-hidden shadow-none border-0"
             style={{
-                background: "var(--cc-surface)",
-                color: "var(--cc-text-primary)",
+                background: "var(--m-card)",
+                color: "var(--m-ink)",
                 borderRadius: "12px",
                 padding: "28px",
             }}
@@ -1131,15 +1137,15 @@ export function RestaurantViewSkeleton() {
             <div style={{ marginBottom: "24px" }}>
                 <div
                     className="animate-pulse"
-                    style={{ width: "80px", height: "14px", borderRadius: "6px", background: "var(--cc-surface-2)", marginBottom: "12px" }}
+                    style={{ width: "80px", height: "14px", borderRadius: "6px", background: "var(--m-cream-2)", marginBottom: "12px" }}
                 />
                 <div
                     className="animate-pulse"
-                    style={{ width: "65%", height: "24px", borderRadius: "8px", background: "var(--cc-surface-2)", marginBottom: "8px" }}
+                    style={{ width: "65%", height: "24px", borderRadius: "8px", background: "var(--m-cream-2)", marginBottom: "8px" }}
                 />
                 <div
                     className="animate-pulse"
-                    style={{ width: "90%", height: "14px", borderRadius: "6px", background: "var(--cc-surface-2)" }}
+                    style={{ width: "90%", height: "14px", borderRadius: "6px", background: "var(--m-cream-2)" }}
                 />
             </div>
 
@@ -1154,7 +1160,7 @@ export function RestaurantViewSkeleton() {
                     className="animate-pulse"
                     style={{
                         borderRadius: "12px",
-                        background: "var(--cc-surface-2)",
+                        background: "var(--m-cream-2)",
                         height: "500px",
                     }}
                 />
@@ -1166,7 +1172,7 @@ export function RestaurantViewSkeleton() {
                     className="animate-pulse"
                     style={{
                         borderRadius: "12px",
-                        background: "var(--cc-surface-2)",
+                        background: "var(--m-cream-2)",
                         height: "320px",
                         marginBottom: "16px",
                     }}

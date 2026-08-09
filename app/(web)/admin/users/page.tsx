@@ -96,10 +96,10 @@ export default function UsersPage() {
   return (
     <main className="max-w-6xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="font-bold text-lg" style={{ color: "var(--cc-text-primary)", letterSpacing: "-0.02em" }}>
+        <h1 className="font-bold text-lg" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
           Users
         </h1>
-        <p className="text-xs mt-0.5" style={{ color: "var(--cc-text-tertiary)" }}>
+        <p className="text-xs mt-0.5" style={{ color: "var(--m-ink-soft)" }}>
           {users.length} loaded
         </p>
       </div>
@@ -108,21 +108,21 @@ export default function UsersPage() {
       <div className="relative max-w-sm">
         <Search
           className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: "var(--cc-text-tertiary)" }}
+          style={{ color: "var(--m-ink-soft)" }}
         />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by email"
           className="w-full pl-9 pr-3 py-2 text-sm rounded-lg"
-          style={{ background: "var(--cc-surface-2)", border: "1px solid var(--cc-border)", color: "var(--cc-text-primary)" }}
+          style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
         />
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>Status</span>
+          <span className="text-xs" style={{ color: "var(--m-ink-soft)" }}>Status</span>
           <div className="flex gap-1.5">
             {STATUS_FILTERS.map((f) => (
               <Chip key={f.value} active={status === f.value} onClick={() => setStatus(f.value)}>
@@ -132,7 +132,7 @@ export default function UsersPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs" style={{ color: "var(--cc-text-tertiary)" }}>Platform</span>
+          <span className="text-xs" style={{ color: "var(--m-ink-soft)" }}>Platform</span>
           <div className="flex gap-1.5">
             {PLATFORM_FILTERS.map((f) => (
               <Chip key={f.value} active={platform === f.value} onClick={() => setPlatform(f.value)}>
@@ -153,16 +153,16 @@ export default function UsersPage() {
       )}
 
       {/* Table */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: "var(--cc-surface)", border: "1px solid var(--cc-border)" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)" }}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--cc-border)" }}>
+              <tr style={{ borderBottom: "1px solid var(--m-ink-faint)" }}>
                 {["Email", "Status", "Plan", "Last-seen platform", "7d requests", "Created"].map((h) => (
                   <th
                     key={h}
                     className="text-left px-4 py-3 text-label"
-                    style={{ color: "var(--cc-text-tertiary)" }}
+                    style={{ color: "var(--m-ink-soft)" }}
                   >
                     {h}
                   </th>
@@ -173,12 +173,12 @@ export default function UsersPage() {
               {loading ? (
                 <tr>
                   <td colSpan={6} className="py-10 text-center">
-                    <Loader2 className="w-5 h-5 animate-spin inline-block" style={{ color: "var(--cc-text-tertiary)" }} />
+                    <Loader2 className="w-5 h-5 animate-spin inline-block" style={{ color: "var(--m-ink-soft)" }} />
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-sm" style={{ color: "var(--cc-text-tertiary)" }}>
+                  <td colSpan={6} className="py-10 text-center text-sm" style={{ color: "var(--m-ink-soft)" }}>
                     No users match these filters.
                   </td>
                 </tr>
@@ -187,25 +187,25 @@ export default function UsersPage() {
                   <tr
                     key={u.user_id}
                     onClick={() => setSelectedUser(u)}
-                    className="cursor-pointer transition-colors hover:bg-[var(--cc-surface-2)]"
-                    style={{ borderBottom: "1px solid var(--cc-border)" }}
+                    className="cursor-pointer transition-colors hover:bg-[var(--m-cream-2)]"
+                    style={{ borderBottom: "1px solid var(--m-ink-faint)" }}
                   >
-                    <td className="px-4 py-3" style={{ color: "var(--cc-text-primary)" }}>
+                    <td className="px-4 py-3" style={{ color: "var(--m-ink)" }}>
                       {u.email ?? u.user_id}
                     </td>
                     <td className="px-4 py-3">
                       <StatusPill tone={STATUS_TONE[u.status]}>{u.status}</StatusPill>
                     </td>
-                    <td className="px-4 py-3" style={{ color: "var(--cc-text-secondary)" }}>
+                    <td className="px-4 py-3" style={{ color: "var(--m-ink-soft)" }}>
                       {u.plan_id ?? "—"}
                     </td>
-                    <td className="px-4 py-3" style={{ color: "var(--cc-text-secondary)" }}>
+                    <td className="px-4 py-3" style={{ color: "var(--m-ink-soft)" }}>
                       {u.last_seen_platform ?? "—"}
                     </td>
-                    <td className="px-4 py-3" style={{ color: "var(--cc-text-secondary)" }}>
+                    <td className="px-4 py-3" style={{ color: "var(--m-ink-soft)" }}>
                       {u.chat_usage_7d}
                     </td>
-                    <td className="px-4 py-3" style={{ color: "var(--cc-text-secondary)" }}>
+                    <td className="px-4 py-3" style={{ color: "var(--m-ink-soft)" }}>
                       {new Date(u.created_at).toLocaleDateString()}
                     </td>
                   </tr>

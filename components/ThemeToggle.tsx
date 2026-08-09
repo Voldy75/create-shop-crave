@@ -10,7 +10,7 @@ export function ThemeToggle({ className }: { className?: string }) {
     <button
       onClick={toggleTheme}
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      className={`border border-[var(--cc-border)] text-[var(--cc-text-secondary)] hover:border-[var(--cc-accent)] hover:text-[var(--cc-accent)] ${className ?? ""}`}
+      className={`border border-[var(--m-ink-faint)] text-[var(--m-ink-soft)] hover:border-[var(--m-forest)] hover:text-[var(--m-forest)] ${className ?? ""}`}
       style={{
         display: "flex",
         alignItems: "center",
@@ -18,7 +18,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         width: "32px",
         height: "32px",
         borderRadius: "50%",
-        background: "var(--cc-surface-2)",
+        background: "var(--m-cream-2)",
         cursor: "pointer",
         transition: "all 0.2s ease",
         flexShrink: 0,
