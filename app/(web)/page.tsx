@@ -18,12 +18,15 @@ import { foodImage } from "@/lib/food-images";
  * partners' own and are on DESIGN.md's allowlist — they are identity, not
  * theme, so they do not follow the palette.
  */
+// hex-ok-start: partners' own brand colours — identity, not theme, so they
+// deliberately do not follow the palette. DESIGN.md allowlist.
 const INTEGRATIONS = [
   { name: "Swiggy", letter: "S", brand: "#FC8019", ink: "#ffffff" },
   { name: "Zomato", letter: "Z", brand: "#E23744", ink: "#ffffff" },
   { name: "Instacart", letter: "I", brand: "#0AAD0A", ink: "#ffffff" },
   { name: "Uber", letter: "U", brand: "#000000", ink: "#ffffff" },
 ] as const;
+// hex-ok-end
 
 const DIETARY_OPTIONS = [
   "Vegetarian",
@@ -116,6 +119,7 @@ const FAQS = [
 ];
 
 /** Wordmarks for the plum integrations strip, in the partners' own colours. */
+// hex-ok-start: partner brand colours, same as INTEGRATIONS above.
 const PLATFORM_MARKS = [
   { name: "Swiggy", brand: "#FC8019" },
   { name: "Zomato", brand: "#E23744" },
@@ -124,6 +128,7 @@ const PLATFORM_MARKS = [
   { name: "Uber", brand: "var(--m-on-deep)" },
   { name: "Ola", brand: "#35B44B" },
 ] as const;
+// hex-ok-end
 
 const TESTIMONIALS = [
   { text: "I used to spend 20 minutes deciding what to eat. Now I just tell Bo my mood and it handles everything.", name: "Priya S.", role: "Home cook, Mumbai", carrots: 5 },
@@ -326,17 +331,21 @@ export default function LandingPage() {
                   <div
                     className="flex items-center gap-2 rounded-xl p-3 text-[14px]"
                     style={{
-                      background: locationError ? "rgba(255,69,58,0.08)" : "var(--m-cream-2)",
-                      border: locationError ? "1px solid rgba(255,69,58,0.2)" : "none",
+                      background: locationError
+                        ? "color-mix(in srgb, var(--m-red) 10%, transparent)"
+                        : "var(--m-cream-2)",
+                      border: locationError
+                        ? "1.5px solid color-mix(in srgb, var(--m-red) 24%, transparent)"
+                        : "none",
                     }}
                   >
-                    <MapPin className="w-4 h-4 shrink-0" style={{ color: locationError ? "#ff453a" : "var(--m-forest)" }} />
-                    <span style={{ color: locationError ? "#ff453a" : "var(--m-ink-soft)" }}>
+                    <MapPin className="w-4 h-4 shrink-0" style={{ color: locationError ? "var(--m-red)" : "var(--m-forest)" }} />
+                    <span style={{ color: locationError ? "var(--m-red)" : "var(--m-ink-soft)" }}>
                       {location ? "Location ready" : locationError ? locationError : "Needed for restaurant suggestions"}
                     </span>
                   </div>
                   {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("error") && (
-                    <div className="flex items-center gap-2 rounded-xl p-3 text-[14px]" style={{ background: "rgba(255,69,58,0.08)", color: "#ff453a" }}>
+                    <div className="flex items-center gap-2 rounded-xl p-3 text-[14px]" style={{ background: "color-mix(in srgb, var(--m-red) 10%, transparent)", color: "var(--m-red)" }}>
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>Sign-in failed. Please try again.</span>
                     </div>
@@ -614,8 +623,9 @@ export default function LandingPage() {
                   </span>
                 )}
               </div>
-              {/* The numeral was rgba(255,107,53,0.25) — the retired orange,
-                  baked into a Tailwind arbitrary value. */}
+              {/* The numeral used to be a translucent tint of the retired
+                  Midnight Kitchen orange, baked into a Tailwind arbitrary
+                  value. It is lime on the forest band now. */}
               <span className="hiw-num text-[58px] font-extrabold leading-none tracking-[-1px] text-[color-mix(in_srgb,var(--m-lime)_32%,transparent)]">
                 {step.step}
               </span>
@@ -686,18 +696,18 @@ export default function LandingPage() {
           {FAQS.map((faq, i) => (
             <div
               key={i}
-              className="border-b border-[rgba(28,25,23,0.1)]"
-              style={{ borderTop: i === 0 ? "1px solid rgba(28,25,23,0.1)" : "none" }}
+              className="border-b border-[var(--m-ink-faint)]"
+              style={{ borderTop: i === 0 ? "1.5px solid var(--m-ink-faint)" : "none" }}
             >
               <button
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="flex w-full cursor-pointer items-center justify-between border-none bg-transparent py-5 text-left text-[17px] font-semibold tracking-[-0.022em] text-[#1c1917]"
+                className="flex w-full cursor-pointer items-center justify-between border-none bg-transparent py-5 text-left text-[17px] font-semibold tracking-[-0.022em] text-[var(--m-ink)]"
               >
                 <span className="pr-4">{faq.q}</span>
                 {openFaq === i ? (
-                  <Minus className="w-4 h-4 shrink-0 text-[rgba(28,25,23,0.4)]" />
+                  <Minus className="w-4 h-4 shrink-0 text-[var(--m-ink-soft)]" />
                 ) : (
-                  <Plus className="w-4 h-4 shrink-0 text-[rgba(28,25,23,0.4)]" />
+                  <Plus className="w-4 h-4 shrink-0 text-[var(--m-ink-soft)]" />
                 )}
               </button>
               {openFaq === i && (
@@ -706,7 +716,7 @@ export default function LandingPage() {
                   animate={{ opacity: 1, height: "auto" }}
                   className="pb-5"
                 >
-                  <p className="text-[14px] leading-[1.57] tracking-[-0.016em] text-[rgba(28,25,23,0.62)]">
+                  <p className="text-[14px] leading-[1.57] tracking-[-0.016em] text-[var(--m-ink-soft)]">
                     {faq.a}
                   </p>
                 </motion.div>

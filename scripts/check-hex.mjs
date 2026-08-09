@@ -4,22 +4,23 @@
  * in app/** and components/**, with an allowlist for the cases already
  * enumerated in DESIGN.md."
  *
- * Two kinds of exemption, matching two different realities in this codebase:
+ * **The baseline is currently EMPTY, so this is a hard gate**: every literal
+ * in app/** and components/** is either a --m-* token or carries an explicit
+ * inline marker. Keep it that way.
+ *
+ * Two mechanisms:
  *
  *   1. GENUINE, PERMANENT exceptions (Razorpay's iframe theme, Google Maps
  *      style JSON, partner brand colours, mascot art, SVG data-URIs) — these
  *      need a literal forever, not because anyone forgot to convert them.
  *      Mark these inline; see MARKERS below.
  *
- *   2. TEMPORARY, real debt — screens Phase 10c never converted because no
- *      artboard exists for them (admin, settings, favorites, arena, and a
- *      few shared components). These are NOT allowlisted; they're recorded in
- *      scripts/hex-baseline.json so the gate can fail on NEW violations
- *      without also failing on every pre-existing line — the same shape as a
- *      "no new `any`" or "no new console.log" ratchet. Converting one of
- *      these files should shrink the baseline, not grow it; run with
- *      --write-baseline after fixing a file, and confirm the diff only
- *      removes entries.
+ *   2. scripts/hex-baseline.json is a RATCHET for temporary debt, kept for
+ *      the case where a large refactor genuinely has to land mid-conversion.
+ *      It reached zero when the admin console, settings, favorites and arena
+ *      were converted; a non-empty baseline is now a regression, not a
+ *      normal state. It must only ever shrink — running --write-baseline to
+ *      silence a new violation defeats the entire point of this script.
  *
  * Usage:
  *   node scripts/check-hex.mjs                 — fail on any new violation
@@ -136,10 +137,14 @@ if (fresh.length > 0) {
     "growing the baseline:\n" +
     '  - one line:        // hex-ok: <why>\n' +
     "  - a block/array:   // hex-ok-start ... // hex-ok-end\n\n" +
-    "If it's real pre-existing debt in a file you are not converting right now,\n" +
-    "that's a bug, not a bypass — the baseline should only shrink. Do not add to it."
+    "scripts/hex-baseline.json is currently EMPTY and should stay that way.\n" +
+    "Do NOT run --write-baseline to silence this; that defeats the gate."
   );
   process.exit(1);
 }
 
-console.log(`✓ No new hardcoded hex/rgba literals (${hits.length} tracked in baseline, 0 new).`);
+console.log(
+  hits.length === 0
+    ? "✓ No hardcoded hex/rgba literals in app/** or components/** outside the inline allowlist."
+    : `✓ No NEW hardcoded hex/rgba literals (${hits.length} still in the baseline — that number should only go down).`
+);

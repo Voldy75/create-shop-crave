@@ -107,7 +107,7 @@ function FeatureFlagsPanel() {
               onClick={handleCreate}
               disabled={creating || !newId.trim()}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-full disabled:opacity-50"
-              style={{ background: "var(--m-forest)", color: "#fff" }}
+              style={{ background: "var(--m-forest)", color: "var(--m-on-deep)" }}
             >
               {creating && <Loader2 className="w-3 h-3 animate-spin" />}
               Create
@@ -146,8 +146,8 @@ function FeatureFlagsPanel() {
                     style={{
                       fontSize: "10px",
                       fontWeight: 700,
-                      color: f.enabled ? "#34c759" : "var(--m-ink-soft)",
-                      background: f.enabled ? "rgba(52,199,89,0.10)" : "var(--m-card)",
+                      color: f.enabled ? "var(--m-forest)" : "var(--m-ink-soft)",
+                      background: f.enabled ? "var(--m-tint-green)" : "var(--m-card)",
                       padding: "1px 6px",
                       borderRadius: "980px",
                       textTransform: "uppercase",
@@ -167,10 +167,10 @@ function FeatureFlagsPanel() {
                 disabled={toggling === f.id}
                 aria-label={`Toggle ${f.id}`}
                 className="ml-3 shrink-0 relative w-10 h-6 rounded-full transition-colors"
-                style={{ background: f.enabled ? "#34c759" : "var(--m-card)" }}
+                style={{ background: f.enabled ? "var(--m-forest)" : "var(--m-card)" }}
               >
                 {toggling === f.id ? (
-                  <Loader2 className="w-3.5 h-3.5 absolute animate-spin" style={{ top: "5px", left: f.enabled ? "19px" : "3px", color: f.enabled ? "#fff" : "var(--m-ink-soft)" }} />
+                  <Loader2 className="w-3.5 h-3.5 absolute animate-spin" style={{ top: "5px", left: f.enabled ? "19px" : "3px", color: f.enabled ? "var(--m-on-deep)" : "var(--m-ink-soft)" }} />
                 ) : (
                   <span
                     className="absolute top-0.5 rounded-full w-5 h-5 bg-white shadow-sm transition-transform"

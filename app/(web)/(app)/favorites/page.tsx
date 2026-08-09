@@ -102,10 +102,7 @@ export default function FavoritesPage() {
                                                         </span>
                                                     )}
                                                     {recipe.dietaryTags?.slice(0, 2).map((tag) => (
-                                                        <span key={tag} style={{
-                                                            fontSize: "12px", padding: "2px 8px", borderRadius: "980px",
-                                                            background: "rgba(52,199,89,0.1)", color: "#34c759",
-                                                        }}>
+                                                        <span key={tag} className="chip-tag chip">
                                                             {tag}
                                                         </span>
                                                     ))}
@@ -113,7 +110,7 @@ export default function FavoritesPage() {
                                             </div>
                                             <button
                                                 onClick={() => handleRemove(fav.id)}
-                                                className="p-2 rounded-full transition-colors shrink-0 ml-2 text-[var(--m-ink-soft)] hover:text-[#ff453a] hover:bg-[rgba(255,69,58,0.1)]"
+                                                className="p-2 rounded-full transition-colors shrink-0 ml-2 text-[var(--m-ink-soft)] hover:text-[var(--m-red)] hover:bg-[color-mix(in_srgb,var(--m-red)_12%,transparent)]"
                                                 aria-label="Remove from favorites"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -167,7 +164,7 @@ export default function FavoritesPage() {
                                             </div>
                                             <button
                                                 onClick={() => handleRemove(fav.id)}
-                                                className="p-2 rounded-full transition-colors shrink-0 ml-2 text-[var(--m-ink-soft)] hover:text-[#ff453a] hover:bg-[rgba(255,69,58,0.1)]"
+                                                className="p-2 rounded-full transition-colors shrink-0 ml-2 text-[var(--m-ink-soft)] hover:text-[var(--m-red)] hover:bg-[color-mix(in_srgb,var(--m-red)_12%,transparent)]"
                                                 aria-label="Remove from favorites"
                                             >
                                                 <Trash2 className="w-4 h-4" />

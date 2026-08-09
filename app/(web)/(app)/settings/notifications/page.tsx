@@ -288,13 +288,13 @@ export default function NotificationsSettingsPage() {
               detail={
                 <div>
                   {!pushSupport.supported && (
-                    <p style={{ fontSize: "12px", color: "#ff9f0a" }}>
+                    <p style={{ fontSize: "12px", color: "color-mix(in srgb, var(--m-burnt) 50%, var(--m-ink))" }}>
                       This browser doesn&apos;t support web push. On iOS, install the PWA first
                       (Add to Home Screen).
                     </p>
                   )}
                   {pushSupport.supported && pushSupport.permission === "denied" && (
-                    <p style={{ fontSize: "12px", color: "#ff453a" }}>
+                    <p style={{ fontSize: "12px", color: "var(--m-red)" }}>
                       Permission blocked. Allow notifications in your browser&apos;s site settings.
                     </p>
                   )}
@@ -410,8 +410,14 @@ interface ChannelCardProps {
 }
 
 const STATUS_TONE: Record<ChannelCardProps["tone"], { color: string; bg: string }> = {
-  active: { color: "#34c759", bg: "rgba(52,199,89,0.10)" },
-  pending: { color: "#ff9f0a", bg: "rgba(255,159,10,0.10)" },
+  active: {
+    color: "color-mix(in srgb, var(--m-forest) 50%, var(--m-ink))",
+    bg: "color-mix(in srgb, var(--m-forest) 18%, transparent)",
+  },
+  pending: {
+    color: "color-mix(in srgb, var(--m-burnt) 50%, var(--m-ink))",
+    bg: "color-mix(in srgb, var(--m-burnt) 18%, transparent)",
+  },
   off: { color: "var(--m-ink-soft)", bg: "var(--m-cream-2)" },
 };
 
@@ -498,7 +504,7 @@ function Switch({ checked, onClick, disabled }: { checked: boolean; onClick: () 
           width: "20px",
           height: "20px",
           borderRadius: "999px",
-          background: "#fff",
+          background: "var(--m-card)",
           transition: "left 0.18s ease-out",
         }}
       />
@@ -511,13 +517,13 @@ function FreeTierNote() {
     <div
       className="p-4 flex items-start gap-3"
       style={{
-        background: "rgba(10,132,255,0.06)",
-        border: "1px solid rgba(10,132,255,0.20)",
+        background: "color-mix(in srgb, var(--m-plum) 8%, transparent)",
+        border: "1.5px solid color-mix(in srgb, var(--m-plum) 22%, transparent)",
         borderRadius: "12px",
         color: "var(--m-ink-soft)",
       }}
     >
-      <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#0a84ff" }} />
+      <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "var(--m-plum)" }} />
       <div>
         <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--m-ink)" }}>
           Free-tier limits
@@ -646,7 +652,7 @@ function WhatsAppDetail({
               fontSize: "12px",
               fontWeight: 700,
               background: phoneInput.trim() ? "var(--m-forest)" : "var(--m-cream-2)",
-              color: phoneInput.trim() ? "#fff" : "var(--m-ink-soft)",
+              color: phoneInput.trim() ? "var(--m-on-deep)" : "var(--m-ink-soft)",
               borderRadius: "10px",
               cursor: enrollLoading ? "wait" : phoneInput.trim() ? "pointer" : "not-allowed",
             }}
@@ -764,7 +770,7 @@ function WhatsAppDetail({
 
   // Revoked
   return (
-    <p style={{ fontSize: "12px", color: "#ff453a" }}>
+    <p style={{ fontSize: "12px", color: "var(--m-red)" }}>
       Channel revoked (you sent STOP). Toggle off and on, then re-send the JOIN code to re-enable.
     </p>
   );
@@ -868,13 +874,13 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
           <div
             className="flex items-start gap-2 px-3 py-2.5"
             style={{
-              background: "rgba(255,159,10,0.08)",
-              border: "1px solid rgba(255,159,10,0.25)",
+              background: "color-mix(in srgb, var(--m-burnt) 10%, transparent)",
+              border: "1.5px solid color-mix(in srgb, var(--m-burnt) 26%, transparent)",
               borderRadius: "10px",
               color: "var(--m-ink-soft)",
             }}
           >
-            <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#ff9f0a" }} />
+            <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "var(--m-burnt)" }} />
             <p style={{ fontSize: "11px", lineHeight: 1.45 }}>
               Swiggy MCP credentials aren&apos;t wired yet. This will become live once the app is approved at{" "}
               <a
@@ -891,7 +897,7 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
         )}
 
         {expiring && (
-          <p style={{ fontSize: "11px", color: "#ff9f0a" }}>
+          <p style={{ fontSize: "11px", color: "color-mix(in srgb, var(--m-burnt) 50%, var(--m-ink))" }}>
             Token expires in &lt;24h. Re-connect to keep the agent working — Swiggy MCP v1 doesn&apos;t support refresh tokens yet.
           </p>
         )}
@@ -929,7 +935,7 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: SwiggyCardProps) 
                 fontSize: "12px",
                 fontWeight: 600,
                 background: configured ? "var(--m-forest)" : "var(--m-cream-2)",
-                color: configured ? "#fff" : "var(--m-ink-soft)",
+                color: configured ? "var(--m-on-deep)" : "var(--m-ink-soft)",
                 borderRadius: "980px",
                 cursor: configured && !busy ? "pointer" : "not-allowed",
               }}

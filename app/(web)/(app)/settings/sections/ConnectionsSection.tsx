@@ -163,7 +163,7 @@ export function ConnectionsSection({
                     fontSize: "12px",
                     fontWeight: 600,
                     background: svc.color,
-                    color: "#fff",
+                    color: "#fff", // hex-ok: partner's own brand pairing, not meshi's cream
                     borderRadius: "980px",
                   }}
                 >

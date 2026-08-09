@@ -52,6 +52,7 @@ function StatCard({
   label: string;
   value: number | string;
   sub?: string;
+  /** A CSS colour VALUE — pass a `var(--m-*)` token, not a literal. */
   iconColor: string;
 }) {
   return (
@@ -63,7 +64,10 @@ function StatCard({
           {sub && <p className="text-xs mt-0.5" style={{ color: "var(--m-ink-soft)" }}>{sub}</p>}
         </div>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: `${iconColor}18`, color: iconColor }}>
+          style={{
+            background: `color-mix(in srgb, ${iconColor} 14%, transparent)`,
+            color: iconColor,
+          }}>
           <Icon className="w-5 h-5" />
         </div>
       </div>
@@ -148,17 +152,21 @@ export default function AdminPage() {
       <main className="max-w-5xl mx-auto p-6 space-y-8">
         {error && error !== "forbidden" && (
           <div className="rounded-xl p-4 text-sm"
-            style={{ background: "rgba(255,69,58,0.08)", color: "#ff453a", border: "1px solid rgba(255,69,58,0.15)" }}>
+            style={{
+              background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+              color: "var(--m-red)",
+              border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
+            }}>
             {error}
           </div>
         )}
 
         {/* KPI grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? 0} iconColor="#0a84ff" />
+          <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? 0} iconColor="var(--m-plum)" />
           <StatCard icon={Zap} label="DAU" value={stats?.dau ?? 0} sub="active today" iconColor="var(--m-forest)" />
-          <StatCard icon={Crown} label="Pro Subscribers" value={stats?.proCount ?? 0} sub={`${conversionRate}% conversion`} iconColor="#ffd60a" />
-          <StatCard icon={TrendingUp} label="Est. MRR" value={`$${mrr}`} sub={`₹${mrr * 84} / month`} iconColor="#34c759" />
+          <StatCard icon={Crown} label="Pro Subscribers" value={stats?.proCount ?? 0} sub={`${conversionRate}% conversion`} iconColor="var(--m-burnt)" />
+          <StatCard icon={TrendingUp} label="Est. MRR" value={`$${mrr}`} sub={`₹${mrr * 84} / month`} iconColor="var(--m-lime)" />
         </div>
 
         {/* Request stats + sparkline */}
@@ -210,7 +218,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2">
                     {u.is_pro && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "var(--m-tint-green)", color: "var(--m-forest)", border: "1px solid rgba(255,107,53,0.25)" }}>
+                        style={{ background: "var(--m-tint-green)", color: "var(--m-forest)" }}>
                         Pro
                       </span>
                     )}

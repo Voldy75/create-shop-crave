@@ -241,10 +241,7 @@ export default function ArenaPage() {
               <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>Same prompt, two AI models</p>
             </div>
           </div>
-          <span className="text-xs font-bold px-2 py-1 rounded-full"
-            style={{ background: "var(--m-tint-green)", color: "var(--m-forest)", border: "1px solid rgba(255,107,53,0.25)" }}>
-            Pro
-          </span>
+          <span className="chip-tag chip">Pro</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -258,7 +255,7 @@ export default function ArenaPage() {
                   className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                   style={
                     rightProvider === p.id
-                      ? { background: "var(--m-forest)", color: "#ffffff" }
+                      ? { background: "var(--m-forest)", color: "var(--m-on-deep)" }
                       : { background: "var(--m-cream-2)", color: "var(--m-ink-soft)" }
                   }
                 >
@@ -282,7 +279,11 @@ export default function ArenaPage() {
       {/* BYOK notice */}
       {!byok && (
         <div className="px-6 py-2 text-xs text-center"
-          style={{ background: "rgba(255,159,28,0.08)", borderBottom: "1px solid rgba(255,159,28,0.15)", color: "#ff9f1c" }}>
+          style={{
+            background: "color-mix(in srgb, var(--m-burnt) 10%, transparent)",
+            borderBottom: "1.5px solid color-mix(in srgb, var(--m-burnt) 22%, transparent)",
+            color: "color-mix(in srgb, var(--m-burnt) 50%, var(--m-ink))",
+          }}>
           Right panel needs your API key. Go to{" "}
           <button onClick={() => router.push("/chat")} className="underline font-medium">
             Chat
@@ -296,14 +297,14 @@ export default function ArenaPage() {
         <ModelPanel
           label="Model A"
           modelName="Gemini 2.5 Flash"
-          accentColor="#0a84ff"
+          accentColor="var(--m-forest)"
           messages={leftChat.messages}
           isLoading={leftChat.isLoading}
         />
         <ModelPanel
           label="Model B"
           modelName={PROVIDERS.find((p) => p.id === rightProvider)?.label ?? rightProvider}
-          accentColor="#bf5af2"
+          accentColor="var(--m-plum)"
           messages={rightChat.messages}
           isLoading={rightChat.isLoading}
         />
@@ -332,7 +333,7 @@ export default function ArenaPage() {
             <button
               type="submit"
               className="rounded-full w-12 h-12 shrink-0 flex items-center justify-center transition-colors disabled:opacity-50"
-              style={{ background: "var(--m-forest)", color: "#ffffff" }}
+              style={{ background: "var(--m-forest)", color: "var(--m-on-deep)" }}
               disabled={isLoading || !sharedInput.trim()}
             >
               <Send className="w-5 h-5" />

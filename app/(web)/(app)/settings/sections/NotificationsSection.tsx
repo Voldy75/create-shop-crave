@@ -181,8 +181,8 @@ export function NotificationsSection() {
         onToggle={() => toggle("webPush")}
         detail={
           <>
-            {!pushSupport.supported && <Note color="#ff9f0a">This browser doesn&apos;t support web push.</Note>}
-            {pushSupport.supported && pushSupport.permission === "denied" && <Note color="#ff453a">Permission blocked. Allow in site settings.</Note>}
+            {!pushSupport.supported && <Note color="color-mix(in srgb, var(--m-burnt) 50%, var(--m-ink))">This browser doesn&apos;t support web push.</Note>}
+            {pushSupport.supported && pushSupport.permission === "denied" && <Note color="var(--m-red)">Permission blocked. Allow in site settings.</Note>}
             {sub?.webPushEnabled && (
               <SmallButton onClick={handleSendTest} loading={testing} icon={Send}>Send test</SmallButton>
             )}
@@ -219,6 +219,7 @@ export function NotificationsSection() {
 
 // ── Subcomponents ──
 
+/** `color` is a CSS colour VALUE — pass a `var(--m-*)` token or a color-mix(). */
 function Note({ color, children }: { color: string; children: React.ReactNode }) {
   return <p style={{ fontSize: "11px", color }}>{children}</p>;
 }
@@ -253,7 +254,7 @@ function ChannelCard({ icon, title, subtitle, enabled, status, tone, saving, onT
         <div className="flex-1">{detail}</div>
         <button onClick={onToggle} disabled={saving} aria-label={`Toggle ${title}`}
           className="ml-3 shrink-0 relative w-10 h-6 rounded-full transition-colors"
-          style={{ background: enabled ? "#34c759" : "var(--m-cream-2)" }}>
+          style={{ background: enabled ? "var(--m-forest)" : "var(--m-cream-2)" }}>
           <span className="absolute top-0.5 rounded-full w-5 h-5 bg-white shadow-sm transition-transform"
             style={{ left: enabled ? "18px" : "2px" }} />
         </button>
@@ -286,7 +287,7 @@ function SwiggyCard({ status, busy, onConnect, onDisconnect }: { status: SwiggyS
           <SmallButton onClick={onDisconnect} loading={busy} icon={AlertCircle}>Disconnect</SmallButton>
         ) : (
           <button onClick={onConnect} disabled={busy} className="inline-flex items-center gap-1.5 px-4 py-2 transition-colors"
-            style={{ fontSize: "12px", fontWeight: 600, background: "var(--m-forest)", color: "#fff", borderRadius: "980px" }}>
+            style={{ fontSize: "12px", fontWeight: 600, background: "var(--m-forest)", color: "var(--m-on-deep)", borderRadius: "980px" }}>
             {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Connect Swiggy
           </button>
         )}
@@ -307,7 +308,7 @@ function WhatsAppDetail({ sub, phoneInput, setPhoneInput, enrollLoading, joinIns
         <input value={phoneInput} onChange={(e) => setPhoneInput(e.target.value)} placeholder="+91 98765 43210"
           className="px-3 py-1.5 flex-1 min-w-0" style={{ fontSize: "12px", background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", borderRadius: "8px", color: "var(--m-ink)" }} />
         <button onClick={onEnroll} disabled={enrollLoading || !phoneInput.trim()} className="px-3 py-1.5 shrink-0"
-          style={{ fontSize: "12px", fontWeight: 600, background: "var(--m-forest)", color: "#fff", borderRadius: "8px" }}>
+          style={{ fontSize: "12px", fontWeight: 600, background: "var(--m-forest)", color: "var(--m-on-deep)", borderRadius: "8px" }}>
           {enrollLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save"}
         </button>
       </div>
@@ -338,5 +339,5 @@ function WhatsAppDetail({ sub, phoneInput, setPhoneInput, enrollLoading, joinIns
       </div>
     );
   }
-  return <Note color="#ff453a">Channel revoked. Toggle off and on, then re-send JOIN.</Note>;
+  return <Note color="var(--m-red)">Channel revoked. Toggle off and on, then re-send JOIN.</Note>;
 }

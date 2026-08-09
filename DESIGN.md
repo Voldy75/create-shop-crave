@@ -46,16 +46,26 @@ onto `--m-*`; they're real, honestly-named CSS custom properties with their
 own default values, currently reused nowhere outside the landing. Do not
 "clean these up" as if they were leftover `--cc-*` scaffolding.
 
-**A hex/rgba CI gate is live** (`.github/workflows/design-tokens.yml`,
-`scripts/check-hex.mjs`) enforcing the allowlist below. Genuinely allowlisted
-literals carry an inline `// hex-ok: <why>` (or `// hex-ok-start` /
-`// hex-ok-end` for a block) so the checker skips them; everything else not
-yet converted to meshi is tracked in `scripts/hex-baseline.json` as debt the
-gate won't newly fail on, but must never grow — see that file's neighbour,
-`scripts/check-hex.mjs`, for the exact rules. As of Phase 10e, real remaining
-debt lives in: the admin console, `/favorites`, `/arena`, `/settings` and its
-sections, and `FavoriteButton`/`SwiggyExpiryBanner`/`UsageBadge` — none of
-these have a web artboard, which is why Phase 10c never touched them.
+**A hex/rgba CI gate is live and the debt baseline is at ZERO**
+(`.github/workflows/design-tokens.yml`, `scripts/check-hex.mjs`). Every
+literal in `app/**` and `components/**` is now either a `--m-*` token or
+carries an explicit inline `// hex-ok: <why>` marker (or a
+`// hex-ok-start` / `// hex-ok-end` block) naming which allowlist entry below
+it falls under. `scripts/hex-baseline.json` is an empty ratchet kept for the
+case where a large refactor must land mid-conversion — **a non-empty baseline
+is now a regression, and `--write-baseline` must never be used to silence a
+new violation.**
+
+The screens with no web artboard (admin console, `/favorites`, `/arena`,
+`/settings` + sections, plus `FavoriteButton` / `SwiggyExpiryBanner` /
+`UsageBadge`) were converted by extending the system rather than copying a
+design. Semantic tone mapping, applied consistently across all of them and
+matching `components/cc/status-pill.tsx`: **forest = healthy/active/enabled,
+burnt = warn/attention, red = error/destructive, plum = info**, with
+`--m-lime` reserved for the on-band accent. Where a tinted badge needs
+readable text, the formula is `hue 50% mixed into --m-ink` on an `18%` tint of
+the same hue — `--m-ink` is chocolate in light and cream in dark, so the label
+tracks the theme by construction instead of needing a per-theme override.
 
 **A meta-trap worth knowing before you next edit this file or handoff.md:**
 Tailwind's content scanner reads markdown and code comments, not just live

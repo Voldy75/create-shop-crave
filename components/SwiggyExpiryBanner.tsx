@@ -111,15 +111,19 @@ export function SwiggyExpiryBanner() {
 }
 
 function BannerShell({ tone, body, onDismiss }: { tone: "info" | "warn"; body: React.ReactNode; onDismiss: () => void }) {
-  const color = tone === "warn" ? "#ff9f0a" : "#0a84ff";
-  const bg = tone === "warn" ? "rgba(255,159,10,0.08)" : "rgba(10,132,255,0.06)";
-  const border = tone === "warn" ? "rgba(255,159,10,0.25)" : "rgba(10,132,255,0.20)";
+  // warn = burnt, info = plum — the same semantic pairing as
+  // components/planner/CoachPanel.tsx and components/cc/status-pill.tsx, so a
+  // given meaning is one colour across the whole product.
+  const hue = tone === "warn" ? "var(--m-burnt)" : "var(--m-plum)";
+  const color = `color-mix(in srgb, ${hue} 50%, var(--m-ink))`;
+  const bg = `color-mix(in srgb, ${hue} 10%, transparent)`;
+  const border = `color-mix(in srgb, ${hue} 26%, transparent)`;
   return (
     <div
       className="flex items-center gap-2 px-4 py-2"
       style={{
         background: bg,
-        border: `1px solid ${border}`,
+        border: `1.5px solid ${border}`,
         borderRadius: "10px",
         fontSize: "12px",
         color: "var(--m-ink-soft)",

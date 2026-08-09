@@ -1117,20 +1117,22 @@ to the end of this section.
    "either token" — has a `*/` inside it, which is COMMENT-CLOSE in CSS. No
    nesting, no escaping. It silently ended the comment early and left prose
    as invalid CSS; build failed with a real syntax error, not just dead
-   output. Second, worse: quoting an old class name verbatim in prose in
-   handoff.md and DESIGN.md — `text-[var(--cc-text-secondary)]`,
-   `text-[var(...)]`, `word[...]` — got picked up by TAILWIND'S CONTENT
-   SCANNER, which reads markdown and comments repo-wide, not just live JSX.
-   It compiled the quoted strings into real utility rules; one contained a
-   literal `var(...)` ellipsis, which isn't valid CSS `var()` syntax, so that
-   one was a hard, build-breaking parse error too — found only via a
+   output. Second, worse: quoting an old Tailwind arbitrary-value class
+   verbatim in prose in handoff.md and DESIGN.md got picked up by TAILWIND'S
+   CONTENT SCANNER, which reads markdown and comments repo-wide, not just live
+   JSX. It compiled the quoted strings into real utility rules; one of them
+   held an ellipsis standing in for "some value", which is not valid CSS
+   inside a custom-property reference, so that one was a hard, build-breaking
+   parse error too — found only via a
    **genuinely fresh tab** (`fetch` with `cache: 'no-store'` on the actual
    served CSS chunk after an `rm -rf .next`), because Turbopack kept serving
    the last-good chunk over HMR and made the page look fine while the
    underlying build was broken. **When quoting an old class name in prose
    anywhere in this repo — code comments, handoff.md, DESIGN.md — never
-   reproduce the bracket-arbitrary-value shape** (`word[...]`), even inside
-   backticks. Describe it instead.
+   reproduce the bracket-arbitrary-value shape at all**, even inside
+   backticks. Describe it in words instead. (This paragraph is written to its
+   own rule; an earlier draft of it quoted the offending strings verbatim and
+   became a third instance of the trap it documents.)
 
    **b) The CI hex/rgba gate is live** — `scripts/check-hex.mjs` +
    `.github/workflows/design-tokens.yml`, running on any PR touching
@@ -1167,13 +1169,29 @@ to the end of this section.
 
 ## What's actually next
 
-Phase 10's mechanical framework (tokens, mascots, motion, the CI gate) is
-done. What's left is real design work with no artboard to build from, since
-Phase 10c never had one for these screens: **the admin console, `/favorites`,
-`/arena`, `/settings` and its three sections**, plus `FavoriteButton`,
-`SwiggyExpiryBanner`, and `UsageBadge` — `scripts/hex-baseline.json` names the
-exact 90 lines. Converting one shrinks the baseline; that file is the
-up-to-date todo list, not this paragraph.
+**Phase 10 is complete, and the hex debt baseline is at ZERO.** The screens
+that had no web artboard — admin console, `/favorites`, `/arena`, `/settings`
++ its three sections, and `FavoriteButton` / `SwiggyExpiryBanner` /
+`UsageBadge` — were converted by extending the system rather than copying a
+design, using one consistent semantic mapping (forest = active, burnt = warn,
+red = error, plum = info; see DESIGN.md). `scripts/hex-baseline.json` is now
+an empty ratchet: a non-empty one is a regression.
+
+**Two real bugs surfaced during that conversion, both invisible until the
+tokens forced the question:**
+
+- **The landing's entire FAQ was pinned to a literal Midnight Kitchen ink
+  (`#1c1917`) in BOTH themes.** In dark mode that measured **1.04:1** against
+  the dark background — the whole section was effectively invisible, and had
+  been since the light-first flip. Now 11.42:1 light / 13.85:1 dark.
+- **The admin dashboard's KPI tiles built their tint by string-appending a hex
+  alpha pair** (`` `${iconColor}18` ``). That only parses when the value is a
+  literal hex — the DAU card already passed `var(--m-forest)`, producing
+  invalid CSS, so that tile rendered with no background at all. Switched to
+  `color-mix`, which works for both.
+
+The real blocker remains **Phase 5 — production cutover**, which needs the env
+vars listed at the top of this file. Nothing in Phase 10 unblocks it.
 
 Two things worth doing before more UI:
 

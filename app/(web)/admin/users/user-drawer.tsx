@@ -106,7 +106,7 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
     <div className="fixed inset-0 z-30 flex justify-end">
       <div
         className="absolute inset-0"
-        style={{ background: "rgba(0,0,0,0.5)" }}
+        style={{ background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)" }}
         onClick={onClose}
       />
       <div
@@ -135,7 +135,11 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
         {error && (
           <div
             className="rounded-xl p-3 text-sm"
-            style={{ background: "rgba(255,69,58,0.08)", color: "#ff453a", border: "1px solid rgba(255,69,58,0.15)" }}
+            style={{
+            background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+            color: "var(--m-red)",
+            border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
+          }}
           >
             {error}
           </div>

@@ -98,7 +98,7 @@ export function PriceEditor({ planId, prices, onSaved }: PriceEditorProps) {
       )}
 
       {error && (
-        <p className="text-xs" style={{ color: "#ff453a" }}>{error}</p>
+        <p className="text-xs" style={{ color: "var(--m-red)" }}>{error}</p>
       )}
 
       {showForm ? (

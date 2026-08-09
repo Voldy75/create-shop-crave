@@ -84,12 +84,12 @@ function Toggle({
       aria-label={label}
       type="button"
       className="shrink-0 relative w-10 h-6 rounded-full transition-colors"
-      style={{ background: checked ? "#34c759" : "var(--m-cream-2)" }}
+      style={{ background: checked ? "var(--m-forest)" : "var(--m-cream-2)" }}
     >
       {busy ? (
         <Loader2
           className="w-3.5 h-3.5 absolute animate-spin"
-          style={{ top: "5px", left: checked ? "19px" : "3px", color: checked ? "#fff" : "var(--m-ink-soft)" }}
+          style={{ top: "5px", left: checked ? "19px" : "3px", color: checked ? "var(--m-on-deep)" : "var(--m-ink-soft)" }}
         />
       ) : (
         <span
@@ -195,7 +195,11 @@ export default function McpAdminPage() {
 
       <div
         className="rounded-xl p-4 text-sm leading-relaxed"
-        style={{ background: "rgba(255,159,10,0.08)", color: "#ff9f0a", border: "1px solid rgba(255,159,10,0.15)" }}
+        style={{
+          background: "color-mix(in srgb, var(--m-burnt) 10%, transparent)",
+          color: "color-mix(in srgb, var(--m-burnt) 50%, var(--m-ink))",
+          border: "1.5px solid color-mix(in srgb, var(--m-burnt) 22%, transparent)",
+        }}
       >
         Enabling a provider here makes the app offer it. It cannot make the provider accept us — Swiggy&apos;s MCP
         OAuth is gated to an allowlist of AI clients, and Instacart/Uber/Zomato have no known public MCP endpoint.
@@ -205,7 +209,11 @@ export default function McpAdminPage() {
       {error && (
         <div
           className="rounded-xl p-4 text-sm"
-          style={{ background: "rgba(255,69,58,0.08)", color: "#ff453a", border: "1px solid rgba(255,69,58,0.15)" }}
+          style={{
+            background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+            color: "var(--m-red)",
+            border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
+          }}
         >
           {error}
         </div>
@@ -436,7 +444,7 @@ function ServerList({
                   onClick={() => remove(s.serviceKey)}
                   disabled={busyKey === s.serviceKey}
                   aria-label={`Delete ${s.serviceKey}`}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-[rgba(255,69,58,0.1)] hover:text-[#ff453a]"
+                  className="p-1.5 rounded-lg transition-colors hover:bg-[color-mix(in_srgb,var(--m-red)_12%,transparent)] hover:text-[var(--m-red)]"
                   style={{ color: "var(--m-ink-soft)" }}
                 >
                   <Trash2 className="w-3.5 h-3.5" />

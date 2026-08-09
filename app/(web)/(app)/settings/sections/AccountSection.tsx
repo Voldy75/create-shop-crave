@@ -64,7 +64,7 @@ export function AccountSection() {
                 fontSize: "10px",
                 fontWeight: 700,
                 color: "var(--m-forest)",
-                background: "rgba(255,107,53,0.12)",
+                background: "var(--m-tint-green)",
                 padding: "2px 8px",
                 borderRadius: "980px",
                 textTransform: "uppercase",
@@ -95,7 +95,7 @@ export function AccountSection() {
               width: "36px",
               height: "36px",
               borderRadius: "10px",
-              background: "rgba(255,107,53,0.10)",
+              background: "var(--m-tint-green)",
               color: "var(--m-forest)",
             }}
           >
@@ -144,9 +144,9 @@ export function AccountSection() {
         style={{
           fontSize: "14px",
           fontWeight: 600,
-          color: "#ff453a",
-          background: "rgba(255,69,58,0.08)",
-          border: "1px solid rgba(255,69,58,0.15)",
+          color: "var(--m-red)",
+          background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+          border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
           borderRadius: "12px",
         }}
       >

@@ -159,7 +159,11 @@ export default function ConfigPage() {
       {error && (
         <div
           className="rounded-xl p-4 text-sm"
-          style={{ background: "rgba(255,69,58,0.08)", color: "#ff453a", border: "1px solid rgba(255,69,58,0.15)" }}
+          style={{
+            background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+            color: "var(--m-red)",
+            border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
+          }}
         >
           {error}
         </div>
@@ -194,7 +198,7 @@ export default function ConfigPage() {
             />
           </label>
         </div>
-        {limitsError && <p className="text-xs" style={{ color: "#ff453a" }}>{limitsError}</p>}
+        {limitsError && <p className="text-xs" style={{ color: "var(--m-red)" }}>{limitsError}</p>}
         <CCButton size="sm" onClick={handleSaveLimits} disabled={savingLimits}>
           {savingLimits && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           Save limits
@@ -204,7 +208,7 @@ export default function ConfigPage() {
       {/* Payment providers per platform */}
       <CCCard className="p-5 space-y-4">
         <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>Checkout providers by platform</h2>
-        {platformError && <p className="text-xs" style={{ color: "#ff453a" }}>{platformError}</p>}
+        {platformError && <p className="text-xs" style={{ color: "var(--m-red)" }}>{platformError}</p>}
         {(["web", "ios", "android"] as const).map((platform) => (
           <div key={platform} className="space-y-2">
             <p className="text-label" style={{ color: "var(--m-ink-soft)" }}>{platform}</p>

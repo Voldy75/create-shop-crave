@@ -51,7 +51,7 @@ export function FavoriteButton({ type, data }: FavoriteButtonProps) {
       onClick={toggle}
       className={`p-1.5 rounded-full transition-colors ${
         isFav
-          ? "text-[#ff453a] bg-[rgba(255,69,58,0.12)]"
+          ? "text-[var(--m-red)] bg-[color-mix(in_srgb,var(--m-red)_14%,transparent)]"
           : "text-[var(--m-ink-soft)] bg-[var(--m-cream-2)] hover:bg-[var(--m-cream-2)]"
       }`}
       aria-label={isFav ? "Remove from favorites" : "Add to favorites"}

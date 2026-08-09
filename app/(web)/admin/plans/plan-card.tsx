@@ -135,7 +135,7 @@ export function PlanCard({ plan, onUpdated }: PlanCardProps) {
         Plan is active
       </label>
 
-      {error && <p className="text-xs" style={{ color: "#ff453a" }}>{error}</p>}
+      {error && <p className="text-xs" style={{ color: "var(--m-red)" }}>{error}</p>}
 
       <CCButton size="sm" onClick={handleSave} disabled={saving || !dirty}>
         {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
