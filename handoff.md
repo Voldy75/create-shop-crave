@@ -33,13 +33,15 @@ git status -sb && git rev-list --left-right --count origin/merge/mobile-into-web
 to `main`. The branch existing on the remote only means it is backed up and
 reviewable.
 
-**There is deliberately NO open PR.** Opening one implies the branch is ready to
-merge, and Phase 5 cutover is blocked on env vars (below). Open it when those
-are set:
-
-```bash
-gh pr create --base main --head merge/mobile-into-web --web
-```
+**There IS now an open PR, and it is a DRAFT on purpose** —
+[#33](https://github.com/Voldy75/create-shop-crave/pull/33). The earlier note
+here said not to open one at all, because opening a PR implies the branch is
+ready to merge and Phase 5 is still blocked on env vars. A draft resolves
+that: review can start in parallel without signalling mergeable. Its body is
+the review guide — what landed, every live bug fixed, an explicit
+verified-vs-not list, a suggested review order, and the exact env vars needed
+before it can come out of draft. **Do not mark it ready until the blockers
+below are cleared.**
 
 **Commit counts — do not be surprised.** `git log main..HEAD` returns roughly
 **65** commits and climbing. The itemized 14 below cover only through the merge
