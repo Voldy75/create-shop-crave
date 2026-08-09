@@ -1,6 +1,6 @@
 # Handoff — Crave & Create (web + mobile, unified)
 
-Last updated: 2026-08-08. Written for a session with zero prior context.
+Last updated: 2026-08-09. Written for a session with zero prior context.
 Supersedes the two separate handoffs that lived in the web and mobile repos.
 
 ## Goal
@@ -14,16 +14,24 @@ That file owns sequencing. This file records state.
 
 ## Where the work lives
 
-All of it is on **`merge/mobile-into-web`**, which is **fully pushed** —
-local `HEAD` and `origin/merge/mobile-into-web` are both at `038c555`, 0 ahead
-/ 0 behind, working tree clean. `main` is untouched at `ac8a8cc` (local and
-origin), and both deployments still serve the old code.
+All of it is on **`merge/mobile-into-web`**, and every commit is **pushed** —
+the branch tracks `origin/merge/mobile-into-web` and is kept in sync after each
+piece of work. `main` is untouched at `ac8a8cc`, and both deployments still
+serve the old code.
 
-**"Pushed" is not "shipped."** Nothing here reaches a user until Phase 5
-merges to `main`. The branch existing on the remote only means it is backed up
-and reviewable. An earlier version of this section said "unpushed" and caused
-exactly this confusion — if you are wondering whether the work is safe, run
-`git status` rather than trusting this paragraph.
+**Do not trust a SHA written in this file.** Two earlier versions of this
+paragraph pinned one, both went stale within a few commits, and one of them
+said "unpushed" long after the branch had been pushed — which cost a session
+re-deriving the actual state. The invariant is what matters (branch in sync,
+`main` untouched); for the specifics, run:
+
+```bash
+git status -sb && git rev-list --left-right --count origin/merge/mobile-into-web...HEAD
+```
+
+**"Pushed" is not "shipped."** Nothing here reaches a user until Phase 5 merges
+to `main`. The branch existing on the remote only means it is backed up and
+reviewable.
 
 **There is deliberately NO open PR.** Opening one implies the branch is ready to
 merge, and Phase 5 cutover is blocked on env vars (below). Open it when those
@@ -33,8 +41,8 @@ are set:
 gh pr create --base main --head merge/mobile-into-web --web
 ```
 
-**Commit counts — do not be surprised.** `git log main..HEAD` now returns
-**62** commits. The itemized 14 below cover only through the merge
+**Commit counts — do not be surprised.** `git log main..HEAD` returns roughly
+**65** commits and climbing. The itemized 14 below cover only through the merge
 consolidation (`3910bc1`); everything after that is Phase 10c screen-by-screen
 design work (landing, sign-in, chat — see the Phase 10c section further down
 for that history in detail, or `git log 3910bc1..HEAD --oneline` for the raw
@@ -63,7 +71,8 @@ b171cf3 feat(admin): admin console API + UI, flags split, platform attribution
 it was cherry-picked here so source and DB stayed consistent. That branch is
 redundant now.)
 
-`npx tsc --noEmit` and `next build` are clean (69 routes).
+`npx tsc --noEmit` and `next build` are clean (**70 routes** — `/cart` was
+added during 10c).
 
 **Database changes ARE already applied to production Supabase**
 (`lxaaclelfhjmqrhdqzxp`) even though this branch is not merged. Schema and code
@@ -85,7 +94,7 @@ project before the merge.
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
-| 10 meshi re-skin | **10b mobile DONE**; **10c web IN PROGRESS** (foundation + sidebar + landing + sign-in + chat landed; recipe view, cart, tracker/planner, paywall, `components/cc/*` still pending); 10d/10e pending |
+| 10 meshi re-skin | **10b mobile DONE**; **10c web DONE** (foundation, sidebar, landing, sign-in, chat, recipe, tracker/planner, cart, paywall, `components/cc/*` — all landed); **10d/10e pending** |
 
 ## Blocked on you — nothing proceeds past these
 
@@ -947,9 +956,68 @@ Next, in order:
      sub-copy, both above AA. Fresh tab: zero console errors.
      **Not exercised:** an actual purchase — Razorpay/Stripe checkout needs a
      session and real keys, which blocker 1 says production has never had.
-   - **`components/cc/*`**, still Midnight Kitchen primitives.
-   Every web page is currently phone-width inside a 1280px shell — the pages
-   have no desktop layout yet. That is the single most visible gap.
+   - ~~`components/cc/*`~~ — **DONE. All six reskinned; none deleted, because
+     all six are still imported** (button ×5, status-pill ×6, chip ×3, card ×3,
+     section and icon-badge ×1). `components/cc/` now greps **zero hex/rgba**.
+
+     **A LIVE BUG was found and fixed in `chip.tsx`.** The active state emitted
+     `class="chip active"`, and a bare `.active` rule exists in NO stylesheet
+     the web tree loads — meshi-b's class is `.chip-active`. The selected chip
+     rendered identical to the unselected ones, so the admin users page's
+     Status and Platform filters both looked permanently unfiltered. **This is
+     the same failure as the `chip-solid` bug the mobile inbox hit** — an
+     invented class name is valid HTML that silently styles nothing. It went
+     unnoticed because the only consumer passing `active` is the admin console,
+     which per blocker 1 nobody has ever rendered. Verified fixed by measuring
+     that the two states now differ (lime `.chip-active` vs card).
+
+     **`status-pill.tsx` needed a real contrast fix, and the naive one was
+     wrong.** The label is 10px, so AA wants 4.5:1. The old iOS colours on 10%
+     tints failed in light mode (burnt 3.43, red 3.15, ink-soft 4.16). But
+     darkening to each hue's dark sibling then failed in DARK mode — `--m-forest-2`
+     and `--m-brown` are dark in BOTH themes, measuring 1.80 and 2.36 on a dark
+     surface. The fix is uniform: **`hue 50% + --m-ink` on an 18% tint of the
+     same hue**, which works because `--m-ink` is chocolate in light and cream
+     in dark, so text lightness tracks the theme by construction. Measured
+     across all 8 combinations — light 7.30 / 5.36 / 10.46 / 5.38, dark 6.03 /
+     6.71 / 12.39 / 6.04. **Retuning these needs a re-measure in BOTH themes.**
+
+     `button.tsx` keeps its sm/md/lg scale rather than becoming `.pill-primary`
+     — that class is a 52px hero pill, wrong for a dense admin table — but
+     takes meshi's chunky sticker press (translateY against a hard bottom
+     shadow) in place of `active:scale-[0.98]`, plus `--m-red` for destructive.
+     `card.tsx` deliberately does NOT adopt meshi-b's `.card` class, because
+     `.band-deep .card` re-scopes text tokens for the marketing bands and would
+     drag landing behaviour into the admin tree; it takes the surface tokens
+     only. `icon-badge.tsx` moves to the tint-green/forest pairing that
+     `.tab-active .tab-ic` already uses.
+
+     **`section.tsx` deliberately still names `--cc-accent`, and it must.** It
+     is the one place the alias layer is load-bearing: `.band-deep` re-scopes
+     `--cc-accent` to LIME on the forest and plum bands, because forest cannot
+     be both the band and the accent on it. Hardcoding `--m-forest` would make
+     the eyebrow invisible on two of the landing's four band types. **10e must
+     move the band mechanism in globals.css to a scoped `--m-*`-named variable
+     BEFORE deleting `--cc-*`** — this is not a stray alias to sweep up.
+
+     Verified: `tsc`, `next build` (70 routes) and `eslint` on `components/cc/`
+     all clean with zero findings. The 4 findings in admin/settings consumers
+     are pre-existing — confirmed identical with the cc changes `git stash`ed.
+     All six rendered with every variant on a temporary, never-committed
+     `/scratch-cc` route (removed; `grep` confirms none remain), computed
+     styles checked against the meshi tokens, and contrast measured in both
+     themes. **Caught during this pass:** the icon-badge rewrite initially
+     dropped its `<Icon />` render and would have shipped empty badges.
+   **10c is complete.** The "every web page is phone-width inside a 1280px
+   shell" gap that headlined this list is closed: the sidebar, the per-screen
+   topbars, `.tracker-grid`, the chat and cart rails, and the paywall's two-up
+   card all lay out for desktop now.
+
+   Still WEB-ONLY-shaped, and worth naming so nobody assumes otherwise:
+   `/settings`, `/favorites` and `/arena` were never converted to an artboard —
+   there is no web board for them. They inherit the shell and the aliased
+   palette, so they are on-brand, but they are not *designed*. The admin
+   console is the same, plus it has never been rendered by anyone (blocker 1).
 2. **Phase 10d** — mascot motion (`Meshi Mascot Animations.dc.html`), plus the
    `#ff6b35` cleanup that still lives in `components/UpgradeDialog.tsx`'s
    Razorpay `theme.color` and `scripts/gen-resources.mjs`, and regenerating
