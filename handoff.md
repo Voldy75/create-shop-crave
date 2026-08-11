@@ -436,13 +436,22 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
      confirmed inside the element's bounding box) — hover-only CSS needs a
      real-cursor check outside this harness.
 
-**Fabricated marketing content on the landing — decide before launch.** The
-three testimonials (`TESTIMONIALS` in `app/(web)/page.tsx`) are invented
-placeholder quotes with invented names, and they pre-date this work. The wLa
-conversion added carrot ratings and avatar discs, which makes them look more
-credible than they are. Replace with real quotes or delete the section before
-the landing is public. The STATS figures are marketing claims too and were not
-verified against anything.
+**Fabricated marketing content on the landing — RESOLVED.** The three
+testimonials were invented quotes with invented names, made to look more
+credible by the wLa conversion's carrot ratings and avatar discs. They are
+**deleted**, replaced by an "at a glance" section in the reference layout
+(centred headline, one wide photo, four fact cards) whose every value is
+checkable in this repo: 6 platforms (`lib/deeplinks.ts`), 3 AI models
+(`lib/providers.ts`), 2 countries, and the free tier's 2/day
+(`plans.chat_daily_limit`). **The obvious version of that section is a scale
+boast — users, orders, cities served — and that was deliberately not built:
+this product has single-digit users and has never shipped a binary, so any
+such number would be the same fiction the testimonials were.**
+
+While there, the forest STATS band's claim of **"4 AI models … Gemini, GPT-4o,
+Claude & Grok" was corrected to 3** — Grok is supported nowhere in the
+codebase. The remaining STATS values ("50+ cuisines", "<10s to a full recipe")
+are still unverified marketing claims and should be checked before launch.
 
 **Sign-in has no dedicated route, and that is deliberate, not unfinished.**
 Every "Sign in" trigger (nav, hero, both CTAs) opens the same modal on

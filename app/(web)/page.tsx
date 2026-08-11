@@ -10,7 +10,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Section } from "@/components/cc/section";
 import { Chip } from "@/components/cc/chip";
 import { BoBowl, Carrot, Broccoli, Tomato, Mushroom } from "@/components/mascots";
-import { CarrotRating } from "@/components/mobile/CarrotRating";
 import { foodImage } from "@/lib/food-images";
 
 /**
@@ -90,7 +89,7 @@ const DEMO_MESSAGES = [
 
 const STATS = [
   { value: "50+", label: "Cuisines Bo speaks", desc: "Indian to Italian, Thai to Mexican" },
-  { value: "4", label: "AI models, one buddy", desc: "Gemini, GPT-4o, Claude & Grok" },
+  { value: "3", label: "AI models, one buddy", desc: "Gemini, GPT-4o & Claude" },
   { value: "<10s", label: "To a full recipe", desc: "Ingredients, macros & a cart" },
   { value: "1-tap", label: "Grocery checkout", desc: "Bo carts & orders for you" },
 ];
@@ -130,10 +129,29 @@ const PLATFORM_MARKS = [
 ] as const;
 // hex-ok-end
 
-const TESTIMONIALS = [
-  { text: "I used to spend 20 minutes deciding what to eat. Now I just tell Bo my mood and it handles everything.", name: "Priya S.", role: "Home cook, Mumbai", carrots: 5 },
-  { text: "The grocery links are the killer feature. I go from recipe to Instamart cart in literally one tap.", name: "Arjun M.", role: "Student, Delhi", carrots: 5 },
-  { text: "Finally an app that understands ‘healthy but not boring.’ Bo's suggestions are surprisingly good.", name: "Sneha R.", role: "Fitness enthusiast, Bangalore", carrots: 4 },
+/**
+ * "At a glance" facts, replacing three invented testimonials that carried
+ * invented names and invented carrot ratings.
+ *
+ * EVERY VALUE HERE IS CHECKABLE IN THIS REPO — deliberately. The obvious
+ * version of this section is a scale boast (users, orders, cities served),
+ * which is what the reference layout does; this product has single-digit
+ * users and has never shipped a native binary, so any such number would be
+ * fiction of exactly the kind the testimonials already were. These are
+ * capability facts instead:
+ *   platforms → lib/deeplinks.ts (Blinkit, Swiggy Instamart, Zomato,
+ *               Instacart, Uber, Ola)
+ *   models    → lib/providers.ts (gemini, openai, anthropic — THREE, and no
+ *               Grok; the forest stats band above claimed four and named
+ *               Grok, which is supported nowhere in the codebase)
+ *   countries → the deeplink targets: India and the U.S.
+ *   free tier → plans.chat_daily_limit = 2, seeded in admin-console.sql
+ */
+const AT_A_GLANCE = [
+  { value: "6 platforms", label: "connected", desc: "Swiggy, Zomato, Blinkit, Instacart, Uber & Ola" },
+  { value: "3 AI models", label: "one buddy", desc: "Gemini, GPT-4o and Claude — or bring your own key" },
+  { value: "2 countries", label: "for grocery & dining", desc: "India and the U.S., with recipes worldwide" },
+  { value: "Free to start", label: "no card needed", desc: "2 Bo requests a day, every day" },
 ];
 
 /* Small product-mock vignettes used in the feature rows */
@@ -193,25 +211,30 @@ export default function LandingPage() {
 
       {/* ── Glass Nav ── */}
       <nav
-        className="glass-nav px-6 flex items-center justify-between sticky top-0 z-50"
-        style={{ height: "48px" }}
+        className="glass-nav flex items-center justify-between sticky top-0 z-50 px-6 md:px-12"
+        style={{ height: 76 }}
       >
         {/* Bo and the meshi wordmark, matching wLa's nav and the sidebar the
             signed-in app already uses. The old "C" tile was the retired
             orange. */}
         <div className="flex items-center gap-2.5">
-          <BoBowl width={28} height={28} />
-          <span className="text-[19px] font-extrabold tracking-[-0.6px] text-[var(--m-ink)]">
+          <BoBowl width={36} height={36} />
+          <span className="text-[23px] font-extrabold tracking-[-0.6px] text-[var(--m-ink)]">
             meshi
           </span>
         </div>
+        {/* wLa also runs a centred Features/Recipes/Integrations/Pricing link
+            row. Only two of those four have anywhere to go on this page and
+            there is no pricing or public recipes route, so the row is not
+            built rather than half-built with dead links — the same call
+            AppShell's sidebar made about Discover. */}
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <button
-            onClick={() => setShowAuthCard(true)}
-            className="text-[13px] font-bold text-[var(--m-ink)] bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity"
-          >
+          <button onClick={() => setShowAuthCard(true)} className="pill-secondary pill-sm">
             Sign in
+          </button>
+          <button onClick={() => setShowAuthCard(true)} className="pill-primary pill-sm">
+            Get started free
           </button>
         </div>
       </nav>
@@ -255,15 +278,14 @@ export default function LandingPage() {
               >
                 <button
                   onClick={() => setShowAuthCard(true)}
-                  className="btn-pill-primary flex items-center gap-2"
-                  style={{ padding: "14px 32px", fontSize: "17px" }}
+                  className="pill-primary"
+                  style={{ gap: 10 }}
                 >
                   Get started free <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
-                  className="btn-pill-secondary"
-                  style={{ padding: "13px 28px", fontSize: "17px" }}
+                  className="pill-secondary"
                 >
                   Take the tour
                 </button>
@@ -351,11 +373,11 @@ export default function LandingPage() {
                     </div>
                   )}
                   <div className="flex gap-2 pt-1">
-                    <button onClick={handleGetStarted} disabled={isLoadingLocation} className="btn-pill-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-60" style={{ height: "48px", fontSize: "17px" }}>
+                    <button onClick={handleGetStarted} disabled={isLoadingLocation} className="pill-primary grow disabled:opacity-60" style={{ gap: 8 }}>
                       {isLoadingLocation ? (<><Loader2 className="w-4 h-4 animate-spin" /> Locating...</>) : "Start Craving"}
                     </button>
                     {locationError && (
-                      <button onClick={() => router.push("/chat")} className="btn-pill-secondary" style={{ height: "48px", padding: "0 20px", fontSize: "14px" }}>Skip</button>
+                      <button onClick={() => router.push("/chat")} className="pill-secondary pill-sm">Skip</button>
                     )}
                   </div>
                 </div>
@@ -537,8 +559,8 @@ export default function LandingPage() {
         <div className="mt-12 text-center">
           <button
             onClick={() => { setShowAuthCard(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            className="btn-pill-primary inline-flex items-center gap-2"
-            style={{ padding: "14px 32px", fontSize: "17px" }}
+            className="pill-primary"
+            style={{ gap: 10 }}
           >
             Try it yourself <ArrowRight className="w-4 h-4" />
           </button>
@@ -639,22 +661,26 @@ export default function LandingPage() {
         </div>
       </Section>
 
-      {/* ── Testimonials — carrot ratings, per wLa ── */}
-      <Section tone="cream" eyebrow="What people are saying" headline="Loved by home cooks and foodies.">
-        <div className="grid gap-5 md:grid-cols-3">
-          {TESTIMONIALS.map((t, i) => (
-            <div key={i} className="card p-[26px]">
-              <CarrotRating value={t.carrots} size={16} />
-              <p className="t-body mt-3 leading-[1.5]">&ldquo;{t.text}&rdquo;</p>
-              <div className="mt-[18px] flex items-center gap-[11px] border-t border-[var(--m-ink-faint)] pt-4">
-                <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-[var(--m-tint-green)] text-[14px] font-extrabold text-[var(--m-forest)]">
-                  {t.name.slice(0, 1)}
-                </span>
-                <div className="flex min-w-0 flex-col">
-                  <span className="t-h2 text-[14px]">{t.name}</span>
-                  <span className="t-cap">{t.role}</span>
-                </div>
-              </div>
+      {/* ── At a glance — replaces the invented testimonials ──
+          Layout follows the reference: a centred headline, one wide photo,
+          then a row of fact cards. Content does NOT follow it — see
+          AT_A_GLANCE for why scale numbers were not invented to fill it. */}
+      <Section tone="cream" headline={<>Everything you need to go<br className="hidden md:block" /> from craving to eating</>}>
+        <div className="overflow-hidden rounded-[var(--m-r-card)]">
+          <div
+            className="imgfill h-[260px] w-full md:h-[420px]"
+            style={{ backgroundImage: `url(${foodImage("Butter Chicken") ?? ""})` }}
+            role="img"
+            aria-label="A home-cooked meal being served"
+          />
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {AT_A_GLANCE.map((s) => (
+            <div key={s.value} className="card flex flex-col gap-2 p-[26px]">
+              <span className="headline-tile">{s.value}</span>
+              <span className="t-cap" style={{ color: "var(--m-forest)" }}>{s.label}</span>
+              <span className="t-body-soft">{s.desc}</span>
             </div>
           ))}
         </div>
@@ -744,8 +770,8 @@ export default function LandingPage() {
           </p>
           <button
             onClick={() => { setShowAuthCard(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            className="btn-pill-primary inline-flex items-center gap-2"
-            style={{ padding: "14px 32px", fontSize: "17px" }}
+            className="pill-lime"
+            style={{ gap: 10 }}
           >
             Get started free <ArrowRight className="w-4 h-4" />
           </button>

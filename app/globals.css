@@ -257,30 +257,43 @@
      the "Inside fixed bands, headlines follow the band" rule further down.
      --m-ink is the correct value for the one hypothetical case of a headline
      rendered outside any band. */
+  /* WEIGHTS ARE 800, NOT 600/500 — these were Midnight Kitchen values that the
+     Phase 10c palette flip never corrected, and they are the single most
+     visible remaining mismatch against wLa. Every display line in that
+     artboard is `font: 800 <size> Montserrat` (56px hero, 46px and 38px
+     section, 22–23px tile), and meshi-b's own scale agrees: .t-d1/.t-d2 are
+     800, .t-h1/.t-h2 are 700. General Sans at 600 read as a bold-ish display
+     face; Montserrat at 600 reads as semibold BODY, which is why the headings
+     looked underweight next to the design.
+
+     Letter-spacing follows meshi rather than the old em-based values —
+     meshi-b pins -.5px on .t-d1 and -.4px on .t-d2, and wLa's hero uses
+     -1.6px at 56px. Tracking that tight has to be px at display sizes; an em
+     value re-tightens as the clamp grows and starts colliding glyphs. */
   .headline-hero {
     font-family: var(--font-display-stack);
-    font-size: clamp(2.5rem, 6vw, 4rem);
-    font-weight: 600;
-    line-height: 1.05;
-    letter-spacing: -0.02em;
+    font-size: clamp(2.5rem, 6vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: -1.6px;
     color: var(--m-ink);
   }
 
   .headline-section {
     font-family: var(--font-display-stack);
-    font-size: clamp(1.75rem, 3vw, 2.5rem);
-    font-weight: 600;
-    line-height: 1.10;
-    letter-spacing: -0.015em;
+    font-size: clamp(1.75rem, 3vw, 2.875rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -1px;
     color: var(--m-ink);
   }
 
   .headline-tile {
     font-family: var(--font-display-stack);
-    font-size: 28px;
-    font-weight: 500;
-    line-height: 1.14;
-    letter-spacing: -0.01em;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.4px;
     color: var(--m-ink);
   }
 

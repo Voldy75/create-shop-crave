@@ -124,6 +124,20 @@ add a `<link>` to fonts.googleapis.com.
 Scale is defined as classes in `meshi-b.css`: `.t-d1`, `.t-d2`, `.t-h1`,
 `.t-h2`, `.t-body`, `.t-body-soft`, `.t-cap`, `.t-micro`.
 
+**Display weight is 800, not 600.** Every display line in the web artboards is
+`font: 800 <size> Montserrat`, and meshi-b agrees — `.t-d1`/`.t-d2` are 800,
+`.t-h1`/`.t-h2` are 700, body is 600. The landing's `.headline-*` classes sat
+at 600/500 for a while because those were the General Sans values the palette
+flip never revisited: at 600, Montserrat reads as semibold *body*, which made
+every heading look underweight beside the design. Tracking is px, not em —
+wLa's hero is -1.6px at 56px, and an em value re-tightens as a clamp grows.
+
+**Buttons are meshi's pills**, not the legacy `.btn-pill-*`: `.pill-primary`
+(52px, forest), `.pill-secondary` (outline), `.pill-lime` (on a deep band,
+where forest cannot be the accent), each with `.pill-sm` at 38px for nav and
+dense rows. The legacy classes were 400-weight and pressed with `scale()`
+instead of the chunky `translateY` against a hard bottom shadow.
+
 General Sans and Geist are retired with the old system. Never SF Pro
 (unlicensed off-Apple, invisible on Android).
 
