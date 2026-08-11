@@ -1,6 +1,6 @@
 # Handoff — Crave & Create (web + mobile, unified)
 
-Last updated: 2026-08-09. Written for a session with zero prior context.
+Last updated: 2026-08-11. Written for a session with zero prior context.
 Supersedes the two separate handoffs that lived in the web and mobile repos.
 
 ## Goal
@@ -436,6 +436,37 @@ and shadcn token points at its meshi equivalent. Consequences to understand:
      confirmed inside the element's bounding box) — hover-only CSS needs a
      real-cursor check outside this harness.
 
+10. **"Converted to the artboard" did NOT mean "matches the artboard", and the
+    verification method is what let that through.** Every 10c screen was
+    checked by resolving tokens in the browser and measuring contrast — so
+    colour was right everywhere — but **type WEIGHT and BUTTON CLASS were
+    never compared against the source markup**, and both were wrong on the
+    landing for the entire phase. The user caught it by eye, not the process.
+
+    Two concrete faults, months old by the time they were found:
+    - `.headline-hero` / `.headline-section` / `.headline-tile` were **600 and
+      500** weight. Every display line in the web artboards is `font: 800`,
+      and meshi-b's own scale agrees (`.t-d1`/`.t-d2` 800, `.t-h1`/`.t-h2`
+      700, body 600). Those were General Sans values that the palette flip
+      never revisited; at 600 Montserrat reads as semibold BODY, so every
+      heading sat visibly light next to the design.
+    - The landing's CTAs were the legacy `.btn-pill-*` — 400-weight, 17px,
+      pressing with `scale()` — instead of meshi's `.pill-primary` /
+      `.pill-secondary` / `.pill-lime` (+ `.pill-sm`), which are 700/16px,
+      52px tall (38px sm), and press with the chunky `translateY` against a
+      hard bottom shadow. Different height, weight AND motion.
+
+    **When converting a screen, diff the artboard's literal declarations, not
+    just its colours.** The design file spells them out: grepping an extracted
+    artboard for the CSS `font:` shorthand gives you the whole weight/size
+    inventory in one command, and the button classes are right there in the
+    markup. (Written without a literal regex here on purpose — see the note
+    about the content scanner in DESIGN.md.)
+
+    Also worth knowing: tracking on display type is **px, not em**. wLa's hero
+    is `-1.6px` at 56px; an em value re-tightens as a `clamp()` grows and
+    starts colliding glyphs at the top of the range.
+
 **Fabricated marketing content on the landing — RESOLVED.** The three
 testimonials were invented quotes with invented names, made to look more
 credible by the wLa conversion's carrot ratings and avatar discs. They are
@@ -560,17 +591,18 @@ worth stating so they are not "re-deferred" by a future reader:
   layouts. The only place `mm-*` keyframes should be added.
 - `app/(mobile)/m/mobile.css` — mobile-only utilities meshi-b lacks
 - `components/mascots/*` — 13 mascots + lookup map
-- **Mobile tree is fully off `--cc-*`** — the only hit is a comment in
-  `app/(mobile)/layout.tsx` explaining the split, not a token reference.
-- **`--cc-*` is still named in 52 files** — 22 under `app/(web)`, 27 under
-  `components/`, plus `app/globals.css` (78 definitions),
-  `app/global-not-found.tsx`, and the mobile comment above. That count is NOT a
-  progress bar for 10c: since `--cc-*` became an alias layer over `--m-*`, a
-  screen can be fully rebuilt to its artboard and still name alias tokens.
-  Chat, for instance, is converted and greps zero; the landing is converted and
-  still names 25. The count only goes to zero in **10e**, which deletes the
-  aliases. Judge 10c screen-by-screen against the artboard list above, not by
-  this number.
+- **BOTH trees are fully off `--cc-*`.** 10e deleted the alias layer; the
+  mechanical exit criterion (`grep -rn -- '--cc-' app components`) returns
+  zero. Do not reintroduce the prefix.
+- **`--band-*` in `app/globals.css` is NOT leftover alias scaffolding.** It is
+  a live, permanent mechanism: the landing's forest and plum bands re-scope
+  text and accent by ancestor selector, because forest cannot be both the band
+  and the accent on it. Deleting it makes the eyebrow and closing CTA
+  invisible on two of the four band types.
+- **Type weight and button class are the two things colour checks miss.**
+  Display is 800 (meshi-b: `.t-d1`/`.t-d2` 800, `.t-h1`/`.t-h2` 700, body
+  600); buttons are `.pill-primary` / `.pill-secondary` / `.pill-lime` with
+  `.pill-sm` at 38px — never the legacy `.btn-pill-*`. See trap 10.
 
 ### Traps already hit — do not rediscover
 
@@ -726,6 +758,21 @@ to the end of this section.
      `Section tone="cream|cream2|forest|plum"`. See the 10c notes below for
      the traps — including a THIRD one found after this was first marked
      done.
+
+     **Corrected LATER, after 10c was already closed** (trap 10 below):
+     display weights were 600/500 instead of the artboard's 800, and the CTAs
+     were the legacy `.btn-pill-*` rather than meshi's `.pill-*` — wrong
+     weight, height and press animation. The nav was 48px with a bare-text
+     sign-in; wLa is 76px with a `pill-secondary pill-sm` + `pill-primary
+     pill-sm` pair. All fixed and measured against the source declarations.
+     **wLa's centred Features / Recipes / Integrations / Pricing link row is
+     still deliberately NOT built** — only two of the four have anywhere to go
+     on this page and there is no pricing or public-recipes route, so it would
+     be half dead links, the same call AppShell's sidebar made about Discover.
+
+     **The testimonials section is gone**, replaced by an "at a glance" band
+     (headline + one wide photo + four fact cards). See the "Fabricated
+     marketing content" note below for what was and was not put in it.
    - ~~sign-in~~ — **DONE.** `components/AuthButton.tsx` + the landing's auth
      modal now match w1b's CARD (Bo circle, "Welcome back", provider stack).
      Stayed a modal, not a new route — see the 10c decisions below for why,
@@ -1015,7 +1062,8 @@ to the end of this section.
      `button.tsx` keeps its sm/md/lg scale rather than becoming `.pill-primary`
      — that class is a 52px hero pill, wrong for a dense admin table — but
      takes meshi's chunky sticker press (translateY against a hard bottom
-     shadow) in place of `active:scale-[0.98]`, plus `--m-red` for destructive.
+     shadow) in place of the old active-state scale transform, plus `--m-red`
+     for destructive.
      `card.tsx` deliberately does NOT adopt meshi-b's `.card` class, because
      `.band-deep .card` re-scopes text tokens for the marketing bands and would
      drag landing behaviour into the admin tree; it takes the surface tokens
@@ -1201,8 +1249,22 @@ tokens forced the question:**
   invalid CSS, so that tile rendered with no background at all. Switched to
   `color-mix`, which works for both.
 
+**A later pass fixed three wLa mismatches that had survived all of 10c** —
+display weights at 600/500 instead of 800, the legacy `.btn-pill-*` instead of
+meshi's pills, and a 48px nav where wLa is 76px. **These were caught by eye,
+not by the verification process**, which had only ever checked that tokens
+resolved and contrast passed. Trap 10 explains what to diff instead. If you
+convert another screen, compare the artboard's literal `font:` declarations
+and button classes, not just its colours.
+
 The real blocker remains **Phase 5 — production cutover**, which needs the env
 vars listed at the top of this file. Nothing in Phase 10 unblocks it.
+
+**Still-unverified marketing copy on the landing.** The testimonials are gone,
+but the forest STATS band's remaining values — "50+ cuisines Bo speaks" and
+"<10s to a full recipe" — were never checked against anything. ("4 AI models …
+& Grok" WAS checked, and was false; it is 3 and there is no Grok.) Verify or
+cut them before the landing is public.
 
 Two things worth doing before more UI:
 
