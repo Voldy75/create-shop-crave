@@ -101,18 +101,34 @@ All values live in `design/meshi-b.css`. Never hardcode a hex in a component.
 | tints | `--m-tint-green/lav/peach` | section backgrounds |
 
 **Light-first.** `:root` is the light palette; dark is a token pass under
-`[data-theme="dark"]`. This is the inverse of the old system — `ThemeContext`
-defaults to `dark` today and must flip as part of the conversion.
+`[data-theme="dark"]`. This is the inverse of the old system, and the flip is
+**done**: both root layouts now pass `defaultTheme="light"` to `ThemeProvider`.
+(`ThemeContext`'s own parameter default is still `"dark"`; that is only a
+fallback for a caller that passes nothing, and no caller does. It was a real
+bug once — a hardcoded `"dark"` shared by both trees silently overrode mobile's
+light default — which is why the value is passed explicitly rather than
+assumed.)
 
-**The orange is retired.** `#ff6b35` was previously kept for brand equity; this
-system replaces it with forest green. It reaches beyond CSS — all three of these
-must change together:
+**The orange is retired, and as of Phase 10d it is gone repo-wide.** It was
+kept for brand equity under the old system; forest green replaces it. It
+reached beyond CSS into four places that a token could not touch, all now
+done:
 
-- `components/UpgradeDialog.tsx` → Razorpay `theme.color`
-- `scripts/gen-resources.mjs` → generated icon/splash background
+- `components/UpgradeDialog.tsx` → Razorpay `theme.color` (a third-party
+  iframe, so it must stay a literal)
+- `scripts/gen-resources.mjs` → the generated icon/splash, which also stopped
+  drawing a letter "C" and now draws Bo
 - the `assets` npm script → `--iconBackgroundColor`
+- `public/manifest.json` → the PWA `theme_color` and `background_color`, found
+  last and still on the old palette at the time
 
-…and `resources/*.png` must be regenerated afterwards.
+`resources/*.png` were regenerated in the same commit. **They are committed
+build output — never change the generator without re-running it**, or source
+and output disagree.
+
+Note the `assets` script now runs `@capacitor/assets` through `npx` rather than
+depending on it: the package bundles a stale, vulnerable toolchain and has no
+fixed release. See handoff.md's "Dependency advisories".
 
 ## Typography
 

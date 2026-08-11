@@ -122,6 +122,12 @@ installed but **CocoaPods is not**, and there is no Android SDK, so
 `npx cap add ios` fails at `pod install`. RevenueCat also needs an account plus
 products in App Store Connect / Play Console.
 
+When you do get there, the icon/splash step is two commands and unchanged in
+behaviour: `npm run gen:resources` (writes `resources/*.png` via sharp) then
+`npm run assets`. The second now pulls `@capacitor/assets` via `npx` instead of
+it being a devDependency — see "Dependency advisories" for why. Nothing to
+install first; npx fetches it.
+
 **5. Google Maps key is HTTP-referrer-restricted** to the web domain, so the
 map falls back on mobile and on localhost. Google Cloud Console allowlist fix, not code.
 
@@ -774,10 +780,12 @@ ignore those two.
   `app_config['limits.fail_mode']`.
 - **Audit logging is best-effort** — a failed audit write does not block the
   mutation. Revisit if this ever backs a compliance requirement.
-- **The orange `#ff6b35` is retired** in favour of forest green. This reaches
-  beyond CSS: `UpgradeDialog`'s Razorpay `theme.color` and
-  `scripts/gen-resources.mjs` both still bake it into checkout and app icons,
-  and `resources/*.png` needs regenerating.
+- **The orange is retired** in favour of forest green — **done repo-wide in
+  Phase 10d**, including the four places CSS could not reach:
+  `UpgradeDialog`'s Razorpay `theme.color`, `scripts/gen-resources.mjs` (which
+  also stopped drawing a letter "C" and now draws Bo), the `assets` npm script,
+  and `public/manifest.json`, whose PWA colours were found last and were still
+  on the old palette. `resources/*.png` were regenerated in the same commit.
 
 ## Environment
 
@@ -786,8 +794,10 @@ ignore those two.
   ever shipped.
 - Migrations are plain `.sql` in `scripts/sql/`, applied by hand. No migration
   tool.
-- No test suite. `npx tsc --noEmit`, `next build`, and screenshot diffs are the
-  only gates.
+- No test suite. The gates are `npx tsc --noEmit`, `next build`, `eslint`,
+  **`npm run check:hex`** (the CI hex/rgba gate — `.github/workflows/
+  design-tokens.yml`, baseline at zero) and browser checks. That is the whole
+  safety net; there is nothing that would catch a behavioural regression.
 - Both deployments still live and serving the OLD code:
   `create-shop-crave.vercel.app` and `create-shop-crave-mobile.vercel.app/m`.
 - `proxy-server/` contains only `node_modules` and is referenced by two env
