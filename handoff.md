@@ -125,6 +125,65 @@ products in App Store Connect / Play Console.
 **5. Google Maps key is HTTP-referrer-restricted** to the web domain, so the
 map falls back on mobile and on localhost. Google Cloud Console allowlist fix, not code.
 
+## Dependency advisories
+
+`npm audit` went **43 → 14** and the only CRITICAL is cleared. What changed and
+why is in the `chore(deps)` commit; the short version: **next 16.0.7 → 16.3.0**
+(33 advisories on its own — middleware/proxy bypasses, SSRF in Server Actions
+and rewrites, RSC cache poisoning, XSS, unauthenticated Server Function
+disclosure), **react 19.2.0 → 19.2.8** (a patch, but it unblocked every
+`audit fix`: `@ai-sdk/react`'s peer range has a gap at exactly 19.2.0, so
+resolution was failing ERESOLVE), **sharp 0.34.5 → 0.35.3**, and
+**`@capacitor/assets` removed**.
+
+That last one is the interesting call. It is what carried the critical: it
+bundles a stale `@capacitor/cli@5.7.8` with `tar@6.2.1`, plus
+`@trapezedev/project → replace → minimatch@3.0.5` and its own
+`sharp@0.32.6`. **None of those have an upstream fix — 3.0.5 IS the latest
+release.** It is never imported by source; it is a one-shot CLI behind
+`npm run assets`, which cannot run until `npx cap add ios/android` creates
+native projects that do not exist. The script now calls it via `npx`, so the
+native workflow is unchanged. **If you reinstate it as a dependency, the
+critical comes back with it.**
+
+Note the count mismatch: GitHub's Dependabot reported **118** alerts (46 high /
+63 moderate / 9 low) against `main`, while `npm audit` here reports far fewer.
+Two different things — Dependabot counts one alert per vulnerable *path* and is
+looking at the unmerged `main` branch, npm audit dedupes by advisory on THIS
+branch. Expect the Dependabot number to drop sharply, but not to match, once
+this merges.
+
+### The remaining 14 — deliberately not attempted
+
+All fourteen have a single root: **`ai` is at v3.4.7 and the fix is v7** — four
+majors. It is imported by six route files: `app/api/{chat,agent,coach,
+ingredients}/route.ts`, `app/api/meals/analyze/route.ts` and
+`lib/coach-insights.ts`, plus `@ai-sdk/react`'s `useChat` in the chat UI. A
+v3→v7 jump changes the streaming API, the tool-calling contract and the
+message format.
+
+**This was left alone on purpose, and the reason is the risk profile, not the
+effort:** there is no test suite, message-sending through `/api/chat` has never
+been exercised end-to-end (it needs a real account — see the w3a notes), and
+this branch carries 70+ unmerged commits. A blind four-major migration of the
+core AI path, with no way to detect a regression, is a worse outcome than the
+advisories.
+
+**Their real-world exposure looks low**, which is why it can wait for a
+deliberate pass rather than a rushed one — but "looks low" is not "patched":
+
+- The two `high` items are `undici` and `nanoid`, both transitive through the
+  SDK. Every high `undici` item is a **WebSocket client** issue
+  (permessage-deflate decompression, `server_max_window_bits` validation,
+  fragment-count bypass); `undici` is here as a fetch implementation and this
+  app opens no undici WebSockets. The `nanoid` highs need a negative or zero
+  `size`, which is SDK-internal and not attacker-reachable.
+- The rest are moderate/low and all sit in the same SDK tree.
+
+**Do it as its own piece of work**, with `ADMIN_EMAIL` and a real account
+available so chat, the Swiggy agent, coach and photo analysis can each be
+exercised after the upgrade.
+
 ## Bugs found and fixed (all were live)
 
 - **The chat daily limit never blocked anyone.** `check_and_increment_usage`
