@@ -43,12 +43,18 @@ verified-vs-not list, a suggested review order, and the exact env vars needed
 before it can come out of draft. **Do not mark it ready until the blockers
 below are cleared.**
 
-**Commit counts — do not be surprised.** `git log main..HEAD` returns roughly
-**65** commits and climbing. The itemized 14 below cover only through the merge
-consolidation (`3910bc1`); everything after that is Phase 10c screen-by-screen
-design work (landing, sign-in, chat — see the Phase 10c section further down
-for that history in detail, or `git log 3910bc1..HEAD --oneline` for the raw
-list). Of the original 35, only 14 were this work — the other ~21 were the
+Its body is kept in step with this file — it now also carries the dependency
+posture and the design-fidelity findings. **If you change something material on
+this branch, update the PR description too**; it is the only thing a reviewer
+reads, and it drifted out of date once already.
+
+**Commit counts — do not be surprised.** `git log main..HEAD` returns **~76**
+commits and still climbing; do not treat that figure as current either, count
+it yourself. The itemized 14 below cover only through the merge
+consolidation (`3910bc1`); everything after that is Phase 10 screen-by-screen
+design work, then 10d/10e, then the dependency pass — see the sections further
+down for that history in detail, or `git log 3910bc1..HEAD --oneline` for the
+raw list. Of the original 35, only 14 were this work — the other ~21 were the
 mobile repo's own history, which arrived with the merge and now lives in this
 repo. That is the consolidation working as intended, not stray commits. The
 original 14:
