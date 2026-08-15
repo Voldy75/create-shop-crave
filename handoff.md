@@ -48,7 +48,15 @@ posture and the design-fidelity findings. **If you change something material on
 this branch, update the PR description too**; it is the only thing a reviewer
 reads, and it drifted out of date once already.
 
-**Commit counts — do not be surprised.** `git log main..HEAD` returns **~76**
+**⚠️ IT IS OUT OF DATE RIGHT NOW.** The PR body predates the artboard audit
+and the nine screens that closed its gaps (7a, 7b, 2a, 2b, 2c, 2d, 6b, 1l,
+7c, 7d, plus the 7h fix). A reviewer reading only the PR will not know those
+exist, will not know about the two live bugs fixed alongside them (the mobile
+sign-in redirect landing in the web tree, and 2c's Skip silently firing a
+permission request), and will see a stale route count. Bring it in step
+before anyone is asked to review.
+
+**Commit counts — do not be surprised.** `git log main..HEAD` returns **~78**
 commits and still climbing; do not treat that figure as current either, count
 it yourself. The itemized 14 below cover only through the merge
 consolidation (`3910bc1`); everything after that is Phase 10 screen-by-screen
@@ -79,8 +87,12 @@ b171cf3 feat(admin): admin console API + UI, flags split, platform attribution
 it was cherry-picked here so source and DB stayed consistent. That branch is
 redundant now.)
 
-`npx tsc --noEmit` and `next build` are clean (**70 routes** — `/cart` was
-added during 10c).
+`npx tsc --noEmit`, `next build`, `eslint` and `npm run check:hex` are clean
+(**72 routes** — `/cart` was added during 10c, then `/m/plan/streak` and
+`/m/settings/notifications` when the audit gaps were closed). Route counts
+quoted inside the phase write-ups further down say 70 and are correct **as of
+those phases** — they are historical verification records, not live claims.
+Do not "fix" them.
 
 **Database changes ARE already applied to production Supabase**
 (`lxaaclelfhjmqrhdqzxp`) even though this branch is not merged. Schema and code
@@ -103,6 +115,7 @@ project before the merge.
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
 | 10 meshi re-skin | **DONE — all of 10a–10e.** Mobile + web converted, mascot motion + brand assets shipped, `--cc-*` deleted (mechanical exit criterion verified zero), CI hex/rgba gate live. Real, tracked debt remains in screens with no artboard — see the 10e write-up below for exactly which. |
+| 10f artboard coverage | **PARTIAL, and it is the honest successor to "10 DONE".** The code-by-code audit found the re-skin converted every ROUTE but left 12 of 37 artboard codes unbuilt. Nine are now closed (7a, 7b, 2a, 2b, 2c, 2d, 6b, 1l, 7c, 7d + the 7h fix). **Still open: 7e** (link accounts, web-only), **7f** (BYOK key entry, web-only), **6a** (animated splash, needs the native shell), **3a–3d/1i** (out of scope by the design file's own note), **5a/7i** (dark mode). |
 
 ## Blocked on you — nothing proceeds past these
 
@@ -251,20 +264,29 @@ The file is 190KB — fetch it with `DesignSync.get_file` (project
 `bdb767d1-b7ae-42ab-b6ce-30542fa2e99f`), write it to `/tmp`, and extract single
 artboards with a script rather than loading it all into context.
 
-### Screens rebuilt to artboards (16 of 16, plus one new route)
+### Screens rebuilt to artboards
+
+**"16 of 16" is what this heading used to say, and that framing is the whole
+reason the coverage gap went unnoticed for a phase** — it counted the app's
+ROUTES against themselves, so it was trivially true and said nothing about
+the 44 artboards. Read it as "every route that existed was converted", not
+"the design is implemented". The code-by-code audit further down is the real
+coverage picture.
 
 | Flow | Screens |
 |---|---|
-| 1 Onboarding | welcome, location, diet, goal — plus **tastes (2b), calorie preview (2a), streak opt-in (2c), sign-in (2d), hand-off loader (6b)**, added later; see the audit below |
-| 2 Home & discovery | Home, Discover (`/m/search`), Restaurants |
+| 1 Onboarding | welcome, location, diet, goal — plus **Meet Bo (7a), works-with-apps (7b), tastes (2b), calorie preview (2a), streak opt-in (2c), sign-in (2d), hand-off loader (6b)**, all added after the audit |
+| 2 Home & discovery | Home, Discover (`/m/search`), Restaurants (incl. dine-in, 7h) |
 | 3 Chat & recipes | chat, recipe |
 | 4 Buy journey | buy, buy/platform, buy/confirmed |
-| 6 Tracking | plan, plan/week, plan/diet-chart, **`/m/log` (new)** |
+| 6 Tracking | plan, plan/week, plan/diet-chart, **`/m/log`**, **`/m/plan/streak` (1l)** |
 | 7 Saved & account | saved, profile, inbox, paywall |
+| 9 Permissions | **`/m/settings/notifications` (7c)**, **bottom-up prompt (7d)** |
 
 ### Phase 10b (mobile) is COMPLETE
 
-Every mobile screen is built to its artboard. The exit check:
+Every mobile ROUTE is built to its artboard — see the caveat above about what
+that does and does not mean. The exit check:
 
 ```bash
 grep -rn '#[0-9a-fA-F]\{3,8\}\|rgba(' "app/(mobile)" | grep -v 'mobile\.css'
@@ -1543,13 +1565,23 @@ but the forest STATS band's remaining values — "50+ cuisines Bo speaks" and
 & Grok" WAS checked, and was false; it is 3 and there is no Grok.) Verify or
 cut them before the landing is public.
 
-Two things worth doing before more UI:
+Four things worth doing before more UI:
 
+- **Update the PR #33 body.** It predates the audit and the nine screens that
+  closed its gaps — see the warning at the top of this file. Cheapest item
+  here and it gates anyone reviewing usefully.
 - **A real-device pass on `/m/log`.** The `getUserMedia` viewfinder has never
   run — camera access is blocked in the preview browser, so only the file
   fallback has been exercised.
 - **A deliberate dark-mode review.** The dark token pass renders (set
   `crave_theme=dark`), but no screen has been designed or checked against it.
+  Note this is now BIGGER than it was: the nine new screens were all built
+  and verified in light only.
+- **Exercise the new screens with a real session.** `/m/settings/notifications`
+  (7c) was verified signed-OUT only — the push toggle, the WhatsApp enrol +
+  JOIN + poll loop, and the test-send buttons all need a real Supabase
+  session, which is the same wall as blocker 1. 7d's prompt likewise only
+  ever rendered via a forced flag, never through its real gate.
 
 Method reminder: extract the flow's artboards from the mockup and build from
 the markup. The Flow 3 rebuild used
