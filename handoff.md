@@ -255,7 +255,7 @@ artboards with a script rather than loading it all into context.
 
 | Flow | Screens |
 |---|---|
-| 1 Onboarding | welcome, location, diet, goal |
+| 1 Onboarding | welcome, location, diet, goal — plus **tastes (2b), calorie preview (2a), streak opt-in (2c), sign-in (2d), hand-off loader (6b)**, added later; see the audit below |
 | 2 Home & discovery | Home, Discover (`/m/search`), Restaurants |
 | 3 Chat & recipes | chat, recipe |
 | 4 Buy journey | buy, buy/platform, buy/confirmed |
@@ -593,6 +593,12 @@ Splash (animated Bo), Meet Bo intro, the mobile Buy 1 menu → 2 cart →
 3 delivery → 4 tracking journey, notification bottom-up prompt, BYOK key
 screen, dark-mode Home. The four-step ordering journey needs real backend
 work, not just UI — there is no orders table and no platform reports state.
+
+**This list was audited screen-by-screen against the design file and was
+WRONG in both directions — read the audit section near the end of this file
+before trusting any line of it.** Short version: it silently omitted four
+boards that were never built and had no recorded reason (7a, 7b, 2c, 6b),
+and it counts things as deferred that have since shipped.
 
 Two entries left this list and the text above did not follow them, which is
 worth stating so they are not "re-deferred" by a future reader:
@@ -1300,6 +1306,202 @@ to the end of this section.
    double-checked against the last commit's source and are byte-identical
    pre-existing values from Phase 10c's original band design — not introduced
    here, and out of scope for a token-rename pass to silently "fix".
+
+## The mobile artboard audit — coverage by screen code
+
+Phase 10b claimed "every mobile screen is built to its artboard", and that was
+true as written but misleading: it counted the app's **16 routes**, not the
+design's **44 artboards**. A code-by-code audit of the mobile design file
+(9 flows, 44 boards) found **21 built, 4 partial, 12 not built** across the 37
+codes that describe app screens. Where a gap had a recorded reason it is cited
+below; four had none at all.
+
+**Stale as of the pass right after this one — read "Six more artboards
+closed" further down before trusting any status below.** 7a, 7b, 1l, 7c and
+7d moved from not-built/wrong-tree to built; 7h moved from partial to done
+(minus fares, which stay out on purpose). This table is kept for the codes
+that are STILL gaps: 6a, 3a–3d/1i, 7f, 5a/7i, and 7e.
+
+**How to redo this audit.** The artboard index is one command — extract
+`dv-opt` ids and their `dv-olabel` text from the design file, and group them
+by the enclosing `dv-turn` flow. Do not eyeball it against the route list;
+that is exactly the error Phase 10b made.
+
+### Not built, with the reason
+
+| Code | Screen | Why |
+|---|---|---|
+| 6a | Splash (animated) | Only a STATIC splash exists (`scripts/gen-resources.mjs` → `resources/splash*.png`). The animated one is a native-shell asset and `ios/`/`android/` do not exist — blocker 4. |
+| 3a–3d, 1i | Restaurant menu → cart → details → tracking → checkout | **The design file itself rules these out.** The note trailing 3d says dine-in 7h is the shipped path and restaurant in-app ordering 3a–3d "stays a future concept; grocery buy is Flow 4." Also needs an orders table, and Swiggy MCP rejects our origin (Dead End 1). |
+| 1l | Streak & mascot unlocks | Was blocked on the mascot-unlock gamification question. `loggingStreak` already existed, so this was a product decision, not a data problem. |
+| 7d | Bottom-up notification prompt | Deferred. Consequence: combined with 2c also missing, NOTHING in the mobile tree ever asked for notification permission. |
+| 7f | BYOK key screen | Key entry exists only in web `components/UpgradeDialog.tsx`. |
+| 5a, 7i | Dark-mode Home, dark dish detail | Deferred with the rest of dark mode, which still has never had a deliberate review. |
+
+### Not built, and NO reason was ever recorded
+
+**7a (Meet Bo intro), 7b (Bo works with your apps), 2c (streak &
+notifications opt-in), 6b (account hand-off loader).** Four consecutive Flow 1
+boards. The deferred list above named only "Meet Bo intro" and silently
+dropped the other three. 2c and 6b are now built (see below).
+
+### Built, but in the WRONG TREE
+
+**7c (notifications) and 7e (link accounts / MCP).** Both exist and work — as
+routes in the **web** group under `app/(web)/(app)/settings/`. `/m/profile`
+pushed at `/settings/notifications`, which crosses root-layout groups: a full
+document load into the web shell, sidebar and all. The mobile artboards for
+these were never built.
+
+### Partial
+
+**7h (dine-in).** `/m/restaurants` "Go there" mode has Directions plus a
+single Uber deeplink. The artboard also has Ola, a drive/walk ETA split, and
+per-ride fare cards. Fares need a rides API we do not call. But
+`buildOlaDeepLink` **already exists in `lib/deeplinks.ts` and only the WEB
+`components/RestaurantView.tsx` consumes it** — the mobile screen simply never
+got it.
+
+### Two live bugs the audit surfaced
+
+- **`/m/paywall`'s BYOK CTA was a dead end.** With no purchasable offer the
+  button reads "Use my own key" and `start()` pushed to `/m/profile`, which
+  has no key field and no link to one.
+- **`/m/chat` had NO rate-limit handling at all.** `/api/chat` returns 429
+  with "Daily limit reached. Add your API key to continue."; mobile's
+  `useChat` was destructured without `error` and configured without
+  `onError`, so a free user hitting the cap saw *nothing happen*. Web handles
+  the same case by opening `UpgradeDialog`. **This was newly reachable** — the
+  free cap never actually blocked anyone until the `check_and_increment_usage`
+  fix on this branch, which is why it went unnoticed.
+
+## Onboarding rebuilt — 2b, 2a, 2c, 2d, 6b (and what NOT to reverse)
+
+The flow went from 5 steps to 8: welcome → location → diet → **tastes** →
+goals → **calories** → **streak** → sign-in, plus a post-sign-in loader.
+
+**2a/2b were labelled "superseded by 4c/4b" and were still worth building.**
+The design file's own note calls 2a/2b/2d "greyed-history". That is right
+about the LAYOUT and wrong about the CONTENT: 2b carries cuisine tastes and
+hard-no allergies, which 4b (diet restrictions) never covered, and 2a carries
+a calorie-target readout that 4c has no equivalent of. They were added as new
+steps ALONGSIDE 4b/4c on an explicit user decision — **not** as replacements.
+Do not "clean this up" by deleting 4b/4c; that loses Halal/Keto/Pescatarian
+and breaks the goal→`WeightGoal` mapping, which only has three values.
+
+**Decisions that will look like omissions later:**
+
+- **2d's Apple and Facebook buttons are deliberately NOT built.**
+  `OAuthProvider` is typed `"google" | "github"`, there is no Apple Services
+  ID in Supabase, and Facebook was never wired anywhere. Both would be dead
+  controls — the same class of defect as the Restore button that drew an App
+  Store rejection. 2d's COPY ("Save your seat at the table") is used, because
+  it describes what has by then actually been collected. **If Apple sign-in is
+  ever wanted it is a dashboard + type change first, not a UI change** — and
+  note that offering any third-party sign-in makes Sign in with Apple an App
+  Store requirement, so this is a real pre-launch item, not cosmetic.
+- **Hard-no allergies merge into `dietaryPreferences`** (as `avoid <x>` tags)
+  rather than getting their own field. That array is already threaded into
+  every AI path as a strict "must respect" list — chat, coach, ingredients,
+  diet-chart. A new field would have needed all of them changed to be worth
+  anything. **Tastes deliberately do NOT go there**: they are preferences, not
+  restrictions, and putting "loves ramen" into a strict-filter array corrupts
+  it. `favoriteCuisines` is captured and persisted but is **not yet wired into
+  any prompt** — real remaining work, not an oversight.
+- **The calorie step still runs on a hardcoded stand-in body profile**
+  (`sex: "female", age: 30, heightCm: 165, weightKg: 62`). That predates this
+  work. NO screen in the design file — 2a included — collects sex/age/height/
+  weight, so a real profile capture is its own piece of work. The number shown
+  is honest about being Bo's starting estimate.
+- **6b could not live inside the onboarding component tree.** Google sign-in
+  is a full navigation away on web and a system-browser round trip on native,
+  so nothing from onboarding is still mounted on return. The loader is
+  therefore `components/mobile/WelcomeGate.tsx`, wrapping the `/m` shell and
+  gated on `?welcome=1`. It keys off UserContext's new `syncing` flag, which
+  tracks the ACTUAL remote pull in `syncTracker` — not a fixed timer — with a
+  900ms floor so it cannot flash and a 6s ceiling so a stalled sync cannot
+  strand the user.
+- **`signInWithProvider` gained a `next` parameter, and it fixed a live bug.**
+  `/api/auth/callback` defaults to `/chat`, so completing mobile onboarding
+  through the WEB flow dropped the user into the web tree. Mobile now passes
+  `/m?welcome=1`. Native was always fine — `initDeepLinks` routes those
+  returns itself.
+
+## Six more artboards closed — 7a, 7b, 7h fix, 1l, 7c, 7d
+
+Second pass over the audit's gap list. All six verified live in the browser,
+not just built — see the per-item notes for what that verification covered.
+
+- **7a (Meet Bo) + 7b (works with your apps)** land in onboarding right after
+  welcome, as their OWN beat — 7a draws no pager and 7b draws its own
+  two-segment one in the artboards, so they are outside `BAR_STEPS`, not
+  folded into the 7-segment run. 7a's "Ask me anything" field is a static
+  artboard prop; tapping it routes to the real `/m/chat` rather than opening a
+  keyboard on a dead input. 7b's five partner tiles use hex-ok'd brand colours
+  (same allowlisted pattern as `ConnectionsSection`) and its closing line says
+  "Connect accounts anytime in Settings" deliberately, not "connect now" —
+  only Swiggy has any linking path at all, and it's blocked upstream (Dead
+  End 1).
+- **7h's gap is closed on `/m/restaurants`**, not as a new route — 7h's
+  header, rating and distance badge were already in that card, and a second
+  screen would have duplicated the selection state. Two additions: an Ola
+  button beside Uber (`buildOlaDeepLink` already existed in `lib/deeplinks.ts`
+  and only the WEB `RestaurantView` called it — this was an omission, not a
+  decision), and a real haversine-derived drive/walk ETA chip labelled
+  "approx". **Deliberately NOT built: per-ride fares and pickup ETAs.** Those
+  need a rides API this app doesn't call; inventing them on a screen a user
+  is deciding from would repeat the exact fabricated-data mistake the recipe
+  carrot rating and the 4f stepper were both held back over.
+- **1l (streak & mascot unlocks) is a new route**, `/m/plan/streak`, reached
+  from both flame chips (Home header, Plan tab). The unlock ladder lives in
+  `lib/mascot-unlocks.ts` — 12 produce mascots (Bo excluded; he's the app's
+  face from first launch, not something to unlock), thresholds 1/3/5/7/10 from
+  the artboard extended to 14/21/30/45/60/90/120 on the same widening curve.
+  This answers the `.mascot-locked` product question the original handoff
+  parked, in the narrowest way that stays honest: everything derives from
+  `loggingStreak` and real meal logs, nothing new is persisted, so clearing
+  logs correctly re-locks the shelf and there's no unlock state to drift out
+  of sync. Verified at streak 0 (all locked, "0 of 12", zero-width progress)
+  and streak 4 (Carrot + Leek unlocked, "2 of 12", progress bar at the
+  hand-computed 50% toward Beet).
+- **7c (notifications) now has a MOBILE screen** —
+  `/m/settings/notifications` — wired to the same `push-client` /
+  `whatsapp-client` / `notifications-client` the web settings page uses, not
+  a reimplementation. The web route is NOT deleted; it's still the desktop
+  surface and still owns the Swiggy connection block, which has no mobile
+  artboard. `/m/profile`'s two links now point here instead of cross-loading
+  into the web shell; its Swiggy chip still goes to
+  `/settings?tab=connections` on purpose, since account linking (7e) still has
+  no mobile screen. Verified signed-out (toggles disabled, "sign in first"
+  banner, static nudge preview) — the signed-in push/WhatsApp toggle paths
+  need a real Supabase session to exercise, same gap as blocker 1.
+- **7d (bottom-up notification prompt)** is
+  `components/mobile/NotificationPrompt.tsx`, mounted on Home. Deliberately
+  narrower than "show it sometime": gated on signed-in AND push supported AND
+  permission still `"default"` (re-prompting after a denial is impossible
+  anyway) AND an actual streak (day 1 has nothing to protect — the artboard's
+  own hook is "keep your streak alive") AND not already asked. It shares a
+  seen-flag with onboarding's 2c step, which was fixed in the same pass: 2c's
+  "Skip" and "Maybe later" previously called the SAME handler as the primary
+  "Light the flame" button, so skipping still silently fired a real
+  `enableWebPush()` because the toggle defaults on — a real bug, not
+  something 7d introduced, caught while wiring the shared flag. Skip/maybe
+  now take a separate path that persists nothing about push. Uses
+  `.sheet-scrim`, which `mobile.css` already defined for exactly this
+  (bottom sheet over a dimmed backdrop) but had zero consumers until now.
+  Verified rendered (temporarily forced `show` to `true`, screenshotted,
+  reverted — the real gate needs a signed-in session to reach naturally).
+
+**New shared pieces from this pass:** `components/mobile/Switch.tsx` (the
+token-only toggle onboarding's 2c introduced, now shared with 7c rather than
+duplicated) and `lib/mascot-unlocks.ts` (the unlock ladder, so the shelf and
+any future consumer of it cannot drift apart the way `mm-dot` once did).
+
+**Not touched, and worth naming so it isn't assumed done:** 7e (link
+accounts) still has no mobile screen — it's the other half of what `/m/profile`'s
+Swiggy chip now points at on web. 7f (BYOK key entry) is still web-only. 3a–3d
+restaurant ordering is still explicitly out of scope per the design file's own
+note. Dark mode still has no deliberate review.
 
 ## What's actually next
 

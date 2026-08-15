@@ -9,6 +9,7 @@ import { getMealLogs } from "@/lib/storage";
 import { loggingStreak } from "@/lib/nutrition";
 import { foodImage } from "@/lib/food-images";
 import { CarrotRating } from "@/components/mobile/CarrotRating";
+import { NotificationPrompt } from "@/components/mobile/NotificationPrompt";
 import { Pea, Chili, Mushroom, Broccoli } from "@/components/mascots";
 
 /**
@@ -74,7 +75,7 @@ export default function MeshiHome() {
           </div>
 
           {streak > 0 && (
-            <Link href="/m/plan" className="streak-chip" aria-label={`${streak} day logging streak`}>
+            <Link href="/m/plan/streak" className="streak-chip" aria-label={`${streak} day logging streak`}>
               <Flame width={18} height={18} />
               {streak}
             </Link>
@@ -197,6 +198,7 @@ export default function MeshiHome() {
           </div>
         </div>
       </div>
+      <NotificationPrompt streak={streak} />
     </div>
   );
 }

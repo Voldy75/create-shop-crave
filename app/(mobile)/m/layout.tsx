@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import NativeInit from "@/components/mobile/NativeInit";
+import WelcomeGate from "@/components/mobile/WelcomeGate";
 
 /**
  * meshi mobile shell — cream surface, max-width phone column.
@@ -28,7 +29,7 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
       }}
     >
       <NativeInit />
-      {children}
+      <WelcomeGate>{children}</WelcomeGate>
     </div>
   );
 }

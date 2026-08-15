@@ -102,7 +102,7 @@ export default function ProfileTab() {
           <span className="t-h1" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</span>
           <span className="t-cap">{subtitle || user?.email || "Not signed in"}</span>
         </div>
-        <button className="icon-btn" onClick={() => router.push("/settings/notifications")} aria-label="Settings">
+        <button className="icon-btn" onClick={() => router.push("/m/settings/notifications")} aria-label="Settings">
           <Settings width={20} height={20} />
         </button>
       </div>
@@ -122,7 +122,12 @@ export default function ProfileTab() {
 
       {/* Destinations. Not in the artboard, but the tab bar has no Saved tab —
           this is its only entry point, and Location / Swiggy have none either.
-          Dropping them would orphan three working routes. */}
+          Dropping them would orphan three working routes.
+
+          Swiggy still leaves the /m tree on purpose: account linking (artboard
+          7e) has no mobile screen, and its only home is the web settings
+          Connections tab. Notifications used to point out here too and no
+          longer needs to. */}
       <div className="hstack hscroll" style={{ gap: 8 }}>
         <button className="chip" onClick={() => router.push("/m/saved")}>
           <Heart width={14} height={14} /> Saved
@@ -130,7 +135,7 @@ export default function ProfileTab() {
         <button className="chip" onClick={() => router.push("/m/onboarding")}>
           <MapPin width={14} height={14} /> {location ? "Location set" : "Set location"}
         </button>
-        <button className="chip" onClick={() => router.push("/settings/notifications")}>
+        <button className="chip" onClick={() => router.push("/settings?tab=connections")}>
           <Utensils width={14} height={14} /> Swiggy
         </button>
       </div>

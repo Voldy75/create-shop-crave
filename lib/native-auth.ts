@@ -37,15 +37,24 @@ export type OAuthProvider = "google" | "github";
  * Web:    normal redirect flow through /api/auth/callback.
  * Native: mint the authorize URL without navigating (skipBrowserRedirect),
  *         then open it in the system browser.
+ *
+ * `next` picks where /api/auth/callback lands the user after the exchange
+ * (it defaults to /chat there). Mobile onboarding passes "/m?welcome=1" —
+ * without it, finishing onboarding via the WEB flow (not the native app)
+ * dropped the user into the web tree instead of back into /m. Native ignores
+ * this entirely; initDeepLinks already routes native OAuth returns to /m.
  */
 export async function signInWithProvider(
   supabase: SupabaseClient,
-  provider: OAuthProvider
+  provider: OAuthProvider,
+  next?: string
 ): Promise<{ error?: string }> {
   if (!isNative()) {
+    const callback = new URL("/api/auth/callback", window.location.origin);
+    if (next) callback.searchParams.set("next", next);
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/api/auth/callback` },
+      options: { redirectTo: callback.toString() },
     });
     return error ? { error: error.message } : {};
   }

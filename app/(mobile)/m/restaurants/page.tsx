@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Search, MapPin as PinIcon, Navigation, Car, ExternalLink } from "lucide-react";
+import { ArrowLeft, Search, MapPin as PinIcon, Navigation, Car, Footprints, ExternalLink } from "lucide-react";
 import { getActiveRestaurants } from "@/lib/mobile-handoff";
 import { foodImage } from "@/lib/food-images";
 import RestaurantMap, { type MapPin } from "@/components/mobile/RestaurantMap";
@@ -12,6 +12,7 @@ import { useUser } from "@/app/context/UserContext";
 import {
   buildGoogleMapsDirectionsLink,
   buildUberDeepLink,
+  buildOlaDeepLink,
   buildSwiggyOrderLink,
   buildZomatoOrderLink,
 } from "@/lib/deeplinks";
@@ -28,7 +29,10 @@ import type { RestaurantSuggestion } from "@/lib/types";
  * The artboard's illustrated map is its stand-in for live tiles; we keep the
  * real map, restyled to the meshi palette. See components/mobile/RestaurantMap.
  *
- * All deeplinks (Directions, Uber, Swiggy, Zomato) are unchanged.
+ * Deeplinks: Directions, Uber, Ola, Swiggy, Zomato. The "Go there" mode is
+ * artboard 7h (dine-in) folded into this card rather than given its own
+ * route — 7h's header, rating row and distance badge are all already here,
+ * and a second screen would have duplicated the selection state.
  */
 
 const SAMPLE: RestaurantSuggestion = {
@@ -48,6 +52,38 @@ const FILTERS = ["Open now", "Under ₹₹", "4+"] as const;
 function carrotsFor(rating: string | undefined): number {
   const n = Number(rating);
   return Number.isFinite(n) ? Math.max(0, Math.min(5, Math.round(n))) : 4;
+}
+
+/** Great-circle km between two points. */
+function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+/**
+ * Rough drive/walk minutes from straight-line distance.
+ *
+ * Artboard 7h shows "12 min drive / 28 min walk" next to per-ride FARES and
+ * pickup ETAs. The fares and pickup times are NOT built and should not be:
+ * they need a rides API we do not call, and inventing them on the screen a
+ * user is deciding from is exactly the fabricated-data trap the recipe
+ * carrot rating and the 4f stepper were both held back over.
+ *
+ * These two numbers are different — they are derived from the real distance
+ * between the user and the restaurant, and are labelled "approx" because a
+ * straight line is not a road. 25 km/h is a conservative urban driving
+ * average; 4.8 km/h is a normal walking pace.
+ */
+function travelEstimate(km: number): { drive: number; walk: number } {
+  return {
+    drive: Math.max(1, Math.round((km / 25) * 60)),
+    walk: Math.max(1, Math.round((km / 4.8) * 60)),
+  };
 }
 
 export default function MobileRestaurants() {
@@ -85,6 +121,16 @@ export default function MobileRestaurants() {
     hasCoords && location
       ? buildUberDeepLink(location, { lat: selected.lat!, lng: selected.lng! }, selected.name)
       : "https://m.uber.com/";
+  const olaHref =
+    hasCoords && location
+      ? buildOlaDeepLink(location, { lat: selected.lat!, lng: selected.lng! }, selected.name)
+      : "https://book.olacabs.com/";
+  // Needs BOTH ends to be real — without the user's location there is no
+  // distance to derive, and a guess here would be worse than no chip.
+  const travel =
+    hasCoords && location
+      ? travelEstimate(distanceKm(location, { lat: selected.lat!, lng: selected.lng! }))
+      : null;
   const swiggyHref = selected?.swiggyUrl || buildSwiggyOrderLink(dish, location?.lat, location?.lng);
   const zomatoHref = selected?.zomatoUrl || buildZomatoOrderLink(dish, selected?.area);
 
@@ -194,6 +240,22 @@ export default function MobileRestaurants() {
               )}
             </div>
 
+            {/* 7h's drive/walk readout. "approx" is load-bearing — this is a
+                straight-line estimate, not a routed one. */}
+            {mode === "go" && travel && (
+              <div className="hstack" style={{ gap: 6, flexWrap: "wrap" }}>
+                <span className="chip chip-tag" style={{ height: 26, gap: 4, background: "var(--m-card)", color: "var(--m-ink)" }}>
+                  <Car width={12} height={12} />
+                  ~{travel.drive} min drive
+                </span>
+                <span className="chip chip-tag" style={{ height: 26, gap: 4, background: "var(--m-card)", color: "var(--m-ink-soft)" }}>
+                  <Footprints width={12} height={12} />
+                  ~{travel.walk} min walk
+                </span>
+                <span className="t-micro" style={{ alignSelf: "center" }}>approx</span>
+              </div>
+            )}
+
             {/* Go there / Order in — decides what the primary action and the
                 secondary links below do. */}
             <div className="hstack" style={{ gap: 6 }}>
@@ -203,8 +265,15 @@ export default function MobileRestaurants() {
                     <Navigation width={14} height={14} />
                     Directions
                   </a>
-                  <button className="pill-tonal pill-sm" style={{ flex: 1 }} onClick={() => setMode("order")}>
+                  {/* Ola sits beside Uber because 7h offers a CHOICE of ride.
+                      buildOlaDeepLink already existed and only the web tree
+                      consumed it — this screen shipped Uber-only by omission,
+                      not by decision. */}
+                  <a className="pill-tonal pill-sm" style={{ flex: 1 }} href={olaHref} target="_blank" rel="noopener noreferrer">
                     <Car width={14} height={14} />
+                    Ola
+                  </a>
+                  <button className="pill-tonal pill-sm" style={{ flex: 1 }} onClick={() => setMode("order")}>
                     Order in
                   </button>
                 </>

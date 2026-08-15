@@ -138,9 +138,14 @@ export default function PlanTracker() {
         <div className="hstack" style={{ justifyContent: "space-between" }}>
           <span className="t-h1">Logged meals</span>
           {streak > 0 && (
-            <span className="streak-chip" style={{ height: 32 }}>
+            <button
+              className="streak-chip"
+              style={{ height: 32, border: "none", cursor: "pointer" }}
+              onClick={() => router.push("/m/plan/streak")}
+              aria-label={`${streak} day streak — open mascot shelf`}
+            >
               🔥 {streak} day{streak === 1 ? "" : "s"}
-            </span>
+            </button>
           )}
         </div>
 
