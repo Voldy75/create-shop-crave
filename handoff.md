@@ -48,15 +48,15 @@ posture and the design-fidelity findings. **If you change something material on
 this branch, update the PR description too**; it is the only thing a reviewer
 reads, and it drifted out of date once already.
 
-**⚠️ IT IS OUT OF DATE RIGHT NOW.** The PR body predates the artboard audit
-and the nine screens that closed its gaps (7a, 7b, 2a, 2b, 2c, 2d, 6b, 1l,
-7c, 7d, plus the 7h fix). A reviewer reading only the PR will not know those
-exist, will not know about the two live bugs fixed alongside them (the mobile
-sign-in redirect landing in the web tree, and 2c's Skip silently firing a
-permission request), and will see a stale route count. Bring it in step
-before anyone is asked to review.
+**It is currently IN STEP** (brought up to date after the artboard-coverage
+pass). It now carries the coverage audit and its results, the nine screens
+that closed those gaps, the three things deliberately not built and why, both
+live bugs fixed alongside them, a 10f phase row naming what is still open,
+and the note that the new notifications screen was only ever verified
+signed-out. If you change something material, it drifts again — it has done
+so twice already.
 
-**Commit counts — do not be surprised.** `git log main..HEAD` returns **~78**
+**Commit counts — do not be surprised.** `git log main..HEAD` returns **~79**
 commits and still climbing; do not treat that figure as current either, count
 it yourself. The itemized 14 below cover only through the merge
 consolidation (`3910bc1`); everything after that is Phase 10 screen-by-screen
@@ -1565,11 +1565,8 @@ but the forest STATS band's remaining values — "50+ cuisines Bo speaks" and
 & Grok" WAS checked, and was false; it is 3 and there is no Grok.) Verify or
 cut them before the landing is public.
 
-Four things worth doing before more UI:
+Three things worth doing before more UI:
 
-- **Update the PR #33 body.** It predates the audit and the nine screens that
-  closed its gaps — see the warning at the top of this file. Cheapest item
-  here and it gates anyone reviewing usefully.
 - **A real-device pass on `/m/log`.** The `getUserMedia` viewfinder has never
   run — camera access is blocked in the preview browser, so only the file
   fallback has been exercised.
