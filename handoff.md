@@ -115,13 +115,15 @@ and the note that the new notifications screen was only ever verified
 signed-out. If you change something material, it drifts again — it has done
 so twice already.
 
-**Commit counts — do not be surprised.** `git log main..HEAD` returns **~79**
+**Commit counts — do not be surprised.** `git log main..HEAD` returns **~83**
 commits and still climbing; do not treat that figure as current either, count
 it yourself. The itemized 14 below cover only through the merge
 consolidation (`3910bc1`); everything after that is Phase 10 screen-by-screen
-design work, then 10d/10e, then the dependency pass — see the sections further
-down for that history in detail, or `git log 3910bc1..HEAD --oneline` for the
-raw list. Of the original 35, only 14 were this work — the other ~21 were the
+design work, then 10d/10e, then the dependency pass, then the artboard-coverage
+pass (audit + nine screens, `2fd0ff8`), the `/m/log` camera-viewfinder fix
+(`6ba913a`), and the docs restructure (MOBILE_SETUP.md rewrite + the pending
+index) — see the sections further down for that history in detail, or
+`git log 3910bc1..HEAD --oneline` for the raw list. Of the original 35, only 14 were this work — the other ~21 were the
 mobile repo's own history, which arrived with the merge and now lives in this
 repo. That is the consolidation working as intended, not stray commits. The
 original 14:
@@ -1515,8 +1517,14 @@ change: point the paywall's BYOK CTA at it and open it from chat's 429.
 
 ## Onboarding rebuilt — 2b, 2a, 2c, 2d, 6b (and what NOT to reverse)
 
-The flow went from 5 steps to 8: welcome → location → diet → **tastes** →
-goals → **calories** → **streak** → sign-in, plus a post-sign-in loader.
+The flow went from 5 steps to **10**: welcome → **Meet Bo (7a)** →
+**works-with-apps (7b)** → location → diet → **tastes** → goals →
+**calories** → **streak** → sign-in, plus a post-sign-in loader. (This
+paragraph originally said "to 8" — that was before 7a/7b were added right
+after welcome; see "Six more artboards closed" below for those two.) Only
+location→sign-in carry the progress bar; welcome and the 7a/7b intro pair sit
+outside it, which is the artboards' own structure — 7a draws no pager and 7b
+draws its own two-segment one.
 
 **2a/2b were labelled "superseded by 4c/4b" and were still worth building.**
 The design file's own note calls 2a/2b/2d "greyed-history". That is right
