@@ -37,15 +37,20 @@ something, update BOTH this index and the section it points to.
    "Blocked on you" §5.
 
 **B. Unbuilt / partial screens (real code work)**
-5. **7e (link accounts) and 7f (BYOK key entry)** exist only in the WEB tree;
-   the mobile app has no native version. → 10f row in "Phase status", and the
-   Flow 9 findings.
+5. **7e (link accounts)** exists only in the WEB tree; the mobile app has no
+   native version. **7f (BYOK key entry) — DONE.** A mobile `/m/settings/key`
+   screen now exists (built to 7f, on the cream shell, all three providers
+   legible), storing to the shared `lib/byok` slots web also reads. → 10f row
+   in "Phase status", and the Flow 9 findings.
 6. **6a animated splash** — needs the native shell (blocked on A3). **3a–3d /
    1i** (restaurant ordering) are out of scope by the design file's own note. →
    10f row.
-7. **The `/m/paywall` BYOK CTA is a dead end** and **`/m/chat` has no 429
-   handling** — two live bugs surfaced by the audit, not yet fixed. → "Two live
-   bugs the audit surfaced — STILL OPEN".
+7. ~~**The `/m/paywall` BYOK CTA is a dead end** and **`/m/chat` has no 429
+   handling**~~ — **BOTH FIXED.** The paywall's "Use my own key" CTA now pushes
+   to `/m/settings/key` (was `/m/profile`, which has no key field); `/m/chat`
+   now reads the stored key into the request body and routes a 429 to
+   `/m/settings/key?from=chat` (was silent). → "Two live bugs the audit
+   surfaced".
 
 **C. Verification gaps (built, not proven)**
 8. **Admin console** — never rendered by anyone; needs `ADMIN_EMAIL` (A1).
@@ -176,7 +181,7 @@ project before the merge.
 | 8 MCP provider registry | done, applied |
 | 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
 | 10 meshi re-skin | **DONE — all of 10a–10e.** Mobile + web converted, mascot motion + brand assets shipped, `--cc-*` deleted (mechanical exit criterion verified zero), CI hex/rgba gate live. Real, tracked debt remains in screens with no artboard — see the 10e write-up below for exactly which. |
-| 10f artboard coverage | **PARTIAL, and it is the honest successor to "10 DONE".** The code-by-code audit found the re-skin converted every ROUTE but left 12 of 37 artboard codes unbuilt. Nine are now closed (7a, 7b, 2a, 2b, 2c, 2d, 6b, 1l, 7c, 7d + the 7h fix). **Still open: 7e** (link accounts, web-only), **7f** (BYOK key entry, web-only), **6a** (animated splash, needs the native shell), **3a–3d/1i** (out of scope by the design file's own note), **5a/7i** (dark mode). |
+| 10f artboard coverage | **PARTIAL, and it is the honest successor to "10 DONE".** The code-by-code audit found the re-skin converted every ROUTE but left 12 of 37 artboard codes unbuilt. Nine are now closed (7a, 7b, 2a, 2b, 2c, 2d, 6b, 1l, 7c, 7d + the 7h fix), plus **7f** (BYOK key entry) built as mobile `/m/settings/key`. **Still open: 7e** (link accounts, web-only), **6a** (animated splash, needs the native shell), **3a–3d/1i** (out of scope by the design file's own note), **5a/7i** (dark mode). |
 
 ## Blocked on you — nothing proceeds past these
 
@@ -1454,8 +1459,9 @@ below; four had none at all.
 **Stale as of the pass right after this one — read "Six more artboards
 closed" further down before trusting any status below.** 7a, 7b, 1l, 7c and
 7d moved from not-built/wrong-tree to built; 7h moved from partial to done
-(minus fares, which stay out on purpose). This table is kept for the codes
-that are STILL gaps: 6a, 3a–3d/1i, 7f, 5a/7i, and 7e.
+(minus fares, which stay out on purpose). 7f has since been built too (mobile
+`/m/settings/key`). This table is kept for the codes that are STILL gaps: 6a,
+3a–3d/1i, 5a/7i, and 7e.
 
 **How to redo this audit.** The artboard index is one command — extract
 `dv-opt` ids and their `dv-olabel` text from the design file, and group them
@@ -1470,7 +1476,7 @@ that is exactly the error Phase 10b made.
 | 3a–3d, 1i | Restaurant menu → cart → details → tracking → checkout | **The design file itself rules these out.** The note trailing 3d says dine-in 7h is the shipped path and restaurant in-app ordering 3a–3d "stays a future concept; grocery buy is Flow 4." Also needs an orders table, and Swiggy MCP rejects our origin (Dead End 1). |
 | 1l | Streak & mascot unlocks | Was blocked on the mascot-unlock gamification question. `loggingStreak` already existed, so this was a product decision, not a data problem. |
 | 7d | Bottom-up notification prompt | Deferred. Consequence: combined with 2c also missing, NOTHING in the mobile tree ever asked for notification permission. |
-| 7f | BYOK key screen | Key entry exists only in web `components/UpgradeDialog.tsx`. |
+| 7f | BYOK key screen | **DONE** — built as mobile `/m/settings/key`. Was web-only (`components/UpgradeDialog.tsx`); the mobile screen shares the `lib/byok` storage and is the target the paywall CTA and chat 429 now route to. |
 | 5a, 7i | Dark-mode Home, dark dish detail | Deferred with the rest of dark mode, which still has never had a deliberate review. |
 
 ### Not built, and NO reason was ever recorded
@@ -1497,23 +1503,36 @@ per-ride fare cards. Fares need a rides API we do not call. But
 `components/RestaurantView.tsx` consumes it** — the mobile screen simply never
 got it.
 
-### Two live bugs the audit surfaced — STILL OPEN, not yet fixed
+### Two live bugs the audit surfaced — NOW FIXED
 
-**These are unfixed as of this writing** (verified in code: paywall still
-`router.push("/m/profile")`, chat's `useChat` still has no `error`/`onError`).
-They are index item B7. Wired together — a mobile 7f screen — they close in one
-change: point the paywall's BYOK CTA at it and open it from chat's 429.
+**Both closed** by building the mobile 7f screen (`app/(mobile)/m/settings/key`)
+and wiring the two entry points at it, exactly as the plan below anticipated:
+"point the paywall's BYOK CTA at it and open it from chat's 429." They were
+index item B7.
 
-- **`/m/paywall`'s BYOK CTA is a dead end.** With no purchasable offer the
-  button reads "Use my own key" and `start()` pushes to `/m/profile`, which
-  has no key field and no link to one.
-- **`/m/chat` has NO rate-limit handling at all.** `/api/chat` returns 429
-  with "Daily limit reached. Add your API key to continue."; mobile's
-  `useChat` is destructured without `error` and configured without
-  `onError`, so a free user hitting the cap sees *nothing happen*. Web handles
-  the same case by opening `UpgradeDialog`. **This is newly reachable** — the
-  free cap never actually blocked anyone until the `check_and_increment_usage`
-  fix on this branch, which is why it went unnoticed.
+- **`/m/paywall`'s BYOK CTA was a dead end.** With no purchasable offer the
+  button reads "Use my own key" and `start()` pushed to `/m/profile`, which has
+  no key field. It now pushes to `/m/settings/key`. (The CTA itself only renders
+  on native, where `canPurchase` is false — on web/localhost the paid path shows
+  instead, so this branch is not reproducible in the browser; the change is the
+  one-line `router.push` target in `start()`.)
+- **`/m/chat` had NO rate-limit handling at all.** `/api/chat` returns 429 with
+  "Daily limit reached. Add your API key to continue."; mobile's `useChat` was
+  configured without `onResponse`/`onError`, so a free user hitting the cap saw
+  *nothing happen*. It now (a) reads the stored key from `lib/byok` at mount and
+  passes `provider`/`apiKey` in the request body — so a key set on the new
+  screen (or on web) actually lifts the cap — and (b) routes a 429 to
+  `/m/settings/key?from=chat`, which shows the "hit today's free limit" copy and
+  bounces back to `/m/chat` once a key is saved. A BYOK 400 (invalid key) is
+  deliberately NOT routed there, to avoid looping the user to a screen where
+  their bad key already sits.
+
+**Shared cleanup done alongside:** the BYOK localStorage slots
+(`crave_byok_provider` / `crave_byok_key`) were re-declared inline in three
+places (web chat, web arena, hand-cleared in UserContext). They now live once in
+`lib/byok.ts` (`getStoredBYOK` / `saveBYOK` / `clearBYOK`); all four call sites
+import from it. `npx tsc --noEmit`, `next build`, and `npm run check:hex` are
+clean; route count is now **73** (`/m/settings/key` added).
 
 ## Onboarding rebuilt — 2b, 2a, 2c, 2d, 6b (and what NOT to reverse)
 
@@ -1645,7 +1664,8 @@ any future consumer of it cannot drift apart the way `mm-dot` once did).
 
 **Not touched, and worth naming so it isn't assumed done:** 7e (link
 accounts) still has no mobile screen — it's the other half of what `/m/profile`'s
-Swiggy chip now points at on web. 7f (BYOK key entry) is still web-only. 3a–3d
+Swiggy chip now points at on web. (7f BYOK key entry has since been built as
+mobile `/m/settings/key` — see "Two live bugs the audit surfaced".) 3a–3d
 restaurant ordering is still explicitly out of scope per the design file's own
 note. Dark mode still has no deliberate review.
 
