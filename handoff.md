@@ -136,16 +136,31 @@ Swiggy silently switches off at cutover.
 **3. `com.cravecreate.app://auth/callback` must be added to Supabase → Auth →
 URL Configuration.** Native sign-in cannot work without it (see Dead End 7).
 
-**4. Native toolchain.** `ios/` and `android/` do not exist. Xcode 26.6 is
-installed but **CocoaPods is not**, and there is no Android SDK, so
-`npx cap add ios` fails at `pod install`. RevenueCat also needs an account plus
-products in App Store Connect / Play Console.
+**4. Native toolchain — the full ordered checklist now lives in
+`MOBILE_SETUP.md`.** Go there rather than working from this paragraph; it
+carries the sequencing, which matters. Summary only:
 
-When you do get there, the icon/splash step is two commands and unchanged in
-behaviour: `npm run gen:resources` (writes `resources/*.png` via sharp) then
-`npm run assets`. The second now pulls `@capacitor/assets` via `npx` instead of
-it being a devDependency — see "Dependency advisories" for why. Nothing to
-install first; npx fetches it.
+`ios/` and `android/` do not exist. Xcode 26.6 is installed but **CocoaPods is
+not**, so `npx cap add ios` fails at `pod install`. Android is worse than
+"no SDK" — there is **no Java runtime on this machine at all**, so it cannot
+build even once the SDK lands.
+
+**Two things that paragraph used to get wrong, and are worth carrying here:**
+
+- **IAP is not built, not merely unconfigured.**
+  `@revenuecat/purchases-capacitor` is NOT in the dependency tree.
+  `purchaseStoreProduct` in `lib/billing.ts` is a `TODO` returning
+  `"unavailable"`, and `restorePurchases` is a deliberate no-op. This is
+  compliant rather than broken — `canPurchase` is false on native so the
+  paywall collapses to BYOK — but the app cannot sell anything on mobile.
+- **Pinning the Vercel alias must happen BEFORE `npx cap add`**, and it is the
+  only genuinely irreversible item in the project. See `capacitor.config.ts`'s
+  own header comment, and item 1 of `MOBILE_SETUP.md`.
+
+The icon/splash step is unchanged: `npm run gen:resources` then
+`npm run assets`. The second pulls `@capacitor/assets` via `npx` instead of it
+being a devDependency — see "Dependency advisories" for why. Nothing to install
+first; npx fetches it.
 
 **5. Google Maps key is HTTP-referrer-restricted** to the web domain, so the
 map falls back on mobile and on localhost. Google Cloud Console allowlist fix, not code.
