@@ -238,12 +238,20 @@ export default function MobileLog() {
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const dataUrl = await new Promise<string>((res, rej) => {
-      const fr = new FileReader();
-      fr.onload = () => res(fr.result as string);
-      fr.onerror = rej;
-      fr.readAsDataURL(file);
-    });
+    let dataUrl: string;
+    try {
+      dataUrl = await new Promise<string>((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(fr.result as string);
+        fr.onerror = () => rej(fr.error ?? new Error("read failed"));
+        fr.readAsDataURL(file);
+      });
+    } catch {
+      // A corrupt file or a permission race rejects the read. Land on the
+      // screen's own error state instead of throwing an unhandled rejection.
+      setError("Couldn't read that photo — try another.");
+      return;
+    }
     stopCamera();
     setImage(dataUrl);
     await analyze({ kind: "photo", imageBase64: dataUrl });

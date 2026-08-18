@@ -17,6 +17,16 @@ function encodeCursor(createdAt: string, userId: string): string {
   return Buffer.from(`${createdAt}|${userId}`, "utf8").toString("base64");
 }
 
+// The cursor is client-supplied (base64) and its parts are interpolated into a
+// PostgREST `.or()` filter below, so both must be validated to formats that
+// cannot carry filter syntax (a comma or `)` would alter the expression). A
+// UUID and an ISO timestamp both do — this closes the injection vector at the
+// door rather than trusting the round-trip. Not an escalation (the route is
+// requireAdmin on a service client), but malformed input should 400, not 500.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Postgres timestamptz serialises as digits + `-`, `T`/space, `:`, `.`, `+`, `Z`.
+const TIMESTAMP_RE = /^[0-9T:.+\- Z]+$/;
+
 function decodeCursor(cursor: string): { createdAt: string; userId: string } | null {
   try {
     const decoded = Buffer.from(cursor, "base64").toString("utf8");
@@ -25,6 +35,8 @@ function decodeCursor(cursor: string): { createdAt: string; userId: string } | n
     const createdAt = decoded.slice(0, sep);
     const userId = decoded.slice(sep + 1);
     if (!createdAt || !userId) return null;
+    if (!UUID_RE.test(userId)) return null;
+    if (!TIMESTAMP_RE.test(createdAt) || Number.isNaN(Date.parse(createdAt))) return null;
     return { createdAt, userId };
   } catch {
     return null;

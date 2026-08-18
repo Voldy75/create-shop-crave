@@ -89,14 +89,18 @@ export async function registerNativePush(): Promise<string | null> {
     // Wait for the registration event (token) — or registrationError.
     const token = await new Promise<string | null>((resolve) => {
       let settled = false;
+      // addListener resolves to a handle; collect them so both are torn down
+      // once we settle. Without this, every call (retry / prompt re-mount)
+      // leaks two Capacitor listeners for the life of the native session.
+      const handles: Promise<{ remove: () => unknown }>[] = [];
       const done = (v: string | null) => {
-        if (!settled) {
-          settled = true;
-          resolve(v);
-        }
+        if (settled) return;
+        settled = true;
+        for (const h of handles) h.then((handle) => handle.remove()).catch(() => {});
+        resolve(v);
       };
-      PushNotifications.addListener("registration", (t) => done(t.value));
-      PushNotifications.addListener("registrationError", () => done(null));
+      handles.push(PushNotifications.addListener("registration", (t) => done(t.value)));
+      handles.push(PushNotifications.addListener("registrationError", () => done(null)));
       PushNotifications.register().catch(() => done(null));
       // Safety timeout so a silent failure doesn't hang the caller.
       setTimeout(() => done(null), 15000);
