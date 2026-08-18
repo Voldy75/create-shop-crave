@@ -1,6 +1,6 @@
 # Handoff — Crave & Create (web + mobile, unified)
 
-Last updated: 2026-08-11. Written for a session with zero prior context.
+Last updated: 2026-08-18. Written for a session with zero prior context.
 Supersedes the two separate handoffs that lived in the web and mobile repos.
 
 ## Goal
@@ -9,8 +9,67 @@ One codebase, one backend, one design system serving a web app and a
 Capacitor-wrapped iOS/Android app; plus an admin console that configures plans,
 limits, and MCP providers at runtime instead of in code.
 
-Full roadmap: `~/.claude/plans/let-s-revisit-so-far-proud-marshmallow.md`.
-That file owns sequencing. This file records state.
+**On "the plan."** There is an original implementation plan at
+`~/.claude/plans/let-s-revisit-so-far-proud-marshmallow.md` — but it is
+**out-of-repo and stale** (dated 2026-08-01, so it predates all of Phase 10,
+the artboard audit, and everything after). Treat it as HISTORICAL: useful for
+the original reasoning, not for what is left to do. **This file plus
+`MOBILE_SETUP.md` are the live source of truth for pending work** — start with
+the consolidated index directly below.
+
+## Pending work — consolidated index
+
+Everything still to execute, most-blocking first. Each line points at the
+section with the detail; this list is a map, not the territory. When you finish
+something, update BOTH this index and the section it points to.
+
+**A. Hard blockers — nothing ships past these, and they are all yours (no code)**
+1. **Vercel env vars** — `ADMIN_EMAIL`, `NEXT_PUBLIC_ADMIN_EMAIL`, `RAZORPAY_*`,
+   `STRIPE_*` (both projects); `SWIGGY_CLIENT_ID`, `NEXT_PUBLIC_SITE_URL` (web
+   project). → "Blocked on you" §1–2. Unblocks Phase 5 cutover, payments, and
+   the admin console (never once rendered).
+2. **Supabase redirect URL** — add `com.cravecreate.app://auth/callback`. →
+   "Blocked on you" §3. One minute; de-risks the highest-risk unverified path.
+3. **Native toolchain + accounts** — CocoaPods, a JDK, the Android SDK; Apple +
+   Play accounts. → `MOBILE_SETUP.md` (the full ordered checklist). **Pin the
+   Vercel alias FIRST — it is the only irreversible step.**
+4. **Google Maps key** — HTTP-referrer-restricted, falls back on mobile. →
+   "Blocked on you" §5.
+
+**B. Unbuilt / partial screens (real code work)**
+5. **7e (link accounts) and 7f (BYOK key entry)** exist only in the WEB tree;
+   the mobile app has no native version. → 10f row in "Phase status", and the
+   Flow 9 findings.
+6. **6a animated splash** — needs the native shell (blocked on A3). **3a–3d /
+   1i** (restaurant ordering) are out of scope by the design file's own note. →
+   10f row.
+7. **The `/m/paywall` BYOK CTA is a dead end** and **`/m/chat` has no 429
+   handling** — two live bugs surfaced by the audit, not yet fixed. → "Two live
+   bugs the audit surfaced — STILL OPEN".
+
+**C. Verification gaps (built, not proven)**
+8. **Admin console** — never rendered by anyone; needs `ADMIN_EMAIL` (A1).
+9. **`/m/settings/notifications` (7c) + the 7d prompt** — verified signed-OUT
+   only; the push/WhatsApp/test-send paths need a real session. → "What's
+   actually next".
+10. **`/m/log` on hardware** — viewfinder bug fixed and exercised via a
+    synthetic stream; real permission/rear-camera/EXIF/iOS-autoplay still
+    unproven. → the `/m/log` section, which carries the `--experimental-https`
+    recipe.
+11. **Dark mode** — renders, never deliberately reviewed; now larger since the
+    nine new screens were built light-only. → "What's actually next".
+12. **Any real payment**, on any provider. → "What is verified, and what is
+    not" (PR #33 body).
+
+**D. Content / decisions (cheap, pre-launch)**
+13. **Unverified marketing copy** — "50+ cuisines", "<10s to a full recipe". →
+    "What's actually next".
+14. **The split product name** — "meshi" vs "Crave & Create". → 10d write-up,
+    and `MOBILE_SETUP.md` §8.
+
+**E. Deliberately deferred, its own piece of work**
+15. **The `ai` v3→v7 SDK upgrade** (the remaining 14 npm advisories). → the
+    "remaining 14" dependency section — do it with a real account available.
 
 ## Where the work lives
 
@@ -1436,16 +1495,21 @@ per-ride fare cards. Fares need a rides API we do not call. But
 `components/RestaurantView.tsx` consumes it** — the mobile screen simply never
 got it.
 
-### Two live bugs the audit surfaced
+### Two live bugs the audit surfaced — STILL OPEN, not yet fixed
 
-- **`/m/paywall`'s BYOK CTA was a dead end.** With no purchasable offer the
-  button reads "Use my own key" and `start()` pushed to `/m/profile`, which
+**These are unfixed as of this writing** (verified in code: paywall still
+`router.push("/m/profile")`, chat's `useChat` still has no `error`/`onError`).
+They are index item B7. Wired together — a mobile 7f screen — they close in one
+change: point the paywall's BYOK CTA at it and open it from chat's 429.
+
+- **`/m/paywall`'s BYOK CTA is a dead end.** With no purchasable offer the
+  button reads "Use my own key" and `start()` pushes to `/m/profile`, which
   has no key field and no link to one.
-- **`/m/chat` had NO rate-limit handling at all.** `/api/chat` returns 429
+- **`/m/chat` has NO rate-limit handling at all.** `/api/chat` returns 429
   with "Daily limit reached. Add your API key to continue."; mobile's
-  `useChat` was destructured without `error` and configured without
-  `onError`, so a free user hitting the cap saw *nothing happen*. Web handles
-  the same case by opening `UpgradeDialog`. **This was newly reachable** — the
+  `useChat` is destructured without `error` and configured without
+  `onError`, so a free user hitting the cap sees *nothing happen*. Web handles
+  the same case by opening `UpgradeDialog`. **This is newly reachable** — the
   free cap never actually blocked anyone until the `check_and_increment_usage`
   fix on this branch, which is why it went unnoticed.
 
