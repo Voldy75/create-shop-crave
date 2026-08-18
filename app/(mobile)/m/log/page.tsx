@@ -81,6 +81,12 @@ export default function MobileLog() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [liveCamera, setLiveCamera] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [camDenied, setCamDenied] = useState(false);
+  // Bumped to force a re-acquire. The effect's other deps (phase, mode) do not
+  // change when an analysis fails, so without this the camera stays dead after
+  // a failed shot and the user has to toggle modes to get it back.
+  const [camNonce, setCamNonce] = useState(0);
 
   useEffect(() => {
     setLogs(getMealLogs());
@@ -99,9 +105,19 @@ export default function MobileLog() {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
         streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
+        setCamDenied(false);
+        // NOTE: do NOT assign videoRef.current.srcObject here. The <video> is
+        // rendered only once liveCamera is true, so at this point the element
+        // does not exist yet and the ref is null — the assignment silently did
+        // nothing, leaving a black viewfinder over a live camera and a 0x0
+        // capture canvas that serialised to the string "data:,". attachVideo
+        // below owns the assignment instead, because a callback ref fires
+        // exactly when the node mounts.
         setLiveCamera(true);
-      } catch {
+      } catch (e) {
+        // A denied permission and an absent camera need different copy: one is
+        // fixable by the user, the other is not.
+        setCamDenied(e instanceof DOMException && (e.name === "NotAllowedError" || e.name === "SecurityError"));
         setLiveCamera(false);
       }
     })();
@@ -110,14 +126,29 @@ export default function MobileLog() {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     };
-  }, [phase, mode]);
+  }, [phase, mode, camNonce]);
+
+  /* Owns srcObject. Runs the moment React mounts the <video>, which is always
+     AFTER the stream resolved — see the note in the effect above. The explicit
+     play() is for iOS Safari, which does not reliably autostart a srcObject
+     assigned post-mount even with autoplay/muted/playsInline. */
+  const attachVideo = useCallback((node: HTMLVideoElement | null) => {
+    videoRef.current = node;
+    if (node && streamRef.current && node.srcObject !== streamRef.current) {
+      node.srcObject = streamRef.current;
+      node.play().catch(() => { /* autoplay refusal is non-fatal; frames still decode */ });
+    }
+  }, []);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setLiveCamera(false);
+    setVideoReady(false);
   }, []);
 
+  /** Returns true when it advanced to the verdict, so callers know whether to
+   *  restore the viewfinder for another attempt. */
   const analyze = useCallback(async (payload: { kind: "photo"; imageBase64: string } | { kind: "dish"; name: string }) => {
     setAnalyzing(true);
     setError(null);
@@ -136,7 +167,7 @@ export default function MobileLog() {
               ? "Sign in to let Bo read your plate."
               : data.message || "Bo couldn't read that one.",
         );
-        return;
+        return false;
       }
       const r = data as AnalyzeResult;
       setResult(r);
@@ -150,8 +181,10 @@ export default function MobileLog() {
       setPortion(1);
       setEditing(false);
       setPhase("verdict");
+      return true;
     } catch {
       setError("Network error — try again.");
+      return false;
     } finally {
       setAnalyzing(false);
     }
@@ -181,6 +214,14 @@ export default function MobileLog() {
     }
     const video = videoRef.current;
     if (!video || !liveCamera) return;
+    // Dimensions are 0 until the first frame's metadata lands. A 0x0 canvas
+    // serialises to the literal string "data:," — which used to be POSTed to
+    // /api/meals/analyze as a real photo, spending a quota-metered, server-paid
+    // model call on nothing. Never send a frame we do not have.
+    if (!video.videoWidth || !video.videoHeight) {
+      setError("Camera is still warming up — try that again in a second.");
+      return;
+    }
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -188,7 +229,10 @@ export default function MobileLog() {
     const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
     stopCamera();
     setImage(dataUrl);
-    await analyze({ kind: "photo", imageBase64: dataUrl });
+    const ok = await analyze({ kind: "photo", imageBase64: dataUrl });
+    // Quota, auth and network failures all leave the user on the capture
+    // screen. Give the viewfinder back so a retry is possible.
+    if (!ok) { setImage(null); setCamNonce((n) => n + 1); }
   };
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,7 +289,16 @@ export default function MobileLog() {
         <div className="capture-view">
           {mode === "photo" ? (
             <>
-              {liveCamera && <video ref={videoRef} autoPlay playsInline muted className="capture-video" />}
+              {liveCamera && (
+                <video
+                  ref={attachVideo}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="capture-video"
+                  onLoadedMetadata={() => setVideoReady(true)}
+                />
+              )}
               <div className="capture-frame" />
               <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 12px) + 20px)", left: 0, right: 0, display: "flex", justifyContent: "center" }}>
                 <span className="chip capture-hint">Center the plate — Bo&rsquo;s watching 👀</span>
@@ -253,7 +306,11 @@ export default function MobileLog() {
               {!liveCamera && !isNative() && (
                 <div className="vstack" style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center", gap: 12, padding: 30, textAlign: "center" }}>
                   <BoBowl width={56} height={56} />
-                  <span className="t-body on-dark-text">No live camera here — pick a photo instead.</span>
+                  <span className="t-body on-dark-text">
+                    {camDenied
+                      ? "Camera access is off. Allow it in your browser settings, or pick a photo instead."
+                      : "No live camera here — pick a photo instead."}
+                  </span>
                 </div>
               )}
             </>
@@ -310,7 +367,14 @@ export default function MobileLog() {
 
             {mode === "photo" ? (
               liveCamera || isNative() ? (
-                <button className="shutter" onClick={shoot} disabled={analyzing} aria-label="Take photo"><span /></button>
+                /* Disabled until the first frame's metadata lands — see the
+                   dimension guard in shoot(). */
+                <button
+                  className="shutter"
+                  onClick={shoot}
+                  disabled={analyzing || (liveCamera && !videoReady)}
+                  aria-label="Take photo"
+                ><span /></button>
               ) : (
                 <label className="shutter" aria-label="Choose a photo">
                   <span />

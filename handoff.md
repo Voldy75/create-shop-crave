@@ -348,9 +348,44 @@ is the same endpoint `components/planner/LogMealSheet.tsx` has been using on
 web. One route, two phases.
 
 - Web uses a real `getUserMedia` viewfinder; native uses the OS camera; both
-  fall back to a file picker. **The getUserMedia path has never been exercised**
-  — camera access is blocked in the preview browser — so it needs a real-device
-  check.
+  fall back to a file picker.
+- **The viewfinder was COMPLETELY BROKEN and had been since it was written.
+  Fixed — but understand the failure, because the shape of it recurs.** The
+  `<video>` renders only when `liveCamera` is true, and the effect assigned
+  `videoRef.current.srcObject` *before* calling `setLiveCamera(true)` — so the
+  element did not exist yet and the ref was `null`. The assignment silently did
+  nothing. Consequences, all of which fired on **every** device that granted
+  permission:
+  - the viewfinder was a black rectangle while the camera light was ON, because
+    the stream was live and simply never attached to anything;
+  - `video.videoWidth/Height` stayed 0, so the shutter's capture canvas was
+    0×0, and **`canvas.toDataURL()` on a 0×0 canvas returns the 6-character
+    string `data:,`** — which was POSTed to `/api/meals/analyze` as a photo,
+    spending a quota-metered, server-paid model call on nothing.
+
+  **Why no one caught it:** the preview browser always DENIES camera access, so
+  every test run took the `catch` and landed on the file-picker fallback, which
+  works fine. The success path had literally never executed. A denied
+  permission was masking a total failure of the granted path.
+
+  `srcObject` is now owned by a **callback ref** (`attachVideo`), which fires
+  exactly when the node mounts, plus an explicit `play()` for iOS Safari — it
+  does not reliably autostart a `srcObject` assigned post-mount even with
+  `autoplay/muted/playsInline`. `shoot()` also refuses to send a frame when
+  `videoWidth` is 0, and the shutter stays disabled until `loadedmetadata`.
+- **The camera also never came back after a failed analysis.** `shoot()` calls
+  `stopCamera()`, but the effect's deps are `[phase, mode]` and neither changes
+  when analysis returns 401/quota/network — so the user was left on a dead
+  viewfinder with no way back except toggling modes. `analyze()` now reports
+  success and a `camNonce` dep forces a re-acquire on failure.
+- **Verified with a synthetic `MediaStream`** (a real stream from
+  `canvas.captureStream()`, so real tracks and real frames — only the source is
+  fake). Before: `srcObject` absent, 0×0, `readyState` 0, capture `data:,`.
+  After: stream attached, 640×480, `readyState` 4, playing, capture a real
+  10.7KB JPEG; a failed analysis re-acquires the camera and leaves it live.
+  **Still genuinely unverified on hardware** — real permission prompts, the
+  rear-camera `facingMode` choice, orientation/EXIF, and iOS Safari's actual
+  autoplay behaviour. See the real-device recipe under "What's actually next".
 - **Manual mode is not in the artboards but is required.** `/api/meals/analyze`
   needs a session and is quota-metered, so without a no-AI path a signed-out
   user, or one over quota, could not log a meal at all.
@@ -627,7 +662,9 @@ worth stating so they are not "re-deferred" by a future reader:
 
 - **camera capture and Bo's verdict (3e + 3f) ARE built** — `app/(mobile)/m/log`
   is one route with `phase: "capture" | "verdict"`. See the `/m/log` section
-  above, including the `getUserMedia` path that still needs a real-device pass.
+  above — including the `getUserMedia` viewfinder, which was found totally
+  broken on the granted-permission path and fixed; only hardware-specific
+  behaviour still needs a real-device pass.
 - **A web cart exists** at `/cart` (artboard w4a) — but it is a shopping list
   with a subtotal and store hand-offs, NOT the mobile four-step journey and
   NOT a checkout. See the 10c entry for exactly what was and was not built.
@@ -1567,9 +1604,27 @@ cut them before the landing is public.
 
 Three things worth doing before more UI:
 
-- **A real-device pass on `/m/log`.** The `getUserMedia` viewfinder has never
-  run — camera access is blocked in the preview browser, so only the file
-  fallback has been exercised.
+- **A real-device pass on `/m/log`** — still outstanding, but much smaller than
+  it was. The viewfinder's logic is now exercised and a fatal bug in it is
+  fixed (see the `/m/log` section above); what hardware still has to settle is
+  the real permission prompt, whether `facingMode: "environment"` actually
+  picks the rear camera, photo orientation/EXIF on a portrait shot, and iOS
+  Safari's real autoplay behaviour.
+
+  **It cannot be done from this repo alone, and the reason is worth knowing:**
+  `getUserMedia` requires a secure context, so a phone pointed at this Mac's
+  LAN address over plain http will refuse regardless of permissions. `ios/` and
+  `android/` do not exist either (blocker 4), so there is no native shell to
+  test in. The two workable routes:
+
+  ```bash
+  # A. HTTPS dev server — phone on the same Wi-Fi, no tunnel, no account
+  npx next dev --experimental-https
+  # then browse https://<this-mac-LAN-IP>:3000/m/log and accept the warning
+  ```
+
+  Or **B**, an HTTPS tunnel (ngrok et al.) — note that exposes the dev server
+  publicly, so prefer A on a trusted network.
 - **A deliberate dark-mode review.** The dark token pass renders (set
   `crave_theme=dark`), but no screen has been designed or checked against it.
   Note this is now BIGGER than it was: the nine new screens were all built
