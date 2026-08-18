@@ -68,9 +68,11 @@ export default function MobilePaywall() {
 
   const start = async () => {
     // No purchasable offer → the free bring-your-own-key path, which is the
-    // only thing we may legitimately offer here.
+    // only thing we may legitimately offer here. This used to push to
+    // `/m/profile`, which has no key field — a dead end. It now lands on the
+    // real 7f key-entry screen.
     if (!canPurchase || !chosen) {
-      router.push("/m/profile");
+      router.push("/m/settings/key");
       return;
     }
     setBusy(true);

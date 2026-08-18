@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "ai/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Camera, ArrowUp } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
+import { getStoredBYOK } from "@/lib/byok";
 import { setActiveRecipe, setActiveRestaurants } from "@/lib/mobile-handoff";
 import { foodImage } from "@/lib/food-images";
 import { BoBowl } from "@/components/mascots";
@@ -64,9 +65,34 @@ function ChatInner() {
   const agentMode = useMemo(() => params?.get("agent") === "1", []); // eslint-disable-line react-hooks/exhaustive-deps
   const seed = useMemo(() => params?.get("q") ?? "", []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // A key entered here — or on web — lifts the free daily cap. Read once at
+  // mount from the shared BYOK slots; when present it rides along in the body
+  // and `/api/chat` uses it instead of the server key.
+  const [byok, setByok] = useState<{ provider: string; apiKey: string } | null>(null);
+  useEffect(() => { setByok(getStoredBYOK()); }, []);
+
+  // Free users hitting the daily cap get a 429 ("Add your API key to continue").
+  // Web opens a dialog; mobile is route-based, so send them to the 7f key
+  // screen with a marker so it can bounce them back to chat once a key is set.
+  // Without this the request failed silently and nothing happened on screen.
+  const onCapReached = () => router.push("/m/settings/key?from=chat");
+
   const { messages, input, handleInputChange, handleSubmit, append, isLoading } = useChat({
     api: agentMode ? "/api/agent" : "/api/chat",
-    body: { userContext: { userName, location, dietaryPreferences } },
+    body: {
+      userContext: { userName, location, dietaryPreferences },
+      ...(byok ? { provider: byok.provider, apiKey: byok.apiKey } : {}),
+    },
+    onResponse: (res) => {
+      // Only the free cap (429) routes to key entry. A BYOK key that is invalid
+      // comes back 400 and is left to the generic failure path rather than
+      // sending the user in a loop to a screen where their key already sits.
+      if (res.status === 429) onCapReached();
+    },
+    onError: (err) => {
+      const msg = err.message || "";
+      if (msg.includes("Daily limit") || msg.includes("rate_limit") || msg.includes("429")) onCapReached();
+    },
   });
 
   const endRef = useRef<HTMLDivElement>(null);
