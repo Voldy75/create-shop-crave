@@ -10,19 +10,7 @@ import { RecipeView } from "@/components/RecipeView";
 import { RestaurantView } from "@/components/RestaurantView";
 import { motion, AnimatePresence } from "framer-motion";
 import { PROVIDERS, type Provider } from "@/lib/providers";
-
-const BYOK_PROVIDER_KEY = "crave_byok_provider";
-const BYOK_API_KEY = "crave_byok_key";
-
-function getStoredBYOK(): { provider: Provider; apiKey: string } | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const provider = localStorage.getItem(BYOK_PROVIDER_KEY) as Provider | null;
-    const apiKey = localStorage.getItem(BYOK_API_KEY);
-    if (provider && apiKey) return { provider, apiKey };
-  } catch { /* ignore */ }
-  return null;
-}
+import { getStoredBYOK } from "@/lib/byok";
 
 function parseContent(content: string, isStreaming = false) {
   const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);

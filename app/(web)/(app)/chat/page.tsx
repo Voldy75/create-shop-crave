@@ -15,6 +15,7 @@ import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { BoBowl } from "@/components/mascots";
 import { motion, AnimatePresence } from "framer-motion";
 import { PROVIDERS, type Provider } from "@/lib/providers";
+import { getStoredBYOK, saveBYOK } from "@/lib/byok";
 import { parseNumeric } from "@/lib/nutrition";
 import { buildSwiggyInstamartLink } from "@/lib/deeplinks";
 import { DAILY_LIMIT } from "@/lib/constants";
@@ -67,27 +68,6 @@ import type { RecipeData, RestaurantSuggestion } from "@/lib/types";
  * (₹749) matches UpgradeDialog's real Razorpay amount, not the artboard's
  * stale ₹399.
  */
-
-const BYOK_PROVIDER_KEY = "crave_byok_provider";
-const BYOK_API_KEY = "crave_byok_key";
-
-function getStoredBYOK(): { provider: Provider; apiKey: string } | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const provider = localStorage.getItem(BYOK_PROVIDER_KEY) as Provider | null;
-    const apiKey = localStorage.getItem(BYOK_API_KEY);
-    if (provider && apiKey) return { provider, apiKey };
-  } catch {
-    /* ignore */
-  }
-  return null;
-}
-
-function saveBYOK(provider: Provider, apiKey: string) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(BYOK_PROVIDER_KEY, provider);
-  localStorage.setItem(BYOK_API_KEY, apiKey);
-}
 
 const SUGGESTION_PROMPTS = [
   { label: "Butter chicken recipe", icon: ChefHat },

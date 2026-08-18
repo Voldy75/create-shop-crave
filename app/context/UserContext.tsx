@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { nativePlatform } from "@/lib/native-bridge";
+import { clearBYOK } from "@/lib/byok";
 import {
   mergeLogs,
   pullMealLogs,
@@ -165,10 +166,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     // Clear BYOK keys on sign out
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("crave_byok_provider");
-      localStorage.removeItem("crave_byok_key");
-    }
+    clearBYOK();
     await supabase.auth.signOut();
   };
 
