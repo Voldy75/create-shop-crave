@@ -1,6 +1,6 @@
 # Handoff — Crave & Create (web + mobile, unified)
 
-Last updated: 2026-08-18. Written for a session with zero prior context.
+Last updated: 2026-08-19. Written for a session with zero prior context.
 Supersedes the two separate handoffs that lived in the web and mobile repos.
 
 ## Goal
@@ -97,38 +97,60 @@ git status -sb && git rev-list --left-right --count origin/merge/mobile-into-web
 to `main`. The branch existing on the remote only means it is backed up and
 reviewable.
 
-**There IS now an open PR, and it is a DRAFT on purpose** —
-[#33](https://github.com/Voldy75/create-shop-crave/pull/33). The earlier note
-here said not to open one at all, because opening a PR implies the branch is
-ready to merge and Phase 5 is still blocked on env vars. A draft resolves
-that: review can start in parallel without signalling mergeable. Its body is
-the review guide — what landed, every live bug fixed, an explicit
-verified-vs-not list, a suggested review order, and the exact env vars needed
-before it can come out of draft. **Do not mark it ready until the blockers
-below are cleared.**
+**There IS an open PR, [#33](https://github.com/Voldy75/create-shop-crave/pull/33),
+and it is now marked READY FOR REVIEW.** It was a draft for most of its life —
+opening a non-draft PR implies the branch is mergeable, and Phase 5 is still
+blocked on env vars — but it was moved out of draft on an explicit user
+decision so review can proceed. **"Ready for review" is NOT "ready to merge."**
+The hard blockers in "Blocked on you" are still open, and the PR body's *Before
+this can merge* section still governs: do not actually MERGE to `main` until
+those are cleared. (If you want it back in draft: `gh pr ready --undo 33`.)
 
-Its body is kept in step with this file — it now also carries the dependency
-posture and the design-fidelity findings. **If you change something material on
-this branch, update the PR description too**; it is the only thing a reviewer
-reads, and it drifted out of date once already.
+**No reviewers are requested.** The repo is a personal account with one
+collaborator (the author), so GitHub has nobody to request — a human review
+needs a collaborator added first (`gh api -X PUT
+repos/Voldy75/create-shop-crave/collaborators/<user> -f permission=push`, then
+`gh pr edit 33 --add-reviewer <user>`). The automated paths used instead are
+`/code-review ultra` (done — see below) and Vercel Agent (user will enable it
+on the Vercel project; it posts to the PR once Code Review is on and has run
+against the head SHA).
 
-**It is currently IN STEP** (brought up to date after the artboard-coverage
-pass). It now carries the coverage audit and its results, the nine screens
-that closed those gaps, the three things deliberately not built and why, both
-live bugs fixed alongside them, a 10f phase row naming what is still open,
-and the note that the new notifications screen was only ever verified
-signed-out. If you change something material, it drifts again — it has done
-so twice already.
+Its body is kept in step with this file — it also carries the dependency
+posture, the design-fidelity findings, and a **Post-review fixes** section.
+**If you change something material on this branch, update the PR description
+too**; it is the only thing a reviewer reads, and it drifted out of date once
+already.
 
-**Commit counts — do not be surprised.** `git log main..HEAD` returns **~83**
+**It is currently IN STEP** (brought up to date after the post-review fixes).
+It carries the coverage audit and its results, the ten screens that closed
+those gaps (incl. 7f), the three things deliberately not built and why, both
+live bugs fixed alongside them, a 10f phase row naming what is still open, the
+note that the new notifications screen was only ever verified signed-out, and
+the Post-review-fixes section recording the ultra review's clean verdict plus
+the three low-severity fixes. If you change something material, it drifts again
+— it has done so twice already.
+
+**An `ultra` code review has been run on this branch and came back clean** — no
+high- or medium-severity correctness bug confirmed across the auth/quota
+chokepoints, billing, MCP registry/oauth, native bridge/push, the admin routes,
+the SQL RPCs, and the modified chat/agent routes. It flagged three
+low-severity sharp edges, all fixed in `db572fd`: a client-supplied base64
+cursor interpolated into a PostgREST `.or()` filter in `/api/admin/users` (now
+validated to strict UUID + timestamp before it reaches the filter); a
+listener leak in `registerNativePush` (handles now removed on settle); and an
+unhandled FileReader rejection in `/m/log`'s `onPick` (now caught → `setError`).
+
+**Commit counts — do not be surprised.** `git log main..HEAD` returns **~88**
 commits and still climbing; do not treat that figure as current either, count
 it yourself. The itemized 14 below cover only through the merge
 consolidation (`3910bc1`); everything after that is Phase 10 screen-by-screen
 design work, then 10d/10e, then the dependency pass, then the artboard-coverage
 pass (audit + nine screens, `2fd0ff8`), the `/m/log` camera-viewfinder fix
-(`6ba913a`), and the docs restructure (MOBILE_SETUP.md rewrite + the pending
-index) — see the sections further down for that history in detail, or
-`git log 3910bc1..HEAD --oneline` for the raw list. Of the original 35, only 14 were this work — the other ~21 were the
+(`6ba913a`), the docs restructure (MOBILE_SETUP.md rewrite + the pending
+index), then the mobile 7f BYOK key screen with the paywall/chat bug fixes
+(`3709013`) on top of the `lib/byok` consolidation (`5a9c245`), and the three
+post-review fixes (`db572fd`) — see the sections further down for that history
+in detail, or `git log 3910bc1..HEAD --oneline` for the raw list. Of the original 35, only 14 were this work — the other ~21 were the
 mobile repo's own history, which arrived with the merge and now lives in this
 repo. That is the consolidation working as intended, not stray commits. The
 original 14:
@@ -154,11 +176,12 @@ it was cherry-picked here so source and DB stayed consistent. That branch is
 redundant now.)
 
 `npx tsc --noEmit`, `next build`, `eslint` and `npm run check:hex` are clean
-(**72 routes** — `/cart` was added during 10c, then `/m/plan/streak` and
-`/m/settings/notifications` when the audit gaps were closed). Route counts
-quoted inside the phase write-ups further down say 70 and are correct **as of
-those phases** — they are historical verification records, not live claims.
-Do not "fix" them.
+(**73 routes** — `/cart` was added during 10c, then `/m/plan/streak` and
+`/m/settings/notifications` when the audit gaps were closed, then
+`/m/settings/key` for the mobile 7f BYOK screen). Route counts quoted inside
+the phase write-ups further down say 70 or 72 and are correct **as of those
+phases** — they are historical verification records, not live claims. Do not
+"fix" them.
 
 **Database changes ARE already applied to production Supabase**
 (`lxaaclelfhjmqrhdqzxp`) even though this branch is not merged. Schema and code
