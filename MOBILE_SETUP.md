@@ -84,20 +84,48 @@ Current state on this machine, checked:
 | | Status |
 |---|---|
 | Xcode 26.6 | ✅ installed, `xcode-select` points at it |
-| CocoaPods | ❌ `pod: command not found` — `npx cap add ios` dies at `pod install` |
+| CocoaPods | ✅ **installed** (`brew install cocoapods` → 1.17.0) |
+| `@capacitor/ios` | ✅ **installed** (`^7.6.8`, committed) — `npx cap add ios` needs it |
+| iOS project | ✅ **generated locally as a DEV build** and run in the Simulator — see the note below |
 | Android SDK | ❌ no SDK, `ANDROID_HOME` unset, no `adb` / `sdkmanager` |
 | Java runtime | ❌ absent — Android cannot build even once the SDK is installed |
 
-iOS is one install away. Android is from scratch: JDK → Android Studio + SDK →
-env vars.
+iOS is done for local/simulator work. Android is still from scratch: JDK →
+Android Studio + SDK → env vars.
 
-- [ ] `brew install cocoapods`
+**iOS simulator smoke test — already done, and what it did NOT prove.** A dev
+build was generated and launched on an iPhone 17 Pro simulator, loading this
+branch's `/m` from a local `next dev` server. This proved the shell launches
+and renders the app; it did **not** exercise native sign-in (needs the Supabase
+redirect from item 3), payments (BYOK-only on native by design), push (needs
+FCM config), or the real production URL.
+
+**Crucial: `ios/` is git-ignored and is a THROWAWAY dev artifact.** The
+generated project bakes in `http://localhost:3000/m` as its server URL (via
+`CAP_SERVER_URL`) plus a dev-only `NSAllowsLocalNetworking` ATS exception in
+`ios/App/App/Info.plist`. It must be **regenerated against the pinned
+production alias (item 1) before any distributable build** — do not reuse this
+one for TestFlight. To reproduce the simulator run:
+
+```bash
+brew install cocoapods                      # once (done)
+export CAP_SERVER_URL="http://localhost:3000/m"
+npx cap add ios                             # regenerates ios/ (dev URL baked in)
+npm run assets                              # after cap add
+# re-add the localhost ATS exception to ios/App/App/Info.plist (cap add overwrites it)
+PORT=3000 npm run dev                       # serve /m locally
+# then build the App scheme for a booted simulator and launch App.app
+```
+
+- [x] `brew install cocoapods`
 - [ ] Install a JDK (Android Studio bundles one) and Android Studio + SDK
 - [ ] Export `ANDROID_HOME` / `ANDROID_SDK_ROOT`
 
-Then, **after item 1 is done**:
+Then, for a **distributable** build **after item 1 is done** (regenerate — the
+committed state has no `ios/`, and any local one is the dev throwaway above):
 
 ```bash
+export CAP_PROD_URL="https://<your-pinned-alias>/m"   # NOT localhost
 npx cap add ios
 npx cap add android
 npx cap sync

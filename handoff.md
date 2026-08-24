@@ -30,9 +30,12 @@ something, update BOTH this index and the section it points to.
    the admin console (never once rendered).
 2. **Supabase redirect URL** — add `com.cravecreate.app://auth/callback`. →
    "Blocked on you" §3. One minute; de-risks the highest-risk unverified path.
-3. **Native toolchain + accounts** — CocoaPods, a JDK, the Android SDK; Apple +
-   Play accounts. → `MOBILE_SETUP.md` (the full ordered checklist). **Pin the
-   Vercel alias FIRST — it is the only irreversible step.**
+3. **Native toolchain + accounts** — CocoaPods is now installed and iOS runs as
+   a local DEV build in the Simulator; **still needed:** a JDK + Android SDK
+   (Android is from scratch), and Apple + Play accounts. → `MOBILE_SETUP.md`
+   (the full ordered checklist). **Pin the Vercel alias FIRST — it is the only
+   irreversible step, and every DISTRIBUTABLE build must regenerate `ios/`
+   against it (the current local `ios/` is a git-ignored localhost throwaway).**
 4. **Google Maps key** — HTTP-referrer-restricted, falls back on mobile. →
    "Blocked on you" §5.
 
@@ -202,7 +205,7 @@ project before the merge.
 | 6 auth chokepoint + runtime limits | done, applied |
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
-| 9 native iOS/Android + IAP | code-level done; **binaries blocked on toolchain** |
+| 9 native iOS/Android + IAP | code-level done. **iOS now runs as a local DEV build in the Simulator** — CocoaPods installed, `@capacitor/ios` added, `ios/` generated (git-ignored, localhost URL baked in) and smoke-tested against `next dev`. **A distributable iOS build is still blocked** on the alias pin + Apple account; **Android is still from scratch** (no JDK/SDK); **IAP is still unbuilt**. See `MOBILE_SETUP.md` §4. |
 | 10 meshi re-skin | **DONE — all of 10a–10e.** Mobile + web converted, mascot motion + brand assets shipped, `--cc-*` deleted (mechanical exit criterion verified zero), CI hex/rgba gate live. Real, tracked debt remains in screens with no artboard — see the 10e write-up below for exactly which. |
 | 10f artboard coverage | **PARTIAL, and it is the honest successor to "10 DONE".** The code-by-code audit found the re-skin converted every ROUTE but left 12 of 37 artboard codes unbuilt. Nine are now closed (7a, 7b, 2a, 2b, 2c, 2d, 6b, 1l, 7c, 7d + the 7h fix), plus **7f** (BYOK key entry) built as mobile `/m/settings/key`. **Still open: 7e** (link accounts, web-only), **6a** (animated splash, needs the native shell), **3a–3d/1i** (out of scope by the design file's own note), **5a/7i** (dark mode). |
 
@@ -229,10 +232,14 @@ URL Configuration.** Native sign-in cannot work without it (see Dead End 7).
 `MOBILE_SETUP.md`.** Go there rather than working from this paragraph; it
 carries the sequencing, which matters. Summary only:
 
-`ios/` and `android/` do not exist. Xcode 26.6 is installed but **CocoaPods is
-not**, so `npx cap add ios` fails at `pod install`. Android is worse than
-"no SDK" — there is **no Java runtime on this machine at all**, so it cannot
-build even once the SDK lands.
+**iOS is now buildable locally.** CocoaPods (1.17.0) is installed, `@capacitor/ios`
+is a committed dependency, and `ios/` has been generated and **run as a DEV
+build in the Simulator** against a local `next dev` server. But `ios/` is
+git-ignored and a throwaway — it bakes in `http://localhost:3000/m` plus a
+dev-only ATS exception, so it **must be regenerated against the pinned alias
+before any distributable build** (item 1). **Android is still from scratch** —
+no Android SDK, `ANDROID_HOME` unset, and **no Java runtime on this machine at
+all**, so it cannot build even once the SDK lands.
 
 **Two things that paragraph used to get wrong, and are worth carrying here:**
 
@@ -250,6 +257,14 @@ The icon/splash step is unchanged: `npm run gen:resources` then
 `npm run assets`. The second pulls `@capacitor/assets` via `npx` instead of it
 being a devDependency — see "Dependency advisories" for why. Nothing to install
 first; npx fetches it.
+
+**Watch two side effects of `npm run assets`** (both seen this session, both to
+be discarded — they are not wanted changes): it rewrites `public/manifest.json`
+to point the PWA icons at broken `../icons/*.webp` paths (mistyped `image/png`,
+resolving outside `public/`), and it dumps a stray `icons/` dir at the repo
+ROOT (not `public/icons/`). `git checkout -- public/manifest.json` and remove
+the root `icons/` after running it. (Separately, `next dev` re-injects an agent-
+rules block into `CLAUDE.md` on every run — also revert unless adopting it.)
 
 **5. Google Maps key is HTTP-referrer-restricted** to the web domain, so the
 map falls back on mobile and on localhost. Google Cloud Console allowlist fix, not code.
