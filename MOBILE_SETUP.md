@@ -87,11 +87,14 @@ Current state on this machine, checked:
 | CocoaPods | ✅ **installed** (`brew install cocoapods` → 1.17.0) |
 | `@capacitor/ios` | ✅ **installed** (`^7.6.8`, committed) — `npx cap add ios` needs it |
 | iOS project | ✅ **generated locally as a DEV build** and run in the Simulator — see the note below |
-| Android SDK | ❌ no SDK, `ANDROID_HOME` unset, no `adb` / `sdkmanager` |
-| Java runtime | ❌ absent — Android cannot build even once the SDK is installed |
+| Java runtime | ✅ **JDK 17 AND JDK 21 installed** (`brew install openjdk@17 openjdk@21`). **JDK 21 is required** — Capacitor 7 plugins declare a Java-21 toolchain, so a JDK-17-only build fails at `:capacitor-geolocation:compileDebugJavaWithJavac`. Run Gradle with `JAVA_HOME=/opt/homebrew/opt/openjdk@21`. |
+| Android SDK | ✅ **installed** at `~/Library/Android/sdk` (`brew install --cask android-commandlinetools`; then `sdkmanager platform-tools "platforms;android-35" "build-tools;35.0.0"`, licenses accepted). `ANDROID_HOME` is NOT persisted in the shell profile — export it per-command (see below). |
+| `@capacitor/android` | ✅ **installed** (`^7.6.8`) — *dependency commit still pending* (parallel to the `@capacitor/ios` commit). |
+| Android project | ✅ **generated locally as a DEV build; debug APK builds cleanly** (`./gradlew assembleDebug`). Not yet run in an emulator/device. |
 
-iOS is done for local/simulator work. Android is still from scratch: JDK →
-Android Studio + SDK → env vars.
+Both platforms build locally. Neither has been set up for *distribution* (that
+needs item 1 + item 2). What's left for Android is only running it visually —
+an emulator (system image + AVD) or a physical device.
 
 **iOS simulator smoke test — already done, and what it did NOT prove.** A dev
 build was generated and launched on an iPhone 17 Pro simulator, loading this
@@ -117,12 +120,36 @@ PORT=3000 npm run dev                       # serve /m locally
 # then build the App scheme for a booted simulator and launch App.app
 ```
 
+**Android was set up from scratch this session and the debug APK builds.**
+`android/` is the same kind of git-ignored DEV throwaway as `ios/`: it bakes in
+`http://10.0.2.2:3000/m` (the emulator's alias for the host's localhost) and a
+dev-only cleartext allowance in `android/app/src/main/res/xml/network_security_config.xml`
+(referenced from `AndroidManifest.xml`). Regenerate against the pinned alias for
+any distributable build. To reproduce the build:
+
+```bash
+export JAVA_HOME=/opt/homebrew/opt/openjdk@21          # 21, NOT 17 — see table
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export CAP_SERVER_URL="http://10.0.2.2:3000/m"         # emulator → host localhost
+npx cap add android                                    # regenerates android/
+# re-add the cleartext network-security config + its manifest reference (cap add overwrites)
+cd android && ./gradlew assembleDebug                  # → app/build/outputs/apk/debug/app-debug.apk
+```
+
+To run it visually (not yet done): an emulator needs
+`sdkmanager "emulator" "system-images;android-35;google_apis;arm64-v8a"` + an
+AVD, then `adb install`; a physical device needs USB debugging + `adb reverse
+tcp:3000 tcp:3000` (and rebuild with `CAP_SERVER_URL=http://localhost:3000/m`).
+
 - [x] `brew install cocoapods`
-- [ ] Install a JDK (Android Studio bundles one) and Android Studio + SDK
-- [ ] Export `ANDROID_HOME` / `ANDROID_SDK_ROOT`
+- [x] Install a JDK — **both 17 and 21** (`brew install openjdk@17 openjdk@21`; JDK 21 is required by Capacitor 7 plugins)
+- [x] Android SDK installed via `android-commandlinetools` + `sdkmanager` (no Android Studio needed to build)
+- [ ] Export `ANDROID_HOME` / `ANDROID_SDK_ROOT` **in your shell profile** (currently set per-command only)
 
 Then, for a **distributable** build **after item 1 is done** (regenerate — the
-committed state has no `ios/`, and any local one is the dev throwaway above):
+committed state has no `ios/` or `android/`, and any local one is the dev
+throwaway above):
 
 ```bash
 export CAP_PROD_URL="https://<your-pinned-alias>/m"   # NOT localhost

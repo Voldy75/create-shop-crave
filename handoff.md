@@ -30,12 +30,14 @@ something, update BOTH this index and the section it points to.
    the admin console (never once rendered).
 2. **Supabase redirect URL** — add `com.cravecreate.app://auth/callback`. →
    "Blocked on you" §3. One minute; de-risks the highest-risk unverified path.
-3. **Native toolchain + accounts** — CocoaPods is now installed and iOS runs as
-   a local DEV build in the Simulator; **still needed:** a JDK + Android SDK
-   (Android is from scratch), and Apple + Play accounts. → `MOBILE_SETUP.md`
+3. **Native toolchain + accounts** — toolchain is DONE for both platforms: iOS
+   runs as a local DEV build in the Simulator, and Android's debug APK builds
+   (JDK 17+21, Android SDK, `@capacitor/android`). **Still needed:** Apple +
+   Play accounts, and running Android visually (emulator/device). → `MOBILE_SETUP.md`
    (the full ordered checklist). **Pin the Vercel alias FIRST — it is the only
-   irreversible step, and every DISTRIBUTABLE build must regenerate `ios/`
-   against it (the current local `ios/` is a git-ignored localhost throwaway).**
+   irreversible step, and every DISTRIBUTABLE build must regenerate `ios/` and
+   `android/` against it (the current local ones are git-ignored localhost
+   throwaways).**
 4. **Google Maps key** — HTTP-referrer-restricted, falls back on mobile. →
    "Blocked on you" §5.
 
@@ -205,7 +207,7 @@ project before the merge.
 | 6 auth chokepoint + runtime limits | done, applied |
 | 7 admin console API + UI | done, applied |
 | 8 MCP provider registry | done, applied |
-| 9 native iOS/Android + IAP | code-level done. **iOS now runs as a local DEV build in the Simulator** — CocoaPods installed, `@capacitor/ios` added, `ios/` generated (git-ignored, localhost URL baked in) and smoke-tested against `next dev`. **A distributable iOS build is still blocked** on the alias pin + Apple account; **Android is still from scratch** (no JDK/SDK); **IAP is still unbuilt**. See `MOBILE_SETUP.md` §4. |
+| 9 native iOS/Android + IAP | code-level done. **BOTH platforms now build locally.** iOS runs as a DEV build in the Simulator (CocoaPods, `@capacitor/ios`, `ios/` generated, smoke-tested against `next dev`). Android's DEV **debug APK builds cleanly** (JDK 17+21, Android SDK, `@capacitor/android`, `android/` generated) — not yet run in an emulator/device. Both `ios/`/`android/` are git-ignored localhost throwaways. **Distributable builds are still blocked** on the alias pin + Apple/Play accounts; **IAP is still unbuilt**. See `MOBILE_SETUP.md` §4. |
 | 10 meshi re-skin | **DONE — all of 10a–10e.** Mobile + web converted, mascot motion + brand assets shipped, `--cc-*` deleted (mechanical exit criterion verified zero), CI hex/rgba gate live. Real, tracked debt remains in screens with no artboard — see the 10e write-up below for exactly which. |
 | 10f artboard coverage | **PARTIAL, and it is the honest successor to "10 DONE".** The code-by-code audit found the re-skin converted every ROUTE but left 12 of 37 artboard codes unbuilt. Nine are now closed (7a, 7b, 2a, 2b, 2c, 2d, 6b, 1l, 7c, 7d + the 7h fix), plus **7f** (BYOK key entry) built as mobile `/m/settings/key`. **Still open: 7e** (link accounts, web-only), **6a** (animated splash, needs the native shell), **3a–3d/1i** (out of scope by the design file's own note), **5a/7i** (dark mode). |
 
@@ -232,14 +234,18 @@ URL Configuration.** Native sign-in cannot work without it (see Dead End 7).
 `MOBILE_SETUP.md`.** Go there rather than working from this paragraph; it
 carries the sequencing, which matters. Summary only:
 
-**iOS is now buildable locally.** CocoaPods (1.17.0) is installed, `@capacitor/ios`
-is a committed dependency, and `ios/` has been generated and **run as a DEV
-build in the Simulator** against a local `next dev` server. But `ios/` is
-git-ignored and a throwaway — it bakes in `http://localhost:3000/m` plus a
-dev-only ATS exception, so it **must be regenerated against the pinned alias
-before any distributable build** (item 1). **Android is still from scratch** —
-no Android SDK, `ANDROID_HOME` unset, and **no Java runtime on this machine at
-all**, so it cannot build even once the SDK lands.
+**Both platforms are now buildable locally.** iOS: CocoaPods (1.17.0),
+`@capacitor/ios` (committed), `ios/` generated and **run as a DEV build in the
+Simulator** against a local `next dev`. Android: **JDK 17 + JDK 21** (21 is
+required — Capacitor 7 plugins declare a Java-21 toolchain), the **Android SDK**
+at `~/Library/Android/sdk` (via `android-commandlinetools` + `sdkmanager`,
+licenses accepted), `@capacitor/android` (**installed; dependency commit still
+pending**), `android/` generated, and the **debug APK builds cleanly**
+(`./gradlew assembleDebug`) — not yet run in an emulator/device. Both `ios/` and
+`android/` are git-ignored throwaways baking in localhost dev URLs
+(`http://localhost:3000/m` for iOS, `http://10.0.2.2:3000/m` for the Android
+emulator) plus dev-only cleartext exceptions, so both **must be regenerated
+against the pinned alias before any distributable build** (item 1).
 
 **Two things that paragraph used to get wrong, and are worth carrying here:**
 
