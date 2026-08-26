@@ -8,6 +8,12 @@ import { Montserrat } from "next/font/google";
  *
  *   design/meshi-b.css    shared tokens + components (also used by mobile)
  *   design/meshi-web.css  desktop shell layer — sidebar / topbar / rail
+ *   design/meshi-app.css  component layer for the w6a–w9e artboards — dine-out
+ *                         chips/pins, cooking rows, settings toggles, the
+ *                         planner grid and the conversation rail. Vendored
+ *                         separately for the same reason meshi-motion.css is:
+ *                         meshi-b.css must stay a faithful copy of the design
+ *                         system's own file.
  *   app/globals.css       Tailwind, referencing meshi's --m-* tokens directly
  *                         (Phase 10e deleted the alias layer this used to be)
  *
@@ -23,6 +29,7 @@ import { Montserrat } from "next/font/google";
 import "../../design/meshi-b.css";
 import "../../design/meshi-web.css";
 import "../../design/meshi-motion.css";
+import "../../design/meshi-app.css";
 import "../globals.css";
 
 /** Bound onto meshi-b's --m-font-display / --m-font-body, as in the mobile tree. */
