@@ -2,8 +2,8 @@
 
 import React, { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ShoppingCart, Plus, X, ChefHat, ExternalLink, Bell } from "lucide-react";
-import { getMealPlan, getMealLogs, saveMealPlan, type WeekPlan, type MealSlot } from "@/lib/storage";
+import { ShoppingCart, Plus, X, ChefHat, ExternalLink, Bell, Sparkles } from "lucide-react";
+import { getMealPlan, getMealLogs, saveMealPlan, MEAL_PLAN_EVENT, type WeekPlan, type MealSlot } from "@/lib/storage";
 import { loggingStreak } from "@/lib/nutrition";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { PlannerTabs, type PlannerTab } from "@/components/planner/PlannerTabs";
@@ -71,6 +71,16 @@ function PlannerPageInner() {
         /* eslint-enable react-hooks/set-state-in-effect */
     }, []);
 
+    /* Re-read whenever anything writes the plan. AddToPlanDialog (opened from a
+       recipe) and CoachPanel's "Apply" both write through saveMealPlan without
+       going through this page's own setMeal, so without this an open planner
+       showed stale data until it remounted. */
+    useEffect(() => {
+        const onChanged = () => setPlan(getMealPlan());
+        window.addEventListener(MEAL_PLAN_EVENT, onChanged);
+        return () => window.removeEventListener(MEAL_PLAN_EVENT, onChanged);
+    }, []);
+
     const setMeal = (day: string, meal: MealType, dish: string) => {
         const updated = { ...plan };
         if (!updated[day]) updated[day] = {};
@@ -115,7 +125,7 @@ function PlannerPageInner() {
                 )}
 
                 <button
-                    onClick={() => router.push("/settings/notifications")}
+                    onClick={() => router.push("/settings?tab=notifications")}
                     className="icon-btn"
                     aria-label="Notification settings"
                     title="Notification settings"
@@ -134,6 +144,7 @@ function PlannerPageInner() {
                         setDishInput={setDishInput}
                         onSetMeal={setMeal}
                         onRemoveMeal={removeMeal}
+                        onFillFromCoach={() => setActiveTab("coach")}
                     />
                 )}
 
@@ -162,6 +173,7 @@ interface PlanViewProps {
     setDishInput: (v: string) => void;
     onSetMeal: (day: string, meal: MealType, dish: string) => void;
     onRemoveMeal: (day: string, meal: MealType) => void;
+    onFillFromCoach: () => void;
 }
 
 function PlanView({
@@ -172,14 +184,43 @@ function PlanView({
     setDishInput,
     onSetMeal,
     onRemoveMeal,
+    onFillFromCoach,
 }: PlanViewProps) {
     const allDishes = DAYS.flatMap((day) =>
         MEALS.map((meal) => plan[day]?.[meal]?.dish).filter(Boolean) as string[]
     );
     const uniqueDishes = [...new Set(allDishes)];
 
+    const filled = allDishes.length;
+
     return (
         <div className="vstack" style={{ gap: 18 }}>
+            {/* ── w8c's auto-fill row ──
+                The artboard's toggle claims "One tap drops Bo's 7-day chart into
+                the empty slots". The chart is real — CoachPanel generates it from
+                the last 7 days of logs and DietChartPreview applies it through
+                saveMealPlan — but it is generated on the Coach tab and nothing
+                persists a generated chart, so there is no chart sitting here to
+                drop in. This routes to the thing that actually fills the week
+                rather than faking a local one, and the label says where it goes.
+                The count is real. */}
+            <div className="card hstack" style={{ padding: 16, gap: 13, flexWrap: "wrap" }}>
+                <button className="xbtn xbtn-l" onClick={onFillFromCoach}>
+                    <Sparkles className="xspk" width={17} height={17} aria-hidden />
+                    {filled > 0 ? `Top up this week from Coach` : `Fill this week from Coach`}
+                </button>
+                <div className="vstack grow" style={{ gap: 1, minWidth: 180 }}>
+                    <span className="t-h2" style={{ fontSize: 14 }}>
+                        {filled === 0
+                            ? "Nothing planned yet"
+                            : `${filled} meal${filled === 1 ? "" : "s"} planned`}
+                    </span>
+                    <span className="t-cap">
+                        Bo builds a 7-day chart from what you have logged, then applies it here.
+                    </span>
+                </div>
+            </div>
+
             <div className="card" style={{ overflowX: "auto", padding: 4 }}>
                 <div className="grid grid-cols-[100px_repeat(7,minmax(130px,1fr))] gap-0 min-w-[1050px]">
                     <div style={{ padding: 12, borderBottom: "1.5px solid var(--m-ink-faint)" }} />
@@ -254,40 +295,36 @@ function PlanView({
                                                 </div>
                                             </div>
                                         ) : slot ? (
-                                            <div
-                                                className="group relative tint-cream"
-                                                style={{ height: "100%", padding: 8, borderRadius: 12 }}
-                                            >
-                                                <div className="hstack" style={{ alignItems: "flex-start", gap: 6 }}>
-                                                    <ChefHat width={13} height={13} style={{ color: "var(--m-forest)", marginTop: 2, flex: "none" }} />
-                                                    <p className="t-cap line-clamp-3" style={{ color: "var(--m-ink)" }}>{slot.dish}</p>
+                                            /* w8c's filled cell: .xfilled drops the dashed
+                                               border and the scale, and the .xmeal card
+                                               inside lifts and tilts on hover instead. */
+                                            <div className="xcell xfilled group">
+                                                <div className="xmeal">
+                                                    <div className="hstack" style={{ alignItems: "flex-start", gap: 6 }}>
+                                                        <ChefHat width={13} height={13} style={{ color: "var(--m-forest)", marginTop: 2, flex: "none" }} />
+                                                        <p className="t-cap line-clamp-3" style={{ color: "var(--m-ink)" }}>{slot.dish}</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => onRemoveMeal(day, meal)}
+                                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                                        style={{ background: "none", border: "none", color: "var(--m-red)", cursor: "pointer", padding: 2 }}
+                                                        aria-label={`Remove ${meal} for ${day}`}
+                                                    >
+                                                        <X width={13} height={13} />
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    onClick={() => onRemoveMeal(day, meal)}
-                                                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                                                    style={{ background: "none", border: "none", color: "var(--m-red)", cursor: "pointer", padding: 2 }}
-                                                    aria-label={`Remove ${meal} for ${day}`}
-                                                >
-                                                    <X width={13} height={13} />
-                                                </button>
                                             </div>
                                         ) : (
+                                            /* w8c's .xcell — dashed affordance, tint-green
+                                               hover, and a plus that rotates 90deg and
+                                               greens on hover. In design/meshi-app.css. */
                                             <button
                                                 onClick={() => { setEditingSlot({ day, meal }); setDishInput(""); }}
-                                                className="hstack plan-slot-empty"
-                                                style={{
-                                                    width: "100%",
-                                                    minHeight: 72,
-                                                    justifyContent: "center",
-                                                    borderRadius: 12,
-                                                    border: "2px dashed var(--m-ink-faint)",
-                                                    background: "transparent",
-                                                    color: "var(--m-ink-soft)",
-                                                    cursor: "pointer",
-                                                }}
+                                                className="xcell"
+                                                style={{ width: "100%", background: "transparent", color: "var(--m-ink-soft)" }}
                                                 aria-label={`Add ${meal} for ${day}`}
                                             >
-                                                <Plus width={16} height={16} />
+                                                <Plus className="xcp" width={16} height={16} />
                                             </button>
                                         )}
                                     </div>

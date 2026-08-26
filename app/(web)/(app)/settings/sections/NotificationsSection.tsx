@@ -238,27 +238,38 @@ function ChannelCard({ icon, title, subtitle, enabled, status, tone, saving, onT
   icon: React.ComponentType<{ className?: string }>; title: string; subtitle: string; enabled: boolean;
   status: string; tone: StatusTone; saving: boolean; onToggle: () => void; detail: React.ReactNode;
 }) {
+  /* w8b's row: the whole card carries a lime ring when the channel is on, the
+     icon tile flips to tint-green, and the detail strip reveals. `.xrow`,
+     `.xsw`, `.xicon` and `.xdet` live in design/meshi-app.css; the `.is-on`
+     modifier is applied here rather than by a :has() selector, because React
+     owns this state (see that file's header). */
   return (
-    <div className="p-4" style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)", borderRadius: "16px" }}>
+    <div className={`card xrow${enabled ? " is-on" : ""}`} style={{ padding: 16 }}>
       <div className="flex items-start gap-3">
-        <IconBadge icon={icon} />
+        <span className="xicon" style={{ borderRadius: 12, display: "inline-flex", flex: "none" }}>
+          <IconBadge icon={icon} />
+        </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <h3 style={{ fontSize: "14px", fontWeight: 700, color: "var(--m-ink)" }}>{title}</h3>
+            <h3 className="t-h2" style={{ fontSize: 14 }}>{title}</h3>
             <StatusPill tone={tone}>{status}</StatusPill>
           </div>
-          <p style={{ fontSize: "11px", color: "var(--m-ink-soft)", marginTop: "2px" }}>{subtitle}</p>
+          <p className="t-cap" style={{ marginTop: 2 }}>{subtitle}</p>
         </div>
-      </div>
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex-1">{detail}</div>
-        <button onClick={onToggle} disabled={saving} aria-label={`Toggle ${title}`}
-          className="ml-3 shrink-0 relative w-10 h-6 rounded-full transition-colors"
-          style={{ background: enabled ? "var(--m-forest)" : "var(--m-cream-2)" }}>
-          <span className="absolute top-0.5 rounded-full w-5 h-5 bg-white shadow-sm transition-transform"
-            style={{ left: enabled ? "18px" : "2px" }} />
+        <button
+          onClick={onToggle}
+          disabled={saving}
+          aria-label={`Toggle ${title}`}
+          aria-pressed={enabled}
+          className="xsw"
+          style={{ border: "none", marginLeft: 12, opacity: saving ? 0.6 : 1 }}
+        >
+          <i />
         </button>
       </div>
+      {/* w8b reveals the detail strip only when the channel is on — an
+          enrolment field for a disabled channel is just noise. */}
+      <div className="xdet" style={{ marginTop: 12 }}>{detail}</div>
     </div>
   );
 }

@@ -1,13 +1,40 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Bell, Plug, User, Loader2 } from "lucide-react";
+import React, { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Bell, Plug, User, Loader2 } from "lucide-react";
+import { AppTopbar } from "@/components/web/AppTopbar";
 import { useUser } from "@/app/context/UserContext";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { NotificationsSection } from "./sections/NotificationsSection";
 import { ConnectionsSection } from "./sections/ConnectionsSection";
 import { AccountSection } from "./sections/AccountSection";
+
+/**
+ * /settings — rebuilt to artboard w8b.
+ *
+ * WHAT CHANGED AND WHY. This page kept a `.glass-nav` sticky header with a
+ * `router.back()` arrow — a PHONE pattern — inside a layout that already has a
+ * persistent sidebar, plus a hand-rolled underline tab bar. It was one of the
+ * two screens holding the app's second header convention (the other, /favorites,
+ * is now a redirect). It uses the shared AppTopbar and w8b's `.utabs` now.
+ *
+ * The three sections themselves are untouched: they wire the real push /
+ * WhatsApp / Swiggy / notification-preference clients, and this pass is
+ * presentation only. What DID change inside them is the row treatment — see
+ * NotificationsSection for the `.xrow` + `.xsw` conversion.
+ *
+ * NOT ADOPTED FROM w8b, because none of it is backed:
+ *   - "meshi+ · yearly · ₹2,990 · renews 14 Mar 2027". The real product is
+ *     ₹749 charged ONCE for 31 days with nothing rescheduling it — see
+ *     lib/billing's renewalNote, and the two separate occasions a paywall
+ *     shipped invented prices before this was caught.
+ *   - "Removes 42 chats, plans and logs" on the delete-account card. There is
+ *     no account-deletion endpoint, so a Delete button would be a dead control.
+ *   - The masked phone "+91 98•••• 4412" and the "8:00 pm · IST" send time as
+ *     static text — NotificationsSection already renders the user's REAL
+ *     enrolment state and nudge preferences.
+ */
 
 type Tab = "notifications" | "connections" | "account";
 
@@ -18,97 +45,69 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function SettingsPage() {
+  // Suspense so useSearchParams doesn't trigger a static-rendering bailout.
+  return (
+    <Suspense fallback={null}>
+      <SettingsPageInner />
+    </Suspense>
+  );
+}
+
+function SettingsPageInner() {
   const router = useRouter();
+  const params = useSearchParams();
   const { user, hydrated } = useUser();
   const { flags, loading: flagsLoading } = useFeatureFlags();
-  const [activeTab, setActiveTab] = useState<Tab>("notifications");
+
+  const requested = params.get("tab");
+  const [activeTab, setActiveTab] = useState<Tab>(
+    requested === "connections" || requested === "account" ? requested : "notifications"
+  );
 
   useEffect(() => {
     if (hydrated && !user) router.replace("/");
   }, [user, hydrated, router]);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get("tab");
-    if (tab === "connections" || tab === "account" || tab === "notifications") {
-      setActiveTab(tab);
-    }
-  }, []);
-
   if (!hydrated || !user) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ background: "var(--m-cream)" }}>
-        <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--m-ink-soft)" }} />
-      </div>
+      <main className="mbody">
+        <div className="flex items-center justify-center" style={{ height: 240 }}>
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--m-ink-soft)" }} />
+        </div>
+      </main>
     );
   }
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: "var(--m-cream)" }}
-    >
-      {/* Header */}
-      <header
-        className="glass-nav px-4 md:px-6 flex items-center gap-3 sticky top-0 z-10"
-        style={{ height: "48px" }}
-      >
-        <button
-          onClick={() => router.back()}
-          className="p-1.5 rounded-lg transition-colors hover:bg-[var(--m-cream-2)]"
-        >
-          <ArrowLeft className="w-4 h-4" style={{ color: "var(--m-ink-soft)" }} />
-        </button>
-        <h1
-          style={{
-            fontSize: "16px",
-            fontWeight: 700,
-            color: "var(--m-ink)",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Settings
-        </h1>
-      </header>
+    <>
+      {/* No back arrow: the sidebar is the way out of a top-level screen. */}
+      <AppTopbar title="Settings" caption="Notifications, connections and your account" />
 
-      {/* Tab bar */}
-      <div
-        className="px-4 md:px-6 flex gap-1 overflow-x-auto"
-        style={{
-          borderBottom: "1px solid var(--m-ink-faint)",
-          background: "var(--m-cream)",
-        }}
-      >
-        {TABS.map(({ id, label, icon: Icon }) => {
-          const active = activeTab === id;
-          return (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className="flex items-center gap-1.5 px-3 py-2.5 transition-colors shrink-0"
-              style={{
-                fontSize: "13px",
-                fontWeight: active ? 600 : 400,
-                color: active ? "var(--m-forest)" : "var(--m-ink-soft)",
-                borderBottom: active ? "2px solid var(--m-forest)" : "2px solid transparent",
-                marginBottom: "-1px",
-              }}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </button>
-          );
-        })}
+      {/* w8b's underline tabs. `.utab` lives in design/meshi-app.css. */}
+      <div className="utabs" role="tablist" aria-label="Settings sections">
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={activeTab === id}
+            className={`utab${activeTab === id ? " is-active" : ""}`}
+            onClick={() => setActiveTab(id)}
+          >
+            <Icon className="w-4 h-4" aria-hidden />
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Content */}
-      <div className="px-4 md:px-6 py-5 max-w-xl mx-auto">
-        {activeTab === "notifications" && <NotificationsSection />}
-        {activeTab === "connections" && (
-          <ConnectionsSection flags={flags} flagsLoading={flagsLoading} />
-        )}
-        {activeTab === "account" && <AccountSection />}
-      </div>
-    </div>
+      <main className="mbody">
+        <div style={{ padding: "24px 32px 40px", maxWidth: 760, margin: "0 auto", width: "100%" }}>
+          {activeTab === "notifications" && <NotificationsSection />}
+          {activeTab === "connections" && (
+            <ConnectionsSection flags={flags} flagsLoading={flagsLoading} />
+          )}
+          {activeTab === "account" && <AccountSection />}
+        </div>
+      </main>
+    </>
   );
 }

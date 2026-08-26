@@ -218,13 +218,8 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
   if (!isSignedIn) {
     return (
       <div
-        className="flex flex-col items-center text-center px-6 py-16"
-        style={{
-          background: "var(--m-card)",
-          border: "1px solid var(--m-ink-faint)",
-          borderRadius: "16px",
-          color: "var(--m-ink-soft)",
-        }}
+        className="card flex flex-col items-center text-center px-6 py-16"
+        style={{ color: "var(--m-ink-soft)" }}
       >
         <Lock className="w-6 h-6" style={{ color: "var(--m-ink-soft)", marginBottom: "10px" }} />
         <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--m-ink)" }}>
@@ -241,12 +236,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
     <div className="flex flex-col gap-6">
       {/* Insights card */}
       <div
-        className="p-5 sm:p-6"
-        style={{
-          background: "var(--m-card)",
-          border: "1px solid var(--m-ink-faint)",
-          borderRadius: "16px",
-        }}
+        className="card p-5 sm:p-6"
       >
         <div className="flex items-start justify-between gap-3" style={{ marginBottom: "12px" }}>
           <div>
@@ -300,17 +290,15 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
             <button
               onClick={handleGenerateInsights}
               disabled={!dataReady}
-              className="flex items-center gap-1.5 px-4 py-2 text-white transition-colors"
+              className="xbtn xbtn-f"
               style={{
-                fontSize: "13px",
-                fontWeight: 600,
                 background: dataReady ? "var(--m-forest)" : "var(--m-cream-2)",
                 color: dataReady ? "var(--m-on-deep)" : "var(--m-ink-soft)",
-                borderRadius: "980px",
+                boxShadow: dataReady ? undefined : "none",
                 cursor: dataReady ? "pointer" : "not-allowed",
               }}
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="xspk w-4 h-4" />
               Generate insights
             </button>
           </div>
@@ -386,12 +374,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
 
       {/* Diet chart card */}
       <div
-        className="p-5 sm:p-6"
-        style={{
-          background: "var(--m-card)",
-          border: "1px solid var(--m-ink-faint)",
-          borderRadius: "16px",
-        }}
+        className="card p-5 sm:p-6"
       >
         <div className="flex items-start justify-between gap-3" style={{ marginBottom: "12px" }}>
           <div>
@@ -425,13 +408,11 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
           <button
             onClick={handleGenerateChart}
             disabled={chartLoading}
-            className="flex items-center gap-1.5 px-4 py-2 text-white transition-colors"
+            className="xbtn xbtn-l"
             style={{
-              fontSize: "13px",
-              fontWeight: 600,
-              background: chartLoading ? "var(--m-cream-2)" : "var(--m-forest)",
-              color: chartLoading ? "var(--m-ink-soft)" : "var(--m-on-deep)",
-              borderRadius: "980px",
+              background: chartLoading ? "var(--m-cream-2)" : "var(--m-lime)",
+              color: chartLoading ? "var(--m-ink-soft)" : "var(--m-forest-2)",
+              boxShadow: chartLoading ? "none" : undefined,
               cursor: chartLoading ? "not-allowed" : "pointer",
             }}
           >
@@ -442,7 +423,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               </>
             ) : (
               <>
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="xspk w-4 h-4" />
                 {chart ? "Generate again" : "Generate plan"}
               </>
             )}
@@ -450,15 +431,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
           {chart && !chartOpen && (
             <button
               onClick={() => setChartOpen(true)}
-              className="px-4 py-2 transition-colors"
-              style={{
-                fontSize: "13px",
-                fontWeight: 600,
-                background: "var(--m-cream-2)",
-                color: "var(--m-ink)",
-                border: "1px solid var(--m-ink-faint)",
-                borderRadius: "980px",
-              }}
+              className="chip"
             >
               View last plan
             </button>

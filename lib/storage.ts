@@ -57,6 +57,16 @@ export type WeekPlan = Record<string, DayPlan>;
 
 const MEAL_PLAN_KEY = "crave_mealPlan";
 
+/**
+ * Fired after any saveMealPlan() write.
+ *
+ * AddToPlanDialog (reached from a recipe) wrote the plan without telling the
+ * planner page, so an open planner kept showing stale data until it remounted —
+ * add a dish from a recipe, switch to the Plan tab, and it was not there. Any
+ * new writer must go through saveMealPlan so this stays true.
+ */
+export const MEAL_PLAN_EVENT = "crave:meal-plan-changed";
+
 export function getMealPlan(): WeekPlan {
   if (typeof window === "undefined") return {};
   try {
@@ -69,6 +79,9 @@ export function getMealPlan(): WeekPlan {
 
 export function saveMealPlan(plan: WeekPlan): void {
   localStorage.setItem(MEAL_PLAN_KEY, JSON.stringify(plan));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(MEAL_PLAN_EVENT));
+  }
 }
 
 // --- Meal Log (tracker) ---

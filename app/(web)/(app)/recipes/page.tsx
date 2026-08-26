@@ -216,7 +216,7 @@ export default function RecipesPage() {
                   return (
                     <button
                       key={r.id}
-                      className="svit svon din-lift"
+                      className="din-lift"
                       onClick={() => startCooking(r.recipe)}
                       style={{
                         flexDirection: "column", alignItems: "flex-start", gap: 8,

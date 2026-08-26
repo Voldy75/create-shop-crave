@@ -18,14 +18,17 @@ const TABS: { id: PlannerTab; label: string; icon: React.ComponentType<{ width?:
 ];
 
 /**
- * Planner tab switcher. The w4b artboard draws only the tracker, so it has no
- * opinion on this control — it is meshi's `.seg` segmented pill, matching the
- * week/month toggle inside the tracker rather than inventing a second
- * switcher shape on the same screen.
+ * Planner tab switcher, now on w8c/w8d's `.pseg`.
+ *
+ * w8c and w8d both draw this control explicitly — a taller pill-segmented
+ * Plan / Tracker / Coach group — where the older w4b artboard drew only the
+ * tracker and had no opinion. `.seg` is kept for the week/month toggle INSIDE
+ * the tracker, so the two levels of switcher are now visually distinct instead
+ * of being the same control at the same size.
  */
 export function PlannerTabs({ active, onChange, coachEnabled = false }: Props) {
   return (
-    <div className="seg" role="tablist" aria-label="Planner view">
+    <div className="pseg" role="tablist" aria-label="Planner view">
       {TABS.map(({ id, label, icon: Icon }) => {
         const disabled = id === "coach" && !coachEnabled;
         const isActive = active === id;
@@ -37,7 +40,7 @@ export function PlannerTabs({ active, onChange, coachEnabled = false }: Props) {
             aria-controls={`planner-panel-${id}`}
             disabled={disabled}
             onClick={() => !disabled && onChange(id)}
-            className={isActive ? "seg-on" : ""}
+            className={isActive ? "is-active" : ""}
             style={{
               display: "inline-flex",
               alignItems: "center",
