@@ -251,8 +251,8 @@ carries the sequencing, which matters. Summary only:
 Simulator** against a local `next dev`. Android: **JDK 17 + JDK 21** (21 is
 required — Capacitor 7 plugins declare a Java-21 toolchain), the **Android SDK**
 at `~/Library/Android/sdk` (via `android-commandlinetools` + `sdkmanager`,
-licenses accepted), `@capacitor/android` (**installed; dependency commit still
-pending**), `android/` generated, and the **debug APK builds cleanly**
+licenses accepted), `@capacitor/android` (**installed and committed**,
+`^7.6.8`, matching `@capacitor/ios`), `android/` generated, and the **debug APK builds cleanly**
 (`./gradlew assembleDebug`) — not yet run in an emulator/device. Both `ios/` and
 `android/` are git-ignored throwaways baking in localhost dev URLs
 (`http://localhost:3000/m` for iOS, `http://10.0.2.2:3000/m` for the Android

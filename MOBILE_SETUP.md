@@ -89,7 +89,7 @@ Current state on this machine, checked:
 | iOS project | ✅ **generated locally as a DEV build** and run in the Simulator — see the note below |
 | Java runtime | ✅ **JDK 17 AND JDK 21 installed** (`brew install openjdk@17 openjdk@21`). **JDK 21 is required** — Capacitor 7 plugins declare a Java-21 toolchain, so a JDK-17-only build fails at `:capacitor-geolocation:compileDebugJavaWithJavac`. Run Gradle with `JAVA_HOME=/opt/homebrew/opt/openjdk@21`. |
 | Android SDK | ✅ **installed** at `~/Library/Android/sdk` (`brew install --cask android-commandlinetools`; then `sdkmanager platform-tools "platforms;android-35" "build-tools;35.0.0"`, licenses accepted). `ANDROID_HOME` is NOT persisted in the shell profile — export it per-command (see below). |
-| `@capacitor/android` | ✅ **installed** (`^7.6.8`) — *dependency commit still pending* (parallel to the `@capacitor/ios` commit). |
+| `@capacitor/android` | ✅ **installed and committed** (`^7.6.8`, pinned to match `@capacitor/ios`). Adds no transitive dependencies, so `npm audit` stayed at 14. |
 | Android project | ✅ **generated locally as a DEV build; debug APK builds cleanly** (`./gradlew assembleDebug`). Not yet run in an emulator/device. |
 
 Both platforms build locally. Neither has been set up for *distribution* (that
