@@ -66,10 +66,19 @@ something, update BOTH this index and the section it points to.
     synthetic stream; real permission/rear-camera/EXIF/iOS-autoplay still
     unproven. → the `/m/log` section, which carries the `--experimental-https`
     recipe.
-11. **Dark mode** — renders, never deliberately reviewed; now larger since the
-    nine new screens were built light-only. → "What's actually next".
+11. **Dark mode** — still not reviewed SCREEN BY SCREEN, but no longer wholly
+    unexamined: the w6a–w9e web screens were each measured in both themes as
+    they landed, and that pass found two real failures (see "Contrast: measure,
+    and measure in BOTH themes"). The nine older mobile screens are still
+    light-only. → "What's actually next".
 12. **Any real payment**, on any provider. → "What is verified, and what is
     not" (PR #33 body).
+
+**C-bis. Web redesign (w6a–w9e) — DONE, with two named gaps**
+The new design file was implemented across 8 commits: see "The web redesign
+against the NEW design file" below. Two things it could NOT verify and did not
+fake: `NotificationsSection`'s real rows (no session — same wall as A1), and
+anything behind a real ride booking or a real store order, which do not exist.
 
 **D. Content / decisions (cheap, pre-launch)**
 13. **Unverified marketing copy** — "50+ cuisines", "<10s to a full recipe". →
@@ -181,6 +190,9 @@ it was cherry-picked here so source and DB stayed consistent. That branch is
 redundant now.)
 
 `npx tsc --noEmit`, `next build`, `eslint` and `npm run check:hex` are clean
+(**77 routes** as of the w6a–w9e web redesign — `/home`, `/recipes`,
+`/recipes/[slug]/cook`, `/dine-out` and `/dine-out/go/[id]` were added on top of
+the 73 below; `/favorites` and `/settings/notifications` remain as redirects)
 (**73 routes** — `/cart` was added during 10c, then `/m/plan/streak` and
 `/m/settings/notifications` when the audit gaps were closed, then
 `/m/settings/key` for the mobile 7f BYOK screen). Route counts quoted inside
@@ -1001,7 +1013,10 @@ ignore those two.
 
 ## Suggested next step
 
-**Phase 10 (the entire meshi re-skin, 10a–10e) is done.** What follows is kept
+**Phase 10 (the entire meshi re-skin, 10a–10e) is done, and so is the later
+w6a–w9e web redesign** — for that, read "The web redesign against the NEW
+design file" further down; the boards this section cites (w2a, w3a, w3b, w4a…)
+no longer exist in the design file. What follows is kept
 for its per-screen decisions and traps — read it if you're touching one of
 these screens again — not as a live task list. For what's actually next, skip
 to the end of this section.
@@ -1490,6 +1505,180 @@ to the end of this section.
    double-checked against the last commit's source and are byte-identical
    pre-existing values from Phase 10c's original band design — not introduced
    here, and out of scope for a token-rename pass to silently "fix".
+
+## The web redesign against the NEW design file (w6a–w9e)
+
+**Read this before touching any web screen.** The design file was REPLACED, not
+extended. `Meshi Redesign - Web.dc.html` no longer contains `w1b, w2a, w3a,
+w3b, w4a, w4b, w5a` — the nine boards Phase 10c was built against. It now holds
+15: `w1a, wLa, w6a, w7a/b/c, w8a–w8d, w9a–w9e`. Anything above that cites w2a
+or w3a is describing a board that is gone; those codes now only name
+already-shipped screens.
+
+**`design/meshi-app.css` is new and load-bearing.** NONE of the new boards'
+component classes existed anywhere in this repo — not in meshi-b.css,
+meshi-web.css, globals.css, nor even mobile.css. `.dchip`, `.dpin`, `.ingr`,
+`.utab`, `.xsw`, `.xrow`, `.xcell`, `.xmeal`, `.thr`, `.dnc`, `.rideo`, `.bkw`,
+`.din-*` and the `din-*/rt-dash/bk-pop` keyframes are all vendored there, in a
+separate file for the reason meshi-motion.css is one. Imported by
+`app/(web)/layout.tsx` after meshi-web.css, unlayered.
+
+**What was deliberately NOT vendored, and why it matters:** the ~66 CSS-only
+state rules. The artboards are static HTML, so every interactive state runs on
+a hidden `input.x-in` plus `:has(…:checked)`. React drives state for real, so
+what is ported is the *rendered appearance* of each `:checked` branch as an
+`.is-*` modifier the component applies. **If you reach for a `:has()` rule from
+the artboard and cannot find it, that is why — use the modifier.** The
+vocabulary is listed in that file's header. Also not ported: the `.win*` fake
+browser chrome, and `.mlabel` (the real Google Map draws its own place labels;
+a second invented set would be fabricated geography).
+
+**A trap this pass hit twice, in both directions.** `.xhost` and `.svit/.svon`
+went into markup before anyone noticed they are state hooks that were never
+vendored — invented class names that are valid HTML and style nothing, exactly
+like `chip-solid` and `class="chip active"`. There is now a mechanical check
+worth re-running after any artboard port:
+
+```bash
+# every artboard-shaped class used in the app, vs what the web tree loads
+grep -rhoE 'className="[^"]*"' app components | tr ' ' '\n' \
+  | grep -oE '\b(x|d|ing|stp|thr|utab|bkw|sv|mp-|rideo|pseg|dseg|dchip|dpin|dnc|rcard|din-)[a-z0-9-]*' \
+  | sort -u | while read c; do grep -q "\.$c" design/*.css app/globals.css || echo "UNDEFINED: .$c"; done
+```
+
+The only legitimate misses are `.ing-name` / `.ing-qty`, which are mobile-only
+and used only in the mobile tree.
+
+### New routes
+
+| Route | Board | Notes |
+|---|---|---|
+| `/home` | none (w2a is gone) | Signed-in dashboard. `/` stays the landing; it used to redirect signed-in users to `/chat`, so the sidebar's "Home" pointed at a page that bounced them out. Composed from the system + the mobile home, NOT traced. |
+| `/recipes` | w9a | The saved shelf. `FavoriteButton` already wrote favorites from chat; this is the missing surface. `/favorites` is now a redirect here. |
+| `/recipes/[slug]/cook` | w9b | Tickable ingredients/steps, servings stepper. Slug resolves via the sessionStorage hand-off first, then the saved shelf — so it is NOT a durable permalink, and has a real not-found state. |
+| `/dine-out` | w9e + w7c | ONE route, two view modes. w9d/w9e/w7c all print the same fake URL, so they are three treatments of one screen. |
+| `/dine-out/go/[id]` | w9c | The most heavily trimmed screen in the project — see below. |
+
+`/settings/notifications` is now a **redirect** onto `?tab=notifications`; it
+was a full 952-line second copy of the notifications UI. It **forwards its query
+string**, because `/api/swiggy/auth/callback` lands there with `?connected=1`.
+
+### What these boards draw that is NOT built
+
+The rule agreed for this work was honest data only, and it removed a lot:
+
+- **Ride fares, and the whole booking flow.** w9c draws nine priced tiers, a
+  "Confirm ride · ₹212", then a named driver, his rating, a plate, an OTP,
+  "Arriving in 3 min", and "your 8:30 table is held". This app calls no rides
+  API, cannot book a ride and cannot hold a table. Mobile 7h already made this
+  call for fares. What IS real: the route, haversine distance, an approximate
+  drive time labelled as such, and real Uber/Ola/Maps deeplinks.
+- **Rapido** — no deeplink builder and no public scheme to write one against.
+  A `.mp-rapido` style exists but nothing renders it. Same call as "Grok".
+- **Match scores** (92%/84%/79%). Nothing computes dish↔restaurant similarity;
+  Bo returns an ordered list, so rank is real and rank is shown.
+- **Per-restaurant dish names and prices** — no platform gives us a menu.
+- **w9a's editorial feed** ("monsoon dinners", "Show 24 more", four Collections
+  cards with counts) — no catalogue, no collections model. The hero and grid are
+  filled from the user's own shelf.
+- **w9b's timer and hands-free mode**; **w9a's "cooked twice"**.
+- **w8b's "₹2,990 · renews 14 Mar 2027"** — the real product is ₹749 once for
+  31 days. Use `lib/billing`. This is the third time a paywall number in a
+  design has been wrong.
+- **w8a's "History synced · kept 90 days"** — the window is 3 days and
+  localStorage does not sync. Both halves false.
+- **Pantry state from "Tuesday's Instamart order"** — there is no order history;
+  it is `lib/pantry.ts`'s keyword guess, and the copy says so. Do not reword it.
+
+### Retention: three short-lived stores
+
+`lib/history-store.ts` is a small `HistoryStore<T>` with prune-on-read (a timer
+cannot run while the tab is closed, which is when most ageing happens; `list()`
+writes the pruned set back, so it self-heals). Screens talk to the interface,
+never to localStorage, so the agreed "Supabase later" swap stays free.
+
+- `lib/conversation-history.ts` — Bo threads, **3 days**. This finally wires up
+  what `lib/storage.ts`'s `ChatSession` block never did (zero callers); that
+  dead code is deleted.
+- `lib/grocery-history.ts` — **7 days**, and note the naming: it records what
+  was **SENT** to a store, never "bought". No platform reports a completed
+  order back. Every label says "sent". Do not "improve" this into a purchase
+  history.
+- Saved recipes stay untimed in `lib/storage.ts`'s favorites.
+
+### Chat: the rail is now quick-action-triggered
+
+The rail used to open itself whenever a reply happened to contain a recipe, so a
+336px column appeared and vanished as you talked. It is closed by default and
+opens on a quick-action chip under Bo's newest answer. Consequence:
+`.chat-input-bar`'s 336px inset can no longer be a pure media query — the page
+sets `.chat-has-rail` on the flex parent so the two cannot disagree.
+
+Two real gaps closed alongside: the rail had **no restaurant branch** at all
+(`latestData` could match a restaurantSuggestion and only the recipe path
+rendered), and the topbar's new-chat button cleared `messages` without starting
+a new THREAD, so the next reply overwrote the thread you were reading.
+
+### The map: one implementation, and two blank-map bugs
+
+`components/web/MeshiMap.tsx` is now the only Google Map in the web tree;
+`RestaurantView` delegates to it through its existing `RestaurantMap` wrapper.
+Every load-bearing piece is unchanged — same loader id (`crave-create-maps`; a
+second id loads the script twice), `fitBounds`, `panTo`, the `gm_authFailure`
+hook and both fallbacks. Pins are `OverlayViewF`, not `Marker` icons, so they
+can use the real mascot components instead of copying path data into an SVG
+data-URI (the `gen-resources.mjs` drift risk).
+
+**Both bugs render a silent blank rectangle, which is why they lasted:**
+
+1. Dropping the `apiKey &&` guard before mounting the loader. `useJsApiLoader`
+   with an empty key does not error — it settles into a state that renders
+   nothing. Guard restored.
+2. **Pre-existing:** `gm_authFailure` works (invoke it and the Embed iframe
+   takes over) but Google does not always call it. A referrer-restricted key on
+   localhost logs `RefererNotAllowedMapError` and renders nothing. That is the
+   state this project's key is in off its web domain (blocker 5), so it is what
+   every developer sees. There is now a guard: if the container is still empty
+   2.5s after load, fall back.
+
+### Contrast: measure, and measure in BOTH themes
+
+Two failures this pass introduced, both caught only by measuring:
+
+- **Brand chips.** The boards pair every `.mp-*` ground with white text, as the
+  brands do. At 13px/700 that is 2.55:1 on Swiggy orange and 2.80:1 on Ola
+  green. The ground stays the brand's (that is what makes a chip
+  recognisable); the ink moved. All seven now clear AA, worst case 4.59. The
+  winning ink is **not uniform** — white stays correct on Uber and on the
+  directions blue.
+- **The dashboard's big kcal number.** `--m-forest` is 8.03:1 on light and
+  **2.63:1** on dark. The obvious fix — `color-mix(--m-forest 50%, --m-ink)`,
+  copying `status-pill.tsx` — made it **worse (1.51:1)**, because `--m-ink` is
+  cream in dark so the mix lands on the card; status-pill works because its
+  ground is a tint of its own hue, not the card. The real fix is
+  `--figure-accent` in globals.css: forest on light, lime on dark. 8.03 / 7.5.
+  **It is permanent** — deleting it drops that number back to 2.63:1.
+
+### Verification notes for this work
+
+`tsc`, `eslint`, `npm run check:hex` (still zero) and `next build` are clean;
+**77 routes**. Two permissions are DENIED in the preview browser and both can
+mask a broken granted path — the `/m/log` camera lesson:
+
+- **Geolocation.** Both branches were exercised: signed-out renders "Set your
+  location to get routes and rides" instead of dead buttons and hides the
+  Nearest sort; the granted branch was checked behind a temporary, never-
+  committed seeded location in UserContext.
+- **Auth.** Chat, settings and the dashboard were driven behind a temporary,
+  never-committed redirect bypass. `grep -rn "TEMP-VERIFY" app components lib`
+  is clean; re-run it if you use the same technique.
+
+**Still NOT exercised:** `NotificationsSection` renders "Sign in to manage
+notifications" without a session, so its real `.xrow`/`.xsw` rows have never
+been on screen — the styling CONTRACT was verified by mounting both states and
+measuring (off: cream-2 track, knob at rest, detail `display:none`; on: lime
+track, knob translated exactly 26px, lime 2.5px ring, tint-green icon), but the
+behaviour behind the toggle still needs a real session. Same wall as blocker 1.
 
 ## The mobile artboard audit — coverage by screen code
 
