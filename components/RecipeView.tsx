@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, ChevronDown, Utensils, CalendarPlus, Bot, Flame, MapPinned } from "lucide-react";
+import { ShoppingCart, ChevronDown, Utensils, CalendarPlus, Bot, Flame, MapPinned, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -111,9 +111,19 @@ export function RecipeView({ data }: RecipeViewProps) {
                             )}
                             <span className="badge badge-plum"><b>{difficultyLabel(data.instructions.length)}</b></span>
                         </div>
-                        <span style={{ font: "800 30px/1.05 var(--m-font-display)", color: "var(--m-on-deep)" }}>
-                            {data.name}
-                        </span>
+                        <div className="vstack" style={{ gap: 10, alignItems: "flex-start" }}>
+                            {/* w6a labels the artifact as model-generated. Worth keeping:
+                                these recipes are produced by an LLM, quantities and the
+                                price estimates included, and the user should know that
+                                before they shop from them. */}
+                            <span className="recipe-ai-badge">
+                                <Sparkles width={12} height={12} aria-hidden />
+                                AI-generated recipe
+                            </span>
+                            <span style={{ font: "800 30px/1.05 var(--m-font-display)", color: "var(--m-on-deep)" }}>
+                                {data.name}
+                            </span>
+                        </div>
                     </div>
                 </div>
 

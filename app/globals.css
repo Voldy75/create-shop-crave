@@ -841,6 +841,21 @@
   }
 }
 
+/* ── Recipe artifact (w6a) — UNLAYERED, sits over the photo hero ── */
+.recipe-ai-badge {
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 11px var(--m-font-display), sans-serif;
+  /* Over a photo, so it needs its own ground rather than a token surface. */
+  background: color-mix(in srgb, var(--m-forest-2) 68%, transparent);
+  color: var(--m-on-deep);
+  backdrop-filter: blur(3px);
+}
+
 /* ── Dine out (w9e list + w7c map) — UNLAYERED, same reason as the rails ──
    w9e's proportions: a 460px accordion beside the map. Both artboards draw the
    map as the larger half, so the list is fixed and the map takes the rest. */

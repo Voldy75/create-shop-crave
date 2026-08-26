@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "rea
 import { useChat } from "ai/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
-import { RotateCcw, AlertCircle, ArrowUp, ArrowDown, ChefHat, MapPin, Leaf, Users, Timer, Store, ShoppingCart, Utensils, Package, Sparkles } from "lucide-react";
+import { RotateCcw, AlertCircle, ArrowUp, ArrowDown, ChefHat, MapPin, Leaf, Users, Timer, Store, ShoppingCart, Utensils, Package, Sparkles, X, MapPinned, ShoppingBag } from "lucide-react";
 import { Chip } from "@/components/cc/chip";
 import { LottiePlayer } from "@/components/LottiePlayer";
 import { RecipeView } from "@/components/RecipeView";
@@ -17,7 +17,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PROVIDERS, type Provider } from "@/lib/providers";
 import { getStoredBYOK, saveBYOK } from "@/lib/byok";
 import { parseNumeric } from "@/lib/nutrition";
-import { buildSwiggyInstamartLink } from "@/lib/deeplinks";
+import { ConversationRail } from "@/components/web/ConversationRail";
+import {
+  listConversations,
+  saveConversation,
+  deleteConversation,
+  type Conversation,
+} from "@/lib/conversation-history";
+import { setActiveRecipe, setBuyList, setActiveRestaurants } from "@/lib/mobile-handoff";
+import { recipeSlug } from "@/lib/recipe-slug";
 import { DAILY_LIMIT } from "@/lib/constants";
 import type { RecipeData, RestaurantSuggestion } from "@/lib/types";
 
@@ -87,6 +95,17 @@ const AGENT_SUGGESTION_PROMPTS = [
   { label: "Re-order my usual groceries", icon: RotateCcw },
 ];
 
+/**
+ * The three stores /cart can hand off to. Brand colours are DESIGN.md-allowlisted
+ * (partner brands are not themeable tokens), and match the same three
+ * lib/deeplinks builders /cart itself uses.
+ */
+const STORE_HANDOFFS = [
+  { id: "instamart", label: "Instamart", tint: "#FC8019", ink: "#fff" }, // hex-ok: Swiggy brand
+  { id: "blinkit", label: "Blinkit", tint: "#F8CB46", ink: "#3A2E00" }, // hex-ok: Blinkit brand
+  { id: "instacart", label: "Instacart", tint: "#0AAD0A", ink: "#fff" }, // hex-ok: Instacart brand
+] as const;
+
 /** Compact labels for the model segment control — "Google Gemini" is too wide at 4-up. */
 const MODEL_LABELS: Record<Provider, string> = { gemini: "Gemini", openai: "GPT-4o", anthropic: "Claude" };
 
@@ -131,6 +150,16 @@ function ChatPageInner() {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const chatAreaRef = useRef<HTMLElement>(null);
+
+  /* ── Conversation history (w8a) + the retractable rail (item 2) ──
+     The rail is CLOSED by default and opens only on a quick action. It used to
+     open itself whenever a reply happened to contain a recipe, which meant the
+     336px column appeared and vanished as you talked. `railFocus` records WHICH
+     quick action opened it so the rail can lead with that context. */
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [threadId, setThreadId] = useState<string>(() => `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  const [railOpen, setRailOpen] = useState(false);
+  const [railFocus, setRailFocus] = useState<"cook" | "buy" | "dine" | null>(null);
 
   useEffect(() => {
     setByok(getStoredBYOK());
@@ -219,6 +248,29 @@ function ChatPageInner() {
     }
   }, [messages]);
 
+  // localStorage read after mount — cannot run during SSR. Same scoped disable
+  // and same reason as /cart's hydration effect.
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setConversations(listConversations());
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
+  /* Persist ON SETTLE, never mid-stream: saving each token would rewrite the
+     whole thread on every frame, and `id` is stable for the life of a thread so
+     saveConversation updates in place rather than stacking rows. */
+  useEffect(() => {
+    if (isLoading || messages.length === 0) return;
+    const saved = saveConversation({
+      id: threadId,
+      messages: messages.map((m) => ({ id: m.id, role: m.role, content: m.content })),
+      agentMode,
+    });
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (saved) setConversations(listConversations());
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [isLoading, messages, threadId, agentMode]);
+
   // One-shot: when the user lands here via a CTA hand-off like
   // /chat?agent=1&q=Order+ingredients..., prefill the input and auto-fire.
   const autoFiredRef = useRef(false);
@@ -247,6 +299,39 @@ function ChatPageInner() {
   };
 
   const handleSuggestionClick = (s: string) => setInput(s);
+
+  /* ── Conversation rail handlers ── */
+  const openThread = (c: Conversation) => {
+    setThreadId(c.id);
+    setMessages(c.messages.map((m) => ({ id: m.id, role: m.role as "user" | "assistant", content: m.content })));
+    setError(null);
+    // A restored thread's artifacts belong to that thread, so the rail resets
+    // rather than keeping the previous conversation's recipe on screen.
+    setRailOpen(false);
+    setRailFocus(null);
+  };
+
+  const removeThread = (id: string) => {
+    deleteConversation(id);
+    setConversations(listConversations());
+    // Deleting the thread you are reading should clear the pane too, or the
+    // messages stay visible with nothing backing them.
+    if (id === threadId) startNewThread();
+  };
+
+  const startNewThread = () => {
+    setMessages([]);
+    setError(null);
+    setThreadId(`c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+    setRailOpen(false);
+    setRailFocus(null);
+  };
+
+  /** A quick action under a Bo answer — this is what opens the rail (item 2). */
+  const openRail = (focus: "cook" | "buy" | "dine") => {
+    setRailFocus(focus);
+    setRailOpen(true);
+  };
 
   const handleChatScroll = () => {
     const el = chatAreaRef.current;
@@ -295,7 +380,20 @@ function ChatPageInner() {
       : `● online · ${Math.max(0, DAILY_LIMIT - usageCount)} free chat${DAILY_LIMIT - usageCount === 1 ? "" : "s"} left today`;
 
   return (
-    <div className="flex h-full flex-col md:flex-row" style={{ background: "var(--m-cream)" }}>
+    <div
+      className={`flex h-full flex-col md:flex-row${railOpen ? " chat-has-rail" : ""}`}
+      style={{ background: "var(--m-cream)" }}
+    >
+      {/* ── Conversation history (w8a). Hides below 1280px — it competes for the
+          same horizontal budget as the sidebar and the right rail. ── */}
+      <ConversationRail
+        conversations={conversations}
+        activeId={messages.length > 0 ? threadId : null}
+        onOpen={openThread}
+        onDelete={removeThread}
+        onNew={startNewThread}
+      />
+
       {/* h-full, not h-screen: this now nests inside AppShell's .main, which
           already gets real viewport height from .web-shell
           (min-height:100dvh) and the sidebar's own height:100dvh. h-screen
@@ -322,7 +420,7 @@ function ChatPageInner() {
 
           {messages.length > 0 && (
             <button
-              onClick={() => { setMessages([]); setError(null); }}
+              onClick={startNewThread}
               className="icon-btn"
               aria-label="Start a new chat"
               title="New chat"
@@ -461,6 +559,32 @@ function ChatPageInner() {
                     </div>
                   )}
 
+                  {/* ── Quick actions (item 2). These are what OPEN the rail —
+                      it no longer opens itself when a reply happens to contain a
+                      recipe. Only rendered on the newest answer, and only for
+                      capabilities this reply actually has. ── */}
+                  {!isUser && !isLoading && index === messages.length - 1 && data && (
+                    <div className="mx-auto w-full max-w-3xl">
+                      <div className="hstack ml-9" style={{ gap: 7, flexWrap: "wrap" }}>
+                        {data.recipe && (
+                          <>
+                            <button className="chip pill-sm" onClick={() => openRail("cook")}>
+                              <ChefHat width={14} height={14} aria-hidden /> Start cooking
+                            </button>
+                            <button className="chip pill-sm" onClick={() => openRail("buy")}>
+                              <ShoppingBag width={14} height={14} aria-hidden /> Buy ingredients
+                            </button>
+                          </>
+                        )}
+                        {data.restaurantSuggestion && (
+                          <button className="chip pill-sm" onClick={() => openRail("dine")}>
+                            <MapPinned width={14} height={14} aria-hidden /> Dine out
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {!isUser && !isLoading && index === messages.length - 1 && (
                     <div className="mx-auto w-full max-w-3xl">
                       <button onClick={() => reload()} className="ml-9 flex items-center gap-1.5 t-cap" style={{ background: "none", border: "none" }} aria-label="Regenerate last response">
@@ -546,54 +670,133 @@ function ChatPageInner() {
         </div>
       </div>
 
-      {/* ── Rail — "From this chat" (w3a). Hidden below --chat-rail-bp; the
-          hide rule lives in globals.css and MUST be unlayered — .rail sets
-          its own `display: flex` in the unlayered meshi-web.css, so a
-          layered Tailwind `hidden` utility would lose to it at every
-          viewport width (the same trap AppShell's sidebar breakpoint hit). ── */}
-      <aside className="rail chat-rail">
-        <span className="t-micro">From this chat</span>
-
-        {latestData?.recipe ? (
-          <RecipeSummaryCard recipe={latestData.recipe} onJump={() => jumpToMessage(latestData.messageId)} />
-        ) : (
-          <div className="card" style={{ padding: 16 }}>
-            <span className="t-cap">Ask Bo for a recipe and it&rsquo;ll show up here.</span>
-          </div>
-        )}
-
-        {latestData?.recipe && latestData.recipe.ingredients.length > 0 && (
-          <div className="card" style={{ padding: 16 }}>
-            <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 10 }}>
-              <span className="t-h2">Buy ingredients</span>
-            </div>
-            <a
-              href={buildSwiggyInstamartLink(latestData.recipe.ingredients.map((i) => i.item).join(", "))}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="pill-lime"
-              style={{ width: "100%", textDecoration: "none", display: "flex" }}
+      {/* ── Rail — "From this chat" (w3a), now RETRACTABLE (item 2).
+          Closed by default; a quick action under a Bo answer opens it. The hide
+          rule and the input bar's 336px inset both live in globals.css and MUST
+          stay unlayered — .rail sets its own `display: flex` in the unlayered
+          meshi-web.css, so a layered Tailwind `hidden` would lose at every
+          width (the trap the sidebar breakpoint hit once already). ── */}
+      {railOpen && (
+        <aside className="rail chat-rail">
+          <div className="hstack" style={{ gap: 8 }}>
+            <span className="t-micro grow">From this chat</span>
+            <button
+              className="icon-btn"
+              style={{ width: 30, height: 30 }}
+              onClick={() => { setRailOpen(false); setRailFocus(null); }}
+              aria-label="Collapse this panel"
+              title="Collapse"
             >
-              Send to Instamart
-            </a>
-          </div>
-        )}
-
-        <div className="grow" />
-
-        {!isPro && (
-          <div className="card tint-lav vstack" style={{ boxShadow: "none", padding: 16, gap: 10 }}>
-            <div className="hstack" style={{ gap: 10 }}>
-              <Sparkles width={20} height={20} style={{ color: "var(--m-plum)" }} />
-              <span className="t-h2" style={{ color: "var(--m-plum)" }}>Loving Bo?</span>
-            </div>
-            <span className="t-cap">Go Pro for unlimited chats, or bring your own key.</span>
-            <button onClick={() => setShowUpgradeDialog(true)} className="pill-plum" style={{ width: "100%" }}>
-              Go Pro — ₹749
+              <X width={14} height={14} />
             </button>
           </div>
-        )}
-      </aside>
+
+          {/* railFocus decides which card leads. A "Dine out" click should not
+              have to scroll past the recipe card to reach the map button. */}
+          {latestData?.recipe && railFocus !== "dine" && (
+            <>
+              <RecipeSummaryCard recipe={latestData.recipe} onJump={() => jumpToMessage(latestData.messageId)} />
+
+              {/* ITEM 3 — "Start cooking" goes to the recipe's own page. The
+                  recipe is handed over through sessionStorage first, so the
+                  cooking view resolves it even though it was never saved. */}
+              <button
+                className="pill-primary"
+                style={{ width: "100%" }}
+                onClick={() => {
+                  setActiveRecipe(latestData.recipe!);
+                  router.push(`/recipes/${recipeSlug(latestData.recipe!.name)}/cook`);
+                }}
+              >
+                <ChefHat width={16} height={16} aria-hidden /> Start cooking
+              </button>
+
+              {latestData.recipe.ingredients.length > 0 && (
+                <div className="card vstack" style={{ padding: 16, gap: 10 }}>
+                  <span className="t-h2">Buy ingredients</span>
+                  {/* ITEM 3 — these go to /cart (w4a), NOT straight to a store.
+                      /cart runs the pantry pre-check first, so the user drops what
+                      they already own before anything is ordered. Linking a store
+                      directly would skip that and send the whole list. */}
+                  <span className="t-cap">
+                    Sends the list to your groceries page first, so you can drop what
+                    you already have.
+                  </span>
+                  <div className="vstack" style={{ gap: 7 }}>
+                    {STORE_HANDOFFS.map((store) => (
+                      <button
+                        key={store.id}
+                        className="xstore"
+                        style={{ width: "100%", background: store.tint, color: store.ink }}
+                        onClick={() => {
+                          setActiveRecipe(latestData.recipe!);
+                          setBuyList({ recipeName: latestData.recipe!.name, items: latestData.recipe!.ingredients });
+                          router.push(`/cart?store=${store.id}`);
+                        }}
+                      >
+                        <ShoppingBag width={15} height={15} aria-hidden /> Send to {store.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* The rail never had a restaurant branch — latestData could match a
+              restaurantSuggestion and only the recipe path rendered, so the panel
+              came up empty on a dine-out answer. */}
+          {latestData?.restaurantSuggestion && (
+            <div className="card vstack" style={{ padding: 16, gap: 10 }}>
+              <span className="t-h2">
+                {latestData.restaurantSuggestion.restaurants?.length ?? 0} place
+                {(latestData.restaurantSuggestion.restaurants?.length ?? 0) === 1 ? "" : "s"} matched
+              </span>
+              {latestData.restaurantSuggestion.dishName && (
+                <span className="t-cap">for {latestData.restaurantSuggestion.dishName}</span>
+              )}
+              <button
+                className="pill-primary"
+                style={{ width: "100%" }}
+                onClick={() => {
+                  setActiveRestaurants(latestData.restaurantSuggestion!);
+                  router.push("/dine-out");
+                }}
+              >
+                <MapPinned width={16} height={16} aria-hidden /> Open the map
+              </button>
+              <button className="chip" style={{ width: "100%" }} onClick={() => jumpToMessage(latestData.messageId)}>
+                Jump to results
+              </button>
+            </div>
+          )}
+
+          {latestData?.recipe && railFocus === "dine" && (
+            <RecipeSummaryCard recipe={latestData.recipe} onJump={() => jumpToMessage(latestData.messageId)} />
+          )}
+
+          {!latestData?.recipe && !latestData?.restaurantSuggestion && (
+            <div className="card" style={{ padding: 16 }}>
+              <span className="t-cap">Ask Bo for a recipe or a place to eat and it&rsquo;ll show up here.</span>
+            </div>
+          )}
+
+          <div className="grow" />
+
+          {!isPro && (
+            <div className="card tint-lav vstack" style={{ boxShadow: "none", padding: 16, gap: 10 }}>
+              <div className="hstack" style={{ gap: 10 }}>
+                <Sparkles width={20} height={20} style={{ color: "var(--m-plum)" }} />
+                <span className="t-h2" style={{ color: "var(--m-plum)" }}>Loving Bo?</span>
+              </div>
+              <span className="t-cap">Go Pro for unlimited chats, or bring your own key.</span>
+              <button onClick={() => setShowUpgradeDialog(true)} className="pill-plum" style={{ width: "100%" }}>
+                Go Pro — ₹749
+              </button>
+            </div>
+          )}
+        </aside>
+      )}
 
       {showUpgradeDialog && (
         <UpgradeDialog
