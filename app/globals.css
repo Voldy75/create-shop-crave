@@ -841,6 +841,24 @@
   }
 }
 
+/* ── Figure accent — UNLAYERED, and a PERMANENT token, not scaffolding ──
+   Big statistic numbers on a `.card` cannot just use --m-forest. In dark mode
+   meshi-b's forest is #2E7A48 against a #362B18 card, which measures 2.63:1 —
+   failing AA even at the 3:1 large-text threshold, on the single most
+   prominent number on the dashboard.
+
+   `color-mix(--m-forest 50%, --m-ink)` looks like the fix (it is what
+   components/cc/status-pill.tsx does) and is WRONG here: --m-ink is cream in
+   dark, so the mix lands almost exactly on the card and measures 1.51:1 —
+   worse than what it replaced. status-pill works because its ground is an 18%
+   tint of its own hue, not the card.
+
+   So this is a real per-theme swap: forest on light, lime on dark. Same
+   mechanism and same justification as --band-* — deleting it in a future
+   token cleanup would silently drop a large number to 2.63:1. */
+:root { --figure-accent: var(--m-forest); }
+[data-theme="dark"] { --figure-accent: var(--m-lime); }
+
 /* ── Home dashboard — UNLAYERED, same reason as the rails ──
    Two-up cards that stop being readable side by side well above the sidebar's
    767.98px cutoff, so they collapse on their own breakpoint. */

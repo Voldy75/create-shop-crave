@@ -58,13 +58,25 @@
   font: 700 13.5px var(--m-font-display, 'Montserrat'), sans-serif;
   border: none; cursor: pointer; white-space: nowrap;
 }
-.mp-swiggy { background: #FC8019; color: #fff; } /* hex-ok: Swiggy brand */
-.mp-zomato { background: #E23744; color: #fff; } /* hex-ok: Zomato brand */
-.mp-uber   { background: #1A1A1A; color: #fff; } /* hex-ok: Uber brand */
-.mp-ola    { background: #0FA05A; color: #fff; } /* hex-ok: Ola brand */
-.mp-rapido { background: #FFD400; color: #241C10; } /* hex-ok: Rapido brand */
-.mp-blinkit{ background: #F8CB46; color: #3A2E00; } /* hex-ok: Blinkit brand */
-.mp-dir    { background: #2F6BE0; color: #fff; } /* hex-ok: Google directions blue */
+/* Text colour here is chosen for CONTRAST, not for brand convention.
+   These chips are 13px/700 — below the 18.66px-bold threshold for "large
+   text" — so AA wants 4.5:1, and the brands' own white-on-colour pairings do
+   not reach it on the lighter grounds: white measured 2.55:1 on Swiggy's
+   orange and 2.80:1 on Ola's green.
+
+   The GROUND always stays the brand's own colour, which is what makes the chip
+   recognisable; only the ink moves. Light and mid grounds take a near-black
+   ink, dark grounds keep white. Measured after this change:
+     Swiggy 7.77 · Blinkit 12.84 · Rapido 13.83 · Ola 5.84 · Zomato 4.59
+     Uber 17.40 (white) · directions blue 4.88 (white — #0A0A0A would be 4.30)
+   Re-measure if any ground changes; the ink that wins is not always the same. */
+.mp-swiggy { background: #FC8019; color: #0A0A0A; } /* hex-ok: Swiggy brand ground */
+.mp-zomato { background: #E23744; color: #0A0A0A; } /* hex-ok: Zomato brand ground */
+.mp-uber   { background: #1A1A1A; color: #fff; }    /* hex-ok: Uber brand ground */
+.mp-ola    { background: #0FA05A; color: #0A0A0A; } /* hex-ok: Ola brand ground */
+.mp-rapido { background: #FFD400; color: #0A0A0A; } /* hex-ok: Rapido brand ground */
+.mp-blinkit{ background: #F8CB46; color: #0A0A0A; } /* hex-ok: Blinkit brand ground */
+.mp-dir    { background: #2F6BE0; color: #fff; }    /* hex-ok: Google directions blue */
 
 .dchip {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;

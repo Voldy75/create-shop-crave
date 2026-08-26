@@ -217,7 +217,11 @@ export default function HomePage() {
               </div>
               <div className="hstack" style={{ gap: 22, flexWrap: "wrap" }}>
                 <div className="vstack" style={{ gap: 0 }}>
-                  <span className="t-d1" style={{ fontSize: 30, color: "var(--m-forest)" }}>
+                  {/* --figure-accent, not --m-forest: bare forest measures
+                      2.63:1 on the dark card, failing AA even at the 3:1
+                      large-text bar. See the token's note in globals.css —
+                      including why the obvious color-mix fix is worse. */}
+                  <span className="t-d1" style={{ fontSize: 30, color: "var(--figure-accent)" }}>
                     {Math.round(todayTotals.calories)}
                   </span>
                   <span className="t-cap">{goals ? `of ${goals.dailyCalories} kcal` : "kcal logged"}</span>
