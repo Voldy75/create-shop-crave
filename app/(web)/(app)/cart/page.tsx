@@ -1,14 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { Check, ExternalLink, Sparkles } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Check, ExternalLink, History, Sparkles, Trash2 } from "lucide-react";
 import { getActiveRecipe, getBuyList, setBuyList } from "@/lib/mobile-handoff";
 import { parseNumeric } from "@/lib/nutrition";
 import { looksPantry } from "@/lib/pantry";
 import { mascotComponentFor, tileTint } from "@/lib/ingredient-mascot";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
-import { BoBowl } from "@/components/mascots";
+import { BoBowl, MascotFor } from "@/components/mascots";
+import {
+  listGroceryRuns,
+  recordGroceryRun,
+  clearGroceryRuns,
+  runDayLabel,
+  STORE_LABELS,
+  type GroceryRun,
+  type GroceryStore,
+} from "@/lib/grocery-history";
 import type { Ingredient } from "@/lib/types";
 
 /**
@@ -49,11 +58,29 @@ import type { Ingredient } from "@/lib/types";
 const EMPTY: Ingredient[] = [];
 
 export default function CartPage() {
+  // Suspense so useSearchParams below doesn't trigger a static-rendering
+  // bailout warning under Next 16 — same shape as chat and planner.
+  return (
+    <Suspense fallback={null}>
+      <CartPageInner />
+    </Suspense>
+  );
+}
+
+function CartPageInner() {
   const router = useRouter();
+  const params = useSearchParams();
   const [items, setItems] = useState<Ingredient[]>(EMPTY);
   const [recipeName, setRecipeName] = useState<string | null>(null);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [hydrated, setHydrated] = useState(false);
+  /* ITEM 6 — the 7-day record of what was sent to a store. */
+  const [runs, setRuns] = useState<GroceryRun[]>([]);
+
+  /* The rail highlights whichever store the caller asked for, so arriving from
+     chat's "Send to Blinkit" lands with Blinkit already picked out instead of
+     making the user find it again. */
+  const preferredStore = params.get("store");
 
   useEffect(() => {
     // sessionStorage read after mount — cannot run during SSR. Same handoff the
@@ -66,6 +93,7 @@ export default function CartPage() {
     setRecipeName(list?.recipeName ?? recipe?.name ?? null);
     // Pre-deselect probable pantry staples, exactly as /m/buy does.
     setOff(new Set(source.filter((i) => looksPantry(i.item)).map((i) => i.item)));
+    setRuns(listGroceryRuns());
     setHydrated(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
@@ -88,9 +116,23 @@ export default function CartPage() {
       return next;
     });
 
+  /**
+   * ITEM 6 — record the hand-off. Called from every path that actually sends
+   * the list somewhere, with the SELECTION at that moment, so the record
+   * matches what the store received rather than the full recipe.
+   */
+  const record = useCallback(
+    (store: GroceryStore) => {
+      recordGroceryRun({ recipeName, items: selected, subtotal, store });
+      setRuns(listGroceryRuns());
+    },
+    [recipeName, selected, subtotal]
+  );
+
   /** Carry the ACTUAL selection to the agent, or deselecting was theatre. */
   const askBo = () => {
     if (recipeName) setBuyList({ recipeName, items: selected });
+    record("agent");
     router.push(`/chat?agent=1&q=${encodeURIComponent(agentPrompt)}`);
   };
 
@@ -115,6 +157,15 @@ export default function CartPage() {
             Find something to cook
           </button>
         </div>
+
+        {/* An empty cart is the MOST likely way to arrive here from the sidebar,
+            so this is exactly where last week's lists matter. The early return
+            above used to hide them completely. */}
+        {runs.length > 0 && (
+          <div style={{ padding: "0 24px 28px", maxWidth: 820, margin: "0 auto", width: "100%" }}>
+            <RecentRuns runs={runs} onClear={() => { clearGroceryRuns(); setRuns([]); }} />
+          </div>
+        )}
       </div>
     );
   }
@@ -232,6 +283,8 @@ export default function CartPage() {
               );
             })}
           </div>
+
+          <RecentRuns runs={runs} onClear={() => { clearGroceryRuns(); setRuns([]); }} style={{ marginTop: 18 }} />
         </div>
       </div>
 
@@ -268,7 +321,13 @@ export default function CartPage() {
 
         {/* Instamart is the only platform Bo can actually transact with, so it
             is the raised card; the rest can only open a pre-searched app. */}
-        <div className="card tint-green" style={{ boxShadow: "none", padding: 14 }}>
+        <div
+          className="card tint-green"
+          style={{
+            padding: 14,
+            boxShadow: preferredStore === "instamart" ? "inset 0 0 0 2px var(--m-forest)" : "none",
+          }}
+        >
           <div className="hstack" style={{ gap: 10, marginBottom: 10 }}>
             <Sparkles width={18} height={18} style={{ color: "var(--m-forest)", flex: "none" }} />
             <span className="t-h2" style={{ fontSize: 14 }}>Swiggy Instamart</span>
@@ -285,6 +344,7 @@ export default function CartPage() {
             href={buildSwiggyInstamartLink(query)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => record("instamart")}
             className="wlink"
             style={{ marginTop: 10, justifyContent: "center", width: "100%", color: "var(--m-forest)" }}
           >
@@ -293,8 +353,18 @@ export default function CartPage() {
         </div>
 
         <div className="vstack" style={{ gap: 8 }}>
-          <StoreLink label="Blinkit" href={buildBlinkitLink(query)} />
-          <StoreLink label="Instacart" href={buildInstacartLink(query)} />
+          <StoreLink
+            label="Blinkit"
+            href={buildBlinkitLink(query)}
+            onSend={() => record("blinkit")}
+            highlight={preferredStore === "blinkit"}
+          />
+          <StoreLink
+            label="Instacart"
+            href={buildInstacartLink(query)}
+            onSend={() => record("instacart")}
+            highlight={preferredStore === "instacart"}
+          />
         </div>
 
         <div className="grow" />
@@ -303,15 +373,101 @@ export default function CartPage() {
   );
 }
 
+/**
+ * ITEM 6 — the 7-day record of what was SENT to a store.
+ *
+ * NOTE THE WORDING, and do not "improve" it: no platform reports a completed
+ * order back to this app, so all we know is that the user opened a store with a
+ * list. Calling these purchases or deliveries would be the same fabrication as
+ * w4a's "Bo places & tracks this order for you", which this screen already
+ * declined to build.
+ */
+function RecentRuns({
+  runs,
+  onClear,
+  style,
+}: {
+  runs: GroceryRun[];
+  onClear: () => void;
+  style?: React.CSSProperties;
+}) {
+  if (runs.length === 0) return null;
+  return (
+    <div className="card vstack" style={{ padding: 18, gap: 14, ...style }}>
+      <div className="hstack" style={{ gap: 10, flexWrap: "wrap" }}>
+        <History width={18} height={18} style={{ color: "var(--m-forest)", flex: "none" }} aria-hidden />
+        <span className="t-d2" style={{ fontSize: 18 }}>Recently sent</span>
+        <span className="chip pill-sm">{runs.length}</span>
+        <div className="grow" />
+        <button className="chip pill-sm" onClick={onClear} aria-label="Clear the sent-list history">
+          <Trash2 width={13} height={13} aria-hidden /> Clear
+        </button>
+      </div>
+
+      <div className="vstack" style={{ gap: 9 }}>
+        {runs.map((run) => (
+          <div
+            key={run.id}
+            className="row"
+            style={{ padding: "12px 14px", boxShadow: "none", background: "var(--m-cream)", alignItems: "flex-start" }}
+          >
+            <div className="vstack grow" style={{ gap: 4, minWidth: 0 }}>
+              <div className="hstack" style={{ gap: 8, flexWrap: "wrap" }}>
+                <span className="t-h2" style={{ fontSize: 14 }}>{run.recipeName ?? "Shopping list"}</span>
+                <span className="t-cap">
+                  {runDayLabel(run.at)} · sent to {STORE_LABELS[run.store]}
+                </span>
+              </div>
+              <div className="hstack" style={{ gap: 6, flexWrap: "wrap" }}>
+                {run.items.slice(0, 6).map((it) => (
+                  <span key={it.item} className="hstack" style={{ gap: 4 }}>
+                    <MascotFor name={it.item} width={18} height={18} aria-hidden />
+                    <span className="t-cap">{it.item}</span>
+                  </span>
+                ))}
+                {run.items.length > 6 && <span className="t-cap">+{run.items.length - 6} more</span>}
+              </div>
+            </div>
+            <span className="vstack" style={{ gap: 1, alignItems: "flex-end", flex: "none" }}>
+              <span className="t-h2" style={{ fontSize: 14 }}>~₹{run.subtotal}</span>
+              <span className="t-cap">{run.items.length} item{run.items.length === 1 ? "" : "s"}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <span className="t-cap">
+        Kept 7 days on this device, then cleared. These are lists you sent to a store —
+        meshi isn&rsquo;t told what you actually bought.
+      </span>
+    </div>
+  );
+}
+
 /** A store we can only hand a search query to — never presented as checkout. */
-function StoreLink({ label, href }: { label: string; href: string }) {
+function StoreLink({
+  label,
+  href,
+  onSend,
+  highlight,
+}: {
+  label: string;
+  href: string;
+  onSend: () => void;
+  highlight?: boolean;
+}) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={onSend}
       className="row"
-      style={{ padding: "11px 14px", boxShadow: "none", background: "var(--m-cream)" }}
+      style={{
+        padding: "11px 14px",
+        background: "var(--m-cream)",
+        boxShadow: highlight ? "inset 0 0 0 2px var(--m-forest)" : "none",
+      }}
     >
       <span className="t-h2 grow" style={{ fontSize: 14 }}>{label}</span>
       <span className="t-cap">opens search</span>
