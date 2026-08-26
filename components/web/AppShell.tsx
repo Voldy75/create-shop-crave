@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Heart, ShoppingBag, CalendarDays, Swords, Settings } from "lucide-react";
+import { Home, ChefHat, ShoppingBag, CalendarDays, Swords, Settings } from "lucide-react";
 import { BoBowl } from "@/components/mascots";
 import { useUser } from "@/app/context/UserContext";
 
@@ -25,7 +25,9 @@ import { useUser } from "@/app/context/UserContext";
  * Recipes / Groceries / Tracker. Discover still has no web route (it is
  * /m-only) so it is still not here — a nav item that goes nowhere is worse
  * than a shorter nav. Groceries JOINED when /cart was built for w4a; it was
- * absent for exactly that reason and no other.
+ * absent for exactly that reason and no other. Recipes JOINED the same way
+ * when /recipes was built for w9a — the slot used to read "Saved" pointing at
+ * /favorites, which is now a redirect onto /recipes.
  *
  * Below the `--web-shell-bp` breakpoint the sidebar hides and
  * components/BottomNav.tsx remains the navigation, which is why that component
@@ -34,7 +36,7 @@ import { useUser } from "@/app/context/UserContext";
 
 const NAV = [
   { href: "/", label: "Home", icon: Home, exact: true },
-  { href: "/favorites", label: "Saved", icon: Heart },
+  { href: "/recipes", label: "Recipes", icon: ChefHat },
   { href: "/cart", label: "Groceries", icon: ShoppingBag },
   { href: "/planner", label: "Planner", icon: CalendarDays },
   { href: "/arena", label: "Arena", icon: Swords },

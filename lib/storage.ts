@@ -39,41 +39,6 @@ export function isFavorited(type: "recipe" | "restaurant", name: string): boolea
   );
 }
 
-// --- Chat History ---
-
-export interface ChatSession {
-  id: string;
-  title: string;
-  messages: Array<{ role: string; content: string; id: string }>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const CHAT_SESSIONS_KEY = "crave_chatSessions";
-
-export function getChatSessions(): ChatSession[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem(CHAT_SESSIONS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveChatSession(session: ChatSession): void {
-  const sessions = getChatSessions().filter((s) => s.id !== session.id);
-  sessions.unshift(session);
-  // Keep only last 20 sessions
-  const trimmed = sessions.slice(0, 20);
-  localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(trimmed));
-}
-
-export function deleteChatSession(id: string): void {
-  const sessions = getChatSessions().filter((s) => s.id !== id);
-  localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(sessions));
-}
-
 // --- Meal Plan ---
 
 export interface MealSlot {
