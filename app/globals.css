@@ -841,6 +841,174 @@
   }
 }
 
+/* ── Dine out (w9e list + w7c map) — UNLAYERED, same reason as the rails ──
+   w9e's proportions: a 460px accordion beside the map. Both artboards draw the
+   map as the larger half, so the list is fixed and the map takes the rest. */
+.dineout-grid {
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  gap: 22px;
+  align-items: start;
+}
+.dineout-map {
+  height: 620px;
+  position: sticky;
+  top: 22px;
+}
+@media (max-width: 1080px) {
+  .dineout-grid { grid-template-columns: 1fr; }
+  /* Map first on narrow screens would push the list below the fold, so it
+     stays after the list and simply shortens. */
+  .dineout-map { height: 380px; position: static; }
+}
+
+/* w9e's rating and rank badges over the card hero. */
+.scrim-dine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, color-mix(in srgb, var(--m-forest-2) 62%, transparent), transparent 58%);
+}
+.dine-rating {
+  position: absolute;
+  left: 11px;
+  bottom: 11px;
+  height: 27px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--m-card);
+  box-shadow: var(--m-shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 700 12.5px var(--m-font-display), sans-serif;
+  color: var(--m-ink);
+}
+.dine-rank {
+  position: absolute;
+  right: 11px;
+  bottom: 11px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: var(--m-on-deep);
+  font: 800 11px var(--m-font-display), sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── w7c map mode — the map IS the page ── */
+.dineout-full {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+.dineout-float-tl {
+  position: absolute;
+  left: 22px;
+  top: 22px;
+  width: 320px;
+  max-width: calc(100% - 44px);
+  padding: 16px;
+  box-shadow: var(--m-shadow-lift);
+  z-index: 3;
+}
+.dineout-float-tr {
+  position: absolute;
+  right: 22px;
+  top: 22px;
+  z-index: 3;
+}
+.dineout-zoom {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--m-shadow-lift);
+  background: var(--m-card);
+}
+.dineout-zoom button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  color: var(--m-ink);
+  font: 700 21px var(--m-font-display), sans-serif;
+  cursor: pointer;
+}
+.dineout-zoom i {
+  height: 1.5px;
+  background: var(--m-ink-faint);
+  display: block;
+}
+.dineout-carousel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 18px 22px 22px;
+  z-index: 3;
+  /* Fades the map out under the cards so a busy map never fights the text. */
+  background: linear-gradient(0deg, var(--m-cream) 12%, transparent);
+}
+.dineout-carousel-track {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.dineout-mini {
+  width: 322px;
+  flex: none;
+  padding: 12px;
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.dineout-mini.is-active {
+  box-shadow: 0 0 0 2.5px var(--m-forest), var(--m-shadow-lift);
+}
+
+/* ── Go there (w9c) — UNLAYERED, same reason as the rails ── */
+.go-grid {
+  display: grid;
+  grid-template-columns: 428px 1fr;
+  gap: 18px;
+  padding: 22px 32px 40px;
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
+  align-items: start;
+}
+.go-map { height: 560px; position: sticky; top: 22px; }
+@media (max-width: 1000px) {
+  .go-grid { grid-template-columns: 1fr; }
+  .go-map { height: 340px; position: static; }
+}
+/* The blue "you are here" convention, matching the map's own user marker. */
+.go-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  flex: none;
+  margin: 0 2px;
+  background: #2F6BE0; /* hex-ok: matches the Maps user-location marker */
+  box-shadow: 0 0 0 3px color-mix(in srgb, #2F6BE0 24%, transparent); /* hex-ok: same */
+}
+.go-brand {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ── Cart rail (w4a) — UNLAYERED, same reason as the chat rail ──
    `.rail` is `display: flex` in the unlayered meshi-web.css, so a layered
    Tailwind `hidden` would lose at every width. Below the cutoff the rail

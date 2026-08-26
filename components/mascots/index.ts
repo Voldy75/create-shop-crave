@@ -63,3 +63,5 @@ export const MASCOTS: Record<MascotName, ComponentType<SVGProps<SVGSVGElement>>>
   pineapple: Pineapple,
   tomato: Tomato,
 };
+
+export { MascotFor } from "./MascotFor";

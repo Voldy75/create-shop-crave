@@ -127,6 +127,14 @@
 }
 .dpin-td > * { transform: rotate(45deg); }
 .dpin-bob { animation: din-bob 1.7s ease-in-out infinite; }
+/* Floating label over the active pin (w7c's "4.2 · Sequel" tooltip). */
+.dpin-tip {
+  position: absolute; left: 50%; top: -40px; transform: translateX(-50%);
+  height: 28px; padding: 0 12px; border-radius: 999px;
+  background: var(--m-card); box-shadow: var(--m-shadow-lift);
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  pointer-events: none;
+}
 /* Inactive pin in a set where one is selected. */
 .dnt { opacity: .62; transform: rotate(-45deg) scale(.86); transition: opacity .25s ease, transform .3s cubic-bezier(.34, 1.56, .64, 1); }
 .dnt.is-active { opacity: 1; transform: rotate(-45deg) scale(1); }

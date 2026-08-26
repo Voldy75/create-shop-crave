@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, ChevronDown, Utensils, CalendarPlus, Bot, Flame } from "lucide-react";
+import { ShoppingCart, ChevronDown, Utensils, CalendarPlus, Bot, Flame, MapPinned } from "lucide-react";
 import { toast } from "sonner";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -168,6 +168,24 @@ export function RecipeView({ data }: RecipeViewProps) {
                         </button>
                         <button className="pill-plum" style={{ flex: "1 1 160px", padding: "0 18px" }} onClick={() => setPlanDialogOpen(true)}>
                             <CalendarPlus width={16} height={16} /> Add to plan
+                        </button>
+                        {/* ITEM 10 — w3b's "Dine out" expansion, landing on w9e.
+                            It goes through Bo rather than straight to /dine-out
+                            because there is no restaurant search in this app: the
+                            matches ARE Bo's answer. Bo replies with a
+                            RestaurantSuggestion, whose "See all on a map" button
+                            then opens /dine-out. Two steps, both real — as opposed
+                            to a button that jumps to an empty dine-out screen. */}
+                        <button
+                            className="pill-secondary"
+                            style={{ flex: "1 1 160px", padding: "0 18px" }}
+                            onClick={() => {
+                                const prompt = `I'd rather eat out than cook ${data.name}. Where near me serves something close?`;
+                                router.push(`/chat?q=${encodeURIComponent(prompt)}`);
+                            }}
+                            aria-label={`Find places serving something like ${data.name}`}
+                        >
+                            <MapPinned width={16} height={16} /> Dine out
                         </button>
                     </div>
                 </div>
