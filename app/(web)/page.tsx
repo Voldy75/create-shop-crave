@@ -178,7 +178,11 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (hydrated && user && location) {
-      router.replace("/chat");
+      // Signed-in users get the dashboard, not chat. `/` stays the marketing
+      // landing for everyone else. Before /home existed this sent people to
+      // /chat, which meant the sidebar's "Home" item pointed at a page that
+      // immediately bounced them back out of it.
+      router.replace("/home");
     }
   }, [hydrated, user, location, router]);
 
@@ -195,7 +199,7 @@ export default function LandingPage() {
       const success = await requestLocation();
       if (!success) return;
     }
-    router.push("/chat");
+    router.push("/home");
   };
 
   if (!hydrated) {

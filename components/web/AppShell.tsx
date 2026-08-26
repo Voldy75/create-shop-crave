@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ChefHat, ShoppingBag, CalendarDays, Swords, Settings } from "lucide-react";
@@ -34,8 +35,16 @@ import { useUser } from "@/app/context/UserContext";
  * is still web-only rather than deleted.
  */
 
-const NAV = [
-  { href: "/", label: "Home", icon: Home, exact: true },
+/** `exact` is no longer needed by any entry — /home replaced the "/" item, and
+ *  every href here is a distinct top-level segment — but the flag is kept on the
+ *  type so a future nested route can opt out of prefix matching. */
+const NAV: Array<{
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ width?: number; height?: number }>;
+  exact?: boolean;
+}> = [
+  { href: "/home", label: "Home", icon: Home },
   { href: "/recipes", label: "Recipes", icon: ChefHat },
   { href: "/cart", label: "Groceries", icon: ShoppingBag },
   { href: "/planner", label: "Planner", icon: CalendarDays },

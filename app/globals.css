@@ -841,6 +841,25 @@
   }
 }
 
+/* ── Home dashboard — UNLAYERED, same reason as the rails ──
+   Two-up cards that stop being readable side by side well above the sidebar's
+   767.98px cutoff, so they collapse on their own breakpoint. */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.home-shelf {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1000px) {
+  .home-grid { grid-template-columns: 1fr; }
+  .home-shelf { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ── Recipe artifact (w6a) — UNLAYERED, sits over the photo hero ── */
 .recipe-ai-badge {
   height: 26px;

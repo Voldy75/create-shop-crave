@@ -1,9 +1,10 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { MessageCircle, ChefHat, Calendar, Settings } from "lucide-react";
+import { Home, MessageCircle, ChefHat, Calendar, Settings } from "lucide-react";
 
 const NAV_ITEMS = [
+  { href: "/home", icon: Home, label: "Home" },
   { href: "/chat", icon: MessageCircle, label: "Chat" },
   { href: "/recipes", icon: ChefHat, label: "Recipes" },
   { href: "/planner", icon: Calendar, label: "Planner" },
@@ -16,7 +17,7 @@ export function BottomNav() {
 
   // Every path where the sidebar is hidden needs a navigation, so a new route
   // MUST be added here or sub-768px users land somewhere with no way out.
-  const showOnPaths = ["/chat", "/recipes", "/favorites", "/cart", "/planner", "/arena", "/admin", "/settings"];
+  const showOnPaths = ["/home", "/chat", "/recipes", "/favorites", "/cart", "/dine-out", "/planner", "/arena", "/admin", "/settings"];
   if (!showOnPaths.some((p) => pathname.startsWith(p))) return null;
 
   return (
