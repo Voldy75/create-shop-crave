@@ -124,10 +124,10 @@ export default function ProfileTab() {
           this is its only entry point, and Location / Swiggy have none either.
           Dropping them would orphan three working routes.
 
-          Swiggy still leaves the /m tree on purpose: account linking (artboard
-          7e) has no mobile screen, and its only home is the web settings
-          Connections tab. Notifications used to point out here too and no
-          longer needs to. */}
+          Swiggy now stays inside /m: account linking (artboard 7e) is built as
+          /m/settings/connections, so this no longer full-page-loads into the
+          web shell the way it did when its only home was the web Connections
+          tab. That was the last cross-root-layout jump in the mobile tree. */}
       <div className="hstack hscroll" style={{ gap: 8 }}>
         <button className="chip" onClick={() => router.push("/m/saved")}>
           <Heart width={14} height={14} /> Saved
@@ -135,7 +135,7 @@ export default function ProfileTab() {
         <button className="chip" onClick={() => router.push("/m/onboarding")}>
           <MapPin width={14} height={14} /> {location ? "Location set" : "Set location"}
         </button>
-        <button className="chip" onClick={() => router.push("/settings?tab=connections")}>
+        <button className="chip" onClick={() => router.push("/m/settings/connections")}>
           <Utensils width={14} height={14} /> Swiggy
         </button>
       </div>
