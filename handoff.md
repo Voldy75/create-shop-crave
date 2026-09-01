@@ -42,11 +42,11 @@ something, update BOTH this index and the section it points to.
    "Blocked on you" §5.
 
 **B. Unbuilt / partial screens (real code work)**
-5. **7e (link accounts)** exists only in the WEB tree; the mobile app has no
-   native version. **7f (BYOK key entry) — DONE.** A mobile `/m/settings/key`
-   screen now exists (built to 7f, on the cream shell, all three providers
-   legible), storing to the shared `lib/byok` slots web also reads. → 10f row
-   in "Phase status", and the Flow 9 findings.
+5. **7e (link accounts) — DONE.** Built as mobile `/m/settings/connections`,
+   which closed the LAST cross-root-layout jump: `/m/profile`'s Swiggy chip used
+   to full-page-load into the web shell. Uses the real swiggy-client and the
+   same feature flags web does. **7f (BYOK key entry) — DONE** (`/m/settings/key`).
+   → 10f row in "Phase status", and the Flow 9 findings.
 6. **6a animated splash** — needs the native shell (blocked on A3). **3a–3d /
    1i** (restaurant ordering) are out of scope by the design file's own note. →
    10f row.
@@ -66,11 +66,12 @@ something, update BOTH this index and the section it points to.
     synthetic stream; real permission/rear-camera/EXIF/iOS-autoplay still
     unproven. → the `/m/log` section, which carries the `--experimental-https`
     recipe.
-11. **Dark mode** — still not reviewed SCREEN BY SCREEN, but no longer wholly
-    unexamined: the w6a–w9e web screens were each measured in both themes as
-    they landed, and that pass found two real failures (see "Contrast: measure,
-    and measure in BOTH themes"). The nine older mobile screens are still
-    light-only. → "What's actually next".
+11. **Dark mode** — the web screens are measured (see "Contrast: measure, and
+    measure in BOTH themes"). The MOBILE tree has now been SPOT-MEASURED in dark
+    across home / recipe / plan / paywall / connections, and there are real
+    failures — see "Dark-mode mobile: measured findings" below. They split into
+    app-level (fixable) and vendored-meshi-b (a design-system decision), which
+    is why this is not just a screen pass. → that section.
 12. **Any real payment**, on any provider. → "What is verified, and what is
     not" (PR #33 body).
 
@@ -1724,8 +1725,10 @@ dropped the other three. 2c and 6b are now built (see below).
 
 ### Built, but in the WRONG TREE
 
-**7c (notifications) and 7e (link accounts / MCP).** Both exist and work — as
-routes in the **web** group under `app/(web)/(app)/settings/`. `/m/profile`
+**7c (notifications) and 7e (link accounts / MCP).** Both HAD this problem —
+they existed only as routes in the **web** group under
+`app/(web)/(app)/settings/`. BOTH are now closed: 7c is `/m/settings/notifications`
+and 7e is `/m/settings/connections`. `/m/profile`
 pushed at `/settings/notifications`, which crosses root-layout groups: a full
 document load into the web shell, sidebar and all. The mobile artboards for
 these were never built.
@@ -1892,6 +1895,46 @@ Swiggy chip now points at on web. (7f BYOK key entry has since been built as
 mobile `/m/settings/key` — see "Two live bugs the audit surfaced".) 3a–3d
 restaurant ordering is still explicitly out of scope per the design file's own
 note. Dark mode still has no deliberate review.
+
+## Dark-mode mobile: measured findings
+
+The "dark mode never reviewed" item was turned into DATA. `crave_theme=dark`,
+mobile viewport, contrast measured on home / recipe / plan / paywall /
+connections. `/m/settings/connections` (7e) is CLEAN in both themes (all ≥ AA)
+because it was built token-only. The older screens are not. Three buckets:
+
+**A. App-level failures — fixable without touching vendored files:**
+- The `color: var(--m-forest)` inline on `.t-cap` LINKS fails on the dark
+  ground: `--m-forest` is `#2E7A48` in dark, ~3.2–3.99:1 on the card/body.
+  ~7 sites: `app/(mobile)/m/(tabs)/page.tsx` ("See all" ×2),
+  `.../plan/page.tsx`, `.../chat/page.tsx`, `m/recipe/page.tsx` (prices, "+N
+  more steps"), `m/log/page.tsx`, `m/settings/key/page.tsx`, `m/onboarding`.
+  This is the `--figure-accent` situation from web, but the mobile tree does
+  NOT import globals.css — it needs its own per-theme accent token in
+  `m/mobile.css` (forest on light, a lighter green on dark), then swap the
+  inline colours to it.
+- **`m/recipe/page.tsx:229` dietary-tag chips are the WORST at 1.35:1** —
+  nearly invisible. `{ background: var(--m-tint-lav), color: var(--m-plum) }`:
+  in dark, tint-lav is `#342639` and plum stays `#5C2B67`, so it is dark-on-
+  dark. The `--m-tint-peach` / `--m-burnt` sibling tag is 4.37. Fix per the
+  status-pill pattern the handoff already documents (hue text that tracks the
+  theme on a tint of the same hue), NOT bare hue-on-tint.
+
+**B. Vendored meshi-b — a DESIGN-SYSTEM decision, do not silently touch:**
+- `.badge-burnt` renders white on `--m-burnt` at **2.87:1**, and `.pill-lime`'s
+  `--m-forest-2`-on-`--m-lime` is **4.43:1** (a hair under AA for its 14px/700
+  label). Both are defined in `design/meshi-b.css`, which is the vendored
+  design-system file BOTH trees share and which DESIGN.md requires to stay a
+  faithful copy. Changing them is a call about the design system itself, not a
+  mobile screen fix — and it would also move the web tree. Flag to the user;
+  do not edit meshi-b to chase a mobile contrast number without that decision.
+
+**C. Scanner false-positives — NOT failures:**
+- `.on-plum` / `.on-plum-faint` reported ~1:1. That is a MEASUREMENT artifact:
+  they are cream text designed for a plum ground, and a naive
+  walk-up-for-background misses the plum panel, resolving cream-on-cream. Same
+  correct-by-design pattern the web paywall uses. Verify any `.on-*` hit by eye
+  before "fixing" it.
 
 ## What's actually next
 
