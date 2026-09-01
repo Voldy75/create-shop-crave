@@ -1903,22 +1903,17 @@ mobile viewport, contrast measured on home / recipe / plan / paywall /
 connections. `/m/settings/connections` (7e) is CLEAN in both themes (all ≥ AA)
 because it was built token-only. The older screens are not. Three buckets:
 
-**A. App-level failures — fixable without touching vendored files:**
-- The `color: var(--m-forest)` inline on `.t-cap` LINKS fails on the dark
-  ground: `--m-forest` is `#2E7A48` in dark, ~3.2–3.99:1 on the card/body.
-  ~7 sites: `app/(mobile)/m/(tabs)/page.tsx` ("See all" ×2),
-  `.../plan/page.tsx`, `.../chat/page.tsx`, `m/recipe/page.tsx` (prices, "+N
-  more steps"), `m/log/page.tsx`, `m/settings/key/page.tsx`, `m/onboarding`.
-  This is the `--figure-accent` situation from web, but the mobile tree does
-  NOT import globals.css — it needs its own per-theme accent token in
-  `m/mobile.css` (forest on light, a lighter green on dark), then swap the
-  inline colours to it.
-- **`m/recipe/page.tsx:229` dietary-tag chips are the WORST at 1.35:1** —
-  nearly invisible. `{ background: var(--m-tint-lav), color: var(--m-plum) }`:
-  in dark, tint-lav is `#342639` and plum stays `#5C2B67`, so it is dark-on-
-  dark. The `--m-tint-peach` / `--m-burnt` sibling tag is 4.37. Fix per the
-  status-pill pattern the handoff already documents (hue text that tracks the
-  theme on a tint of the same hue), NOT bare hue-on-tint.
+**A. App-level failures — FIXED** (commit `fix(mobile): dark-mode contrast on
+the app-level failures`):
+- The `color: var(--m-forest)` inline on `.t-cap` LINKS (~3.2–3.99:1 on the
+  dark ground, 7 sites) now uses a new `--figure-accent` token in `m/mobile.css`
+  — forest on light, lime on dark, the mobile twin of web's globals.css token.
+  Only TEXT uses were swapped; `.icon-btn` forest-on-tint was left. "See all"
+  went 3.99 → 9.11 in dark.
+- The recipe dietary-tag chips (the WORST at 1.35:1) now use
+  `color-mix(<hue> 50%, var(--m-ink))` so the text tracks the theme — the
+  status-pill pattern. Measured: lav tag 1.35 → 4.57 dark / 9.87 light; peach
+  tag 4.37 → 6.98 dark / 6.08 light.
 
 **B. Vendored meshi-b — a DESIGN-SYSTEM decision, do not silently touch:**
 - `.badge-burnt` renders white on `--m-burnt` at **2.87:1**, and `.pill-lime`'s
