@@ -154,7 +154,7 @@ function ChatInner() {
         </span>
         <span className="vstack grow" style={{ gap: 0 }}>
           <span className="t-h2">Bo{agentMode ? " · order" : ""}</span>
-          <span className="t-cap" style={{ color: "var(--m-forest)" }}>
+          <span className="t-cap" style={{ color: "var(--figure-accent)" }}>
             {isLoading ? STATUS_BUSY : STATUS_IDLE}
           </span>
         </span>

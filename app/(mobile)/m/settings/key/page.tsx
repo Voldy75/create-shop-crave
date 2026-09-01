@@ -185,7 +185,7 @@ function KeyInner() {
         </button>
       </div>
 
-      {note && <span className="t-cap" style={{ color: "var(--m-forest)" }}>{note}</span>}
+      {note && <span className="t-cap" style={{ color: "var(--figure-accent)" }}>{note}</span>}
 
       <div className="grow" />
 

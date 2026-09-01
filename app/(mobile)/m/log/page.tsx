@@ -540,7 +540,7 @@ export default function MobileLog() {
         onClick={() => setEditing((v) => !v)}
         style={{ background: "none", border: "none", textAlign: "center", padding: 0 }}
       >
-        <span className="t-cap" style={{ color: "var(--m-forest)", fontWeight: 700 }}>
+        <span className="t-cap" style={{ color: "var(--figure-accent)", fontWeight: 700 }}>
           {editing ? "Done editing" : "Edit values instead"}
         </span>
       </button>

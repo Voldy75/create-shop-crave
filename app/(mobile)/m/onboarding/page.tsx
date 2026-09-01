@@ -498,7 +498,7 @@ export default function Onboarding() {
             </span>
             <MapPin width={26} height={26} style={{ position: "absolute", top: 2, right: 8, color: "var(--m-forest)" }} />
           </div>
-          <span className="t-cap" style={{ color: "var(--m-forest)" }}>
+          <span className="t-cap" style={{ color: "var(--figure-accent)" }}>
             Tomato has already scoped the block.
           </span>
         </div>
@@ -868,7 +868,7 @@ export default function Onboarding() {
         }}
       >
         <BoBowl width={96} height={96} style={{ animation: "mm-bob 3s ease-in-out infinite" }} />
-        <span className="t-cap" style={{ color: "var(--m-forest)" }}>
+        <span className="t-cap" style={{ color: "var(--figure-accent)" }}>
           Bo remembers your taste across devices.
         </span>
       </div>

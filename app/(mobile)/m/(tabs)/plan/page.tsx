@@ -177,7 +177,7 @@ export default function PlanTracker() {
             than the old modal sheet. */}
         <button onClick={() => router.push("/m/log")} className="row" style={{ boxShadow: "none", background: "transparent", border: "2px dashed var(--m-ink-faint)", justifyContent: "center", gap: 8 }}>
           <Camera width={18} height={18} style={{ color: "var(--m-forest)" }} />
-          <span className="t-cap" style={{ color: "var(--m-forest)", fontWeight: 700 }}>
+          <span className="t-cap" style={{ color: "var(--figure-accent)", fontWeight: 700 }}>
             {dayLogs.length === 0 ? "Snap a meal to log it — Bo does the math" : "Snap the next one — Bo does the math"}
           </span>
         </button>
@@ -231,7 +231,7 @@ function Ring({ pct, value, goal, over }: { pct: number; value: number; goal: nu
       </svg>
       <div className="vstack" style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center", gap: 0 }}>
         <span style={{ font: "800 21px/1 var(--m-font-display)", color: "var(--m-forest-2)" }}>{value.toLocaleString()}</span>
-        <span className="t-micro" style={{ color: "var(--m-forest)" }}>of {goal.toLocaleString()}</span>
+        <span className="t-micro" style={{ color: "var(--figure-accent)" }}>of {goal.toLocaleString()}</span>
       </div>
     </div>
   );

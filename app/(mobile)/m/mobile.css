@@ -10,6 +10,20 @@
    design/meshi-b.css instead.
    ============================================================ */
 
+/* ---------- Accent text token ----------
+   `--m-forest` used as a TEXT colour on a `.t-cap` link fails AA in dark mode:
+   it is #2E7A48 there, ~3.2–3.99:1 on the dark card/body. Forest stays the
+   accent in light (8:1) but has to lift to lime in dark (7.5:1) to stay legible.
+
+   This is the mobile-tree twin of web's `--figure-accent` in globals.css (same
+   name, same forest/lime swap, same reason) — the mobile tree does not import
+   globals.css, so it needs its own copy. Do not delete it in a token cleanup;
+   the caption links that reference it drop back to ~3.2:1 in dark without it.
+   It is app-level only: the vendored meshi-b component contrasts (.badge-burnt,
+   .pill-lime) are a separate, design-system-level decision. */
+:root { --figure-accent: var(--m-forest); }
+[data-theme="dark"] { --figure-accent: var(--m-lime); }
+
 /* ---------- Minimal reset ----------
    This tree no longer imports globals.css, which means it also lost Tailwind's
    preflight. design/meshi-b.css assumes a reset exists but does not ship one,

@@ -142,7 +142,7 @@ export default function MeshiHome() {
           {/* Cravings — mascots, one per mood */}
           <div className="hstack" style={{ justifyContent: "space-between", marginTop: 4 }}>
             <span className="t-h1">Craving something?</span>
-            <Link href="/m/search" className="t-cap" style={{ color: "var(--m-forest)" }}>
+            <Link href="/m/search" className="t-cap" style={{ color: "var(--figure-accent)" }}>
               See all
             </Link>
           </div>
@@ -163,7 +163,7 @@ export default function MeshiHome() {
           {/* Editor's picks — duotone photo cards with time badge + carrots */}
           <div className="hstack" style={{ justifyContent: "space-between", marginTop: 4 }}>
             <span className="t-h1">Editor&rsquo;s picks</span>
-            <Link href="/m/search" className="t-cap" style={{ color: "var(--m-forest)" }}>
+            <Link href="/m/search" className="t-cap" style={{ color: "var(--figure-accent)" }}>
               See all
             </Link>
           </div>

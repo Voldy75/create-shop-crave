@@ -215,7 +215,12 @@ export default function MobileRecipe() {
         {/* Tags */}
         <div className="hstack" style={{ gap: 8, flexWrap: "wrap" }}>
           {kcal && (
-            <span className="chip-tag chip" style={{ background: "var(--m-tint-peach)", color: "var(--m-burnt)" }}>
+            // Text is a burnt hue MIXED WITH --m-ink so it tracks the theme:
+            // bare --m-burnt on the peach tint was 4.37:1 in dark. --m-ink is
+            // chocolate in light / cream in dark, so this stays legible in both
+            // (6.08 light / 6.98 dark) — the status-pill pattern the handoff
+            // documents, not bare-hue-on-tint.
+            <span className="chip-tag chip" style={{ background: "var(--m-tint-peach)", color: "color-mix(in srgb, var(--m-burnt) 50%, var(--m-ink))" }}>
               {kcal}
             </span>
           )}
@@ -226,7 +231,10 @@ export default function MobileRecipe() {
               style={
                 i % 2 === 0
                   ? undefined
-                  : { background: "var(--m-tint-lav)", color: "var(--m-plum)" }
+                  : // Bare --m-plum on --m-tint-lav collapsed to 1.35:1 in dark
+                    // (both are dark there). Same theme-tracking mix as above —
+                    // 9.87 light / 4.57 dark.
+                    { background: "var(--m-tint-lav)", color: "color-mix(in srgb, var(--m-plum) 50%, var(--m-ink))" }
               }
             >
               {t}
@@ -305,7 +313,7 @@ export default function MobileRecipe() {
                 <span className="t-body grow">{ing.item}</span>
                 {ing.quantity && <span className="t-cap">{scaleQuantity(ing.quantity, factor)}</span>}
                 {ing.price && (
-                  <span className="t-cap" style={{ color: "var(--m-forest)", fontWeight: 700 }}>{scalePrice(ing.price, factor)}</span>
+                  <span className="t-cap" style={{ color: "var(--figure-accent)", fontWeight: 700 }}>{scalePrice(ing.price, factor)}</span>
                 )}
               </div>
             ))}
@@ -346,7 +354,7 @@ export default function MobileRecipe() {
                 className="row"
                 style={{ padding: "10px 14px", boxShadow: "none", background: "transparent", justifyContent: "center", border: "none" }}
               >
-                <span className="t-cap" style={{ color: "var(--m-forest)", fontWeight: 700 }}>
+                <span className="t-cap" style={{ color: "var(--figure-accent)", fontWeight: 700 }}>
                   +{recipe.instructions.length - 1} more steps
                 </span>
               </button>
