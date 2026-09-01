@@ -12,6 +12,7 @@
 import { z } from "zod";
 import { generateObject } from "ai";
 import { getServerModel } from "@/lib/providers";
+import { tastesLine } from "@/lib/taste-prompt";
 
 // ─── Shared types ───────────────────────────────────────────────────────────
 
@@ -107,6 +108,14 @@ interface PromptArgs {
   logs: CoachLog[];
   goals: CoachGoals;
   dietaryPreferences?: string[];
+  /** Soft taste signal from onboarding's 2b step. See lib/taste-prompt.ts. */
+  favoriteCuisines?: string[];
+  /**
+   * Pre-formatted cuisine string. Predates `favoriteCuisines` and was declared
+   * on both request types but NEVER SENT by any caller — a half-built seam.
+   * Kept so an existing caller cannot break; `favoriteCuisines` wins when both
+   * are present.
+   */
   cuisinesHint?: string;
 }
 
@@ -119,9 +128,12 @@ Tone: friendly but specific. No medical claims. No emojis.`;
   const dietary = req.dietaryPreferences?.length
     ? `Dietary preferences (must respect): ${req.dietaryPreferences.join(", ")}.`
     : "No dietary restrictions provided.";
+  // Soft signal, kept distinct from the strict `dietary` line above.
+  const tastes = tastesLine(req.favoriteCuisines);
 
   const prompt = `User's daily goal: ${req.goals.dailyCalories} kcal, ${req.goals.protein}g protein, ${req.goals.carbs}g carbs, ${req.goals.fat}g fat. Goal: ${req.goals.goal}.
 ${dietary}
+${tastes}
 
 Recent meal logs (last few days):
 ${summarizeLogs(req.logs)}
@@ -139,7 +151,8 @@ No medical claims.`;
   const dietary = req.dietaryPreferences?.length
     ? `Dietary preferences (strict): ${req.dietaryPreferences.join(", ")}.`
     : "No dietary restrictions.";
-  const cuisines = req.cuisinesHint ? `Cuisine context: ${req.cuisinesHint}.` : "";
+  const cuisines = tastesLine(req.favoriteCuisines)
+    || (req.cuisinesHint ? `Cuisine context: ${req.cuisinesHint}.` : "");
 
   const prompt = `Daily target: ${req.goals.dailyCalories} kcal, ${req.goals.protein}g protein, ${req.goals.carbs}g carbs, ${req.goals.fat}g fat. Goal: ${req.goals.goal}.
 ${dietary}

@@ -52,6 +52,12 @@ function buildPrompt(req: IngredientsRequest): { system: string; prompt: string 
   const dietary = req.dietaryPreferences?.length
     ? `Dietary preferences (strict): ${req.dietaryPreferences.join(", ")}.`
     : "";
+  /* NOTE: `favoriteCuisines` is deliberately NOT used here, and that is not an
+     omission to fix later. This route expands an ALREADY-CHOSEN dish name into
+     its ingredients. A soft cuisine preference has no business changing what
+     goes into a named dish — "user tends to enjoy Thai" must not put lemongrass
+     in a rajma recipe. Tastes belong where a dish is being CHOSEN (chat, coach,
+     diet chart), which is where they are wired. */
   const prompt = `Dishes:
 ${req.dishes.map((d, i) => `${i + 1}. ${d}`).join("\n")}
 

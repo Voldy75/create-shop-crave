@@ -20,6 +20,9 @@ interface CoachRequest {
   logs: CoachLog[];
   goals: CoachGoals;
   dietaryPreferences?: string[];
+  /** Soft taste signal from onboarding's 2b step. See lib/taste-prompt.ts. */
+  favoriteCuisines?: string[];
+  /** Legacy pre-formatted variant; favoriteCuisines wins when both are set. */
   cuisinesHint?: string;
   provider?: Provider;
   apiKey?: string;

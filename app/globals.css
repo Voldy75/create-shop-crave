@@ -841,6 +841,67 @@
   }
 }
 
+/* ── Sidebar account menu — UNLAYERED, deliberately ──
+   `.side-acct` is `display: flex` in the unlayered meshi-web.css, and it also
+   sets `margin-top: auto` to push itself to the bottom of the sidebar. That
+   auto-margin has to move to the WRAPPER now that the block is a button inside
+   a positioned container, or the menu anchors mid-sidebar. */
+.acct-wrap {
+  position: relative;
+  margin-top: auto;
+}
+.acct-trigger {
+  /* Override the vendored rule's own margin-top: auto — the wrapper owns it. */
+  margin-top: 0;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background .16s ease;
+}
+.acct-trigger:hover { background: var(--m-cream-2); }
+
+.acct-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: var(--m-card);
+  border-radius: 14px;
+  box-shadow: var(--m-shadow-lift);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: din-up .16s ease both;
+}
+.acct-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 11px;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  color: var(--m-ink);
+  font: 600 13.5px var(--m-font-display), sans-serif;
+  transition: background .14s ease;
+}
+.acct-item:hover { background: var(--m-cream-2); text-decoration: none; }
+.acct-item-danger { color: var(--m-red); }
+.acct-sep {
+  display: block;
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--m-ink-faint);
+}
+
 /* ── Figure accent — UNLAYERED, and a PERMANENT token, not scaffolding ──
    Big statistic numbers on a `.card` cannot just use --m-forest. In dark mode
    meshi-b's forest is #2E7A48 against a #362B18 card, which measures 2.63:1 —

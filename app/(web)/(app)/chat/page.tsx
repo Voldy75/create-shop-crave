@@ -136,7 +136,7 @@ interface ParsedChatData {
 }
 
 function ChatPageInner() {
-  const { user, userName, location, dietaryPreferences, hydrated } = useUser();
+  const { user, userName, location, dietaryPreferences, favoriteCuisines, hydrated } = useUser();
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -199,11 +199,11 @@ function ChatPageInner() {
     (overrideBYOK?: { provider: Provider; apiKey: string } | null) => {
       const activeBYOK = overrideBYOK !== undefined ? overrideBYOK : byok;
       return {
-        userContext: { userName, location, dietaryPreferences },
+        userContext: { userName, location, dietaryPreferences, favoriteCuisines },
         ...(activeBYOK ? { provider: activeBYOK.provider, apiKey: activeBYOK.apiKey } : {}),
       };
     },
-    [byok, userName, location, dietaryPreferences]
+    [byok, userName, location, dietaryPreferences, favoriteCuisines]
   );
 
   const searchParams = useSearchParams();

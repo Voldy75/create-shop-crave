@@ -51,7 +51,7 @@ export default function PlannerPage() {
 function PlannerPageInner() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { user, dietaryPreferences } = useUser();
+    const { user, dietaryPreferences, favoriteCuisines } = useUser();
     const tabParam = searchParams?.get("tab");
     const initialTab: PlannerTab =
         tabParam === "tracker" ? "tracker" : tabParam === "coach" ? "coach" : "plan";
@@ -156,6 +156,7 @@ function PlannerPageInner() {
                     <CoachPanel
                         isSignedIn={Boolean(user)}
                         dietaryPreferences={dietaryPreferences}
+                        favoriteCuisines={favoriteCuisines}
                         weekPlan={plan}
                         onPlanUpdated={setPlan}
                     />

@@ -117,7 +117,7 @@ function ModelPanel({ label, modelName, accentColor, messages, isLoading }: Mode
 }
 
 export default function ArenaPage() {
-  const { user, userName, location, dietaryPreferences, hydrated } = useUser();
+  const { user, userName, location, dietaryPreferences, favoriteCuisines, hydrated } = useUser();
   const router = useRouter();
 
   const [isPro, setIsPro] = useState(false);
@@ -139,7 +139,7 @@ export default function ArenaPage() {
     setByok(getStoredBYOK());
   }, [user]);
 
-  const userContext = { userName, location, dietaryPreferences };
+  const userContext = { userName, location, dietaryPreferences, favoriteCuisines };
 
   const leftChat = useChat({
     api: "/api/chat",

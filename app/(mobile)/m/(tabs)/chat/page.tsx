@@ -60,7 +60,7 @@ function extractResponse(content: string): { text: string; data: ChatResponse | 
 function ChatInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const { userName, location, dietaryPreferences } = useUser();
+  const { userName, location, dietaryPreferences, favoriteCuisines } = useUser();
 
   const agentMode = useMemo(() => params?.get("agent") === "1", []); // eslint-disable-line react-hooks/exhaustive-deps
   const seed = useMemo(() => params?.get("q") ?? "", []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -80,7 +80,7 @@ function ChatInner() {
   const { messages, input, handleInputChange, handleSubmit, append, isLoading } = useChat({
     api: agentMode ? "/api/agent" : "/api/chat",
     body: {
-      userContext: { userName, location, dietaryPreferences },
+      userContext: { userName, location, dietaryPreferences, favoriteCuisines },
       ...(byok ? { provider: byok.provider, apiKey: byok.apiKey } : {}),
     },
     onResponse: (res) => {

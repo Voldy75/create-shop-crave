@@ -35,6 +35,8 @@ interface DietChartResponse {
 interface Props {
   isSignedIn: boolean;
   dietaryPreferences: string[];
+  /** Soft taste signal. Threaded from the planner, which owns UserContext. */
+  favoriteCuisines: string[];
   weekPlan: WeekPlan;
   onPlanUpdated: (plan: WeekPlan) => void;
 }
@@ -55,7 +57,7 @@ const SEVERITY_ORDER: Record<Insight["severity"], number> = {
   info: 2,
 };
 
-function buildPayload(logs: MealLog[], goals: NutritionGoals, dietaryPreferences: string[]) {
+function buildPayload(logs: MealLog[], goals: NutritionGoals, dietaryPreferences: string[], favoriteCuisines: string[]) {
   // Limit to last 7 days to keep tokens cheap
   const cutoffSet = new Set(lastNDates(7));
   const trimmed = logs
@@ -80,10 +82,13 @@ function buildPayload(logs: MealLog[], goals: NutritionGoals, dietaryPreferences
       goal: goals.goal,
     },
     dietaryPreferences,
+    // Soft taste signal — kept separate from the strict dietary array on
+    // purpose; see lib/taste-prompt.ts.
+    favoriteCuisines,
   };
 }
 
-export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpdated }: Props) {
+export function CoachPanel({ isSignedIn, dietaryPreferences, favoriteCuisines, weekPlan, onPlanUpdated }: Props) {
   const [insights, setInsights] = useState<Insight[] | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [insightsError, setInsightsError] = useState<string | null>(null);
@@ -104,7 +109,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
     if (!goals) {
       throw new Error("Set your daily goals first.");
     }
-    const payload = { mode, ...buildPayload(logs, goals, dietaryPreferences) };
+    const payload = { mode, ...buildPayload(logs, goals, dietaryPreferences, favoriteCuisines) };
     const res = await fetch("/api/coach", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -127,7 +132,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
       const logs = getMealLogs();
       const goals = getNutritionGoals();
       if (!goals) throw Object.assign(new Error("Set your daily goals first."), { code: "missing_goals" });
-      const payload = { mode: "insights" as const, ...buildPayload(logs, goals, dietaryPreferences) };
+      const payload = { mode: "insights" as const, ...buildPayload(logs, goals, dietaryPreferences, favoriteCuisines) };
       const res = await fetch("/api/coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

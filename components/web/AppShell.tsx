@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ChefHat, ShoppingBag, CalendarDays, Swords, Settings } from "lucide-react";
 import { BoBowl } from "@/components/mascots";
-import { useUser } from "@/app/context/UserContext";
+import { SidebarAccount } from "@/components/web/SidebarAccount";
 
 /**
  * Web app shell — the 250px sidebar from artboard w2a.
@@ -54,10 +54,6 @@ const NAV: Array<{
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
-  const { user, userName, hydrated } = useUser();
-
-  const name = hydrated && userName ? userName : "Guest";
-  const initials = hydrated && userName ? userName.slice(0, 2).toUpperCase() : "··";
   const boActive = pathname.startsWith("/chat");
 
   return (
@@ -98,17 +94,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           Ask Bo
         </Link>
 
-        <div className="side-acct">
-          <span className="side-avatar side-avatar-initials">{initials}</span>
-          <div className="vstack grow" style={{ gap: 0, minWidth: 0 }}>
-            <span className="t-h2" style={{ fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {name}
-            </span>
-            <span className="t-cap" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {user?.email ?? "Not signed in"}
-            </span>
-          </div>
-        </div>
+        <SidebarAccount />
+
       </aside>
 
       <div className="main web-main">{children}</div>
