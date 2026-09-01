@@ -80,6 +80,11 @@ against the NEW design file" below. Two things it could NOT verify and did not
 fake: `NotificationsSection`'s real rows (no session — same wall as A1), and
 anything behind a real ride booking or a real store order, which do not exist.
 
+**C-ter. Three small gaps — DONE**
+`favoriteCuisines` now reaches the prompts (soft signal, `lib/taste-prompt.ts`);
+the sidebar account block is a real menu (`components/web/SidebarAccount.tsx`)
+owning the theme toggle — previously unreachable once signed in — and sign-out.
+
 **D. Content / decisions (cheap, pre-launch)**
 13. **Unverified marketing copy** — "50+ cuisines", "<10s to a full recipe". →
     "What's actually next".
@@ -1061,14 +1066,12 @@ to the end of this section.
      header (brand mark, avatar dropdown with Saved/Planner/Arena/Settings/
      theme/sign-out, usage badge) is replaced by w3a's topbar — this was the
      page the topbar work was held back for, since the sidebar (AppShell)
-     already covers that nav. **Not fully redundant — a real gap, not fixed
-     here.** Sign-out still works, one click further (Settings nav item →
-     `/settings`'s `AccountSection`, which has the real `signOut()`), but
-     theme toggle has no home anywhere in the logged-in app: `components/
-     ThemeToggle.tsx` only appears on the pre-auth landing nav, and AppShell's
-     `.side-acct` is a static display, not a clickable menu. Giving it one is
-     future work, not silently claimed as done — see chat/page.tsx's top
-     comment for the same note in situ. Message bubbles, the typing
+     already covers that nav. **Both gaps this note used to record are now
+     CLOSED** — see `components/web/SidebarAccount.tsx`. `.side-acct` was a
+     static display, so sign-out took an extra hop through Settings → Account
+     and the theme toggle had no home at all in the logged-in app
+     (`ThemeToggle.tsx` rendered only on the pre-auth landing). That block is a
+     real menu now and owns both. Message bubbles, the typing
      indicator (Lottie stays for streaming; a real `.card`+`mm-dot` pulse
      backs pre-first-token loading), and the input pill are restyled onto
      meshi. A new "From this chat" rail tracks the most recent recipe live
@@ -1804,26 +1807,14 @@ and breaks the goal→`WeightGoal` mapping, which only has three values.
   diet-chart. A new field would have needed all of them changed to be worth
   anything. **Tastes deliberately do NOT go there**: they are preferences, not
   restrictions, and putting "loves ramen" into a strict-filter array corrupts
-  it. `favoriteCuisines` is captured and persisted but is **not yet wired into
-  any prompt** — real remaining work, not an oversight.
-- **The calorie step still runs on a hardcoded stand-in body profile**
-  (`sex: "female", age: 30, heightCm: 165, weightKg: 62`). That predates this
-  work. NO screen in the design file — 2a included — collects sex/age/height/
-  weight, so a real profile capture is its own piece of work. The number shown
-  is honest about being Bo's starting estimate.
-- **6b could not live inside the onboarding component tree.** Google sign-in
-  is a full navigation away on web and a system-browser round trip on native,
-  so nothing from onboarding is still mounted on return. The loader is
-  therefore `components/mobile/WelcomeGate.tsx`, wrapping the `/m` shell and
-  gated on `?welcome=1`. It keys off UserContext's new `syncing` flag, which
-  tracks the ACTUAL remote pull in `syncTracker` — not a fixed timer — with a
-  900ms floor so it cannot flash and a 6s ceiling so a stalled sync cannot
-  strand the user.
-- **`signInWithProvider` gained a `next` parameter, and it fixed a live bug.**
-  `/api/auth/callback` defaults to `/chat`, so completing mobile onboarding
-  through the WEB flow dropped the user into the web tree. Mobile now passes
-  `/m?welcome=1`. Native was always fine — `initDeepLinks` routes those
-  returns itself.
+  it. `favoriteCuisines` is captured, persisted **and now wired**, via
+  `lib/taste-prompt.ts`, into chat (web/mobile/arena) and both coach prompts.
+  It is a deliberately SOFT signal that stays OUT of `dietaryPreferences` for
+  the reason above — most of the sentence it generates is spent telling the
+  model not to treat it as a filter, because the failure mode is over-applying
+  it, not ignoring it. It is deliberately NOT used by `/api/ingredients`, which
+  expands an already-chosen dish: a cuisine preference must not put lemongrass
+  in a rajma recipe.
 
 ## Six more artboards closed — 7a, 7b, 7h fix, 1l, 7c, 7d
 
