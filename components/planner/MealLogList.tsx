@@ -1,13 +1,16 @@
 "use client";
 
 import React from "react";
-import { Trash2, Pencil, Camera, Search, PenLine, CalendarCheck } from "lucide-react";
+import { Trash2, Pencil, Plus } from "lucide-react";
+import { mascotComponentFor } from "@/lib/ingredient-mascot";
 import type { MealLog, MealSource, MealType } from "@/lib/types";
 
 interface Props {
   logs: MealLog[];
   onDelete: (id: string) => void;
   onEdit?: (log: MealLog) => void;
+  /** Opens the log sheet prefilled to a meal type — drives the artboard's "Log now" rows. */
+  onLog?: (mealType: MealType) => void;
 }
 
 const TYPE_ORDER: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
@@ -19,163 +22,171 @@ const TYPE_LABEL: Record<MealType, string> = {
   snack: "Snack",
 };
 
-const SOURCE_ICON: Record<MealSource, React.ComponentType<{ className?: string }>> = {
-  planned: CalendarCheck,
-  search: Search,
-  manual: PenLine,
-  photo: Camera,
+/**
+ * Meals the day is expected to contain, so a missing one is worth prompting.
+ * Snack is deliberately NOT here — "you haven't snacked yet" is not a gap, and
+ * a prompt for it would nag rather than help.
+ */
+const PROMPTED: MealType[] = ["breakfast", "lunch", "dinner"];
+
+/** Tile tint per meal type — the artboard's peach / green / lavender rhythm. */
+const TYPE_TINT: Record<MealType, string> = {
+  breakfast: "var(--m-tint-peach)",
+  lunch: "var(--m-tint-green)",
+  dinner: "var(--m-tint-lav)",
+  snack: "var(--m-cream-2)",
 };
 
 const SOURCE_LABEL: Record<MealSource, string> = {
-  planned: "From plan",
-  search: "From search",
-  manual: "Manual",
-  photo: "Photo",
+  planned: "from plan",
+  search: "from search",
+  manual: "manual",
+  photo: "via Bo",
 };
 
-export function MealLogList({ logs, onDelete, onEdit }: Props) {
-  if (logs.length === 0) {
+/** ISO timestamp → "8:20 AM". Returns null rather than guessing on a bad value. */
+function timeOf(log: MealLog): string | null {
+  const d = new Date(log.loggedAt);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+/**
+ * Today's meals — artboard w4b.
+ *
+ * Flat and ordered by meal type rather than grouped under per-type headings:
+ * the artboard puts the type in the row title ("Breakfast · Avocado toast"),
+ * which carries the same information in less vertical space. The per-group
+ * kcal subtotal is dropped because the day total is already the ring.
+ *
+ * Ingredient mascots stand in for a photo when there is none — the same
+ * `lib/ingredient-mascot.ts` mapping the recipe view uses, so a dish resolves
+ * to the same character everywhere. DESIGN.md's rule against dish photos on
+ * ingredient tiles does not apply in reverse: a mascot for a meal is a
+ * deliberate flat-illustration stand-in, not a misleading photo.
+ */
+export function MealLogList({ logs, onDelete, onEdit, onLog }: Props) {
+  const ordered = TYPE_ORDER.flatMap((type) => logs.filter((l) => l.mealType === type));
+  const missing = onLog
+    ? PROMPTED.filter((type) => !logs.some((l) => l.mealType === type))
+    : [];
+
+  if (ordered.length === 0 && missing.length === 0) {
     return (
-      <div
-        className="flex flex-col items-center text-center"
-        style={{ padding: "40px 16px", color: "var(--cc-text-tertiary)" }}
-      >
-        <span style={{ fontSize: "28px", marginBottom: "8px" }}>🍽️</span>
-        <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--cc-text-primary)" }}>
-          Nothing logged yet
-        </p>
-        <p style={{ fontSize: "12px", marginTop: "4px" }}>
-          Tap &ldquo;Log meal&rdquo; to add what you ate.
-        </p>
+      <div className="vstack" style={{ alignItems: "center", textAlign: "center", padding: "36px 16px", gap: 4 }}>
+        <span className="t-h2">Nothing logged yet</span>
+        <span className="t-cap">Log a meal and Bo does the math.</span>
       </div>
     );
   }
 
-  const grouped = TYPE_ORDER.map((type) => ({
-    type,
-    items: logs.filter((l) => l.mealType === type),
-  })).filter((g) => g.items.length > 0);
-
   return (
-    <div className="flex flex-col gap-4">
-      {grouped.map(({ type, items }) => {
-        const groupKcal = items.reduce((s, l) => s + (l.calories || 0), 0);
+    <div className="vstack" style={{ gap: 10 }}>
+      {ordered.map((log) => {
+        const Mascot = mascotComponentFor(log.name);
+        const time = timeOf(log);
         return (
-          <div key={type}>
-            <div className="flex items-baseline justify-between" style={{ marginBottom: "6px" }}>
+          <div
+            key={log.id}
+            className="row group"
+            style={{ boxShadow: "none", background: "var(--m-cream)", padding: "12px 14px" }}
+          >
+            {log.imageDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={log.imageDataUrl}
+                alt=""
+                style={{ width: 44, height: 44, borderRadius: 12, objectFit: "cover", flex: "none" }}
+              />
+            ) : (
               <span
+                className="hstack"
                 style={{
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  color: "var(--cc-text-tertiary)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: TYPE_TINT[log.mealType],
+                  justifyContent: "center",
+                  flex: "none",
                 }}
               >
-                {TYPE_LABEL[type]}
+                <Mascot width={30} height={30} />
               </span>
-              <span style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
-                {groupKcal} kcal
+            )}
+
+            <div className="vstack grow" style={{ gap: 0, minWidth: 0 }}>
+              <span
+                className="t-h2"
+                style={{ fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+              >
+                {TYPE_LABEL[log.mealType]} · {log.name}
+              </span>
+              <span className="t-cap">
+                {[time, SOURCE_LABEL[log.source], `${Math.round(log.protein)}P · ${Math.round(log.carbs)}C · ${Math.round(log.fat)}F`]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
             </div>
-            <div className="flex flex-col gap-2">
-              {items.map((log) => {
-                const SourceIcon = SOURCE_ICON[log.source];
-                return (
-                  <div
-                    key={log.id}
-                    className="group flex items-center gap-3 p-3"
-                    style={{
-                      background: "var(--cc-surface)",
-                      border: "1px solid var(--cc-border)",
-                      borderRadius: "12px",
-                    }}
-                  >
-                    {log.imageDataUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={log.imageDataUrl}
-                        alt=""
-                        style={{
-                          width: "44px",
-                          height: "44px",
-                          borderRadius: "10px",
-                          objectFit: "cover",
-                          flexShrink: 0,
-                        }}
-                      />
-                    ) : (
-                      <div
-                        className="flex items-center justify-center"
-                        style={{
-                          width: "44px",
-                          height: "44px",
-                          borderRadius: "10px",
-                          background: "var(--cc-surface-2)",
-                          flexShrink: 0,
-                          color: "var(--cc-text-tertiary)",
-                        }}
-                      >
-                        <SourceIcon className="w-4 h-4" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p
-                        style={{
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: "var(--cc-text-primary)",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {log.name}
-                      </p>
-                      <p
-                        style={{
-                          fontSize: "11px",
-                          color: "var(--cc-text-tertiary)",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {SOURCE_LABEL[log.source]} · {Math.round(log.protein)}P · {Math.round(log.carbs)}C · {Math.round(log.fat)}F
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end" style={{ flexShrink: 0 }}>
-                      <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
-                        {Math.round(log.calories)}
-                      </span>
-                      <span style={{ fontSize: "10px", color: "var(--cc-text-tertiary)" }}>kcal</span>
-                    </div>
-                    {/* Always visible on mobile (no hover); reveal-on-hover on desktop */}
-                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
-                      {onEdit && (
-                        <button
-                          onClick={() => onEdit(log)}
-                          className="p-1.5"
-                          style={{ color: "var(--cc-text-tertiary)", borderRadius: "8px" }}
-                          aria-label={`Edit ${log.name}`}
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => onDelete(log.id)}
-                        className="p-1.5"
-                        style={{ color: "var(--cc-text-tertiary)", borderRadius: "8px" }}
-                        aria-label={`Delete ${log.name}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+
+            <span className="t-h2" style={{ flex: "none" }}>{Math.round(log.calories)} kcal</span>
+
+            {/* Always visible below sm (no hover there); reveal on hover above it. */}
+            <div
+              className="hstack opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity"
+              style={{ gap: 2, flex: "none" }}
+            >
+              {onEdit && (
+                <button
+                  onClick={() => onEdit(log)}
+                  className="icon-btn"
+                  style={{ width: 30, height: 30, borderRadius: 9, boxShadow: "none", background: "transparent" }}
+                  aria-label={`Edit ${log.name}`}
+                >
+                  <Pencil width={14} height={14} />
+                </button>
+              )}
+              <button
+                onClick={() => onDelete(log.id)}
+                className="icon-btn"
+                style={{ width: 30, height: 30, borderRadius: 9, boxShadow: "none", background: "transparent", color: "var(--m-red)" }}
+                aria-label={`Delete ${log.name}`}
+              >
+                <Trash2 width={14} height={14} />
+              </button>
             </div>
           </div>
         );
       })}
+
+      {missing.map((type) => (
+        <div
+          key={`empty-${type}`}
+          className="row"
+          style={{ boxShadow: "none", background: "var(--m-cream)", padding: "12px 14px" }}
+        >
+          <span
+            className="hstack"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: TYPE_TINT[type],
+              justifyContent: "center",
+              flex: "none",
+              opacity: 0.55,
+            }}
+          >
+            <Plus width={20} height={20} style={{ color: "var(--m-ink-soft)" }} />
+          </span>
+          <div className="vstack grow" style={{ gap: 0, minWidth: 0 }}>
+            <span className="t-h2" style={{ fontSize: 14 }}>{TYPE_LABEL[type]}</span>
+            <span className="t-cap">Not logged yet</span>
+          </div>
+          <button className="pill-lime pill-sm" onClick={() => onLog?.(type)} style={{ flex: "none" }}>
+            Log now
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

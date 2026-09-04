@@ -1,0 +1,359 @@
+/* ============================================================
+   meshi — MOBILE layer
+   Sits on top of design/meshi-b.css. Only adds what the shared
+   design system does not carry: layout utilities, scroll
+   containers, photo placeholders, and two type sizes the mobile
+   screens use heavily.
+
+   Everything here is expressed in --m-* tokens. If you find
+   yourself writing a hex value in this file, it belongs in
+   design/meshi-b.css instead.
+   ============================================================ */
+
+/* ---------- Accent text token ----------
+   `--m-forest` used as a TEXT colour on a `.t-cap` link fails AA in dark mode:
+   it is #2E7A48 there, ~3.2–3.99:1 on the dark card/body. Forest stays the
+   accent in light (8:1) but has to lift to lime in dark (7.5:1) to stay legible.
+
+   This is the mobile-tree twin of web's `--figure-accent` in globals.css (same
+   name, same forest/lime swap, same reason) — the mobile tree does not import
+   globals.css, so it needs its own copy. Do not delete it in a token cleanup;
+   the caption links that reference it drop back to ~3.2:1 in dark without it.
+   It is app-level only: the vendored meshi-b component contrasts (.badge-burnt,
+   .pill-lime) are a separate, design-system-level decision. */
+:root { --figure-accent: var(--m-forest); }
+[data-theme="dark"] { --figure-accent: var(--m-lime); }
+
+/* ---------- Minimal reset ----------
+   This tree no longer imports globals.css, which means it also lost Tailwind's
+   preflight. design/meshi-b.css assumes a reset exists but does not ship one,
+   so without this every padded element measures content-box and overflows —
+   the tab bar rendered 406px wide in a 390px viewport before this landed.
+
+   Kept deliberately small: box model, margins, and media defaults. Anything
+   more opinionated belongs in the design system, not here. */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+h1, h2, h3, h4, p, figure, blockquote { margin: 0; }
+
+img, svg, video, canvas { display: block; max-width: 100%; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+button { cursor: pointer; }
+
+a { color: inherit; text-decoration: none; }
+
+/* ---------- Layout utilities ----------
+   NOTE ON `.row`: the old mobile stylesheet defined `.row` as a plain flex
+   utility, and 89 call sites use it that way. design/meshi-b.css defines
+   `.row` as a padded, shadowed LIST ROW CARD — same name, completely
+   different thing. Converted screens must use `.hstack` (from meshi-b) for
+   flex rows and reserve `.row` for actual list rows. This file deliberately
+   does NOT redefine `.row`, so the collision surfaces loudly during
+   conversion instead of silently restyling 89 elements into cards. */
+.col { display: flex; flex-direction: column; }
+.grow-1 { flex: 1; min-width: 0; }
+
+/* ---------- Scroll containers ---------- */
+.scroll { overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.hscroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+.scroll::-webkit-scrollbar,
+.hscroll::-webkit-scrollbar { display: none; }
+.scroll { scrollbar-width: none; }
+.hscroll { scrollbar-width: none; }
+
+/* ---------- Hairline ---------- */
+.divider { height: 1px; background: var(--m-ink-faint); }
+
+/* ---------- Frosted overlay (sticky headers, tab bar backdrop) ---------- */
+.glass {
+  background: color-mix(in srgb, var(--m-cream) 78%, transparent);
+  backdrop-filter: saturate(160%) blur(20px);
+  -webkit-backdrop-filter: saturate(160%) blur(20px);
+}
+
+/* ---------- Type sizes the mobile screens rely on ----------
+   meshi-b.css ships .t-d1/.t-d2/.t-h1/.t-h2/.t-body/.t-body-soft/.t-cap/
+   .t-micro. These three fill the gaps rather than forcing every screen to
+   restructure its hierarchy during a re-skin. */
+.t-display { font: 800 34px/1.03 var(--m-font-display); letter-spacing: -.6px; color: var(--m-ink); }
+.t-h3 { font: 700 14.5px/1.25 var(--m-font-display); color: var(--m-ink); }
+.t-small { font: 600 13px/1.4 var(--m-font-body); color: var(--m-ink-soft); }
+
+/* ---------- Photo placeholders ----------
+   Used where a dish has no matching photo (lib/food-images.ts falls back to
+   these). Retinted from the old dark-first palette onto the cream system —
+   these are warm paper washes now, not night gradients. */
+.ph {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 20% 0%, var(--ph-a, var(--m-tint-peach)) 0%, transparent 60%),
+    radial-gradient(100% 100% at 100% 100%, var(--ph-b, var(--m-cream-2)) 0%, transparent 60%),
+    linear-gradient(135deg, var(--ph-c, var(--m-cream-2)), var(--ph-d, var(--m-card)));
+}
+.ph::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(75, 46, 18, .03) 0 2px, transparent 2px 14px);
+  pointer-events: none;
+}
+.ph-saffron { --ph-a: var(--m-tint-peach); --ph-b: var(--m-orange); --ph-c: var(--m-tint-peach); --ph-d: var(--m-cream-2); }
+.ph-spinach { --ph-a: var(--m-tint-green); --ph-b: var(--m-lime); --ph-c: var(--m-tint-green); --ph-d: var(--m-cream-2); }
+.ph-rose    { --ph-a: var(--m-tint-lav);   --ph-b: var(--m-plum-2); --ph-c: var(--m-tint-lav); --ph-d: var(--m-cream-2); }
+.ph-cream   { --ph-a: var(--m-cream-2);    --ph-b: var(--m-card);   --ph-c: var(--m-cream-2); --ph-d: var(--m-card); }
+.ph-fire    { --ph-a: var(--m-orange);     --ph-b: var(--m-burnt);  --ph-c: var(--m-tint-peach); --ph-d: var(--m-cream-2); }
+.ph-night   { --ph-a: var(--m-tint-lav);   --ph-b: var(--m-plum);   --ph-c: var(--m-tint-lav); --ph-d: var(--m-cream-2); }
+.ph-blue    { --ph-a: var(--m-tint-green); --ph-b: var(--m-forest); --ph-c: var(--m-tint-green); --ph-d: var(--m-cream-2); }
+
+/* ---------- Bo, the AI affordance ----------
+   Replaces the old conic-gradient "ai-orb". Bo is the brand's AI presence
+   (components/mascots/BoBowl), so the orb is now a forest ring the mascot
+   sits inside. */
+.ai-orb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--m-card);
+  box-shadow: 0 0 0 2.5px var(--m-forest);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* ---------- Photo scrims + bottom fade ----------
+   DESIGN.md forbids hex/rgba literals in app/** and components/**, and photo
+   overlays are not on its allowlist — so the values live here, not inline.
+
+   .scrim-hero is the recipe artboard's forest-tinted top wash, which keeps the
+   back and save controls legible over a bright photo.
+   .action-fade lets content dissolve into the cream under a sticky action row
+   instead of being cut off by a hard edge. */
+.scrim-hero {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 66, 31, .45), rgba(20, 66, 31, 0) 35%);
+}
+.action-fade {
+  background: linear-gradient(180deg, rgba(251, 246, 227, 0), var(--m-cream) 42%);
+}
+[data-theme="dark"] .action-fade {
+  background: linear-gradient(180deg, rgba(36, 28, 16, 0), var(--m-cream) 42%);
+}
+/* Caption text sitting on a duotone photo — slightly recessed from the title. */
+.on-photo-soft { color: var(--m-on-deep); opacity: .85; }
+
+/* ---------- `.row` + tint ----------
+   meshi-b declares the `.tint-*` helpers at line 72 and `.row` at line 144, so
+   `.row` re-declares `background: var(--m-card)` and — same specificity, later
+   wins — a `class="row tint-green"` row renders plain. The artboards use that
+   pairing to mark today's row, so restore it here with a compound selector.
+   Fixing it in the vendored design/meshi-b.css instead would put this tree out
+   of sync with the design source on the next export. */
+.row.tint-green { background: var(--m-tint-green); }
+.row.tint-lav   { background: var(--m-tint-lav); }
+.row.tint-peach { background: var(--m-tint-peach); }
+.row.tint-cream { background: var(--m-cream-2); }
+
+/* Order-confirmed hero: Bo in a tinted disc with a soft lime halo. */
+.confirm-halo {
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: var(--m-tint-green);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 14px rgba(155, 207, 55, .18);
+  flex: none;
+}
+
+/* Onboarding's pulsing halo behind Bo — two translucent forest rings. */
+.bo-halo, .bo-halo-inner {
+  position: absolute;
+  border-radius: 50%;
+}
+.bo-halo { inset: 0; background: rgba(30, 90, 52, .10); animation: mm-ring 2.4s ease-out infinite; }
+.bo-halo-inner { inset: 18px; background: rgba(30, 90, 52, .14); }
+
+/* Calorie ring track — a translucent forest, per the tracker artboard. A solid
+   token would either vanish into the tint-green card or read as a white hole. */
+.cal-ring-track { stroke: rgba(30, 90, 52, .15); }
+[data-theme="dark"] .cal-ring-track { stroke: rgba(244, 232, 207, .16); }
+
+/* Dimmer behind a bottom sheet. Brown rather than black so it reads as the
+   cream system going dark, not as a generic modal overlay. */
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(36, 28, 16, .55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* ---------- Ingredient tiles ----------
+   The recipe artboard's tile captions are short ("2 leeks"). Real ingredient
+   strings are not ("Boneless chicken thigh"), so an unclamped label grows the
+   tile to four lines and the 4-up grid loses its rhythm. Clamp the name, keep
+   the quantity on its own line, and leave the full text in the title
+   attribute. */
+.ing-tile { min-height: 104px; justify-content: flex-start; }
+.ing-tile .ing-qty { color: var(--m-ink-soft); }
+.ing-tile .ing-name {
+  color: var(--m-ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Camera logging shell ----------
+   Artboard 3e is the one screen that is dark by design in both themes — a
+   viewfinder has to be. Its values live here rather than inline because
+   DESIGN.md bans hex/rgba literals in app/** and components/**. */
+.capture-shell {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #241D15;
+}
+.capture-view { position: relative; flex: 1; overflow: hidden; background: #1A150E; }
+.capture-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* The framing guide: an inset rounded rectangle drawn purely with a ring. */
+.capture-frame {
+  position: absolute;
+  inset: 40px 30px;
+  border-radius: 28px;
+  box-shadow: 0 0 0 3px rgba(253, 248, 231, .9);
+  pointer-events: none;
+}
+.capture-busy {
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(26, 21, 14, .72);
+}
+.capture-controls {
+  flex: none;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+}
+/* The framing hint sits ON the guide ring, so it needs an opaque-enough dark
+   fill of its own — the translucent .on-dark fill lets the ring strike through
+   the text. */
+.capture-hint { background: rgba(36, 29, 21, .85) !important; color: #FDF8E7 !important; box-shadow: none !important; }
+
+/* Controls sitting on the viewfinder rather than on cream. */
+.on-dark { background: rgba(253, 248, 231, .14) !important; color: #FDF8E7 !important; box-shadow: none !important; }
+.on-dark-text { color: #FDF8E7; }
+.on-dark-dim { color: rgba(253, 248, 231, .6); padding: 0 24px; }
+.shutter {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: none;
+  background: #FDF8E7;
+  box-shadow: 0 0 0 5px rgba(253, 248, 231, .3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  cursor: pointer;
+}
+.shutter > span { width: 60px; height: 60px; border-radius: 50%; background: var(--m-forest); display: block; }
+.shutter:active > span { transform: scale(.92); }
+.shutter:disabled { opacity: .5; }
+
+/* ---------- Paywall ----------
+   Artboard 1o is a full-bleed plum screen, so like the viewfinder it is dark
+   in both themes by design. Values live here, not inline (DESIGN.md). */
+.paywall-shell { min-height: 100dvh; background: var(--m-plum); }
+.on-plum { color: var(--m-on-deep); }
+.on-plum-dim { color: rgba(253, 248, 231, .8); }
+.on-plum-faint { color: rgba(253, 248, 231, .55); }
+/* The selected offer gets the artboard's inset lime ring. */
+.offer-selected { box-shadow: inset 0 0 0 3px var(--m-lime); }
+/* The unselected offer is a translucent panel rather than a cream card. */
+.offer-muted { background: rgba(253, 248, 231, .12); box-shadow: none; }
+.paywall-close {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(253, 248, 231, .15);
+  color: var(--m-on-deep);
+  border: none;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* ---------- Map backdrop (restaurants) ---------- */
+.mapbg {
+  background:
+    linear-gradient(0deg, var(--m-tint-green) 0%, transparent 40%),
+    var(--m-cream-2);
+}
+
+/* ---------- Tab bar positioning ----------
+   meshi-b.css declares `.tabbar { position: absolute }`, which is right for the
+   design file (each screen is a fixed-height artboard) and wrong for a real
+   scrolling app — the bar scrolls away with the content and lands in the middle
+   of the page. Pin it to the viewport and honour the home indicator.
+
+   The phone column is capped at 520px by the shell, so the bar is centred
+   rather than stretched edge-to-edge on wide screens. */
+.tabbar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 520px;
+  height: calc(86px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ---------- Mascot motion ----------
+   Referenced by the design's artboards. meshi-b.css ships mm-pop and
+   mm-slideup but not these, so they live here.
+   Honour prefers-reduced-motion — these are decorative. */
+/* mm-ring / mm-bob / mm-blink now live in design/meshi-motion.css, which both
+   trees import — they were byte-identical here and in the web tree.
+
+   mm-dot-soft is the ONE deliberate divergence and is why it got a new name.
+   The design doc's mm-dot is an 11px hop; on the 8px dots of Bo's "thinking"
+   bubble that reads as a jump rather than a pulse, so this variant travels 4px
+   and fades. Keeping both under the name `mm-dot` meant one name animated two
+   ways depending on which tree you were in — the `.row` mistake again. */
+@keyframes mm-dot-soft {
+  0%, 100% { transform: translateY(0);    opacity: .45; }
+  50%      { transform: translateY(-4px); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="mm-dot-soft"], .pill-attn {
+    animation: none !important;
+  }
+}
+
+/* ---------- Onboarding step pager ----------
+   4-segment bar: lime = completed, forest = current, faint = ahead. */
+.step-bar { display: flex; flex: 1; gap: 6px; padding: 0 10px; }
+.step-seg { flex: 1; height: 7px; border-radius: 9px; background: var(--m-ink-faint); }
+.step-seg.done { background: var(--m-lime); }
+.step-seg.now  { background: var(--m-forest); }
+
+/* ---------- Safe-area helpers ---------- */
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }

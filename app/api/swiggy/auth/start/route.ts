@@ -1,5 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { buildAuthorizeUrl, callbackUrlFor, newPkcePair } from "@/lib/swiggy-oauth";
+import { requireUser } from "@/lib/auth-guard";
+import { getProvider, clientIdFor } from "@/lib/mcp/registry";
+import { buildAuthorizeUrl, callbackUrlFor, newPkcePair } from "@/lib/mcp/oauth";
 
 export const maxDuration = 10;
 
@@ -12,25 +13,38 @@ export const maxDuration = 10;
  *
  * Cookies (instead of a DB row) keep this stateless and avoid having to
  * clean up abandoned auth attempts.
+ *
+ * Endpoints and the client-id env var name now come from the mcp_providers
+ * row rather than hardcoded constants. This route stays Swiggy-specific
+ * because its redirect_uri is registered with Swiggy and changing the path
+ * would invalidate that registration.
  */
 export async function POST(req: Request) {
-  const clientId = process.env.SWIGGY_CLIENT_ID;
-  if (!clientId) {
+  const guard = await requireUser();
+  if (guard instanceof Response) return guard;
+
+  const provider = await getProvider("swiggy");
+  if (!provider || !provider.authorizeBase) {
     return Response.json(
-      { error: "not_configured", message: "Swiggy MCP isn't wired up yet — admin needs to set SWIGGY_CLIENT_ID." },
-      { status: 503 },
+      { error: "not_configured", message: "Swiggy MCP isn't configured — admin needs to set it up." },
+      { status: 503 }
     );
   }
 
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const clientId = clientIdFor(provider);
+  if (!clientId) {
+    return Response.json(
+      {
+        error: "not_configured",
+        message: `Swiggy MCP isn't wired up yet — admin needs to set ${provider.clientIdEnv ?? "the client id env var"}.`,
+      },
+      { status: 503 }
+    );
   }
 
   const { verifier, challenge, state } = newPkcePair();
-  const redirectUri = callbackUrlFor(req);
-  const authorizeUrl = buildAuthorizeUrl({ clientId, redirectUri, challenge, state });
+  const redirectUri = callbackUrlFor(req, provider.id);
+  const authorizeUrl = buildAuthorizeUrl(provider, { clientId, redirectUri, challenge, state });
 
   const cookieAttrs = "Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600";
   const headers = new Headers({ "Content-Type": "application/json" });

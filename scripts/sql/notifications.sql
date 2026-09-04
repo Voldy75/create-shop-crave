@@ -20,6 +20,16 @@ create table if not exists public.notification_subscriptions (
   updated_at             timestamptz not null default now()
 );
 
+-- Native push (Capacitor APNs/FCM) — added for the mobile app shell. Additive so
+-- re-running on an existing DB just no-ops these columns.
+alter table public.notification_subscriptions
+  add column if not exists native_push_enabled  boolean not null default false;
+alter table public.notification_subscriptions
+  add column if not exists native_push_token     text;      -- APNs/FCM registration token
+alter table public.notification_subscriptions
+  add column if not exists native_push_platform  text
+    check (native_push_platform in ('ios','android'));
+
 alter table public.notification_subscriptions enable row level security;
 
 drop policy if exists "notification_subscriptions_select_own" on public.notification_subscriptions;
@@ -39,7 +49,7 @@ create policy "notification_subscriptions_delete_own" on public.notification_sub
 -- Index for finding all opted-in users in the cron (faster than scanning entire table).
 create index if not exists notification_subscriptions_active_idx
   on public.notification_subscriptions (user_id)
-  where web_push_enabled or whatsapp_enabled;
+  where web_push_enabled or whatsapp_enabled or native_push_enabled;
 
 -- Index for webhook lookups by phone number (Twilio sends inbound keyed by phone).
 create index if not exists notification_subscriptions_phone_idx
@@ -51,7 +61,7 @@ create index if not exists notification_subscriptions_phone_idx
 create table if not exists public.notification_log (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users(id) on delete cascade,
-  channel     text not null check (channel in ('web_push','whatsapp')),
+  channel     text not null check (channel in ('web_push','whatsapp','native_push')),
   sent_at     timestamptz not null default now(),
   status      text not null check (status in ('queued','sent','failed','skipped')),
   error       text,
@@ -60,6 +70,15 @@ create table if not exists public.notification_log (
   -- send_date is the IST calendar day, used for daily dedupe. Adjust if the
   -- project ever serves users in other primary TZs.
 );
+
+-- Widen the channel check to include native_push on already-created tables.
+do $$
+begin
+  alter table public.notification_log drop constraint if exists notification_log_channel_check;
+  alter table public.notification_log
+    add constraint notification_log_channel_check
+    check (channel in ('web_push','whatsapp','native_push'));
+end $$;
 
 create index if not exists notification_log_user_date_idx
   on public.notification_log (user_id, send_date desc);

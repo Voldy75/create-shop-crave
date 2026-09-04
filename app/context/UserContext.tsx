@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { nativePlatform } from "@/lib/native-bridge";
+import { clearBYOK } from "@/lib/byok";
 import {
   mergeLogs,
   pullMealLogs,
@@ -39,6 +41,13 @@ interface UserContextType {
   // Preferences
   dietaryPreferences: string[];
   setDietaryPreferences: (prefs: string[]) => void;
+  favoriteCuisines: string[];
+  setFavoriteCuisines: (cuisines: string[]) => void;
+  // True while a just-signed-in session's meal logs/goals are being pulled
+  // from Supabase and merged with local state. Onboarding's post-sign-in
+  // hand-off loader (`/m?welcome=1`) gates on this so it reflects real work
+  // in flight, not a fixed timer.
+  syncing: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -63,6 +72,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [dietaryPreferences, setDietaryPreferencesState] = useState<string[]>([]);
+  const [favoriteCuisines, setFavoriteCuisinesState] = useState<string[]>([]);
+  const [syncing, setSyncing] = useState(false);
 
   // Hydrate from Supabase session + localStorage
   useEffect(() => {
@@ -71,6 +82,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const syncTracker = async (userId: string) => {
       if (lastSyncedUserId === userId) return; // already synced this session
       lastSyncedUserId = userId;
+      setSyncing(true);
       try {
         const [remoteLogs, remoteGoals] = await Promise.all([
           pullMealLogs(userId),
@@ -98,13 +110,29 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (e) {
         // Sync is best-effort; never block the UI.
         console.error("Tracker sync failed:", e instanceof Error ? e.message : e);
+      } finally {
+        setSyncing(false);
       }
+    };
+
+    // Records web vs ios vs android against the user's profile so the admin
+    // console can answer "which platform is this user on". Fire-and-forget:
+    // a failure must never affect sign-in.
+    const pingPlatform = () => {
+      void fetch("/api/session/ping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform: nativePlatform() }),
+      }).catch(() => {});
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) syncTracker(session.user.id);
+      if (session?.user) {
+        syncTracker(session.user.id);
+        pingPlatform();
+      }
     });
 
     const {
@@ -115,6 +143,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Sync on actual sign-in only — not on every token refresh.
       if (event === "SIGNED_IN" && session?.user) {
         syncTracker(session.user.id);
+        pingPlatform();
       }
       if (event === "SIGNED_OUT") {
         lastSyncedUserId = null;
@@ -123,6 +152,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Migrate dietary prefs from localStorage (preserved from old flow)
     setDietaryPreferencesState(getStoredValue("crave_dietaryPreferences", []));
+    setFavoriteCuisinesState(getStoredValue("crave_favoriteCuisines", []));
     // Clean up the old userName key since it's now from OAuth profile
     if (typeof window !== "undefined") {
       localStorage.removeItem("crave_userName");
@@ -136,10 +166,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     // Clear BYOK keys on sign out
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("crave_byok_provider");
-      localStorage.removeItem("crave_byok_key");
-    }
+    clearBYOK();
     await supabase.auth.signOut();
   };
 
@@ -147,6 +174,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setDietaryPreferencesState(prefs);
     if (typeof window !== "undefined") {
       localStorage.setItem("crave_dietaryPreferences", JSON.stringify(prefs));
+    }
+  };
+
+  const setFavoriteCuisines = (cuisines: string[]) => {
+    setFavoriteCuisinesState(cuisines);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("crave_favoriteCuisines", JSON.stringify(cuisines));
     }
   };
 
@@ -206,6 +240,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         requestLocation,
         dietaryPreferences,
         setDietaryPreferences,
+        favoriteCuisines,
+        setFavoriteCuisines,
+        syncing,
       }}
     >
       {children}

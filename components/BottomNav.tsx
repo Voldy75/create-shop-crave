@@ -1,11 +1,12 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { MessageCircle, Heart, Calendar, Settings } from "lucide-react";
+import { Home, MessageCircle, ChefHat, Calendar, Settings } from "lucide-react";
 
 const NAV_ITEMS = [
+  { href: "/home", icon: Home, label: "Home" },
   { href: "/chat", icon: MessageCircle, label: "Chat" },
-  { href: "/favorites", icon: Heart, label: "Saved" },
+  { href: "/recipes", icon: ChefHat, label: "Recipes" },
   { href: "/planner", icon: Calendar, label: "Planner" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
@@ -14,7 +15,9 @@ export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const showOnPaths = ["/chat", "/favorites", "/planner", "/arena", "/admin", "/settings"];
+  // Every path where the sidebar is hidden needs a navigation, so a new route
+  // MUST be added here or sub-768px users land somewhere with no way out.
+  const showOnPaths = ["/home", "/chat", "/recipes", "/favorites", "/cart", "/dine-out", "/planner", "/arena", "/admin", "/settings"];
   if (!showOnPaths.some((p) => pathname.startsWith(p))) return null;
 
   return (
@@ -34,7 +37,7 @@ export function BottomNav() {
             key={href}
             onClick={() => router.push(href)}
             className="flex flex-col items-center gap-0.5 px-4 py-1 transition-all min-h-[44px] min-w-[64px]"
-            style={{ color: isActive ? "var(--cc-accent)" : "var(--cc-text-tertiary)" }}
+            style={{ color: isActive ? "var(--m-forest)" : "var(--m-ink-soft)" }}
             aria-label={label}
             aria-current={isActive ? "page" : undefined}
           >

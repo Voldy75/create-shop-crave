@@ -1,6 +1,5 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+import { createServiceClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export interface FeatureFlag {
   id: string;
@@ -9,7 +8,15 @@ export interface FeatureFlag {
   updated_at: string;
 }
 
+/**
+ * Admin flag list — includes description and updated_at, which the public
+ * GET /api/flags deliberately omits. lib/feature-flags.ts now reads that public
+ * route, so guarding this one no longer breaks flag reads for normal users.
+ */
 export async function GET() {
+  const guard = await requireAdmin();
+  if (guard instanceof Response) return guard;
+
   const svc = await createServiceClient();
   const { data, error } = await svc
     .from("feature_flags")
@@ -22,14 +29,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!ADMIN_EMAIL || user.email !== ADMIN_EMAIL) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof Response) return guard;
 
   const body = await req.json().catch(() => null);
   if (!body?.id || typeof body.enabled !== "boolean") {
@@ -51,14 +52,8 @@ export async function PATCH(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!ADMIN_EMAIL || user.email !== ADMIN_EMAIL) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof Response) return guard;
 
   const body = await req.json().catch(() => null);
   if (!body?.id || typeof body.id !== "string") {

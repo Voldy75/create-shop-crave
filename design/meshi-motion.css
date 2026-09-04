@@ -1,0 +1,97 @@
+/* ============================================================
+   meshi mascot motion kit — Phase 10d
+   Vendored from the Claude Design project's
+   "Meshi Mascot Animations.dc.html" (artboards 1a–1d, inline <style>).
+
+   WHY THIS IS A SEPARATE FILE, not an addition to meshi-b.css:
+   DESIGN.md requires `design/meshi-b.css` to stay a faithful copy of the
+   design system's own meshi-b.css. These keyframes live in a DIFFERENT design
+   document, so they get their own vendored file rather than being smuggled
+   into that one. Both root layouts import this; it is shared by construction,
+   which is the whole point — see the note on mm-dot below for what happens
+   when the two trees each keep their own copy.
+
+   Everything here is transform/opacity only (GPU-friendly) and decorative.
+   ============================================================ */
+
+/* ---------- Source keyframes (verbatim from the design doc) ---------- */
+@keyframes mm-bob    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes mm-wiggle { 0%,100%{transform:rotate(-6deg)} 50%{transform:rotate(6deg)} }
+@keyframes mm-sway   { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} }
+@keyframes mm-bounce { 0%,100%{transform:translateY(0) scale(1,1)} 30%{transform:translateY(-14px) scale(.95,1.07)} 60%{transform:translateY(0) scale(1.09,.88)} 80%{transform:translateY(0) scale(.98,1.03)} }
+@keyframes mm-wobble { 0%,100%{transform:rotate(0deg) scale(1,1)} 25%{transform:rotate(-5deg) scale(1.05,.93)} 75%{transform:rotate(5deg) scale(.95,1.07)} }
+@keyframes mm-shake  { 0%,100%{transform:translateX(0) rotate(0deg)} 20%{transform:translateX(-3px) rotate(-5deg)} 40%{transform:translateX(3px) rotate(5deg)} 60%{transform:translateX(-2px) rotate(-3deg)} 80%{transform:translateX(2px) rotate(3deg)} }
+@keyframes mm-roll   { 0%,100%{transform:rotate(-11deg)} 50%{transform:rotate(11deg)} }
+@keyframes mm-squash { 0%,55%,100%{transform:translateY(0) scale(1,1)} 70%{transform:translateY(0) scale(1.12,.82)} 85%{transform:translateY(-12px) scale(.94,1.1)} }
+@keyframes mm-blink  { 0%,90%,96%,100%{transform:scaleY(1)} 93%{transform:scaleY(.08)} }
+@keyframes mm-steam  { 0%{transform:translateY(5px);opacity:0} 35%{opacity:.85} 100%{transform:translateY(-15px);opacity:0} }
+@keyframes mm-ring   { 0%{transform:scale(.55);opacity:.65} 100%{transform:scale(1.4);opacity:0} }
+@keyframes mm-fill   { 0%{width:6%} 100%{width:96%} }
+@keyframes mm-walk   { 0%{left:2px} 100%{left:calc(100% - 40px)} }
+@keyframes mm-fadeup { 0%{opacity:0;transform:translateY(14px)} 100%{opacity:1;transform:translateY(0)} }
+
+/* `mm-dot` is the design doc's own curve: an 11px hop, no opacity fade.
+   It reads as a bounce on the 8px dots the "Bo typing" bubble uses.
+
+   NOTE: app/(mobile)/m/mobile.css used to define a DIFFERENT mm-dot — 4px and
+   an opacity fade — so the same name animated two different ways depending on
+   which tree you were in. That is the `.row` problem again (one name, two
+   meanings). The mobile variant is now `mm-dot-soft` and stays local to that
+   file; this is the only `mm-dot`. */
+@keyframes mm-dot    { 0%,100%{transform:translateY(0)} 35%{transform:translateY(-11px)} }
+
+/* ---------- Move utilities ----------
+   Each carries the design doc's own duration, easing and transform-origin, so
+   a caller gets the intended motion from the class alone. */
+.mm-move-bob    { animation: mm-bob 2.4s ease-in-out infinite; }
+.mm-move-wiggle { animation: mm-wiggle 1.6s ease-in-out infinite; transform-origin: 50% 88%; }
+.mm-move-sway   { animation: mm-sway 2.8s ease-in-out infinite; transform-origin: 50% 95%; }
+.mm-move-bounce { animation: mm-bounce 1.9s cubic-bezier(.5,0,.5,1) infinite; transform-origin: 50% 100%; }
+.mm-move-wobble { animation: mm-wobble 2s ease-in-out infinite; transform-origin: 50% 100%; }
+.mm-move-shake  { animation: mm-shake .9s ease-in-out infinite; transform-origin: 50% 30%; }
+.mm-move-roll   { animation: mm-roll 2.1s ease-in-out infinite; transform-origin: 50% 60%; }
+.mm-move-squash { animation: mm-squash 2.2s ease-in-out infinite; transform-origin: 50% 100%; }
+
+/* ---------- Per-character idle loops (artboard 1a) ----------
+   "One signature move per character" — the durations and origins differ per
+   mascot even where the move is shared, which is what stops a row of mascots
+   looking like one mechanical wave. Use `lib/mascot-motion.ts` to get the
+   right class for a MascotName rather than picking by hand. */
+.mm-idle-bo-bowl   { animation: mm-bob 2.4s ease-in-out infinite; }
+.mm-idle-pea       { animation: mm-bob 1.8s ease-in-out infinite; }
+.mm-idle-carrot    { animation: mm-wiggle 1.6s ease-in-out infinite; transform-origin: 50% 88%; }
+.mm-idle-leek      { animation: mm-sway 2.8s ease-in-out infinite; transform-origin: 50% 95%; }
+.mm-idle-onion     { animation: mm-sway 3s ease-in-out infinite;   transform-origin: 50% 95%; }
+.mm-idle-avocado   { animation: mm-sway 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.mm-idle-beet      { animation: mm-bounce 1.9s cubic-bezier(.5,0,.5,1) infinite; transform-origin: 50% 100%; }
+.mm-idle-pineapple { animation: mm-bounce 2.3s cubic-bezier(.5,0,.5,1) infinite; transform-origin: 50% 100%; }
+.mm-idle-mushroom  { animation: mm-squash 2.2s ease-in-out infinite; transform-origin: 50% 100%; }
+.mm-idle-tomato    { animation: mm-wobble 2s ease-in-out infinite;   transform-origin: 50% 100%; }
+.mm-idle-broccoli  { animation: mm-wobble 1.7s ease-in-out infinite; transform-origin: 50% 90%; }
+.mm-idle-chili     { animation: mm-shake .9s ease-in-out infinite;   transform-origin: 50% 30%; }
+.mm-idle-lemon     { animation: mm-roll 2.1s ease-in-out infinite;   transform-origin: 50% 60%; }
+
+/* ---------- Composed loaders (artboard 1b) ---------- */
+/* Concentric pulse behind a mascot. Two rings, second offset by half. */
+.mm-ring-pulse { position: absolute; inset: 0; border-radius: 50%; animation: mm-ring 1.8s ease-out infinite; }
+.mm-ring-pulse-2 { animation-delay: .9s; }
+
+/* ---------- Reduced motion ----------
+   Covers BOTH shapes this codebase uses: the class utilities above and the
+   `style={{ animation: "mm-… " }}` inline form that predates them. The
+   attribute selectors are not redundant — a class-only rule would silently
+   miss every inline caller, which is most of the existing screens. */
+@media (prefers-reduced-motion: reduce) {
+  [class*="mm-move-"],
+  [class*="mm-idle-"],
+  .mm-ring-pulse,
+  [style*="mm-bob"],
+  [style*="mm-dot"],
+  [style*="mm-ring"],
+  [style*="mm-blink"],
+  [style*="mm-steam"],
+  [style*="mm-bounce"],
+  [style*="mm-fadeup"] {
+    animation: none !important;
+  }
+}

@@ -1,0 +1,361 @@
+/* meshi-app.css — component layer for the w6a–w9e web artboards.
+ *
+ * Vendored from the <style> block of "Meshi Redesign - Web.dc.html" (the same
+ * Claude Design project as meshi-b.css / meshi-web.css).
+ *
+ * WHY THIS IS ITS OWN FILE, and not an addition to meshi-b.css:
+ * DESIGN.md requires meshi-b.css to stay a faithful copy of the design system's
+ * own file. These rules come from a different document — the same reason
+ * design/meshi-motion.css exists. Keep that separation.
+ *
+ * WHAT WAS DELIBERATELY NOT PORTED, and why:
+ *  1. The mockup's own chrome — .dv-*, .phone, .isl, .sb, .hb, and above all
+ *     .win / .win-bar / .win-url / .win-body, which are the FAKE BROWSER FRAME.
+ *     Those must never enter the app (see handoff.md, "Traps already hit").
+ *  2. .hiw-* — already live in app/globals.css as the landing's how-it-works kit.
+ *  3. ~66 CSS-ONLY STATE RULES. The artboards are static HTML, so every
+ *     interactive state is driven by a hidden `input.x-in` plus `:has(…:checked)`
+ *     selectors (.ct1/.cp1, .sv1..5, .pvp1..3, .dn1..3, .st1..3, .pt1..2 …).
+ *     React drives state for real, so what is ported here is the *rendered
+ *     appearance* of each :checked branch, re-expressed as an `.is-*` modifier
+ *     the components apply themselves. If you are looking for a `:has()` rule
+ *     from the artboard and cannot find it, that is why — use the modifier.
+ *
+ * Modifier vocabulary (apply from the component, never re-add :has):
+ *   .xrow.is-on   .ingr.is-checked   .stp.is-done   .bkw.is-saved
+ *   .dnc.is-open  .utab.is-active    .pseg .is-active   .dseg .is-active
+ *   .rideo.is-selected   .dnt.is-active   .xcell.xfilled
+ *
+ * This file is UNLAYERED on purpose. meshi-b.css and meshi-web.css are also
+ * unlayered, so anything inside @layer would lose to them regardless of
+ * specificity. It is imported AFTER both, so equal specificity resolves on
+ * source order. Do not wrap it in a layer.
+ *
+ * Literal hexes below are PARTNER BRAND COLOURS (Swiggy, Zomato, Uber, Ola,
+ * Blinkit, Rapido, Google directions blue) plus the lime button's hard shadow.
+ * DESIGN.md allowlists partner brands; a brand is not a themeable token.
+ * design/** is outside scripts/check-hex.mjs's scan (app/** + components/**),
+ * matching how meshi-b.css and meshi-web.css already carry literals.
+ */
+
+/* ---------------------------------------------------------------- keyframes */
+/* Note: mm-* keyframes belong in design/meshi-motion.css, not here. These are
+   the dine-out / reveal set, which is local to these boards. */
+@keyframes din-up   { 0% { opacity: 0; transform: translateY(26px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes din-drop { 0% { opacity: 0; transform: translateY(-36px) scale(.5); } 55% { opacity: 1; transform: translateY(5px) scale(1.06); } 76% { transform: translateY(-3px) scale(.97); } 100% { transform: translateY(0) scale(1); } }
+@keyframes din-float{ 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes din-bob  { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-9px) scale(1.03); } }
+@keyframes din-ring { 0% { transform: scale(.6); opacity: .6; } 100% { transform: scale(2.4); opacity: 0; } }
+@keyframes bk-pop   { 0% { transform: scale(.5); } 60% { transform: scale(1.28); } 100% { transform: scale(1); } }
+@keyframes rt-dash  { to { stroke-dashoffset: -220; } }
+
+/* ------------------------------------------------- partner / platform chips */
+/* .mp is the 38px marketplace button; .dchip the 34px dine-out action chip.
+   The .mp-* brand fills are shared by both. */
+.mp {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 38px; padding: 0 16px; border-radius: 999px;
+  font: 700 13.5px var(--m-font-display, 'Montserrat'), sans-serif;
+  border: none; cursor: pointer; white-space: nowrap;
+}
+/* Text colour here is chosen for CONTRAST, not for brand convention.
+   These chips are 13px/700 — below the 18.66px-bold threshold for "large
+   text" — so AA wants 4.5:1, and the brands' own white-on-colour pairings do
+   not reach it on the lighter grounds: white measured 2.55:1 on Swiggy's
+   orange and 2.80:1 on Ola's green.
+
+   The GROUND always stays the brand's own colour, which is what makes the chip
+   recognisable; only the ink moves. Light and mid grounds take a near-black
+   ink, dark grounds keep white. Measured after this change:
+     Swiggy 7.77 · Blinkit 12.84 · Rapido 13.83 · Ola 5.84 · Zomato 4.59
+     Uber 17.40 (white) · directions blue 4.88 (white — #0A0A0A would be 4.30)
+   Re-measure if any ground changes; the ink that wins is not always the same. */
+.mp-swiggy { background: #FC8019; color: #0A0A0A; } /* hex-ok: Swiggy brand ground */
+.mp-zomato { background: #E23744; color: #0A0A0A; } /* hex-ok: Zomato brand ground */
+.mp-uber   { background: #1A1A1A; color: #fff; }    /* hex-ok: Uber brand ground */
+.mp-ola    { background: #0FA05A; color: #0A0A0A; } /* hex-ok: Ola brand ground */
+.mp-rapido { background: #FFD400; color: #0A0A0A; } /* hex-ok: Rapido brand ground */
+.mp-blinkit{ background: #F8CB46; color: #0A0A0A; } /* hex-ok: Blinkit brand ground */
+.mp-dir    { background: #2F6BE0; color: #fff; }    /* hex-ok: Google directions blue */
+
+.dchip {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 34px; padding: 0 14px; border-radius: 999px;
+  font: 700 13px var(--m-font-display, 'Montserrat'), sans-serif;
+  border: none; cursor: pointer; white-space: nowrap;
+  transition: transform .13s cubic-bezier(.34, 1.56, .64, 1);
+}
+.dchip:active { transform: scale(.95); }
+
+/* Segmented control, dine-out flavour (sort: Best match / Nearest / …). */
+.dseg { display: inline-flex; background: var(--m-cream-2); border-radius: 999px; padding: 4px; gap: 2px; }
+.dseg button {
+  height: 36px; padding: 0 18px; border: none; background: none; border-radius: 999px;
+  font: 700 13.5px var(--m-font-display, 'Montserrat'), sans-serif;
+  color: var(--m-ink-soft); cursor: pointer; transition: background .15s, color .15s;
+}
+.dseg .is-active { background: var(--m-card); color: var(--m-forest); box-shadow: var(--m-shadow); }
+.dseg button:hover:not(.is-active) { color: var(--m-ink); }
+
+/* Pill segmented control, planner/coach flavour. */
+.pseg { display: inline-flex; background: var(--m-cream-2); border-radius: 999px; padding: 5px; gap: 3px; }
+.pseg label, .pseg a, .pseg button {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 20px; border: none; background: none; border-radius: 999px;
+  font: 700 14px var(--m-font-display, 'Montserrat'), sans-serif;
+  color: var(--m-ink-soft); cursor: pointer; text-decoration: none;
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.pseg label:hover, .pseg a:hover, .pseg button:hover { color: var(--m-ink); text-decoration: none; }
+.pseg .is-active { background: var(--m-forest); color: var(--m-on-deep); box-shadow: 0 3px 0 var(--m-forest-2); }
+
+/* ------------------------------------------------------------ card motion */
+/* din-card animates on scroll via animation-timeline: view(). That is
+   progressive enhancement — browsers without it simply show the card. */
+.din-card {
+  animation: din-up .7s cubic-bezier(.25, .1, .25, 1) both;
+  animation-timeline: view();
+  animation-range: entry 3% cover 24%;
+}
+.din-lift { transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s ease; }
+.din-lift:hover { transform: translateY(-7px); box-shadow: var(--m-shadow-lift); }
+.din-lift:hover .din-zoom { transform: scale(1.09); }
+.din-zoom { transition: transform .55s cubic-bezier(.25, .1, .25, 1); }
+
+/* --------------------------------------------------------------- map pins */
+/* DOM overlays positioned above the Google Map — NOT marker icons. The map's
+   own markers stay SVG data-URIs in RestaurantView's numberedMarkerIcon. */
+.dpin { position: absolute; transform: translate(-50%, -100%); cursor: pointer; }
+.dpin-in {
+  animation: din-drop .6s cubic-bezier(.34, 1.56, .64, 1) both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 16%;
+}
+.dpin-td {
+  width: 46px; height: 46px; border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg); display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 7px 13px color-mix(in srgb, var(--m-forest-2) 32%, transparent),
+              inset 0 0 0 3px color-mix(in srgb, var(--m-card) 92%, transparent);
+}
+.dpin-td > * { transform: rotate(45deg); }
+.dpin-bob { animation: din-bob 1.7s ease-in-out infinite; }
+/* Floating label over the active pin (w7c's "4.2 · Sequel" tooltip). */
+.dpin-tip {
+  position: absolute; left: 50%; top: -40px; transform: translateX(-50%);
+  height: 28px; padding: 0 12px; border-radius: 999px;
+  background: var(--m-card); box-shadow: var(--m-shadow-lift);
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  pointer-events: none;
+}
+/* Inactive pin in a set where one is selected. */
+.dnt { opacity: .62; transform: rotate(-45deg) scale(.86); transition: opacity .25s ease, transform .3s cubic-bezier(.34, 1.56, .64, 1); }
+.dnt.is-active { opacity: 1; transform: rotate(-45deg) scale(1); }
+/* Pulsing "you are here" ring. */
+.din-ring { animation: din-ring 2.2s ease-out infinite; }
+/* Animated route dash on the SVG route overlay. */
+.rt-dash { animation: rt-dash 3.4s linear infinite; }
+
+/* ----------------------------------------------------- w9e dine-out cards */
+/* Accordion: one place open at a time. `.is-open` is set by the component. */
+.dnc {
+  display: block; background: var(--m-card); border-radius: 22px;
+  box-shadow: var(--m-shadow); padding: 12px; cursor: pointer;
+  transition: box-shadow .22s ease, transform .2s cubic-bezier(.34, 1.56, .64, 1);
+}
+.dnc:hover { transform: translateY(-2px); }
+.dnc.is-open { box-shadow: 0 0 0 2.5px var(--m-forest), var(--m-shadow-lift); cursor: default; }
+.dnc.is-open:hover { transform: none; }
+.dnc-open { display: none; }
+.dnc.is-open .dnc-open { display: block; animation: din-up .42s cubic-bezier(.25, .1, .25, 1) both; }
+.dnc-shut { display: flex; gap: 13px; align-items: center; padding: 3px 4px; }
+.dnc.is-open .dnc-shut { display: none; }
+
+/* --------------------------------------------------- w6a ingredient tiles */
+.ing {
+  position: relative; background: var(--m-cream-2); border-radius: 16px;
+  padding: 15px 13px 13px; box-shadow: inset 0 0 0 1.5px var(--m-ink-faint);
+}
+.ing-add {
+  position: absolute; top: 9px; right: 9px; width: 26px; height: 26px;
+  border-radius: 50%; background: var(--m-lime); color: var(--m-forest-2);
+  border: none; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 2px 0 #7BA82A; /* hex-ok: matches meshi-b.css .pill-lime lime shadow */
+}
+
+/* ------------------------------------------- w9b cooking view: rows + steps */
+.ingr {
+  display: flex; gap: 12px; align-items: center; padding: 11px 14px;
+  border-radius: 14px; background: var(--m-cream-2); cursor: pointer;
+  transition: background .18s ease, transform .16s ease;
+}
+.ingr:hover { transform: translateX(3px); }
+.ingr.is-checked { background: var(--m-tint-green); }
+.ingr.is-checked .ingt { text-decoration: line-through; opacity: .5; }
+.ingbox {
+  width: 22px; height: 22px; border-radius: 7px;
+  box-shadow: inset 0 0 0 1.8px color-mix(in srgb, var(--m-ink) 30%, transparent);
+  display: flex; align-items: center; justify-content: center;
+  color: transparent; flex: none;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.ingr.is-checked .ingbox { background: var(--m-forest); box-shadow: none; color: var(--m-on-deep); }
+
+.stp { display: flex; gap: 15px; padding: 17px 0; border-bottom: 1px solid var(--m-ink-faint); cursor: pointer; }
+.stpn {
+  width: 31px; height: 31px; border-radius: 50%; background: var(--m-cream-2);
+  color: var(--m-ink); font: 800 13px var(--m-font-display, 'Montserrat'), sans-serif;
+  display: flex; align-items: center; justify-content: center; flex: none;
+  transition: background .2s ease, color .2s ease, transform .2s cubic-bezier(.34, 1.56, .64, 1);
+}
+.stp:hover .stpn { transform: scale(1.1); }
+.stp.is-done .stpn { background: var(--m-forest); color: var(--m-on-deep); }
+.stp.is-done .stpt { opacity: .45; }
+.stpck { display: none; }
+.stp.is-done .stpck { display: inline-flex; }
+.stp.is-done .stpnum { display: none; }
+
+/* ------------------------------------------------- w9a bookmark / saved shelf */
+.bkw {
+  position: absolute; top: 10px; right: 10px; width: 34px; height: 34px;
+  border-radius: 50%; background: color-mix(in srgb, var(--m-card) 94%, transparent);
+  box-shadow: 0 2px 7px color-mix(in srgb, var(--m-ink) 24%, transparent);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  color: var(--m-ink-soft);
+  transition: transform .18s cubic-bezier(.34, 1.56, .64, 1), background .2s ease, color .2s ease;
+}
+.bkw:hover { transform: scale(1.13); }
+.bkw.is-saved { background: var(--m-forest); color: var(--m-on-deep); }
+.bkw.is-saved svg { animation: bk-pop .44s cubic-bezier(.34, 1.56, .64, 1); }
+
+/* ------------------------------------------------------- w8b settings rows */
+.utabs {
+  display: flex; gap: 28px; padding: 0 30px;
+  border-bottom: 1px solid var(--m-ink-faint); background: var(--m-card); flex: none;
+}
+.utab {
+  position: relative; display: inline-flex; align-items: center; gap: 9px;
+  height: 54px; border: none; background: none;
+  font: 700 15px var(--m-font-display, 'Montserrat'), sans-serif;
+  color: var(--m-ink-soft); cursor: pointer; transition: color .18s ease;
+}
+.utab:hover { color: var(--m-ink); }
+.utab::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px;
+  border-radius: 3px 3px 0 0; background: var(--m-forest);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
+}
+.utab.is-active { color: var(--m-forest); }
+.utab.is-active::after { transform: scaleX(1); }
+
+.xsw {
+  width: 58px; height: 32px; border-radius: 99px; background: var(--m-cream-2);
+  box-shadow: inset 0 0 0 1.5px var(--m-ink-faint);
+  display: inline-flex; align-items: center; padding: 3px; cursor: pointer; flex: none;
+  transition: background .24s ease, box-shadow .24s ease;
+}
+.xsw i {
+  display: block; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--m-card); box-shadow: 0 2px 5px color-mix(in srgb, var(--m-ink) 28%, transparent);
+  transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
+}
+.xrow { transition: box-shadow .22s ease, transform .18s ease; }
+.xrow:hover { transform: translateY(-2px); }
+.xrow.is-on { box-shadow: 0 0 0 2.5px var(--m-lime), var(--m-shadow); }
+.xrow.is-on .xsw { background: var(--m-lime); box-shadow: none; }
+.xrow.is-on .xsw i { transform: translateX(26px); }
+.xrow.is-on .xicon { background: var(--m-tint-green); color: var(--m-forest); }
+.xdet { display: none; }
+.xrow.is-on .xdet { display: flex; animation: din-up .4s cubic-bezier(.25, .1, .25, 1) both; }
+
+/* --------------------------------------------------------- w8c planner grid */
+.xcell {
+  position: relative; height: 78px; border-radius: 14px;
+  border: 1.7px dashed color-mix(in srgb, var(--m-ink) 20%, transparent);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1);
+}
+.xcell:hover { background: var(--m-tint-green); border-color: var(--m-forest); transform: scale(1.04); }
+.xcell:hover .xcp { transform: rotate(90deg) scale(1.2); color: var(--m-forest); }
+.xcp { transition: transform .24s cubic-bezier(.34, 1.56, .64, 1), color .18s ease; }
+/* A filled cell drops the dashed affordance and does not scale — the card
+   inside lifts instead. */
+.xcell.xfilled { border-color: transparent; background: transparent; transform: none; }
+.xcell.xfilled:hover { background: transparent; border-color: transparent; transform: none; }
+.xmeal {
+  position: absolute; inset: 0; border-radius: 13px; background: var(--m-card);
+  box-shadow: var(--m-shadow); padding: 9px 10px;
+  display: flex; flex-direction: column; gap: 3px; justify-content: center;
+  transition: transform .18s cubic-bezier(.34, 1.56, .64, 1), box-shadow .18s ease;
+}
+.xcell:hover .xmeal { transform: translateY(-3px) rotate(-1.2deg); box-shadow: var(--m-shadow-lift); }
+
+/* -------------------------------------------------- w8a conversation threads */
+.thr {
+  display: flex; gap: 11px; align-items: center; padding: 10px 11px;
+  border-radius: 14px; cursor: pointer; width: 100%; border: none;
+  background: none; text-align: left;
+  transition: background .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+.thr:hover { background: var(--m-cream-2); transform: translateX(3px); }
+.thr.is-active {
+  background: var(--m-tint-green);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--m-forest) 28%, transparent);
+}
+.thr.is-active .t-h2 { color: var(--m-forest); }
+/* Delete reveals on hover only — but keep it reachable by keyboard. */
+.thr-x { opacity: 0; transition: opacity .16s ease; }
+.thr:hover .thr-x, .thr-x:focus-visible { opacity: .6; }
+
+/* ------------------------------------------------ generate / connect buttons */
+.xbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  height: 46px; padding: 0 24px; border-radius: 999px;
+  font: 700 15px var(--m-font-display, 'Montserrat'), sans-serif;
+  cursor: pointer; border: none;
+  transition: transform .15s cubic-bezier(.34, 1.56, .64, 1), box-shadow .15s ease, background .2s ease;
+}
+.xbtn:hover { transform: translateY(-2px); }
+.xbtn:active { transform: translateY(1px); }
+.xbtn-f { background: var(--m-forest); color: var(--m-on-deep); box-shadow: 0 4px 0 var(--m-forest-2); }
+.xbtn-l { background: var(--m-lime); color: var(--m-forest-2); box-shadow: 0 4px 0 #7BA82A; /* hex-ok: matches meshi-b.css .pill-lime lime shadow */ }
+.xbtn:hover .xspk { animation: mm-twinkle 1.1s ease-in-out infinite; }
+
+.xstore {
+  display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 15px;
+  border-radius: 999px; font: 700 13px var(--m-font-display, 'Montserrat'), sans-serif;
+  border: none; cursor: pointer; transition: transform .14s cubic-bezier(.34, 1.56, .64, 1);
+}
+.xstore:hover { transform: translateY(-2px) scale(1.03); }
+
+/* ------------------------------------------------------------ misc surfaces */
+/* Selectable restaurant/result card. */
+.rcard { cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; }
+.rcard:hover { transform: translateY(-4px); box-shadow: var(--m-shadow-lift); }
+.rcard.is-active { box-shadow: 0 0 0 2.5px var(--m-forest), var(--m-shadow-lift); }
+
+/* Ride option row (w9c). */
+.rideo {
+  display: flex; gap: 14px; align-items: center; padding: 13px 16px;
+  border-radius: 18px; background: var(--m-card);
+  box-shadow: inset 0 0 0 1.5px var(--m-ink-faint); cursor: pointer;
+  transition: box-shadow .2s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1);
+}
+.rideo:hover { transform: translateY(-2px); }
+.rideo.is-selected { box-shadow: 0 0 0 2.5px var(--m-forest), var(--m-shadow); }
+
+/* Staggered reveal used by coach insights and the planner auto-fill. */
+.xrev { opacity: 0; transform: translateY(12px) scale(.96); transition: opacity .38s ease, transform .44s cubic-bezier(.34, 1.56, .64, 1); }
+.xrev.is-shown { opacity: 1; transform: none; }
+
+/* NOTE: .mlabel (the artboard's hand-placed neighbourhood labels) is
+   deliberately NOT ported. Those exist because the mockup's map is a drawing;
+   the real Google Map renders its own place labels, and drawing a second set
+   over it would be fabricated geography. */
+
+@media (prefers-reduced-motion: reduce) {
+  .din-card, .dpin-in, .dpin-bob, .din-ring, .rt-dash,
+  .bkw.is-saved svg, .xbtn:hover .xspk,
+  .dnc.is-open .dnc-open, .xrow.is-on .xdet { animation: none !important; }
+  .din-lift, .din-zoom, .thr, .ingr, .xcell, .xmeal, .dnc, .rideo, .xrev { transition: none !important; }
+}

@@ -1,4 +1,5 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth-guard";
 import { sendPush } from "@/lib/web-push";
 import type { PushSubscriptionJSON } from "@/lib/types";
 
@@ -10,11 +11,9 @@ export const maxDuration = 10;
  * before relying on the daily cron.
  */
 export async function POST() {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireUser();
+  if (guard instanceof Response) return guard;
+  const { user } = guard;
 
   // Read from service role to avoid an extra RLS round-trip; user is auth-verified above.
   const service = await createServiceClient();

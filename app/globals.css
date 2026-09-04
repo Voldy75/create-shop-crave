@@ -6,10 +6,14 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-system: var(--font-geist-sans), "Geist", -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, sans-serif;
-  --font-display-stack: var(--font-display), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
+  /* Phase 10c: Geist and General Sans are gone — meshi is one family. These
+     stacks stay because Tailwind and ~50 files reference them; they now
+     resolve to Montserrat. Without this the h1/h2/h3 rules below would fall
+     through to a system font, since --font-display no longer exists. */
+  --font-sans: var(--font-montserrat), system-ui, sans-serif;
+  --font-system: var(--font-montserrat), system-ui, sans-serif;
+  --font-display-stack: var(--font-montserrat), system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,96 +50,75 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Crave & Create — "Midnight Kitchen" Design System
-   General Sans display · Geist body · warm charcoal surfaces
-   · pill CTAs · glass navigation · one confident orange
+   Phase 10e — the Midnight Kitchen alias layer is deleted.
+
+   Phase 10c introduced a `cc`-prefixed set of custom properties (`cc-accent`,
+   `cc-surface`, `cc-text-primary`, and so on) as a temporary ALIAS layer onto
+   meshi's `m`-prefixed tokens, so the web tree could move onto the new
+   palette in one edit without rewriting ~50 files at once. Every call site
+   has since been converted to reference the `m`-prefixed tokens directly
+   (the repo-wide grep this file's exit criterion names now returns zero), so
+   the alias block that used to live here is gone. If you are looking for it
+   in history: it was a flat 1:1 map (`cc-accent` → `m-forest`, etc.) plus one
+   non-aliased literal, `cc-radius-sm: 10px`, which had no `m`-token
+   equivalent and is now just inlined at its one call site.
+
+   The shadcn/ui block directly below survives — it is a DIFFERENT vocabulary
+   (shadcn's own component primitives, `--card`, `--primary`, etc.), not part
+   of that migration, and nothing asked for its retirement.
    ───────────────────────────────────────────────────────────── */
-:root {
-  /* App surfaces — warm charcoal, never pure black */
-  --cc-bg:               #0c0a09;
-  --cc-surface:          #1c1917;
-  --cc-surface-2:        #292524;
-  --cc-surface-3:        #34302c;
-  --cc-surface-alt:      #faf7f4;
-  --cc-border:           rgba(250, 249, 247, 0.08);
-  --cc-border-strong:    rgba(250, 249, 247, 0.14);
 
-  /* Text — warm white scale */
-  --cc-text-primary:     #faf9f7;
-  --cc-text-secondary:   rgba(250, 249, 247, 0.68);
-  --cc-text-tertiary:    rgba(250, 249, 247, 0.45);
-
-  /* Accent — warm orange, food-forward */
-  --cc-accent:           #ff6b35;
-  --cc-accent-hover:     #ff5520;
-  --cc-accent-dim:       rgba(255, 107, 53, 0.15);
-
-  /* Interactive — in-family warm tones (no borrowed blue) */
-  --cc-link:             #ffa06b;
-  --cc-link-light:       #c2410c;
-  --cc-focus:            #ff8a4d;
-
-  /* Shadows — soft diffused, warm-tinted */
-  --cc-shadow-sm:        rgba(10, 6, 3, 0.25) 3px 5px 30px 0px;
-  --cc-shadow-md:        rgba(10, 6, 3, 0.4) 0px 8px 24px;
-  --cc-shadow-lg:        rgba(10, 6, 3, 0.6) 0px 16px 48px;
-
-  /* Radius scale */
-  --cc-radius-sm:        6px;
-  --cc-radius-md:        10px;
-  --cc-radius-lg:        14px;
-  --cc-radius-pill:      980px;
-}
-
-/* shadcn/ui tokens */
+/* shadcn/ui tokens — aliased onto meshi for the same reason the old `cc`
+   tokens were. NOTE: `--card` here is the shadcn COLOUR token, unrelated to
+   meshi-b's `.card` class. They coexist. */
 :root {
   --radius: 0.625rem;
-  --background: #0c0a09;
-  --foreground: #faf9f7;
-  --card: #1c1917;
-  --card-foreground: #faf9f7;
-  --popover: #292524;
-  --popover-foreground: #faf9f7;
-  --primary: #ff6b35;
-  --primary-foreground: #ffffff;
-  --secondary: #292524;
-  --secondary-foreground: #faf9f7;
-  --muted: #292524;
-  --muted-foreground: rgba(250, 249, 247, 0.68);
-  --accent: #34302c;
-  --accent-foreground: #faf9f7;
-  --destructive: #ff453a;
-  --border: rgba(250, 249, 247, 0.08);
-  --input: rgba(250, 249, 247, 0.08);
-  --ring: #ff6b35;
-  --chart-1: #ff6b35;
-  --chart-2: #ff9f1c;
-  --chart-3: #ffbf69;
-  --chart-4: #cbf3f0;
-  --chart-5: #2ec4b6;
-  --sidebar: #0c0a09;
-  --sidebar-foreground: #faf9f7;
-  --sidebar-primary: #ff6b35;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #292524;
-  --sidebar-accent-foreground: #faf9f7;
-  --sidebar-border: rgba(250, 249, 247, 0.08);
-  --sidebar-ring: #ff6b35;
+  --background: var(--m-cream);
+  --foreground: var(--m-ink);
+  --card: var(--m-card);
+  --card-foreground: var(--m-ink);
+  --popover: var(--m-card);
+  --popover-foreground: var(--m-ink);
+  --primary: var(--m-forest);
+  --primary-foreground: var(--m-on-deep);
+  --secondary: var(--m-cream-2);
+  --secondary-foreground: var(--m-ink);
+  --muted: var(--m-cream-2);
+  --muted-foreground: var(--m-ink-soft);
+  --accent: var(--m-tint-green);
+  --accent-foreground: var(--m-forest);
+  --destructive: var(--m-red);
+  --border: var(--m-ink-faint);
+  --input: var(--m-ink-faint);
+  --ring: var(--m-forest);
+  --chart-1: var(--m-forest);
+  --chart-2: var(--m-lime);
+  --chart-3: var(--m-orange);
+  --chart-4: var(--m-plum-2);
+  --chart-5: var(--m-burnt);
+  --sidebar: var(--m-card);
+  --sidebar-foreground: var(--m-ink);
+  --sidebar-primary: var(--m-forest);
+  --sidebar-primary-foreground: var(--m-on-deep);
+  --sidebar-accent: var(--m-tint-green);
+  --sidebar-accent-foreground: var(--m-forest);
+  --sidebar-border: var(--m-ink-faint);
+  --sidebar-ring: var(--m-forest);
 }
 
 @layer base {
   * {
     @apply border-border;
   }
-  /* Global focus ring — Apple blue */
+  /* Global focus ring */
   *:focus-visible {
-    outline: 2px solid var(--cc-focus);
+    outline: 2px solid var(--m-forest);
     outline-offset: 2px;
     border-radius: 4px;
   }
   body {
-    background-color: var(--cc-bg);
-    color: var(--cc-text-primary);
+    background-color: var(--m-cream);
+    color: var(--m-ink);
     font-family: var(--font-system);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -149,29 +132,43 @@
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
   /* ── Glass Navigation — warm tint ── */
+  /* Was a hardcoded near-black translucent, with a light-mode override that
+     has been removed. color-mix keeps the frosted translucency while tracking
+     whichever surface the theme is on, so it is correct in both. */
   .glass-nav {
-    background: rgba(12, 10, 9, 0.8);
+    background: color-mix(in srgb, var(--m-card) 82%, transparent);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--m-ink-faint);
   }
 
-  /* ── Cards ── */
+  /* ── Cards ──
+     .cc-card / .cc-card-elevated below have no consumer anywhere in app/** or
+     components/** (confirmed by grep before this edit) — left in place rather
+     than deleted, since removing genuinely dead CSS is a different cleanup
+     than retiring the old `cc`-prefixed tokens, but converted off the names
+     being retired. */
   .cc-card {
-    background: var(--cc-surface);
-    border-radius: var(--cc-radius-md);
+    background: var(--m-card);
+    border-radius: var(--m-r-tile);
   }
 
   .cc-card-elevated {
-    background: var(--cc-surface-2);
-    border-radius: var(--cc-radius-md);
-    box-shadow: var(--cc-shadow-sm);
+    background: var(--m-cream-2);
+    border-radius: var(--m-r-tile);
+    box-shadow: var(--m-shadow);
   }
 
-  /* ── Apple Pill CTA — Primary (filled orange) ── */
+  /* ── Pill CTA — Primary ──
+     `background`/`:hover background` read --band-accent (see the band-token
+     block near .band-deep below), NOT --m-forest directly: this class renders
+     inside the landing's forest-band closing CTA (app/(web)/page.tsx), where
+     the accent must be lime — forest is the band, so it cannot also be the
+     accent on it. Everywhere else --band-accent just equals --m-forest. */
   .btn-pill-primary {
-    background: var(--cc-accent);
-    color: #ffffff;
-    border-radius: var(--cc-radius-pill);
+    background: var(--band-accent);
+    color: var(--m-on-deep);
+    border-radius: var(--m-r-pill);
     padding: 12px 24px;
     font-weight: 400;
     font-size: 17px;
@@ -181,17 +178,19 @@
     transition: background 0.15s ease, transform 0.1s ease;
   }
   .btn-pill-primary:hover {
-    background: var(--cc-accent-hover);
+    background: var(--band-accent-hover);
   }
   .btn-pill-primary:active {
     transform: scale(0.98);
   }
 
-  /* ── Apple Pill CTA — Secondary (outline) ── */
+  /* ── Pill CTA — Secondary (outline) ──
+     Never rendered inside a band-deep section today (checked) — --m-ink is
+     correct as a static value, not --band-text-primary. */
   .btn-pill-secondary {
     background: transparent;
-    color: var(--cc-text-primary);
-    border-radius: var(--cc-radius-pill);
+    color: var(--m-ink);
+    border-radius: var(--m-r-pill);
     padding: 11px 24px;
     font-weight: 400;
     font-size: 17px;
@@ -204,12 +203,12 @@
     border-color: rgba(255, 255, 255, 0.48);
   }
 
-  /* ── Apple Link Pill — "Learn more" style ── */
+  /* ── Link Pill — no consumer found; converted, not deleted (see .cc-card). ── */
   .btn-link-pill {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    color: var(--cc-link);
+    color: var(--m-forest);
     font-size: 21px;
     font-weight: 400;
     line-height: 1.19;
@@ -223,83 +222,174 @@
     text-decoration: underline;
   }
 
-  /* ── Chip — Apple filter pill ── */
+  /* ── Chip (Midnight Kitchen) ──
+     DEAD: meshi-b.css is unlayered and defines its own `.chip`, which beats
+     everything in this `@layer utilities` block regardless of specificity —
+     the trap documented near .band-deep below. Every real chip in the app
+     goes through components/cc/chip.tsx onto meshi-b's `.chip`/`.chip-active`
+     instead. Kept and converted, not deleted, for the same reason as .cc-card. */
   .chip {
-    background: var(--cc-surface-2);
-    color: var(--cc-text-secondary);
-    border-radius: var(--cc-radius-pill);
+    background: var(--m-cream-2);
+    color: var(--m-ink-soft);
+    border-radius: var(--m-r-pill);
     padding: 8px 16px;
     font-size: 14px;
     font-weight: 400;
     letter-spacing: -0.224px;
-    border: 1px solid var(--cc-border);
+    border: 1px solid var(--m-ink-faint);
     cursor: pointer;
     transition: all 0.15s ease;
   }
   .chip:hover {
-    background: var(--cc-surface-3);
-    color: var(--cc-text-primary);
+    background: var(--m-cream-2);
+    color: var(--m-ink);
   }
   .chip.active {
-    background: var(--cc-accent);
-    color: #ffffff;
-    border-color: var(--cc-accent);
+    background: var(--m-forest);
+    color: var(--m-on-deep);
+    border-color: var(--m-forest);
   }
 
-  /* ── Display Headlines — General Sans ── */
+  /* ── Display Headlines ──
+     Base `color` here is inert wherever these classes actually render: every
+     current usage sits inside SOME `.band-*` wrapper (Section always applies
+     one), and every band type overrides headline colour to `inherit` — see
+     the "Inside fixed bands, headlines follow the band" rule further down.
+     --m-ink is the correct value for the one hypothetical case of a headline
+     rendered outside any band. */
+  /* WEIGHTS ARE 800, NOT 600/500 — these were Midnight Kitchen values that the
+     Phase 10c palette flip never corrected, and they are the single most
+     visible remaining mismatch against wLa. Every display line in that
+     artboard is `font: 800 <size> Montserrat` (56px hero, 46px and 38px
+     section, 22–23px tile), and meshi-b's own scale agrees: .t-d1/.t-d2 are
+     800, .t-h1/.t-h2 are 700. General Sans at 600 read as a bold-ish display
+     face; Montserrat at 600 reads as semibold BODY, which is why the headings
+     looked underweight next to the design.
+
+     Letter-spacing follows meshi rather than the old em-based values —
+     meshi-b pins -.5px on .t-d1 and -.4px on .t-d2, and wLa's hero uses
+     -1.6px at 56px. Tracking that tight has to be px at display sizes; an em
+     value re-tightens as the clamp grows and starts colliding glyphs. */
   .headline-hero {
     font-family: var(--font-display-stack);
-    font-size: clamp(2.5rem, 6vw, 4rem);
-    font-weight: 600;
-    line-height: 1.05;
-    letter-spacing: -0.02em;
-    color: var(--cc-text-primary);
+    font-size: clamp(2.5rem, 6vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: -1.6px;
+    color: var(--m-ink);
   }
 
   .headline-section {
     font-family: var(--font-display-stack);
-    font-size: clamp(1.75rem, 3vw, 2.5rem);
-    font-weight: 600;
-    line-height: 1.10;
-    letter-spacing: -0.015em;
-    color: var(--cc-text-primary);
+    font-size: clamp(1.75rem, 3vw, 2.875rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    color: var(--m-ink);
   }
 
   .headline-tile {
     font-family: var(--font-display-stack);
-    font-size: 28px;
-    font-weight: 500;
-    line-height: 1.14;
-    letter-spacing: -0.01em;
-    color: var(--cc-text-primary);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.4px;
+    color: var(--m-ink);
   }
 
-  /* ── Text Scale ── */
-  .text-title   { font-size: 21px; font-weight: 700; line-height: 1.19; letter-spacing: -0.01em; color: var(--cc-text-primary); }
-  .text-body    { font-size: 17px; line-height: 1.47; letter-spacing: -0.022em; color: var(--cc-text-secondary); }
-  .text-caption { font-size: 14px; font-weight: 400; line-height: 1.29; letter-spacing: -0.016em; color: var(--cc-text-tertiary); }
-  .text-label   { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--cc-text-tertiary); }
-  .text-link    { font-size: 14px; font-weight: 400; line-height: 1.43; letter-spacing: -0.016em; color: var(--cc-link); }
+  /* ── Text Scale — .text-title/-body/-caption/-link have no consumer
+     (confirmed by grep); .text-label does (page.tsx, three admin screens),
+     never inside a band-deep section. All converted, not deleted. ── */
+  .text-title   { font-size: 21px; font-weight: 700; line-height: 1.19; letter-spacing: -0.01em; color: var(--m-ink); }
+  .text-body    { font-size: 17px; line-height: 1.47; letter-spacing: -0.022em; color: var(--m-ink-soft); }
+  .text-caption { font-size: 14px; font-weight: 400; line-height: 1.29; letter-spacing: -0.016em; color: var(--m-ink-soft); }
+  .text-label   { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--m-ink-soft); }
+  .text-link    { font-size: 14px; font-weight: 400; line-height: 1.43; letter-spacing: -0.016em; color: var(--m-forest); }
   .text-link:hover { text-decoration: underline; }
   .text-price   { font-variant-numeric: tabular-nums; }
 
-  /* ── Section Backgrounds — fixed alternating bands ── */
-  .section-dark {
-    background: #0c0a09;
-    color: #faf9f7;
+  /* ── Section bands ──
+     wLa does not alternate two tones; it runs a FOUR-band rhythm:
+       cream → forest → cream → cream-2 → forest → cream → plum → cream →
+       forest → cream-2
+     A two-value dark/light switch cannot express that, which is why the old
+     `.section-dark`/`.section-light` pair is replaced by explicit bands.
+
+     `.band-deep` carries everything the two dark bands share. Anything placed
+     on one must be legible on a saturated ground — which specifically means
+     not the forest accent itself. */
+  /* ── Band-scoped tokens ──
+     Phase 10c ran this mechanism on the old, now-deleted `cc`-prefixed
+     tokens, since re-scoping a custom property by ancestor selector was the
+     same trick as the alias layer, just applied locally instead of at :root.
+     That alias layer is gone, but this specific need — text/accent
+     legibility changing with the section it sits in — was never legacy; it
+     is how the landing's forest and plum bands work. It gets its OWN
+     honestly-named prefix, `--band-*`, rather than disappearing with the
+     tokens it used to borrow.
+
+     Defaults here are the light-band values, so anything using --band-* off
+     a band gets the ordinary tokens with zero extra code. */
+  :root {
+    --band-text-secondary: var(--m-ink-soft);
+    --band-text-tertiary: var(--m-ink-soft);
+    --band-border-strong: var(--m-ink-faint);
+    --band-accent: var(--m-forest);
+    --band-accent-hover: var(--m-forest-2);
   }
-  .section-light {
-    background: #faf7f4;
-    color: #1c1917;
+
+  .band-cream  { background: var(--m-cream);   color: var(--m-ink); }
+  .band-cream2 { background: var(--m-cream-2); color: var(--m-ink); }
+  .band-forest { background: var(--m-forest);  color: var(--m-on-deep); }
+  .band-plum   { background: var(--m-plum);    color: var(--m-on-deep); }
+  /* Inside a forest or plum band the whole text scale has to flip. Rather
+     than chase each rule, RE-SCOPE THE TOKENS on the band. Everything
+     referencing a --band-text-* token or --band-accent, whether a utility
+     class or a Tailwind arbitrary value, follows automatically.
+
+     Accents become LIME, not forest: forest is the band, so the accent cannot
+     also be it. wLa does exactly this — its on-band numerals and eyebrows are
+     lime. */
+  .band-deep {
+    --band-text-secondary: color-mix(in srgb, var(--m-on-deep) 82%, transparent);
+    --band-text-tertiary: color-mix(in srgb, var(--m-on-deep) 62%, transparent);
+    --band-border-strong: color-mix(in srgb, var(--m-on-deep) 28%, transparent);
+    --band-accent: var(--m-lime);
+    --band-accent-hover: var(--m-lime);
+  }
+  /* …but a CARD on the band is still a cream surface, so inside one the scale
+     flips back. Without this, every card on a forest band renders
+     cream-on-cream. No current content nests one, but the fix costs nothing
+     and the failure mode (silent, band-only) is exactly the kind that goes
+     unnoticed until someone adds a card to a band months from now. */
+  .band-deep .card {
+    --band-text-secondary: var(--m-ink-soft);
+    --band-text-tertiary: var(--m-ink-soft);
+    --band-border-strong: var(--m-ink-faint);
+    --band-accent: var(--m-forest);
+    --band-accent-hover: var(--m-forest-2);
+    color: var(--m-ink);
+  }
+  .band-deep .text-body,
+  .band-deep .text-title {
+    color: inherit;
+  }
+  /* The accent on a forest band is lime, and cream text on lime is only ~1.9:1.
+     meshi's own `.pill-lime` pairs lime with deep forest text — match it. */
+  .band-deep .btn-pill-primary {
+    color: var(--m-forest-2);
   }
 
   /* Inside fixed bands, headlines follow the band, not the theme */
-  .section-dark .headline-hero,
-  .section-dark .headline-section,
-  .section-dark .headline-tile,
-  .section-light .headline-hero,
-  .section-light .headline-section,
-  .section-light .headline-tile {
+  .band-cream .headline-hero,
+  .band-cream .headline-section,
+  .band-cream .headline-tile,
+  .band-cream2 .headline-hero,
+  .band-cream2 .headline-section,
+  .band-cream2 .headline-tile,
+  .band-deep .headline-hero,
+  .band-deep .headline-section,
+  .band-deep .headline-tile {
     color: inherit;
   }
 
@@ -341,96 +431,31 @@
 /* ─────────────────────────────────────────────────────────────
    Light mode — warm off-white
    ───────────────────────────────────────────────────────────── */
-[data-theme="light"] {
-  --cc-bg:               #faf7f4;
-  --cc-surface:          #ffffff;
-  --cc-surface-2:        #f3efe9;
-  --cc-surface-3:        #e9e3db;
-  --cc-surface-alt:      #0c0a09;
-  --cc-border:           rgba(28, 25, 23, 0.07);
-  --cc-border-strong:    rgba(28, 25, 23, 0.13);
-  --cc-text-primary:     #1c1917;
-  --cc-text-secondary:   rgba(28, 25, 23, 0.62);
-  --cc-text-tertiary:    rgba(28, 25, 23, 0.4);
-  --cc-link:             #c2410c;
-  --cc-link-light:       #c2410c;
-  --cc-focus:            #ea580c;
-  --cc-shadow-sm:        rgba(28, 25, 23, 0.05) 0px 2px 12px;
-  --cc-shadow-md:        rgba(28, 25, 23, 0.09) 0px 8px 24px;
-  --cc-shadow-lg:        rgba(28, 25, 23, 0.13) 0px 16px 48px;
+/* The [data-theme="light"] token block that used to live here is GONE. It
+   existed to flip Midnight Kitchen from its dark :root to light. This file's
+   tokens (and shadcn's) now reference meshi's --m-* directly, and meshi-b.css
+   already defines those light-first with a [data-theme="dark"] override — so
+   re-declaring them here would override the very system they alias, and light
+   mode would silently stop tracking the design tokens. */
 
-  /* shadcn tokens */
-  --background:          #faf7f4;
-  --foreground:          #1c1917;
-  --card:                #ffffff;
-  --card-foreground:     #1c1917;
-  --popover:             #ffffff;
-  --popover-foreground:  #1c1917;
-  --secondary:           #f3efe9;
-  --secondary-foreground:#1c1917;
-  --muted:               #f3efe9;
-  --muted-foreground:    rgba(28, 25, 23, 0.62);
-  --accent:              #e9e3db;
-  --accent-foreground:   #1c1917;
-  --border:              rgba(28, 25, 23, 0.07);
-  --input:               rgba(28, 25, 23, 0.07);
+/* Every [data-theme="light"] RULE override that used to sit here is gone too.
+   They existed to repaint a dark-first system for light mode with literal
+   hexes. Light is now the base and the tokens are meshi's, so each of these
+   either duplicated the base rule or actively overrode it — the
+   `.section-dark` pair in particular pinned the landing hero to #1c1917 and
+   beat the retoned band above.
+
+   The one behaviour worth keeping is the scrollbar, which needs an ink-tinted
+   thumb on cream rather than the dark-mode default. */
+::-webkit-scrollbar-thumb {
+  background: var(--m-ink-faint);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--m-ink-soft);
 }
 
-[data-theme="light"] body {
-  background-color: var(--cc-bg);
-  color: var(--cc-text-primary);
-}
-
-[data-theme="light"] .glass-nav {
-  background: rgba(250, 247, 244, 0.72);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-}
-
-[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: rgba(28, 25, 23, 0.14);
-}
-[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(28, 25, 23, 0.22);
-}
-
-[data-theme="light"] .btn-pill-secondary {
-  color: #1c1917;
-  border-color: rgba(28, 25, 23, 0.2);
-}
-[data-theme="light"] .btn-pill-secondary:hover {
-  background: rgba(28, 25, 23, 0.04);
-  border-color: rgba(28, 25, 23, 0.32);
-}
-/* Secondary pills on fixed dark bands stay light-on-dark in light mode */
-[data-theme="light"] .section-dark .btn-pill-secondary {
-  color: #faf9f7;
-  border-color: rgba(250, 249, 247, 0.32);
-}
-[data-theme="light"] .section-dark .btn-pill-secondary:hover {
-  background: rgba(250, 249, 247, 0.08);
-  border-color: rgba(250, 249, 247, 0.48);
-}
-
-[data-theme="light"] .chip {
-  background: #ffffff;
-  color: rgba(28, 25, 23, 0.62);
-  border-color: rgba(28, 25, 23, 0.1);
-}
-[data-theme="light"] .chip:hover {
-  background: #f3efe9;
-  color: #1c1917;
-}
-
-/* Alternating sections in light mode */
-[data-theme="light"] .section-dark {
-  background: #1c1917;
-  color: #faf9f7;
-}
-[data-theme="light"] .section-light {
-  background: #faf7f4;
-  color: #1c1917;
-}
+/* No band-specific pill override is needed any more: both bands are light, so
+   .btn-pill-secondary's own token-driven colours are correct on each. */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -440,5 +465,680 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ── meshi type classes on a deep band — UNLAYERED, deliberately ──
+   meshi-b.css sets an explicit colour on .t-micro/.t-cap/.t-body/.t-h1/.t-h2
+   and is unlayered, so it beats any Tailwind colour class or @layer rule on
+   those elements no matter the specificity. On a forest or plum band that
+   means ink-on-plum — the integrations eyebrow measured 2.14:1 with a
+   perfectly good band-scoped text colour on it that never applied because
+   this rule wasn't yet written. These have to sit outside a layer to win. */
+.band-deep .t-micro,
+.band-deep .t-cap {
+  color: var(--band-text-secondary);
+}
+.band-deep .t-body,
+.band-deep .t-h1,
+.band-deep .t-h2 {
+  color: var(--m-on-deep);
+}
+/* …except inside a card, which is still a cream surface. */
+.band-deep .card .t-micro,
+.band-deep .card .t-cap {
+  color: var(--m-ink-soft);
+}
+.band-deep .card .t-body,
+.band-deep .card .t-h1,
+.band-deep .card .t-h2 {
+  color: var(--m-ink);
+}
+
+/* ── Web app shell (Phase 10c) — UNLAYERED, deliberately ──
+   design/meshi-web.css is unlayered, and an unlayered rule outranks any
+   @layer rule no matter the specificity or source order. Inside
+   `@layer utilities` these rules lost to meshi-web's own `.side { display:
+   flex }`, so the sidebar simply never hid below the breakpoint. Anything
+   here that has to override the vendored shell must stay out of a layer. */
+.web-shell {
+  display: flex;
+  min-height: 100dvh;
+}
+.web-shell > .side {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+}
+.web-main {
+  flex: 1;
+  min-width: 0;
+  overflow: visible;
+}
+/* The sidebar's avatar has no image to show — the design's is a photo, and
+   nothing in this product uploads one. Initials on a tinted disc instead. */
+.side-avatar-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--m-tint-green);
+  color: var(--m-forest);
+  font: 800 14px var(--m-font-display);
+}
+.snav { text-decoration: none; }
+.side-bo { text-decoration: none; }
+
+/* MUST match Tailwind's `md` breakpoint, because components/BottomNav.tsx
+   hides itself with `md:hidden`. Any other value leaves a band of widths
+   with either two navigations or none — 900px here previously left 768–900
+   with no navigation at all. */
+@media (max-width: 767.98px) {
+  .web-shell > .side { display: none; }
+}
+
+/* ── Tracker two-up (artboard w4b) ──
+   Deliberately NOT meshi-web's `.wgrid2`, which is a hard `1fr 1fr` with no
+   collapse. The calorie ring is 150px wide before its macro column, and the
+   week chart holds seven bars; side by side they stop being readable at
+   roughly 900px — well ABOVE the 767.98px sidebar breakpoint, so reusing
+   .wgrid2 would need an unlayered override of a vendored rule rather than a
+   new class. A new class avoids that fight entirely. */
+.tracker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+@media (max-width: 900px) {
+  .tracker-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Mascot motion for the web tree ──
+   meshi-b.css ships mm-pop and mm-slideup but NOT mm-bob or mm-dot — those are
+   only defined in the mobile tree's own mobile.css. Every `animation: mm-bob
+   …` written into app/(web)/page.tsx (hero, demo chat, closing CTA, and the
+   how-it-works mascots below) has consequently been rendering completely
+   static: an animation-name with no matching @keyframes rule is valid CSS
+   that silently does nothing. Confirmed empty in the browser — no stylesheet
+   on this page defines mm-bob.
+
+   mm-dot here is NOT the same curve as mobile.css's — the web artboard defines
+   its own (translateY only, no opacity fade), taken verbatim from the source
+   .dc.html's inline <style>, which is the only place any of this block was
+   ever defined. */
+/* mm-bob and mm-dot moved to design/meshi-motion.css — they were duplicated
+   verbatim here and in the mobile tree. mm-twinkle / mm-poploop / mm-deliver
+   below stay: they are landing-page compositions, not part of the mascot kit,
+   and nothing else uses them. */
+@keyframes mm-twinkle {
+  0%, 100% { transform: scale(.75) rotate(-10deg); opacity: .55; }
+  50%      { transform: scale(1.15) rotate(20deg); opacity: 1; }
+}
+@keyframes mm-poploop {
+  0%, 12%  { transform: scale(0); opacity: 0; }
+  42%      { transform: scale(1.18); opacity: 1; }
+  88%      { transform: scale(1); opacity: 1; }
+  100%     { transform: scale(0); opacity: 0; }
+}
+@keyframes mm-deliver {
+  0%           { transform: translateX(-15px) scale(.6); opacity: 0; }
+  22%, 72%     { transform: translateX(0) scale(1); opacity: 1; }
+  100%         { transform: translateX(13px) scale(.6); opacity: 0; }
+}
+/* Scroll-reveal for each how-it-works step. `animation-timeline: view()` is
+   progressive enhancement — unsupported browsers ignore the property and the
+   animation just plays once on load instead of on scroll-into-view, so
+   content is never stuck hidden either way. */
+@keyframes hiw-in {
+  0%   { opacity: 0; transform: translateY(26px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ── How-it-works step mascot ── */
+.hiw-step {
+  position: relative;
+  padding-top: 6px;
+  animation: hiw-in .7s cubic-bezier(.25,.1,.25,1) both;
+  animation-timeline: view();
+  animation-range: entry 4% cover 34%;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1);
+}
+.hiw-step:hover { transform: translateY(-7px); }
+.hiw-num {
+  display: inline-block;
+  transition: color .22s ease, transform .22s cubic-bezier(.34,1.56,.64,1);
+}
+.hiw-step:hover .hiw-num { color: var(--m-lime); transform: scale(1.07); }
+.hiw-bar {
+  height: 3px;
+  width: 34px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--m-lime) 34%, transparent);
+  transition: width .28s ease, background .28s ease;
+}
+.hiw-step:hover .hiw-bar { width: 74px; background: var(--m-lime); }
+.hiw-mascot {
+  position: relative;
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  background: color-mix(in srgb, var(--m-on-deep) 7%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--m-lime) 30%, transparent);
+  transition: box-shadow .22s ease;
+}
+.hiw-step:hover .hiw-mascot {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--m-lime) 70%, transparent);
+}
+.hiw-bubble {
+  position: absolute;
+  top: 4px;
+  right: 0;
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 12px;
+  border-bottom-right-radius: 4px;
+  background: var(--m-card);
+  box-shadow: var(--m-shadow);
+}
+.hiw-bubble i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--m-forest);
+  display: block;
+}
+.hiw-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--m-lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--m-forest-2) 35%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="mm-bob"],
+  [style*="mm-dot"],
+  [style*="mm-twinkle"],
+  [style*="mm-poploop"],
+  [style*="mm-deliver"],
+  .hiw-step {
+    animation: none !important;
+  }
+}
+
+/* ── Chat rail (w3a) — UNLAYERED, deliberately ──
+   .rail sets `display: flex` in the unlayered meshi-web.css, so a layered
+   Tailwind `hidden` utility on the same element would lose at every viewport
+   width — the same trap the sidebar's breakpoint already hit once. The rail
+   needs sidebar (250px) + a readable chat column + itself (336px) to fit
+   without the chat column getting cramped, so its cutoff is wider than the
+   sidebar's own 768px. */
+@media (max-width: 1100px) {
+  .chat-rail { display: none; }
+}
+/* The rail is now COLLAPSED BY DEFAULT and opens on a quick action (item 2),
+   so the input bar's inset can no longer be a pure media query — it has to
+   track the rail's actual state. `.chat-has-rail` is set on the flex parent by
+   the chat page whenever the rail is open, so the two can never disagree.
+   Without this the bar's translucent gradient painted over the rail's bottom
+   card and clipped its button; with an unconditional inset it instead left a
+   336px dead strip whenever the rail was shut. */
+@media (min-width: 1100.02px) {
+  .chat-has-rail .chat-input-bar { right: 336px; }
+}
+
+/* ── Conversation rail (w8a) — UNLAYERED, same reason as the chat rail ──
+   The artboard's 288px thread list, between AppShell's sidebar and the chat
+   pane. It hides earlier than the chat rail because it competes for the same
+   horizontal budget: sidebar 250 + conv 288 + a readable chat column is
+   already past a 13" laptop once the right rail is also open. */
+.conv-rail {
+  width: 288px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  background: var(--m-card);
+  border-right: 1px solid var(--m-ink-faint);
+  height: 100%;
+  min-height: 0;
+}
+.conv-rail-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px;
+}
+.conv-rail-foot {
+  flex: none;
+  padding: 11px 16px;
+  border-top: 1px solid var(--m-ink-faint);
+}
+/* The delete control cannot live inside .thr — a button may not nest in a
+   button — so the row is a positioned wrapper and the trash sits over it. */
+.conv-row { position: relative; display: flex; align-items: center; }
+.conv-del {
+  position: absolute;
+  right: 9px;
+  border: none;
+  background: none;
+  color: var(--m-ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 8px;
+}
+.conv-del:hover { opacity: 1; background: var(--m-cream-2); }
+/* Titles and snippets must not wrap — a long first message would otherwise
+   make one row three lines tall and break the rail's rhythm. */
+.conv-clip {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+@media (max-width: 1280px) {
+  .conv-rail { display: none; }
+}
+
+/* ── Paywall (w5a) — UNLAYERED, deliberately ──
+   `.on-plum` / `.on-plum-dim` exist ONLY in app/(mobile)/m/mobile.css, which
+   app/(web) never imports. Using them here without redefining them would have
+   left the pitch panel's text at meshi-b's `.t-body { color: var(--m-ink) }` —
+   chocolate ink on a plum panel, unreadable, and silently so. That is the same
+   failure mode as `mm-bob` animating nothing for three commits, and it is the
+   THIRD time a mobile-only definition has been reached for from the web tree.
+   Before using any meshi class on web, confirm the WEB tree actually loads it.
+
+   These must also stay outside a layer: meshi-b sets an explicit colour on
+   .t-body/.t-cap, and globals.css is imported AFTER meshi-b (see
+   app/(web)/layout.tsx), so an unlayered rule of equal specificity wins on
+   source order. Inside `@layer utilities` it would lose outright. */
+.on-plum { color: var(--m-on-deep); }
+.on-plum-dim { color: color-mix(in srgb, var(--m-on-deep) 80%, transparent); }
+
+.paywall-card {
+  display: flex;
+  padding: 0;
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+}
+.paywall-pitch {
+  width: 318px;
+  flex: none;
+  background: var(--m-plum);
+  padding: 32px 26px;
+  gap: 15px;
+}
+/* Below this the two columns cannot both hold their content, so the pitch
+   stacks above the picker rather than squeezing it. */
+@media (max-width: 720px) {
+  .paywall-card { flex-direction: column; }
+  .paywall-pitch { width: 100%; padding: 24px 22px; }
+}
+
+/* ── Recipes shelf (w9a) — UNLAYERED, same reason as the rails below ──
+   w9a's proportions: a 1.35fr hero beside a 1fr 2x2 grid. Both collapse to one
+   column well above the sidebar's 767.98px cutoff, because a 130px card image
+   beside a 300px hero stops being readable long before the sidebar goes. */
+.recipes-hero-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.recipes-mini-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.recipes-shelf {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1080px) {
+  .recipes-hero-grid { grid-template-columns: 1fr; }
+  .recipes-shelf { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 760px) {
+  .recipes-mini-grid { grid-template-columns: 1fr; }
+  .recipes-shelf { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Cooking view (w9b) — UNLAYERED, same reason as the rails ──
+   Left scroll column + the artboard's 372px rail. The rail STACKS below the
+   list under the cutoff rather than hiding: it holds the "add missing to cart"
+   CTA, so hiding it would remove an action with no other home on this screen —
+   the same call .cart-rail made, and the opposite of .chat-rail's. */
+.cook-page {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.cook-main { flex: 1; min-width: 0; }
+.cook-rail { width: 372px; }
+@media (max-width: 1100px) {
+  .cook-page { flex-direction: column; overflow: auto; }
+  .cook-main { overflow: visible; }
+  .cook-rail {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--m-ink-faint);
+  }
+}
+
+/* ── Sidebar account menu — UNLAYERED, deliberately ──
+   `.side-acct` is `display: flex` in the unlayered meshi-web.css, and it also
+   sets `margin-top: auto` to push itself to the bottom of the sidebar. That
+   auto-margin has to move to the WRAPPER now that the block is a button inside
+   a positioned container, or the menu anchors mid-sidebar. */
+.acct-wrap {
+  position: relative;
+  margin-top: auto;
+}
+.acct-trigger {
+  /* Override the vendored rule's own margin-top: auto — the wrapper owns it. */
+  margin-top: 0;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background .16s ease;
+}
+.acct-trigger:hover { background: var(--m-cream-2); }
+
+.acct-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: var(--m-card);
+  border-radius: 14px;
+  box-shadow: var(--m-shadow-lift);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: din-up .16s ease both;
+}
+.acct-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 11px;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  color: var(--m-ink);
+  font: 600 13.5px var(--m-font-display), sans-serif;
+  transition: background .14s ease;
+}
+.acct-item:hover { background: var(--m-cream-2); text-decoration: none; }
+.acct-item-danger { color: var(--m-red); }
+.acct-sep {
+  display: block;
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--m-ink-faint);
+}
+
+/* ── Figure accent — UNLAYERED, and a PERMANENT token, not scaffolding ──
+   Big statistic numbers on a `.card` cannot just use --m-forest. In dark mode
+   meshi-b's forest is #2E7A48 against a #362B18 card, which measures 2.63:1 —
+   failing AA even at the 3:1 large-text threshold, on the single most
+   prominent number on the dashboard.
+
+   `color-mix(--m-forest 50%, --m-ink)` looks like the fix (it is what
+   components/cc/status-pill.tsx does) and is WRONG here: --m-ink is cream in
+   dark, so the mix lands almost exactly on the card and measures 1.51:1 —
+   worse than what it replaced. status-pill works because its ground is an 18%
+   tint of its own hue, not the card.
+
+   So this is a real per-theme swap: forest on light, lime on dark. Same
+   mechanism and same justification as --band-* — deleting it in a future
+   token cleanup would silently drop a large number to 2.63:1. */
+:root { --figure-accent: var(--m-forest); }
+[data-theme="dark"] { --figure-accent: var(--m-lime); }
+
+/* ── Home dashboard — UNLAYERED, same reason as the rails ──
+   Two-up cards that stop being readable side by side well above the sidebar's
+   767.98px cutoff, so they collapse on their own breakpoint. */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.home-shelf {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1000px) {
+  .home-grid { grid-template-columns: 1fr; }
+  .home-shelf { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Recipe artifact (w6a) — UNLAYERED, sits over the photo hero ── */
+.recipe-ai-badge {
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 11px var(--m-font-display), sans-serif;
+  /* Over a photo, so it needs its own ground rather than a token surface. */
+  background: color-mix(in srgb, var(--m-forest-2) 68%, transparent);
+  color: var(--m-on-deep);
+  backdrop-filter: blur(3px);
+}
+
+/* ── Dine out (w9e list + w7c map) — UNLAYERED, same reason as the rails ──
+   w9e's proportions: a 460px accordion beside the map. Both artboards draw the
+   map as the larger half, so the list is fixed and the map takes the rest. */
+.dineout-grid {
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  gap: 22px;
+  align-items: start;
+}
+.dineout-map {
+  height: 620px;
+  position: sticky;
+  top: 22px;
+}
+@media (max-width: 1080px) {
+  .dineout-grid { grid-template-columns: 1fr; }
+  /* Map first on narrow screens would push the list below the fold, so it
+     stays after the list and simply shortens. */
+  .dineout-map { height: 380px; position: static; }
+}
+
+/* w9e's rating and rank badges over the card hero. */
+.scrim-dine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, color-mix(in srgb, var(--m-forest-2) 62%, transparent), transparent 58%);
+}
+.dine-rating {
+  position: absolute;
+  left: 11px;
+  bottom: 11px;
+  height: 27px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--m-card);
+  box-shadow: var(--m-shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 700 12.5px var(--m-font-display), sans-serif;
+  color: var(--m-ink);
+}
+.dine-rank {
+  position: absolute;
+  right: 11px;
+  bottom: 11px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: var(--m-on-deep);
+  font: 800 11px var(--m-font-display), sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── w7c map mode — the map IS the page ── */
+.dineout-full {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+.dineout-float-tl {
+  position: absolute;
+  left: 22px;
+  top: 22px;
+  width: 320px;
+  max-width: calc(100% - 44px);
+  padding: 16px;
+  box-shadow: var(--m-shadow-lift);
+  z-index: 3;
+}
+.dineout-float-tr {
+  position: absolute;
+  right: 22px;
+  top: 22px;
+  z-index: 3;
+}
+.dineout-zoom {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--m-shadow-lift);
+  background: var(--m-card);
+}
+.dineout-zoom button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  color: var(--m-ink);
+  font: 700 21px var(--m-font-display), sans-serif;
+  cursor: pointer;
+}
+.dineout-zoom i {
+  height: 1.5px;
+  background: var(--m-ink-faint);
+  display: block;
+}
+.dineout-carousel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 18px 22px 22px;
+  z-index: 3;
+  /* Fades the map out under the cards so a busy map never fights the text. */
+  background: linear-gradient(0deg, var(--m-cream) 12%, transparent);
+}
+.dineout-carousel-track {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.dineout-mini {
+  width: 322px;
+  flex: none;
+  padding: 12px;
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.dineout-mini.is-active {
+  box-shadow: 0 0 0 2.5px var(--m-forest), var(--m-shadow-lift);
+}
+
+/* ── Go there (w9c) — UNLAYERED, same reason as the rails ── */
+.go-grid {
+  display: grid;
+  grid-template-columns: 428px 1fr;
+  gap: 18px;
+  padding: 22px 32px 40px;
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
+  align-items: start;
+}
+.go-map { height: 560px; position: sticky; top: 22px; }
+@media (max-width: 1000px) {
+  .go-grid { grid-template-columns: 1fr; }
+  .go-map { height: 340px; position: static; }
+}
+/* The blue "you are here" convention, matching the map's own user marker. */
+.go-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  flex: none;
+  margin: 0 2px;
+  background: #2F6BE0; /* hex-ok: matches the Maps user-location marker */
+  box-shadow: 0 0 0 3px color-mix(in srgb, #2F6BE0 24%, transparent); /* hex-ok: same */
+}
+.go-brand {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Cart rail (w4a) — UNLAYERED, same reason as the chat rail ──
+   `.rail` is `display: flex` in the unlayered meshi-web.css, so a layered
+   Tailwind `hidden` would lose at every width. Below the cutoff the rail
+   becomes a normal block under the item list rather than disappearing —
+   unlike chat's rail, this one holds the total and the buy actions, so
+   hiding it would remove the point of the screen. */
+@media (max-width: 1100px) {
+  .cart-rail {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--m-ink-faint);
+  }
+  .cart-page {
+    flex-direction: column;
+    overflow: auto;
+  }
+  .cart-page > div {
+    overflow: visible;
   }
 }

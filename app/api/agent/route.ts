@@ -1,14 +1,10 @@
 import { streamText, tool, jsonSchema } from "ai";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementUsage } from "@/lib/rate-limit";
 import { getModel, getServerModel, type Provider } from "@/lib/providers";
-import {
-  connectAll,
-  closeAll,
-  getStoredToken,
-  isExpired,
-  type SwiggyService,
-} from "@/lib/swiggy-mcp";
+import { activeProviders } from "@/lib/mcp/registry";
+import { connectProvider, closeAll, toolAllowed, type OpenServer } from "@/lib/mcp/client";
+import { getConnection, isExpired } from "@/lib/mcp/connections";
 
 export const maxDuration = 60;
 
@@ -40,15 +36,18 @@ const SKIP_TOOLS = new Set(["report_error"]);
 
 const SYSTEM_PROMPT = `You are the Crave & Create concierge. The user has connected their Swiggy account, giving you access to three sets of tools:
 
-- Tools prefixed with "food__" → Swiggy Food (cooked-meal delivery)
-- Tools prefixed with "im__" → Swiggy Instamart (groceries)
-- Tools prefixed with "dineout__" → Swiggy DineOut (table reservations)
+- Tools prefixed with "swiggy_food__" → Swiggy Food (cooked-meal delivery)
+- Tools prefixed with "swiggy_im__" → Swiggy Instamart (groceries)
+- Tools prefixed with "swiggy_dineout__" → Swiggy DineOut (table reservations)
+
+Tool names are always "<provider>_<service>__<tool>". Use the exact name as given
+to you — never guess a prefix.
 
 Use them when the user wants to order, shop, or book. Otherwise reply conversationally.
 
 Hard rules:
 1. Always start food/grocery flows with get_addresses (the correct prefixed variant) to pick a delivery address.
-2. Before any destructive action (food__place_food_order, im__checkout, dineout__book_table):
+2. Before any destructive action (swiggy_food__place_food_order, swiggy_im__checkout, swiggy_dineout__book_table):
    - On the FIRST invocation the tool will return {requiresConfirmation: true, summary}.
    - You MUST surface the summary clearly to the user and ask them yes/no.
    - Only after the user explicitly confirms in their next message, call the SAME tool again with the same arguments plus _confirmed: true.
@@ -75,19 +74,39 @@ export async function POST(req: Request) {
     return Response.json({ error: "missing_messages" }, { status: 400 });
   }
 
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireUser();
+  if (guard instanceof Response) return guard;
+  const { user, profile } = guard;
+
+  // Must precede the BYOK branch below: BYOK skips quota entirely, so without
+  // this a restricted user just supplies their own key. This route can place
+  // real Swiggy orders, so it is the one that matters most.
+  const restricted = denyIfRestricted(profile);
+  if (restricted) return restricted;
+
+  // Which providers are switched on, configured, AND connected by this user?
+  // activeProviders() already filters out anything enabled-but-unconfigured.
+  const providers = await activeProviders();
+  const connected: { providerId: string; accessToken: string }[] = [];
+  let sawExpired = false;
+
+  for (const p of providers) {
+    const conn = await getConnection(user.id, p.id);
+    if (!conn) continue;
+    if (isExpired(conn)) {
+      sawExpired = true;
+      continue;
+    }
+    connected.push({ providerId: p.id, accessToken: conn.accessToken });
   }
 
-  // Swiggy token gate.
-  const token = await getStoredToken(user.id);
-  if (!token || isExpired(token)) {
+  if (connected.length === 0) {
     return Response.json(
       {
         error: "swiggy_reconnect_required",
-        message: token ? "Your Swiggy session expired (Swiggy MCP v1 has no refresh tokens). Reconnect to keep ordering." : "Connect your Swiggy account in Settings → Notifications first.",
+        message: sawExpired
+          ? "Your Swiggy session expired (Swiggy MCP v1 has no refresh tokens). Reconnect to keep ordering."
+          : "Connect your Swiggy account in Settings → Notifications first.",
       },
       { status: 412 },
     );
@@ -110,12 +129,14 @@ export async function POST(req: Request) {
     model = getServerModel();
   }
 
-  // Open MCP clients for all three services.
-  const clients = await connectAll(token.accessToken);
-  const openServices = Object.keys(clients) as SwiggyService[];
-  if (openServices.length === 0) {
+  // Open every enabled endpoint across every connected provider.
+  const open: OpenServer[] = (
+    await Promise.all(connected.map((c) => connectProvider(c.providerId, c.accessToken)))
+  ).flat();
+
+  if (open.length === 0) {
     return Response.json(
-      { error: "swiggy_connect_failed", message: "Couldn't reach Swiggy MCP. Try again in a moment." },
+      { error: "swiggy_connect_failed", message: "Couldn't reach the provider's MCP servers. Try again in a moment." },
       { status: 502 },
     );
   }
@@ -126,16 +147,22 @@ export async function POST(req: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const aiTools: Record<string, any> = {};
   try {
-    for (const service of openServices) {
-      const client = clients[service];
-      if (!client) continue;
+    for (const { client, serviceKey, namespace, server } of open) {
       const list = await client.listTools();
       for (const t of list.tools) {
         if (SKIP_TOOLS.has(t.name)) continue;
-        const namespaced = `${service}__${t.name}`;
+        // Per-server allowlist from the registry; NULL/empty = expose all.
+        if (!toolAllowed(server, t.name)) continue;
+        const namespaced = `${namespace}__${t.name}`;
+        // NOTE: DESTRUCTIVE is keyed by bare tool name and its ₹1000 cap is
+        // Swiggy-specific. That is fine while Swiggy is the only provider with
+        // a real endpoint. When a second one lands, this metadata belongs on
+        // mcp_provider_servers (a `destructive_tools` column) rather than in
+        // a module constant — deliberately not built for hypothetical
+        // providers that may never exist.
         const isDestructive = Boolean(DESTRUCTIVE[t.name]);
         aiTools[namespaced] = tool({
-          description: `[${service}] ${t.description ?? ""}`.slice(0, 1024),
+          description: `[${serviceKey}] ${t.description ?? ""}`.slice(0, 1024),
           // Pass the MCP tool's raw JSON Schema directly via the AI SDK helper.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           parameters: jsonSchema((t.inputSchema ?? { type: "object" }) as any),
@@ -202,7 +229,7 @@ export async function POST(req: Request) {
       }
     }
   } catch (err) {
-    await closeAll(clients);
+    await closeAll(open);
     return Response.json(
       { error: "tool_discovery_failed", message: err instanceof Error ? err.message.slice(0, 200) : "unknown" },
       { status: 502 },
@@ -221,11 +248,11 @@ export async function POST(req: Request) {
       toolChoice: "auto",
       maxToolRoundtrips: 6, // allow chains like address → search → menu → cart → place
       onFinish: async () => {
-        await closeAll(clients);
+        await closeAll(open);
       },
     });
   } catch (err) {
-    await closeAll(clients);
+    await closeAll(open);
     return Response.json(
       { error: "agent_failed", message: err instanceof Error ? err.message.slice(0, 200) : "unknown" },
       { status: 500 },
