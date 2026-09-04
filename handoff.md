@@ -1,7 +1,17 @@
 # Handoff — Crave & Create (web + mobile, unified)
 
-Last updated: 2026-08-19. Written for a session with zero prior context.
+Last updated: 2026-09-01. Written for a session with zero prior context.
 Supersedes the two separate handoffs that lived in the web and mobile repos.
+
+**Latest work (newest first), so a returning reader is not misled by the older
+sections below:** the WEB tree was rebuilt against a REPLACED web design file
+(w6a–w9e) — see "The web redesign against the NEW design file"; `favoriteCuisines`
+was wired into the prompts and the signed-in theme toggle / sign-out were made
+reachable ("C-ter" in the index); mobile 7e (link accounts) shipped as
+`/m/settings/connections`, closing the last cross-shell jump; and the app-level
+dark-mode contrast failures were fixed ("Dark-mode mobile: measured findings").
+Anything below that still frames "Phase 10" as the most recent work is
+HISTORICAL — read the index and those four sections for the current picture.
 
 ## Goal
 
@@ -160,9 +170,10 @@ validated to strict UUID + timestamp before it reaches the filter); a
 listener leak in `registerNativePush` (handles now removed on settle); and an
 unhandled FileReader rejection in `/m/log`'s `onPick` (now caught → `setError`).
 
-**Commit counts — do not be surprised.** `git log main..HEAD` returns **~88**
-commits and still climbing; do not treat that figure as current either, count
-it yourself. The itemized 14 below cover only through the merge
+**Commit counts — do not be surprised.** `git log main..HEAD` returns **~109**
+commits and still climbing (it was ~88 before the web redesign + its
+follow-ups: the w6a–w9e screens, the tastes/theme wiring, mobile 7e, and the
+dark-mode fixes); do not treat any figure here as current, count it yourself. The itemized 14 below cover only through the merge
 consolidation (`3910bc1`); everything after that is Phase 10 screen-by-screen
 design work, then 10d/10e, then the dependency pass, then the artboard-coverage
 pass (audit + nine screens, `2fd0ff8`), the `/m/log` camera-viewfinder fix
@@ -1933,6 +1944,31 @@ the app-level failures`):
 
 ## What's actually next
 
+**CURRENT STATE — what is actually left to IMPLEMENT (code), most-honest first.**
+The web redesign and the small-gap items are done (see the top-of-file note and
+their sections). What genuinely remains as code work:
+
+- **IAP / RevenueCat — the one big unbuilt feature.** `canPurchase` is false,
+  `purchaseStoreProduct` in `lib/billing.ts` is a TODO, and
+  `@revenuecat/purchases-capacitor` is not in the tree. It cannot be verified
+  without configured store products + Apple/Play accounts + a device, so it is
+  BLOCKED, not merely unwritten — the same risk profile as the `ai` upgrade.
+- **`ai` v3→v7 upgrade** — still deferred; needs a real account and there is no
+  test suite. → "The remaining 14".
+- **Dark-mode bucket B (vendored meshi-b)** — `.badge-burnt` (2.87:1) and
+  `.pill-lime` (4.43:1) are sub-AA in dark, but they live in the shared
+  vendored design-system file, so fixing them is a design-system decision that
+  also moves the web tree. Left open on that basis. → "Dark-mode mobile".
+- **6a animated splash** — a native-shell asset, verifiable only by a native
+  build/run.
+- **Full dark-mode screen-by-screen review** — the app-level failures on the
+  measured screens are fixed; the older mobile screens beyond those five have
+  not each been walked.
+
+Everything below this line is HISTORICAL context from the Phase 10 era. It is
+still accurate about what it describes, but it is NOT the live to-do list — the
+five bullets above are.
+
 **Phase 10 is complete, and the hex debt baseline is at ZERO.** The screens
 that had no web artboard — admin console, `/favorites`, `/arena`, `/settings`
 + its three sections, and `FavoriteButton` / `SwiggyExpiryBanner` /
@@ -1994,10 +2030,12 @@ Three things worth doing before more UI:
 
   Or **B**, an HTTPS tunnel (ngrok et al.) — note that exposes the dev server
   publicly, so prefer A on a trusted network.
-- **A deliberate dark-mode review.** The dark token pass renders (set
-  `crave_theme=dark`), but no screen has been designed or checked against it.
-  Note this is now BIGGER than it was: the nine new screens were all built
-  and verified in light only.
+- **A deliberate dark-mode review — now PARTLY done.** The web w6a–w9e screens
+  were each measured in both themes as they landed, and the mobile tree was
+  spot-measured across home / recipe / plan / paywall / connections with the
+  app-level failures fixed (see "Dark-mode mobile: measured findings"). What is
+  left: the vendored bucket-B contrasts (a design-system call) and the older
+  mobile screens beyond those five, which have not each been walked.
 - **Exercise the new screens with a real session.** `/m/settings/notifications`
   (7c) was verified signed-OUT only — the push toggle, the WhatsApp enrol +
   JOIN + poll loop, and the test-send buttons all need a real Supabase
