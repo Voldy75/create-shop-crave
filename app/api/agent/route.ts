@@ -4,7 +4,8 @@ import { checkAndIncrementUsage } from "@/lib/rate-limit";
 import { getModel, getServerModel, type Provider } from "@/lib/providers";
 import { activeProviders } from "@/lib/mcp/registry";
 import { connectProvider, closeAll, toolAllowed, type OpenServer } from "@/lib/mcp/client";
-import { getConnection, isExpired } from "@/lib/mcp/connections";
+import { callbackUrlFor } from "@/lib/mcp/oauth";
+import { ensureFreshConnection } from "@/lib/mcp/connections";
 
 export const maxDuration = 60;
 
@@ -91,13 +92,15 @@ export async function POST(req: Request) {
   let sawExpired = false;
 
   for (const p of providers) {
-    const conn = await getConnection(user.id, p.id);
-    if (!conn) continue;
-    if (isExpired(conn)) {
+    // Transparently refreshes when the provider issued a refresh token;
+    // returns null when the user genuinely has to reconnect.
+    const result = await ensureFreshConnection(user.id, p, callbackUrlFor(req, p.id));
+    if (result.status === "none") continue;
+    if (result.status === "expired") {
       sawExpired = true;
       continue;
     }
-    connected.push({ providerId: p.id, accessToken: conn.accessToken });
+    connected.push({ providerId: p.id, accessToken: result.connection.accessToken });
   }
 
   if (connected.length === 0) {
@@ -105,7 +108,7 @@ export async function POST(req: Request) {
       {
         error: "swiggy_reconnect_required",
         message: sawExpired
-          ? "Your Swiggy session expired (Swiggy MCP v1 has no refresh tokens). Reconnect to keep ordering."
+          ? "Your Swiggy session expired and could not be renewed. Reconnect to keep ordering."
           : "Connect your Swiggy account in Settings → Notifications first.",
       },
       { status: 412 },

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getProvider, clientIdFor } from "@/lib/mcp/registry";
+import { getProvider, resolveClientId } from "@/lib/mcp/registry";
 import { callbackUrlFor, exchangeCodeForToken, McpOAuthError } from "@/lib/mcp/oauth";
 import { persistConnection } from "@/lib/mcp/connections";
 
@@ -45,7 +45,15 @@ export async function GET(req: Request) {
   if (!provider) {
     return redirectToSettings("error=not_configured");
   }
-  const clientId = clientIdFor(provider);
+  // Same resolution chain as /auth/start. In practice this hits the cached id
+  // that start just registered; it re-registers only if that cache write lost.
+  const redirectUri = callbackUrlFor(req, provider.id);
+  let clientId: string | null;
+  try {
+    clientId = await resolveClientId(provider, redirectUri);
+  } catch {
+    return redirectToSettings("error=registration_failed");
+  }
   if (!clientId) {
     return redirectToSettings("error=not_configured");
   }
@@ -65,13 +73,14 @@ export async function GET(req: Request) {
       code,
       verifier,
       clientId,
-      redirectUri: callbackUrlFor(req, provider.id),
+      redirectUri,
     });
     await persistConnection(user.id, provider.id, {
       accessToken: token.access_token,
       tokenType: token.token_type,
       scope: token.scope,
       expiresInSec: token.expires_in,
+      refreshToken: token.refresh_token ?? null,
     });
   } catch (e) {
     const reason = e instanceof McpOAuthError ? e.code : "exchange_failed";

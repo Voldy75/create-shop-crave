@@ -21,6 +21,11 @@ export interface McpProvider {
   revokePath: string | null;
   scopes: string | null;
   clientIdEnv: string | null;
+  /** RFC 7591 registration endpoint path. NULL = provider does not do DCR. */
+  registrationPath: string | null;
+  /** Cached DCR result. Public identifier, never a secret. */
+  clientId: string | null;
+  clientIdIssuedAt: string | null;
   icon: string | null;
   notes: string | null;
 }
@@ -58,6 +63,9 @@ function toProvider(r: any): McpProvider {
     revokePath: r.revoke_path,
     scopes: r.scopes,
     clientIdEnv: r.client_id_env,
+    registrationPath: r.registration_path ?? null,
+    clientId: r.client_id ?? null,
+    clientIdIssuedAt: r.client_id_issued_at ?? null,
     icon: r.icon,
     notes: r.notes,
   };
@@ -125,7 +133,14 @@ export async function activeProviders(): Promise<McpProvider[]> {
     if (!hasServer) return false;
     if (p.authType === "oauth_pkce") {
       if (!p.authorizeBase) return false;
-      if (!p.clientIdEnv || !process.env[p.clientIdEnv]) return false;
+      // A client id can come from three places, in precedence order: an env
+      // override, a cached Dynamic Client Registration, or a registration we
+      // can still perform on demand. Requiring the ENV VAR here (the original
+      // behaviour) hid every DCR provider from the UI entirely — for Swiggy
+      // that meant the connect flow could never start, because Swiggy issues
+      // no client id to apply for.
+      const fromEnv = p.clientIdEnv ? process.env[p.clientIdEnv] : null;
+      if (!fromEnv && !p.clientId && !p.registrationPath) return false;
     }
     return true;
   });
@@ -135,8 +150,68 @@ export async function serversFor(providerId: string): Promise<McpServer[]> {
   return (await listServers()).filter((s) => s.providerId === providerId && s.enabled);
 }
 
-/** Read a provider's client id from the env var its row names. */
+/**
+ * Read a provider's client id from the env var its row names.
+ * Env is an OVERRIDE, kept so a manually-issued id (or a pinned one during an
+ * incident) still wins over anything registered dynamically.
+ */
 export function clientIdFor(provider: McpProvider): string | null {
   if (!provider.clientIdEnv) return null;
   return process.env[provider.clientIdEnv] ?? null;
+}
+
+/** Cache a Dynamic Client Registration result onto the provider row. */
+export async function persistClientId(
+  providerId: string,
+  clientId: string,
+  issuedAtUnixSec: number | null
+): Promise<void> {
+  const supabase = await createServiceClient();
+  const { error } = await supabase
+    .from("mcp_providers")
+    .update({
+      client_id: clientId,
+      client_id_issued_at: issuedAtUnixSec
+        ? new Date(issuedAtUnixSec * 1000).toISOString()
+        : new Date().toISOString(),
+    })
+    .eq("id", providerId);
+  if (error) throw new Error(`persistClientId: ${error.message}`);
+  invalidateMcpCache();
+}
+
+/**
+ * The client id to use for an OAuth run, in precedence order:
+ *   1. the env override, if set
+ *   2. a previously registered id cached on the provider row
+ *   3. a fresh Dynamic Client Registration, which we then cache
+ *
+ * Returns null only when every route is exhausted, so callers can still show a
+ * clear "not configured" state rather than throwing at the user.
+ *
+ * A failed REGISTRATION throws (via registerClient) rather than returning null,
+ * because "we tried to register and Swiggy said no" is a genuinely different
+ * situation from "this provider has no client id configured" and the two
+ * should not collapse into the same message.
+ */
+export async function resolveClientId(
+  provider: McpProvider,
+  redirectUri: string
+): Promise<string | null> {
+  const fromEnv = clientIdFor(provider);
+  if (fromEnv) return fromEnv;
+  if (provider.clientId) return provider.clientId;
+  if (!provider.registrationPath) return null;
+
+  const { registerClient } = await import("@/lib/mcp/oauth");
+  const reg = await registerClient(provider, redirectUri);
+  try {
+    await persistClientId(provider.id, reg.clientId, reg.issuedAt);
+  } catch (e) {
+    // Caching is an optimisation, not a correctness requirement — a failed
+    // write means we re-register next time, which is harmless. Do not fail the
+    // user's connect attempt over it.
+    console.error("resolveClientId: cache write failed:", e instanceof Error ? e.message : e);
+  }
+  return reg.clientId;
 }

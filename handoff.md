@@ -253,9 +253,13 @@ console stays dead until `ADMIN_EMAIL` is set (you said you would do this) or a
 `.env.local` also still contains the literal placeholder `your-email@gmail.com`
 for both admin vars, which is why admin never worked locally either.
 
-**2. Before Phase 5 cutover** the web Vercel project must gain `SWIGGY_CLIENT_ID`
-and `NEXT_PUBLIC_SITE_URL` — both exist only on the mobile project. Without them
-Swiggy silently switches off at cutover.
+**2. Before Phase 5 cutover** the web Vercel project must gain
+`NEXT_PUBLIC_SITE_URL` — it exists only on the mobile project, and it pins the
+OAuth redirect URI Swiggy allowlists by exact match. Set it to
+`https://create-shop-crave.vercel.app`.
+**`SWIGGY_CLIENT_ID` is NO LONGER REQUIRED** — Swiggy issues no client id and we
+self-register via DCR (see "Swiggy MCP: Dynamic Client Registration" below). It
+remains supported as an override if they ever do issue one.
 
 **3. `com.cravecreate.app://auth/callback` must be added to Supabase → Auth →
 URL Configuration.** Native sign-in cannot work without it (see Dead End 7).
@@ -957,12 +961,80 @@ hole.
 deliberate: service-role only. The Supabase advisor reports them as INFO lints;
 ignore those two.
 
+## Swiggy MCP: Dynamic Client Registration (and refresh tokens)
+
+Audited the implementation against the live Swiggy MCP developer docs
+(2026-09-05). Endpoints, PKCE/S256, scopes, the three server paths
+(`/food`, `/im`, `/dineout`), Streamable HTTP and the Bearer header all matched
+EXACTLY — that part of Phase 8 was right. Two things did not.
+
+**1. We required a client id Swiggy does not issue.** Their docs say verbatim:
+"Your MCP client registers itself via Dynamic Client Registration — no client
+identifier to apply for", and discovery advertises a `registration_endpoint`.
+Our code read `SWIGGY_CLIENT_ID` from env and **503'd before ever contacting
+Swiggy** when it was unset (`/auth/start`), while `activeProviders()` hid the
+provider entirely. So the connect flow could not start in production, and the
+cause looked like a config gap rather than a design mismatch.
+
+Now implemented: `registerClient()` (RFC 7591) in `lib/mcp/oauth.ts`, and
+`resolveClientId()` in the registry resolving **env override → cached
+`mcp_providers.client_id` → fresh DCR (then cached)**. The env var still wins if
+set, so nothing that relied on it breaks.
+
+**MEASURED against the live server, not assumed:**
+`POST https://mcp.swiggy.com/auth/register` → **201**, returning
+`client_id: "swiggy-mcp"`, `token_endpoint_auth_method: "none"`, no
+`client_secret`. Note the id is a **fixed shared value**, not per-client. It is
+still not hardcoded — that value is Swiggy's to change, and a hardcoded copy
+would fail silently the day it does.
+
+**2. Refresh tokens ARE supported; the prose docs are stale.** The docs say
+"refresh-token issuance is not wired in v1.0". The live discovery document
+lists `refresh_token` in `grant_types_supported`, `/auth/register` echoes it
+back as accepted, and the token endpoint's own error enumerates them:
+
+```
+grant_type=client_credentials -> "Supported grant types: authorization_code, refresh_token"
+grant_type=refresh_token      -> 401 invalid_grant ("Refresh token invalid or expired")
+```
+
+That 401 — rather than `unsupported_grant_type` — is the proof the path exists.
+Access tokens last 5 days, so without this every user redid phone+OTP weekly.
+`mcp_connections.refresh_token` now stores it and `ensureFreshConnection()`
+renews transparently, falling back to reconnect when there is no refresh token
+or the provider refuses.
+
+**Two traps worth carrying:**
+- **`refresh_token` must never join the column grant allowlist.**
+  `mcp_connections` protects `access_token` by an explicit column allowlist
+  (see `mcp-registry.sql`). A refresh token is STRICTLY more dangerous — it
+  does not expire in 5 days. `mcp-dcr.sql` adds a defensive `revoke` and says
+  so; do not "tidy" it away.
+- **`ensureFreshConnection` returns a 3-state result, deliberately.** An
+  earlier draft returned `null` for both "never connected" and "expired", which
+  told a first-time user their session had expired. The agent route needs the
+  distinction for its copy.
+
+**Still NOT verified, and it is the same wall as always:** no OAuth run has
+completed end to end. That needs Swiggy to allowlist our redirect URI
+(`https://create-shop-crave.vercel.app/api/swiggy/auth/callback` — in flight
+with their team) plus a real session. What IS proven is everything up to the
+authorize redirect: registration, grant support, and the token error contract.
+
+**`scripts/sql/mcp-dcr.sql` must be applied** — additive and idempotent, but
+until it runs, `client_id` / `registration_path` / `refresh_token` do not exist
+and the code falls back to the env var.
+
 ## Dead ends — do not retry
 
 1. **Swiggy MCP OAuth from a web origin.** Gated to an allowlist of AI clients;
    a custom origin gets "Oops, Vercel isn't whitelisted yet". The Phase 8
    registry makes the SYSTEM provider-agnostic but cannot make a third party
-   accept us. Instacart/Zomato/Uber are seeded as disabled placeholders with no
+   accept us. **AMENDED — read "Swiggy MCP: Dynamic Client Registration" below
+   before acting on this.** The allowlist half is still true (redirect URIs are
+   exact-match and registered by Swiggy by hand), but the assumption that we
+   were waiting on a client id was WRONG: Swiggy issues none, and we now
+   self-register. Instacart/Zomato/Uber are seeded as disabled placeholders with no
    endpoint URLs because no public MCP endpoint is known for any of them.
 2. **`whileInView` with `initial={{ opacity: 0 }}`.** Renders as a black void in
    headless capture. Animate transform only. The web landing page still

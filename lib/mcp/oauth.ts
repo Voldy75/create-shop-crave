@@ -66,6 +66,14 @@ export interface McpTokenResponse {
   token_type: string;
   expires_in: number;
   scope: string;
+  /**
+   * Optional. Swiggy's prose docs say refresh tokens are "not wired in v1.0",
+   * but its live discovery document lists refresh_token in
+   * grant_types_supported and /auth/register echoes it back as accepted. The
+   * docs lag the server, so we read it when present and degrade to full
+   * re-auth when it is absent.
+   */
+  refresh_token?: string;
 }
 
 export async function exchangeCodeForToken(
@@ -101,6 +109,84 @@ export async function revokeToken(provider: McpProvider, accessToken: string): P
   } catch {
     // Provider may not honour revoke; the token expires regardless.
   }
+}
+
+export interface DcrResult {
+  clientId: string;
+  /** Unix seconds, when the provider reports it. */
+  issuedAt: number | null;
+}
+
+/**
+ * RFC 7591 Dynamic Client Registration.
+ *
+ * Swiggy issues no client id to apply for — the docs say so verbatim and the
+ * discovery document advertises a registration_endpoint. Measured against the
+ * live server: POST /auth/register returns 201 with client_id "swiggy-mcp",
+ * token_endpoint_auth_method "none", and NO client_secret.
+ *
+ * Two deliberate choices:
+ *  - We send token_endpoint_auth_method "none" because we are a public client
+ *    proving ourselves with PKCE, and we never want to be issued a secret we
+ *    would then have to store.
+ *  - We do NOT hardcode the returned id even though it is currently a fixed
+ *    shared value. It is the provider's to change, and a hardcoded copy would
+ *    fail silently and confusingly the day it does.
+ */
+export async function registerClient(
+  provider: McpProvider,
+  redirectUri: string
+): Promise<DcrResult> {
+  if (!provider.registrationPath) {
+    throw new McpOAuthError(
+      "dcr_unsupported",
+      `${provider.id} has no registration_path — its client id must come from an env var`
+    );
+  }
+  const res = await fetch(`${requireBase(provider)}${provider.registrationPath}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client_name: "Crave & Create",
+      redirect_uris: [redirectUri],
+      grant_types: ["authorization_code", "refresh_token"],
+      response_types: ["code"],
+      token_endpoint_auth_method: "none",
+      application_type: "web",
+      ...(provider.scopes ? { scope: provider.scopes } : {}),
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new McpOAuthError(`registration_failed (${res.status})`, errText.slice(0, 200));
+  }
+  const body = (await res.json()) as { client_id?: string; client_id_issued_at?: number };
+  if (!body.client_id) {
+    throw new McpOAuthError("registration_no_client_id", "register returned no client_id");
+  }
+  return { clientId: body.client_id, issuedAt: body.client_id_issued_at ?? null };
+}
+
+/**
+ * Refresh an access token. Returns null when the provider rejects the refresh
+ * token (revoked, expired, or never really supported) so callers can fall back
+ * to a full re-auth instead of surfacing a hard error to the user.
+ */
+export async function refreshAccessToken(
+  provider: McpProvider,
+  opts: { refreshToken: string; clientId: string }
+): Promise<McpTokenResponse | null> {
+  const res = await fetch(`${requireBase(provider)}${provider.tokenPath}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      grant_type: "refresh_token",
+      refresh_token: opts.refreshToken,
+      client_id: opts.clientId,
+    }),
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as McpTokenResponse;
 }
 
 /** Our callback URL for a given provider, derived from the running request. */
