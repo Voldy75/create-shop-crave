@@ -97,8 +97,9 @@ the sidebar account block is a real menu (`components/web/SidebarAccount.tsx`)
 owning the theme toggle — previously unreachable once signed in — and sign-out.
 
 **D. Content / decisions (cheap, pre-launch)**
-13. **Unverified marketing copy** — "50+ cuisines", "<10s to a full recipe". →
-    "What's actually next".
+13. ~~**Unverified marketing copy**~~ — **DONE.** Both claims were audited
+    against the codebase and neither survived; see "Landing marketing claims"
+    below.
 14. **The split product name** — "meshi" vs "Crave & Create". → 10d write-up,
     and `MOBILE_SETUP.md` §8.
 
@@ -763,8 +764,8 @@ such number would be the same fiction the testimonials were.**
 
 While there, the forest STATS band's claim of **"4 AI models … Gemini, GPT-4o,
 Claude & Grok" was corrected to 3** — Grok is supported nowhere in the
-codebase. The remaining STATS values ("50+ cuisines", "<10s to a full recipe")
-are still unverified marketing claims and should be checked before launch.
+codebase. The two remaining STATS values were audited later and BOTH were
+false — see "Landing marketing claims" below.
 
 **Sign-in has no dedicated route, and that is deliberate, not unfinished.**
 Every "Sign in" trigger (nav, hero, both CTAs) opens the same modal on
@@ -2001,11 +2002,33 @@ and button classes, not just its colours.
 The real blocker remains **Phase 5 — production cutover**, which needs the env
 vars listed at the top of this file. Nothing in Phase 10 unblocks it.
 
-**Still-unverified marketing copy on the landing.** The testimonials are gone,
-but the forest STATS band's remaining values — "50+ cuisines Bo speaks" and
-"<10s to a full recipe" — were never checked against anything. ("4 AI models …
-& Grok" WAS checked, and was false; it is 3 and there is no Grok.) Verify or
-cut them before the landing is public.
+## Landing marketing claims — audited, both were false
+
+The forest STATS band's two unchecked values were audited against the code.
+Neither survived, and both are now capability facts instead:
+
+- **"50+ cuisines Bo speaks" was fabricated.** There is no cuisine list of any
+  size in this repo; the only cuisine cardinality anywhere is
+  `MAX_CUISINES = 6` in `lib/taste-prompt.ts`. Same class as the "4 AI models …
+  & Grok" claim already caught and corrected. Now **"Worldwide / Recipes, any
+  cuisine"**, which the FAQ and the at-a-glance band already state honestly.
+- **"<10s to a full recipe" was unverifiable AND contradicted by the code** —
+  `/api/chat` sets `maxDuration = 30` and `/api/ingredients` 45, so we were
+  advertising a latency ceiling a third of what we provision. Now
+  **"1 reply / Recipe + cart"**, describing the output shape rather than speed.
+
+The other two tiles were checked and LEFT ALONE: "3 AI models" matches
+`lib/providers.ts` exactly (gemini/openai/anthropic, no Grok), and "1-tap
+grocery checkout" describes the built cart/agent flow.
+
+`STATS` now carries a comment block documenting why each value is checkable, in
+the same style as `AT_A_GLANCE` — so this cannot silently regress.
+
+**One judgement call left open:** "1-tap Grocery checkout — Bo carts & orders
+for you". "Carts" is true; "**orders**" leans on order PLACEMENT, which on web
+cannot complete (no orders table, and Dead End 1 means Instamart OAuth can
+reject us). Pre-existing and arguably fair for the mobile agent flow, so it was
+flagged rather than changed.
 
 Three things worth doing before more UI:
 

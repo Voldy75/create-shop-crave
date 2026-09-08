@@ -87,10 +87,22 @@ const DEMO_MESSAGES = [
   { role: "ai", text: "I’ve also found 3 restaurants near you serving butter chicken, with Zomato links and ride booking." },
 ];
 
+/*
+ * Forest stats band. Every value is checkable in this repo — the same rule the
+ * AT_A_GLANCE block below documents. Two tiles were reframed off unverifiable
+ * marketing claims (a launch-audit finding):
+ *   - "50+ cuisines" had NO backing anywhere — the only cuisine cardinality in
+ *     the codebase is MAX_CUISINES = 6 (lib/taste-prompt.ts). Reframed onto the
+ *     recipe-generator's real reach, which the FAQ and AT_A_GLANCE already
+ *     state honestly (Gemini is general-purpose; recipes work worldwide).
+ *   - "<10s to a full recipe" was an unmeasured latency claim, and in tension
+ *     with the code, which provisions maxDuration 30s (/api/chat) and 45s
+ *     (/api/ingredients). Reframed onto the real output shape instead of speed.
+ */
 const STATS = [
-  { value: "50+", label: "Cuisines Bo speaks", desc: "Indian to Italian, Thai to Mexican" },
+  { value: "Worldwide", label: "Recipes, any cuisine", desc: "Indian to Italian, Thai to Mexican" },
   { value: "3", label: "AI models, one buddy", desc: "Gemini, GPT-4o & Claude" },
-  { value: "<10s", label: "To a full recipe", desc: "Ingredients, macros & a cart" },
+  { value: "1 reply", label: "Recipe + cart", desc: "Ingredients, macros & a shopping cart" },
   { value: "1-tap", label: "Grocery checkout", desc: "Bo carts & orders for you" },
 ];
 
