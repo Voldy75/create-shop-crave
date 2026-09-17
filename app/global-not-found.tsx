@@ -7,6 +7,7 @@ import { Montserrat } from "next/font/google";
  * every token on this page resolves to nothing and the 404 renders unstyled.
  */
 import "../design/meshi-b.css";
+import "../design/meshi-a11y.css";
 import "./globals.css";
 
 const montserrat = Montserrat({

@@ -75,7 +75,7 @@ export function pinTone(index: number): string {
 // with a warm casing, and a paler administrative wash.
 const MESHI_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: "geometry", stylers: [{ color: "#EFE8D2" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8A6B47" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#806342" }] }, // mirrors light --m-ink-soft, design/meshi-a11y.css
   { elementType: "labels.text.stroke", stylers: [{ color: "#FBF6E3" }] },
   { featureType: "road", elementType: "geometry", stylers: [{ color: "#FBF6E3" }] },
   { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#F0E8CD" }] },

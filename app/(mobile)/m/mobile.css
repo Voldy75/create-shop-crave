@@ -389,3 +389,27 @@ a { color: inherit; text-decoration: none; }
 /* ---------- Safe-area helpers ---------- */
 .safe-top { padding-top: env(safe-area-inset-top, 0px); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+
+/* ---------- Tab bar + secondary pill, contrast (approved 2026-09-17) ----------
+   meshi-b colours .tab-active / .tab-bo and .pill-secondary with --m-forest.
+   In dark that is #2E7A48 on the dark card: 2.63:1 — failing AA for the 10px
+   tab labels on EVERY tabbed screen, and failing even the 3:1 non-text bar for
+   the pill's outline ring. Dark swaps to --figure-accent (lime), ~7.5:1, the
+   same forest->lime swap the caption links already use. Light is untouched.
+
+   Inactive .tab is a HARDCODED #A98F66 in meshi-b (not a token, so it never
+   tracked the theme): 3.03:1 in light, 4.49 in dark. It now reads
+   --m-ink-soft, which passes in both (see design/meshi-a11y.css).
+
+   SELECTOR TRAP: the inactive rule is `.tab:not(.tab-active):not(.tab-bo)`,
+   NOT bare `.tab`. meshi-b declares `.tab-active` before this file loads at
+   the same specificity as `.tab`, so a later bare `.tab { color }` would repaint
+   the ACTIVE tab grey in light mode as well. */
+.tab:not(.tab-active):not(.tab-bo) { color: var(--m-ink-soft); }
+[data-theme="dark"] .tab-active,
+[data-theme="dark"] .tab-bo { color: var(--figure-accent); }
+[data-theme="dark"] .pill-secondary {
+  color: var(--figure-accent);
+  box-shadow: inset 0 0 0 2.5px var(--figure-accent);
+}

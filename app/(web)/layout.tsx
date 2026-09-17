@@ -27,6 +27,7 @@ import { Montserrat } from "next/font/google";
  * Midnight Kitchen rules.
  */
 import "../../design/meshi-b.css";
+import "../../design/meshi-a11y.css";
 import "../../design/meshi-web.css";
 import "../../design/meshi-motion.css";
 import "../../design/meshi-app.css";

@@ -84,7 +84,10 @@ sticker-like. Editorial food photography against flat illustrated characters.
 
 ## Color
 
-All values live in `design/meshi-b.css`. Never hardcode a hex in a component.
+All values live in `design/meshi-b.css`, except approved accessibility
+adjustments, which live in `design/meshi-a11y.css` (imported right after
+meshi-b so the vendored file stays a faithful copy). Never hardcode a hex in a
+component.
 
 | Token | Value | Use |
 |---|---|---|
@@ -92,7 +95,7 @@ All values live in `design/meshi-b.css`. Never hardcode a hex in a component.
 | `--m-cream-2` | `#F4ECD2` | inset / pressed |
 | `--m-card` | `#FFFDF4` | raised card |
 | `--m-ink` | `#4B2E12` | primary text (chocolate) |
-| `--m-ink-soft` | `#8A6B47` | secondary text |
+| `--m-ink-soft` | `#806342` light · `#C4A97E` dark | secondary text — light value adjusted in `meshi-a11y.css` (meshi-b ships `#8A6B47`, sub-AA) |
 | `--m-forest` | `#1E5A34` | **primary action** |
 | `--m-plum` | `#5C2B67` | secondary accent |
 | `--m-burnt` / `--m-orange` | `#C05F16` / `#F19A2E` | streaks, ratings |
@@ -243,3 +246,6 @@ the Razorpay iframe theme. Convert file by file.
 | 2026-07-08 | Midnight Kitchen, General Sans + Geist | SF Pro unlicensed + invisible on Android; Apple-clone identity; no appetite appeal |
 | 2026-08-02 | **Superseded by meshi Kitchef** | Light-first cream over dark-first charcoal; forest green replaces the orange as primary; Montserrat replaces General Sans + Geist + DM Sans; one shared token file for web and mobile |
 | 2026-08-02 | Mobile conversion replaces `meshi.css` wholesale rather than merging | The two systems claim the same class names, so they cannot coexist in one tree |
+| 2026-09-17 | Light `--m-ink-soft` `#8A6B47` → `#806342`, both trees, via new `design/meshi-a11y.css` | Measured 4.13–4.26:1 on cream-2 and the tints, under AA for 10–13px captions. Same hue/saturation, HSL lightness −.03 — the smallest step clearing 4.6 on every light ground. In its own file so re-vendoring meshi-b cannot silently revert it |
+| 2026-09-17 | Mobile dark: `.tab-active`/`.tab-bo`/`.pill-secondary` use `--figure-accent` (lime); inactive `.tab` reads `--m-ink-soft` | Forest on the dark card measured 2.63:1 on every tabbed screen; inactive `.tab` was a hardcoded `#A98F66` (3.03 light). In `m/mobile.css`, so web and the light theme's active tab are unchanged |
+| 2026-09-17 | NOT changed: light burnt small text (3.61:1), `.badge-burnt` (2.87 dark), lime pills (4.43) | Each alters the designed look; left as open decisions in handoff.md |

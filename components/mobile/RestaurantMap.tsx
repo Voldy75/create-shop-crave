@@ -46,7 +46,7 @@ const ON_DEEP = "#FDF8E7";
 
 const MESHI_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: "geometry", stylers: [{ color: LAND }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8A6B47" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#806342" }] }, // mirrors light --m-ink-soft, design/meshi-a11y.css
   { elementType: "labels.text.stroke", stylers: [{ color: ROAD }] },
   { featureType: "road", elementType: "geometry", stylers: [{ color: ROAD }] },
   { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#EFE8D2" }] },

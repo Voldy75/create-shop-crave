@@ -76,11 +76,13 @@ something, update BOTH this index and the section it points to.
     synthetic stream; real permission/rear-camera/EXIF/iOS-autoplay still
     unproven. → the `/m/log` section, which carries the `--experimental-https`
     recipe.
-11. **Dark mode** — **app-level: DONE across all 21 mobile routes, in both
-    themes** (incl. all 10 onboarding steps). What remains is a DECISION, not a
-    screen pass: the vendored meshi-b contrasts (bucket B — bigger than first
-    recorded, the tab bar is 2.63:1 on every tab) and a light-theme burnt-text
-    pattern. → "Dark-mode mobile: measured findings".
+11. **Contrast** — **MOBILE: done** in both themes on all 21 routes, including
+    the approved design-system fixes (tab bar, `.pill-secondary`, light grey
+    text). **WEB DARK MODE IS NOT CLEAN** — the first compositing scan of the
+    web tree (2026-09-17) found sidebar/nav, captions, pills and the landing's
+    forest bands failing in dark. Still-open decisions: light burnt text,
+    `.badge-burnt`, lime pills. → "Dark-mode mobile: measured findings" and
+    "Web tree: dark mode".
 12. **Any real payment**, on any provider. → "What is verified, and what is
     not" (PR #33 body).
 
@@ -2046,24 +2048,66 @@ is now tokenised too.
 
 **Result:** zero app-level fails in dark on all 21 routes.
 
+### Design-system fixes APPLIED (approved 2026-09-17)
+
+- **Light `--m-ink-soft` `#8A6B47` → `#806342`, BOTH trees**, in the new
+  `design/meshi-a11y.css` (imported right after meshi-b by the web layout, the
+  mobile layout and `global-not-found.tsx`). Same hue/saturation, lightness −.03;
+  worst light ground now 4.66 (was 4.13). Kept out of meshi-b so a re-vendor
+  cannot revert it. **Selector trap documented in the file:** it is
+  `:root:not([data-theme="dark"])`, not bare `:root` — meshi-b's dark block has
+  equal specificity, so a later bare `:root` would paint this brown over DARK
+  too. Verified dark still resolves `#C4A97E`. Both Google Maps style JSONs
+  mirror the literal.
+- **Mobile tab bar + `.pill-secondary` in dark** → `--figure-accent` (lime),
+  2.63 → ~7.5, in `m/mobile.css`. Inactive `.tab` (a hardcoded `#A98F66` in
+  meshi-b, 3.03 in light) now reads `--m-ink-soft`. **Trap:** the inactive rule
+  is `.tab:not(.tab-active):not(.tab-bo)` — a bare later `.tab {color}` would
+  repaint the ACTIVE tab grey in light, since meshi-b's `.tab-active` has equal
+  specificity and loads first.
+- Re-measured all 21 mobile routes + web routes in both themes: none of the
+  fixed classes fail, and no remaining fail anywhere uses the new grey. Logged
+  in DESIGN.md's decisions table.
+
 ### Still open — decisions, deliberately not changed
 
 **B (expanded) — vendored meshi-b, moves web too if edited:**
 
 | Class | Dark | Light | Where |
 |---|---|---|---|
-| `.tab-active`, `.tab-bo` (forest) | **2.63** | ok | tab bar, EVERY tabbed screen |
-| `.tab` (hardcoded hex, not theme-aware) | 4.49 | **3.03** | tab bar, every tabbed screen |
-| `.pill-secondary` (forest) | **2.63–3.20** | ok | "Directions", "Back to home" |
+| ~~`.tab-active`, `.tab-bo`~~ | ~~2.63~~ | — | **FIXED on mobile** (see above) |
+| ~~`.tab` inactive~~ | ~~4.49~~ | ~~3.03~~ | **FIXED on mobile** |
+| `.pill-secondary` (forest) | **2.75–3.20 on WEB** | ok | **fixed on mobile only** — web still fails |
 | `.badge-burnt` | **2.87** | 4.04 | home, recipe, restaurants |
-| `.pill-lime` / `.chip-active` / lime `.chip-tag` | 4.43 | 4.43 | everywhere |
-| `.t-cap` / `.t-micro` (`--m-ink-soft`) | ok | **4.13–4.26** | secondary text, most screens |
+| `.pill-lime` / `.chip-active` / lime `.chip-tag` | 4.43 | 4.43 | everywhere, both trees |
+| ~~`.t-cap` / `.t-micro` (`--m-ink-soft`)~~ | ok | ~~4.13–4.26~~ | **FIXED, both trees** |
 
-The mobile tree already overrides meshi-b from `m/mobile.css` without editing
-the vendored file (`.tabbar`, `.row`+`.tint-*`), so a mobile-only dark override
-for `.tab-active`/`.tab-bo`/`.pill-secondary` via `--figure-accent` is the
-in-bounds route if wanted. The light `--m-ink-soft` finding is the bigger call:
-it is the system's secondary-text colour, used on both trees.
+### Web tree: dark mode — NEW FINDING, not fixed (2026-09-17)
+
+The earlier claim that the web screens were "measured in both themes" does not
+survive the compositing scanner. First web scan, signed out, so only `/`,
+`/recipes`, `/dine-out`, `/cart`, `/planner` and the 404 actually render
+(`/home`, `/chat`, `/arena`, `/settings`, `/admin` redirect to the landing).
+Failing in DARK:
+
+| What | Dark | Where |
+|---|---|---|
+| Sidebar active nav `.snav-active` + initials avatar (forest on dark tint) | **2.45** | every app screen |
+| `.t-cap` forest captions ("connected") | **2.63** | landing |
+| Web `.pill-secondary` ("Sign in", "Take the tour") | **2.75–3.20** | landing |
+| Forest bands: lime accent/headline/eyebrow on dark-mode forest | **2.85** | landing ×4 bands |
+| Forest-band secondary text (`--band-text-secondary`) | **2.92** (4.04 light) | landing |
+| Forest eyebrows ("See it in action") on the dark ground | **2.86–3.20** | landing |
+| White letters on Swiggy/Instacart brand tiles | **2.55 / 3.00** (both themes) | landing integrations |
+| Zomato red wordmark on the plum strip | **2.44** (both themes) | landing |
+
+Cause is the same as mobile: forest used as text or as a band ground, and
+meshi-b's dark `--m-forest` (`#2E7A48`) is lighter, which sinks lime ON it. The
+mobile fix pattern (`--figure-accent` for forest text; brand tiles → the
+near-black ink `.mp-*` chips already use) transfers directly. The forest bands
+need their own decision: the band ground itself goes lighter in dark.
+**Not attempted:** the signed-in web screens (chat, settings, admin, home)
+need a real session.
 
 **Light-theme burnt text (app-level, but it changes the DESIGNED look):**
 `--m-burnt` as small text on cream/peach measures **3.61** in light — "Order
@@ -2085,11 +2129,13 @@ their sections). What genuinely remains as code work:
   BLOCKED, not merely unwritten — the same risk profile as the `ai` upgrade.
 - **`ai` v3→v7 upgrade** — still deferred; needs a real account and there is no
   test suite. → "The remaining 14".
-- **Contrast decisions (not code-blocked, waiting on a yes)** — bucket B is
-  bigger than first recorded: the tab bar is 2.63:1 in dark on every tab,
-  `.pill-secondary` 2.63, `.badge-burnt` 2.87, lime pills 4.43, and meshi-b's
-  secondary text (`--m-ink-soft`) is 4.1–4.3 in LIGHT. Plus light burnt text at
-  3.61, now a one-token fix. → "Dark-mode mobile".
+- **Web dark-mode contrast** — real code work, found 2026-09-17: sidebar nav
+  2.45 on every app screen, web `.pill-secondary`, captions, the landing's
+  forest bands and brand tiles. The mobile fix pattern transfers. → "Web tree:
+  dark mode".
+- **Contrast decisions (waiting on a yes)** — light burnt text 3.61 (one token),
+  `.badge-burnt` 2.87 dark, lime pills 4.43. Tab bar, mobile pill-secondary and
+  light grey text are DONE. → "Dark-mode mobile".
 - **6a animated splash** — a native-shell asset, verifiable only by a native
   build/run.
 - ~~**Full dark-mode screen-by-screen review**~~ — **DONE** (2026-09-14): all
