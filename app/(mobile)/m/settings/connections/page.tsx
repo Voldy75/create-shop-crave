@@ -146,7 +146,7 @@ export default function MobileConnectionsPage() {
           </div>
 
           {swiggy?.connected ? (
-            <button className="chip" onClick={disconnect} disabled={busy} style={{ alignSelf: "flex-start", color: "var(--m-burnt)" }}>
+            <button className="chip" onClick={disconnect} disabled={busy} style={{ alignSelf: "flex-start", color: "var(--text-burnt)" }}>
               {busy ? <Loader2 width={15} height={15} className="animate-spin" /> : <AlertCircle width={15} height={15} />}
               Disconnect
             </button>
@@ -159,7 +159,7 @@ export default function MobileConnectionsPage() {
 
           {/* The expiry state web surfaces too — real data from the token. */}
           {swiggy?.connected && swiggy.expiringWithin24h && (
-            <span className="t-cap" style={{ color: "var(--m-burnt)" }}>
+            <span className="t-cap" style={{ color: "var(--text-burnt)" }}>
               This connection expires soon — reconnect to keep ordering.
             </span>
           )}

@@ -134,7 +134,7 @@ export default function SavedTab() {
             style={{ borderRadius: 24, padding: "26px 22px", alignItems: "center", gap: 10, textAlign: "center", marginTop: 8 }}
           >
             <Beet width={110} height={110} />
-            <span className="t-h1" style={{ color: "var(--m-plum)" }}>
+            <span className="t-h1" style={{ color: "var(--text-plum)" }}>
               No saved {tab === "recipes" ? "recipes" : "restaurants"} yet
             </span>
             <span className="t-body-soft">

@@ -107,8 +107,8 @@ export default function BuyPrecheck() {
         <div className="card tint-lav hstack" style={{ boxShadow: "none", padding: "12px 14px", gap: 12 }}>
           <BoBowl width={34} height={34} style={{ flex: "none" }} />
           <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
-            <span className="t-micro" style={{ color: "var(--m-plum)" }}>Smart check</span>
-            <span className="t-body" style={{ color: "var(--m-plum)" }}>
+            <span className="t-micro" style={{ color: "var(--text-plum)" }}>Smart check</span>
+            <span className="t-body" style={{ color: "var(--text-plum)" }}>
               You probably have {pantryHits.slice(0, 2).map((p) => p.item.toLowerCase()).join(" & ")}
               {pantrySaving > 0 ? `. Skipping saves ~₹${pantrySaving}.` : "."}
             </span>

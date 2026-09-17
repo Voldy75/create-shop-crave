@@ -230,7 +230,7 @@ function Ring({ pct, value, goal, over }: { pct: number; value: number; goal: nu
         />
       </svg>
       <div className="vstack" style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center", gap: 0 }}>
-        <span style={{ font: "800 21px/1 var(--m-font-display)", color: "var(--m-forest-2)" }}>{value.toLocaleString()}</span>
+        <span style={{ font: "800 21px/1 var(--m-font-display)", color: "var(--text-forest-2)" }}>{value.toLocaleString()}</span>
         <span className="t-micro" style={{ color: "var(--figure-accent)" }}>of {goal.toLocaleString()}</span>
       </div>
     </div>

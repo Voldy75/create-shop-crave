@@ -52,8 +52,8 @@ export default function BuyPlatform() {
     .join(", ")}. Use my saved address.`;
 
   const deeplinks = [
-    { id: "blinkit", name: "Blinkit", eta: "~10 min · opens Blinkit search", letter: "B", tint: "tint-green", ink: "var(--m-forest)", href: buildBlinkitLink(query) },
-    { id: "instacart", name: "Instacart", eta: "~2 hrs · opens Instacart search", letter: "I", tint: "tint-lav", ink: "var(--m-plum)", href: buildInstacartLink(query) },
+    { id: "blinkit", name: "Blinkit", eta: "~10 min · opens Blinkit search", letter: "B", tint: "tint-green", ink: "var(--figure-accent)", href: buildBlinkitLink(query) },
+    { id: "instacart", name: "Instacart", eta: "~2 hrs · opens Instacart search", letter: "I", tint: "tint-lav", ink: "var(--text-plum)", href: buildInstacartLink(query) },
   ];
 
   if (!hydrated) return <div style={{ minHeight: "100dvh", background: "var(--m-cream)" }} />;
@@ -80,7 +80,7 @@ export default function BuyPlatform() {
         <div className="hstack">
           <span
             className="mascot-tile tint-peach"
-            style={{ width: 44, height: 44, borderRadius: 14, flex: "none", font: "800 18px var(--m-font-display)", color: "var(--m-burnt)" }}
+            style={{ width: 44, height: 44, borderRadius: 14, flex: "none", font: "800 18px var(--m-font-display)", color: "var(--text-burnt)" }}
           >
             S
           </span>
@@ -88,13 +88,13 @@ export default function BuyPlatform() {
             <span className="t-h2">Swiggy Instamart</span>
             <span className="t-cap">~15 min delivery</span>
           </div>
-          <span className="chip-tag chip" style={{ background: "var(--m-tint-lav)", color: "var(--m-plum)", gap: 4, flex: "none" }}>
+          <span className="chip-tag chip" style={{ background: "var(--m-tint-lav)", color: "var(--text-plum)", gap: 4, flex: "none" }}>
             <Sparkles width={12} height={12} /> Agent
           </span>
         </div>
         <div className="card tint-green hstack" style={{ boxShadow: "none", padding: "10px 12px", gap: 10 }}>
           <BoBowl width={28} height={28} style={{ flex: "none" }} />
-          <span className="t-cap" style={{ color: "var(--m-forest-2)" }}>
+          <span className="t-cap" style={{ color: "var(--text-forest-2)" }}>
             Bo builds the cart and places the order in-app. You just approve.
           </span>
         </div>

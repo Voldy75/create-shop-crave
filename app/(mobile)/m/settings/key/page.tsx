@@ -159,7 +159,7 @@ function KeyInner() {
           target="_blank"
           rel="noopener noreferrer"
           className="t-cap hstack"
-          style={{ gap: 4, color: "var(--m-forest)", fontWeight: 700 }}
+          style={{ gap: 4, color: "var(--figure-accent)", fontWeight: 700 }}
         >
           Get a key <ExternalLink width={12} height={12} />
         </a>

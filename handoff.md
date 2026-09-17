@@ -76,12 +76,11 @@ something, update BOTH this index and the section it points to.
     synthetic stream; real permission/rear-camera/EXIF/iOS-autoplay still
     unproven. → the `/m/log` section, which carries the `--experimental-https`
     recipe.
-11. **Dark mode** — the web screens are measured (see "Contrast: measure, and
-    measure in BOTH themes"). The MOBILE tree has now been SPOT-MEASURED in dark
-    across home / recipe / plan / paywall / connections, and there are real
-    failures — see "Dark-mode mobile: measured findings" below. They split into
-    app-level (fixable) and vendored-meshi-b (a design-system decision), which
-    is why this is not just a screen pass. → that section.
+11. **Dark mode** — **app-level: DONE across all 21 mobile routes, in both
+    themes** (incl. all 10 onboarding steps). What remains is a DECISION, not a
+    screen pass: the vendored meshi-b contrasts (bucket B — bigger than first
+    recorded, the tab bar is 2.63:1 on every tab) and a light-theme burnt-text
+    pattern. → "Dark-mode mobile: measured findings".
 12. **Any real payment**, on any provider. → "What is verified, and what is
     not" (PR #33 body).
 
@@ -2008,12 +2007,70 @@ the app-level failures`):
   mobile screen fix — and it would also move the web tree. Flag to the user;
   do not edit meshi-b to chase a mobile contrast number without that decision.
 
-**C. Scanner false-positives — NOT failures:**
-- `.on-plum` / `.on-plum-faint` reported ~1:1. That is a MEASUREMENT artifact:
-  they are cream text designed for a plum ground, and a naive
-  walk-up-for-background misses the plum panel, resolving cream-on-cream. Same
-  correct-by-design pattern the web paywall uses. Verify any `.on-*` hit by eye
-  before "fixing" it.
+**C. Scanner false-positives — CORRECTED.** An earlier note here called
+`.on-plum-faint` a ~1:1 measurement artifact. Half right: the naive scanner
+did miss the plum ground. But composited onto the REAL plum it measured
+**4.12:1 — a genuine fail, in both themes** (plum does not flip). Alpha raised
+.55 → .62 in `m/mobile.css` (~4.8:1). Lesson: an artifact reading does not mean
+the element passes — re-measure it properly before dismissing it.
+
+### Full pass (2026-09-14): all 21 mobile routes, both themes
+
+Method, so it can be re-run: each route loaded in a same-origin 375×812 iframe,
+theme set via `crave_theme`, and every text element's colour composited onto
+its full ancestor background stack ON A CANVAS (so alpha layers and
+`color-mix()` resolve exactly). Calibrated first: it reproduced `.pill-lime` at
+exactly 4.43. Onboarding was walked step by step via its primary CTA, stopping
+before the OAuth button. **Blind spot:** text over photos (`<img>`, not a CSS
+background) — the scanner cannot see image pixels; those rely on `.scrim-hero`.
+
+**Root cause of nearly every app-level fail:** hues that stay DARK in dark mode
+used as TEXT. meshi-b's dark block never redefines `--m-plum` or `--m-red` at
+all, and only nudges forest-2/brown/burnt. Measured: plum on the lav tint
+**1.35**, forest-2 **1.58**, brown **2.45**, forest **2.63**.
+
+**Fix — theme-aware text tokens in `m/mobile.css`**, siblings of
+`--figure-accent`: `--text-forest-2`, `--text-plum`, `--text-brown`,
+`--text-burnt`, `--text-red`. The LIGHT value of each is exactly the original
+token, so the designed light theme is byte-identical (verified: no light
+regressions); only dark lifts toward `--m-ink`. Applied to TEXT only (~45 sites,
+including colours passed as `ink` props — a form the first inventory missed).
+Icons and chart fills keep raw hues (non-text needs 3:1; they pass). **New
+mobile text should use these tokens, not raw `--m-plum`/`--m-forest-2`/…**
+
+Also fixed: 7b's partner tiles (white on Swiggy/Zomato/Instacart measured
+2.55/4.32/3.00 in both themes) now use near-black ink — the same call web's
+`.mp-*` chips already made. `/m/settings/connections` was marked "clean" before
+only because its connected-state rows never render signed out; its burnt text
+is now tokenised too.
+
+**Result:** zero app-level fails in dark on all 21 routes.
+
+### Still open — decisions, deliberately not changed
+
+**B (expanded) — vendored meshi-b, moves web too if edited:**
+
+| Class | Dark | Light | Where |
+|---|---|---|---|
+| `.tab-active`, `.tab-bo` (forest) | **2.63** | ok | tab bar, EVERY tabbed screen |
+| `.tab` (hardcoded hex, not theme-aware) | 4.49 | **3.03** | tab bar, every tabbed screen |
+| `.pill-secondary` (forest) | **2.63–3.20** | ok | "Directions", "Back to home" |
+| `.badge-burnt` | **2.87** | 4.04 | home, recipe, restaurants |
+| `.pill-lime` / `.chip-active` / lime `.chip-tag` | 4.43 | 4.43 | everywhere |
+| `.t-cap` / `.t-micro` (`--m-ink-soft`) | ok | **4.13–4.26** | secondary text, most screens |
+
+The mobile tree already overrides meshi-b from `m/mobile.css` without editing
+the vendored file (`.tabbar`, `.row`+`.tint-*`), so a mobile-only dark override
+for `.tab-active`/`.tab-bo`/`.pill-secondary` via `--figure-accent` is the
+in-bounds route if wanted. The light `--m-ink-soft` finding is the bigger call:
+it is the system's secondary-text colour, used on both trees.
+
+**Light-theme burnt text (app-level, but it changes the DESIGNED look):**
+`--m-burnt` as small text on cream/peach measures **3.61** in light — "Order
+again?", streak M/S, the ₹₹₹ chip, the "S" tile, onboarding's step circles and
+"1,580 kcal". Pre-existing, not a regression. Since every site now reads
+`--text-burnt`, the fix is ONE token value (e.g. a darker burnt in light) — but
+it alters the artboard colour, so it waits for a yes.
 
 ## What's actually next
 
@@ -2028,15 +2085,16 @@ their sections). What genuinely remains as code work:
   BLOCKED, not merely unwritten — the same risk profile as the `ai` upgrade.
 - **`ai` v3→v7 upgrade** — still deferred; needs a real account and there is no
   test suite. → "The remaining 14".
-- **Dark-mode bucket B (vendored meshi-b)** — `.badge-burnt` (2.87:1) and
-  `.pill-lime` (4.43:1) are sub-AA in dark, but they live in the shared
-  vendored design-system file, so fixing them is a design-system decision that
-  also moves the web tree. Left open on that basis. → "Dark-mode mobile".
+- **Contrast decisions (not code-blocked, waiting on a yes)** — bucket B is
+  bigger than first recorded: the tab bar is 2.63:1 in dark on every tab,
+  `.pill-secondary` 2.63, `.badge-burnt` 2.87, lime pills 4.43, and meshi-b's
+  secondary text (`--m-ink-soft`) is 4.1–4.3 in LIGHT. Plus light burnt text at
+  3.61, now a one-token fix. → "Dark-mode mobile".
 - **6a animated splash** — a native-shell asset, verifiable only by a native
   build/run.
-- **Full dark-mode screen-by-screen review** — the app-level failures on the
-  measured screens are fixed; the older mobile screens beyond those five have
-  not each been walked.
+- ~~**Full dark-mode screen-by-screen review**~~ — **DONE** (2026-09-14): all
+  21 mobile routes and all 10 onboarding steps, both themes, zero app-level
+  fails in dark.
 
 Everything below this line is HISTORICAL context from the Phase 10 era. It is
 still accurate about what it describes, but it is NOT the live to-do list — the
@@ -2125,12 +2183,9 @@ Three things worth doing before more UI:
 
   Or **B**, an HTTPS tunnel (ngrok et al.) — note that exposes the dev server
   publicly, so prefer A on a trusted network.
-- **A deliberate dark-mode review — now PARTLY done.** The web w6a–w9e screens
-  were each measured in both themes as they landed, and the mobile tree was
-  spot-measured across home / recipe / plan / paywall / connections with the
-  app-level failures fixed (see "Dark-mode mobile: measured findings"). What is
-  left: the vendored bucket-B contrasts (a design-system call) and the older
-  mobile screens beyond those five, which have not each been walked.
+- ~~**A deliberate dark-mode review**~~ — **DONE for app-level code** on web
+  (w6a–w9e) and all 21 mobile routes. Only the design-system decisions remain
+  (see "Dark-mode mobile: measured findings").
 - **Exercise the new screens with a real session.** `/m/settings/notifications`
   (7c) was verified signed-OUT only — the push toggle, the WhatsApp enrol +
   JOIN + poll loop, and the test-send buttons all need a real Supabase

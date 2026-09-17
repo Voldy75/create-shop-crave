@@ -160,7 +160,7 @@ export default function MobilePaywall() {
               </span>
               {/* The renewal terms live in the footer; repeating them here just
                   says the same sentence twice. */}
-              <span className={`t-cap ${on ? "" : "on-plum-faint"}`} style={on ? { color: "var(--m-forest)" } : undefined}>
+              <span className={`t-cap ${on ? "" : "on-plum-faint"}`} style={on ? { color: "var(--figure-accent)" } : undefined}>
                 {pm ?? "Everything above, unlocked"}
               </span>
             </div>

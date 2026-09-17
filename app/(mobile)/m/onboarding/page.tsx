@@ -72,9 +72,9 @@ const AVOID_OPTIONS = ["Peanuts", "Shellfish", "Dairy", "Gluten", "Cilantro", "O
 
 /** Artboard 7a's three capability rows, each on its own tint. */
 const BO_CAN_DO: { n: string; title: string; body: string; tint: string; ink: string }[] = [
-  { n: "1", title: "Turn cravings into plans", body: "Say you're hungry — I spin up recipes, grocery lists or a table.", tint: "var(--m-tint-green)", ink: "var(--m-forest)" },
-  { n: "2", title: "Cook, buy, or dine out", body: "One chat, three ways to eat — make it, order the ingredients, or book a seat.", tint: "var(--m-tint-peach)", ink: "var(--m-burnt)" },
-  { n: "3", title: "Learn your taste", body: "Veg, dairy-free, that cilantro grudge — I remember and filter everything.", tint: "var(--m-tint-lav)", ink: "var(--m-plum)" },
+  { n: "1", title: "Turn cravings into plans", body: "Say you're hungry — I spin up recipes, grocery lists or a table.", tint: "var(--m-tint-green)", ink: "var(--figure-accent)" },
+  { n: "2", title: "Cook, buy, or dine out", body: "One chat, three ways to eat — make it, order the ingredients, or book a seat.", tint: "var(--m-tint-peach)", ink: "var(--text-burnt)" },
+  { n: "3", title: "Learn your taste", body: "Veg, dairy-free, that cilantro grudge — I remember and filter everything.", tint: "var(--m-tint-lav)", ink: "var(--text-plum)" },
 ];
 
 // hex-ok-start: partners' own brand colours — identity, not theme, so they do
@@ -86,13 +86,19 @@ const PARTNER_GREEN = "#0AAD0A";  // Instacart
 const PARTNER_BLACK = "#000000";  // Uber
 const PARTNER_LIME = "#C6F000";   // Ola
 const PARTNER_ON_DARK = "#FFFFFF";
+// White on the three coloured grounds measured 2.55 (Swiggy) / 4.32 (Zomato)
+// / 3.00 (Instacart) at 17px — sub-AA in BOTH themes, since brand grounds do
+// not flip. Same fix web made in meshi-app.css's .mp-* chips: the ground stays
+// the brand's (that is what makes the tile recognisable), the ink moves.
+// Near-black measures 7.8 / 4.59 / 6.6. White stays correct on Uber's black.
+const PARTNER_INK_DARK = "#0A0A0A";
 // hex-ok-end
 
 /** Artboard 7b. `mark` is the partner's own wordmark colour pairing. */
 const PARTNERS: { key: string; label: string; sub: string; bg: string; fg: string; short: string }[] = [
-  { key: "swiggy", label: "Swiggy", sub: "Food delivery · Instamart · Dineout", bg: PARTNER_ORANGE, fg: PARTNER_ON_DARK, short: "S" },
-  { key: "zomato", label: "Zomato", sub: "Restaurant delivery & dining", bg: PARTNER_RED, fg: PARTNER_ON_DARK, short: "Z" },
-  { key: "instacart", label: "Instacart", sub: "Grocery runs, ingredient by ingredient", bg: PARTNER_GREEN, fg: PARTNER_ON_DARK, short: "I" },
+  { key: "swiggy", label: "Swiggy", sub: "Food delivery · Instamart · Dineout", bg: PARTNER_ORANGE, fg: PARTNER_INK_DARK, short: "S" },
+  { key: "zomato", label: "Zomato", sub: "Restaurant delivery & dining", bg: PARTNER_RED, fg: PARTNER_INK_DARK, short: "Z" },
+  { key: "instacart", label: "Instacart", sub: "Grocery runs, ingredient by ingredient", bg: PARTNER_GREEN, fg: PARTNER_INK_DARK, short: "I" },
 ];
 
 const RIDE_PARTNERS: { key: string; label: string; bg: string; fg: string }[] = [
@@ -322,7 +328,7 @@ export default function Onboarding() {
         <div style={{ textAlign: "center", marginTop: 14 }}>
           <span className="t-cap">
             Already have an account?{" "}
-            <button onClick={() => go("signup")} style={{ background: "none", border: "none", color: "var(--m-forest)", fontWeight: 700 }}>
+            <button onClick={() => go("signup")} style={{ background: "none", border: "none", color: "var(--figure-accent)", fontWeight: 700 }}>
               Sign in
             </button>
           </span>
@@ -466,7 +472,7 @@ export default function Onboarding() {
             would be a claim the product cannot honour. */}
         <div className="card tint-green" style={{ boxShadow: "none", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <Lock width={22} height={22} style={{ color: "var(--m-forest)", flex: "none" }} />
-          <span className="t-cap" style={{ color: "var(--m-forest-2)" }}>
+          <span className="t-cap" style={{ color: "var(--text-forest-2)" }}>
             Connect accounts anytime in Settings — Bo works without them too.
           </span>
         </div>
@@ -564,7 +570,7 @@ export default function Onboarding() {
           style={{ boxShadow: "none", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}
         >
           <Mushroom width={40} height={40} style={{ flex: "none" }} />
-          <span className="t-body" style={{ color: "var(--m-plum)" }}>{summary}</span>
+          <span className="t-body" style={{ color: "var(--text-plum)" }}>{summary}</span>
         </div>
 
         <div className="grow" />
@@ -720,8 +726,8 @@ export default function Onboarding() {
         <div className="card tint-peach" style={{ boxShadow: "none", padding: "14px 16px", marginTop: 14 }}>
           <div className="vstack" style={{ gap: 8 }}>
             <div className="hstack" style={{ justifyContent: "space-between" }}>
-              <span className="t-cap" style={{ color: "var(--m-brown)" }}>Daily calorie target</span>
-              <span className="t-h2" style={{ color: "var(--m-burnt)" }}>{kcal ? `${kcal.toLocaleString()} kcal` : "—"}</span>
+              <span className="t-cap" style={{ color: "var(--text-brown)" }}>Daily calorie target</span>
+              <span className="t-h2" style={{ color: "var(--text-burnt)" }}>{kcal ? `${kcal.toLocaleString()} kcal` : "—"}</span>
             </div>
             <div className="progress">
               <i style={{ width: `${pct}%`, background: "var(--m-burnt)" }} />
@@ -731,7 +737,7 @@ export default function Onboarding() {
 
         <div className="card tint-peach" style={{ boxShadow: "none", padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
           <BoBowl width={24} height={24} style={{ flex: "none" }} />
-          <span className="t-body" style={{ color: "var(--m-brown)" }}>
+          <span className="t-body" style={{ color: "var(--text-brown)" }}>
             Bo&rsquo;s starting target: <b>{kcal ? `${kcal.toLocaleString()} kcal/day` : "—"}</b>. Refine anytime in the tracker.
           </span>
         </div>
@@ -761,7 +767,7 @@ export default function Onboarding() {
             <Bell width={26} height={26} style={{ color: "var(--m-burnt)" }} />
             <span style={{ font: "800 40px/1 var(--m-font-display)", color: "var(--m-burnt)" }}>Day 1</span>
           </div>
-          <span className="t-h2" style={{ color: "var(--m-brown)" }}>
+          <span className="t-h2" style={{ color: "var(--text-brown)" }}>
             Log a meal a day, grow your streak,<br />adopt the whole veggie gang.
           </span>
           <div className="hstack" style={{ gap: 8, marginTop: 4 }}>
@@ -847,7 +853,7 @@ export default function Onboarding() {
           </div>
         </div>
         {authError && (
-          <span className="t-cap" style={{ color: "var(--m-red)", marginTop: 8 }}>
+          <span className="t-cap" style={{ color: "var(--text-red)", marginTop: 8 }}>
             {authError}
           </span>
         )}
@@ -882,7 +888,7 @@ export default function Onboarding() {
 
       {authError && (
         <div style={{ textAlign: "center", marginTop: 10 }}>
-          <span className="t-cap" style={{ color: "var(--m-red)" }}>Couldn&rsquo;t sign in — {authError}</span>
+          <span className="t-cap" style={{ color: "var(--text-red)" }}>Couldn&rsquo;t sign in — {authError}</span>
         </div>
       )}
 

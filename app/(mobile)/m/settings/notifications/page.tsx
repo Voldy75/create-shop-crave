@@ -304,7 +304,7 @@ export default function MobileNotifications() {
 
       {join && (
         <div className="card tint-green" style={{ boxShadow: "none", padding: 14 }}>
-          <span className="t-body" style={{ color: "var(--m-forest-2)" }}>
+          <span className="t-body" style={{ color: "var(--text-forest-2)" }}>
             One more step — send <b>{join.text}</b> to <b>{join.to}</b> on WhatsApp. Bo goes live the moment it lands.
           </span>
         </div>
@@ -341,7 +341,7 @@ export default function MobileNotifications() {
           <MessageCircle width={20} height={20} style={{ color: ON_BRAND }} />
         </span>
         <div className="card tint-green" style={{ boxShadow: "none", padding: "11px 15px", borderBottomLeftRadius: 6 }}>
-          <span className="t-body" style={{ color: "var(--m-forest-2)" }}>
+          <span className="t-body" style={{ color: "var(--text-forest-2)" }}>
             620 kcal left today. Want 3 dinner ideas?
           </span>
         </div>

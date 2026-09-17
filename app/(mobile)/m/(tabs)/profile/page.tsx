@@ -115,9 +115,9 @@ export default function ProfileTab() {
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-        <Stat tint="tint-green" ink="var(--m-forest-2)" value={mealsLogged} label="meals logged" />
-        <Stat tint="tint-peach" ink="var(--m-burnt)" value={savedCount} label="saved" />
-        <Stat tint="tint-lav" ink="var(--m-plum)" value={streak} label="day streak" />
+        <Stat tint="tint-green" ink="var(--text-forest-2)" value={mealsLogged} label="meals logged" />
+        <Stat tint="tint-peach" ink="var(--text-burnt)" value={savedCount} label="saved" />
+        <Stat tint="tint-lav" ink="var(--text-plum)" value={streak} label="day streak" />
       </div>
 
       {/* Destinations. Not in the artboard, but the tab bar has no Saved tab —
@@ -147,7 +147,7 @@ export default function ProfileTab() {
           <button
             onClick={() => router.push("/m/inbox")}
             className="t-cap"
-            style={{ background: "none", border: "none", padding: 0, color: "var(--m-forest)", fontWeight: 700 }}
+            style={{ background: "none", border: "none", padding: 0, color: "var(--figure-accent)", fontWeight: 700 }}
           >
             See all ›
           </button>

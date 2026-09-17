@@ -132,7 +132,7 @@ export default function MeshiHome() {
               }}
             />
             <div className="vstack grow" style={{ gap: 2, minWidth: 0 }}>
-              <span className="t-micro" style={{ color: "var(--m-burnt)" }}>Order again?</span>
+              <span className="t-micro" style={{ color: "var(--text-burnt)" }}>Order again?</span>
               <span className="t-h2">Your Instamart go-tos</span>
               <span className="t-cap">Bo will confirm the cart first</span>
             </div>

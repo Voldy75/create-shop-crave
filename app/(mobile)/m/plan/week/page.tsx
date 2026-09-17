@@ -94,7 +94,7 @@ export default function WeeklyPlan() {
                           : "var(--m-lime)",
                   }}
                 />
-                <span className="t-micro" style={{ color: isToday ? "var(--m-forest)" : undefined }}>
+                <span className="t-micro" style={{ color: isToday ? "var(--figure-accent)" : undefined }}>
                   {DOW[new Date(d.date + "T00:00:00").getDay()]}
                 </span>
               </div>
@@ -127,7 +127,7 @@ export default function WeeklyPlan() {
       {/* Bo's diet chart */}
       <div className="hstack" style={{ justifyContent: "space-between" }}>
         <span className="t-h1">Bo&rsquo;s 7-day diet chart</span>
-        <span className="chip-tag chip" style={{ background: "var(--m-tint-lav)", color: "var(--m-plum)", gap: 4 }}>
+        <span className="chip-tag chip" style={{ background: "var(--m-tint-lav)", color: "var(--text-plum)", gap: 4 }}>
           <Sparkles width={13} height={13} /> AI
         </span>
       </div>
@@ -138,7 +138,7 @@ export default function WeeklyPlan() {
             const Mascot = mascotComponentFor(p.dish);
             return (
               <div key={p.day} className={`row ${i === 0 ? "tint-green" : ""}`} style={i === 0 ? { boxShadow: "none" } : undefined}>
-                <span className="t-micro" style={{ width: 34, flex: "none", color: i === 0 ? "var(--m-forest)" : undefined }}>
+                <span className="t-micro" style={{ width: 34, flex: "none", color: i === 0 ? "var(--figure-accent)" : undefined }}>
                   {p.day.slice(0, 3)}
                 </span>
                 <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>

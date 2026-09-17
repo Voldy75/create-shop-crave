@@ -124,7 +124,7 @@ export default function DietChart() {
           <div className="card tint-lav hstack" style={{ boxShadow: "none", padding: "12px 16px", gap: 12 }}>
             <BoBowl width={38} height={38} style={{ flex: "none" }} />
             <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
-              <span className="t-h2" style={{ color: "var(--m-plum)" }}>
+              <span className="t-h2" style={{ color: "var(--text-plum)" }}>
                 Built for &ldquo;{goals?.goal ?? "maintain"}&rdquo;
                 {goals?.dailyCalories ? ` · ${goals.dailyCalories.toLocaleString()} kcal` : ""}
               </span>

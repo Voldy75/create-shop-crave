@@ -454,7 +454,7 @@ export default function MobileLog() {
       {result?.needsConfirmation && (
         <div className="card tint-peach hstack" style={{ boxShadow: "none", padding: "12px 14px", gap: 10 }}>
           <AlertTriangle width={18} height={18} style={{ color: "var(--m-burnt)", flex: "none" }} />
-          <span className="t-cap" style={{ color: "var(--m-burnt)" }}>
+          <span className="t-cap" style={{ color: "var(--text-burnt)" }}>
             {result.notes ?? "Bo isn't confident here — check the numbers before logging."}
           </span>
         </div>
@@ -463,9 +463,9 @@ export default function MobileLog() {
 
       {/* Macros */}
       <div className="hstack" style={{ gap: 10 }}>
-        <Stat tint="tint-green" ink="var(--m-forest-2)" value={scaled.calories.toLocaleString()} label="kcal" />
-        <Stat tint="tint-peach" ink="var(--m-burnt)" value={`${scaled.protein}g`} label="protein" />
-        <Stat tint="tint-lav" ink="var(--m-plum)" value={`${scaled.carbs}g`} label="carbs" />
+        <Stat tint="tint-green" ink="var(--text-forest-2)" value={scaled.calories.toLocaleString()} label="kcal" />
+        <Stat tint="tint-peach" ink="var(--text-burnt)" value={`${scaled.protein}g`} label="protein" />
+        <Stat tint="tint-lav" ink="var(--text-plum)" value={`${scaled.carbs}g`} label="carbs" />
         <Stat tint="tint-cream" ink="var(--m-ink)" value={`${scaled.fat}g`} label="fat" />
       </div>
 
@@ -529,7 +529,7 @@ export default function MobileLog() {
       {streak > 0 && (
         <div className="card tint-peach hstack" style={{ boxShadow: "none", padding: "12px 16px", gap: 12 }}>
           <Flame width={26} height={26} style={{ color: "var(--m-burnt)", flex: "none" }} />
-          <span className="t-h2" style={{ color: "var(--m-burnt)" }}>Logging this lights Day {streak + 1} 🔥</span>
+          <span className="t-h2" style={{ color: "var(--text-burnt)" }}>Logging this lights Day {streak + 1} 🔥</span>
         </div>
       )}
 

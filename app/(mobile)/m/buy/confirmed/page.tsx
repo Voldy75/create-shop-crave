@@ -38,7 +38,7 @@ export default function OrderConfirmed() {
         <div className="confirm-halo">
           <BoBowl width={104} height={104} style={{ animation: "mm-bob 2.4s ease-in-out infinite" }} />
         </div>
-        <span className="t-d2" style={{ color: "var(--m-forest-2)" }}>Order placed!</span>
+        <span className="t-d2" style={{ color: "var(--text-forest-2)" }}>Order placed!</span>
         <span className="t-body-soft" style={{ maxWidth: 280 }}>
           Bo will nudge you here as it&rsquo;s shopped and delivered. Your stomach just applauded.
         </span>
@@ -75,7 +75,7 @@ export default function OrderConfirmed() {
                   >
                     {done && <Check width={14} height={14} style={{ color: "var(--m-forest-2)" }} />}
                   </span>
-                  <span className="t-micro" style={{ textAlign: "center", lineHeight: 1.15, ...(done ? { color: "var(--m-forest)" } : {}) }}>
+                  <span className="t-micro" style={{ textAlign: "center", lineHeight: 1.15, ...(done ? { color: "var(--figure-accent)" } : {}) }}>
                     {label}
                   </span>
                 </div>

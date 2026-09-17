@@ -24,6 +24,34 @@
 :root { --figure-accent: var(--m-forest); }
 [data-theme="dark"] { --figure-accent: var(--m-lime); }
 
+/* ---------- Theme-aware text hues ----------
+   Same idea as --figure-accent, for the other hues screens use as TEXT.
+   meshi-b's dark block either leaves these at their light values (plum, red:
+   it never redefines them, so plum text measured 1.35:1 on the dark lav tint)
+   or only nudges them (forest-2 1.58:1, brown 2.45:1, burnt 4.29:1).
+
+   Rule: the LIGHT value is exactly the original token, so the designed light
+   theme is byte-for-byte unchanged; only dark lifts toward --m-ink (cream in
+   dark). Measured 2026-09-14 on the actual dark grounds (card / tints).
+
+   TEXT ONLY. Icons and chart fills keep the raw hue — non-text needs 3:1 and
+   the raw hues pass it. Use these, not raw --m-plum/--m-forest-2/…, for any
+   new text in the mobile tree. */
+:root {
+  --text-forest-2: var(--m-forest-2);
+  --text-plum:     var(--m-plum);
+  --text-brown:    var(--m-brown);
+  --text-burnt:    var(--m-burnt);
+  --text-red:      var(--m-red);
+}
+[data-theme="dark"] {
+  --text-forest-2: var(--m-lime);
+  --text-plum:     color-mix(in srgb, var(--m-plum-2) 55%, var(--m-ink));
+  --text-brown:    color-mix(in srgb, var(--m-brown) 40%, var(--m-ink));
+  --text-burnt:    color-mix(in srgb, var(--m-burnt) 70%, var(--m-ink));
+  --text-red:      color-mix(in srgb, var(--m-red) 60%, var(--m-ink));
+}
+
 /* ---------- Minimal reset ----------
    This tree no longer imports globals.css, which means it also lost Tailwind's
    preflight. design/meshi-b.css assumes a reset exists but does not ship one,
@@ -286,7 +314,11 @@ a { color: inherit; text-decoration: none; }
 .paywall-shell { min-height: 100dvh; background: var(--m-plum); }
 .on-plum { color: var(--m-on-deep); }
 .on-plum-dim { color: rgba(253, 248, 231, .8); }
-.on-plum-faint { color: rgba(253, 248, 231, .55); }
+/* .55 measured 4.12:1 on --m-plum (plum does not change with theme, so it
+   failed in BOTH themes). An earlier note wrote this off as a scanner
+   false positive; a scanner that composites the real plum ground shows it is
+   a genuine sub-AA fail. .62 measures ~4.8:1. */
+.on-plum-faint { color: rgba(253, 248, 231, .62); }
 /* The selected offer gets the artboard's inset lime ring. */
 .offer-selected { box-shadow: inset 0 0 0 3px var(--m-lime); }
 /* The unselected offer is a translucent panel rather than a cream card. */

@@ -75,7 +75,7 @@ export default function StreakPage() {
           <Flame width={34} height={34} style={{ color: "var(--m-burnt)" }} />
           <span style={{ font: "800 52px/1 var(--m-font-display)", color: "var(--m-burnt)" }}>{streak}</span>
         </div>
-        <span className="t-h2" style={{ color: "var(--m-brown)", textAlign: "center" }}>
+        <span className="t-h2" style={{ color: "var(--text-brown)", textAlign: "center" }}>
           {streak === 0
             ? "No streak yet. Log a meal to light it."
             : streak === 1
@@ -87,7 +87,7 @@ export default function StreakPage() {
         <div className="hstack" style={{ gap: 6, marginTop: 4 }}>
           {week.map((on, i) => (
             <span key={i} className="hstack" style={{ gap: 6 }}>
-              {i === 0 && <span className="t-micro" style={{ color: "var(--m-burnt)" }}>M</span>}
+              {i === 0 && <span className="t-micro" style={{ color: "var(--text-burnt)" }}>M</span>}
               <i
                 aria-label={`${WEEK_LETTERS[i]}${on ? " logged" : " not logged"}`}
                 style={{
@@ -96,7 +96,7 @@ export default function StreakPage() {
                   boxShadow: on ? "none" : "inset 0 0 0 1.5px var(--m-ink-faint)",
                 }}
               />
-              {i === 6 && <span className="t-micro" style={{ color: "var(--m-burnt)" }}>S</span>}
+              {i === 6 && <span className="t-micro" style={{ color: "var(--text-burnt)" }}>S</span>}
             </span>
           ))}
         </div>
@@ -127,7 +127,7 @@ export default function StreakPage() {
         <div className="card tint-lav" style={{ boxShadow: "none", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
           <NextMascot width={44} height={44} className="mascot-locked" style={{ flex: "none" }} />
           <div className="vstack grow" style={{ gap: 5, minWidth: 0 }}>
-            <span className="t-h2" style={{ color: "var(--m-plum)" }}>
+            <span className="t-h2" style={{ color: "var(--text-plum)" }}>
               {next.daysAway} more day{next.daysAway === 1 ? "" : "s"} to unlock {mascotLabel(next.entry.name)}
             </span>
             <div className="progress">

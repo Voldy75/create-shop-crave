@@ -226,10 +226,10 @@ export default function MobileRestaurants() {
             </div>
 
             <div className="hstack" style={{ gap: 6, flexWrap: "wrap" }}>
-              <span className="chip chip-tag" style={{ background: "var(--m-tint-peach)", color: "var(--m-burnt)", height: 26 }}>
+              <span className="chip chip-tag" style={{ background: "var(--m-tint-peach)", color: "var(--text-burnt)", height: 26 }}>
                 {selected.priceRange}
               </span>
-              <span className="chip chip-tag" style={{ background: "var(--m-tint-green)", color: "var(--m-forest)", height: 26, gap: 4 }}>
+              <span className="chip chip-tag" style={{ background: "var(--m-tint-green)", color: "var(--figure-accent)", height: 26, gap: 4 }}>
                 <PinIcon width={12} height={12} />
                 {selected.area}
               </span>
