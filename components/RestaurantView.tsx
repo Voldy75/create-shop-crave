@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { Card } from "@/components/ui/card";
-import { Star, Utensils, ExternalLink, Navigation, AlertCircle, Bot, CalendarCheck } from "lucide-react";
+import { Star, Utensils, ExternalLink, Navigation, Bot, CalendarCheck, Map as MapIcon } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import {
     buildUberDeepLink,
@@ -14,6 +13,15 @@ import {
     buildZomatoOrderLink,
 } from "@/lib/deeplinks";
 import { ShareButton } from "@/components/ShareButton";
+import { MeshiMap } from "@/components/web/MeshiMap";
+import { setActiveRestaurants } from "@/lib/mobile-handoff";
+import {
+    haversineKm,
+    formatDistance,
+    etaMinutes,
+    ratingNumber,
+    restaurantImage,
+} from "@/lib/restaurants";
 import type { Restaurant, RestaurantSuggestion } from "@/lib/types";
 
 interface RestaurantViewProps {
@@ -22,54 +30,31 @@ interface RestaurantViewProps {
 
 type Coords = { lat: number; lng: number };
 
-// ---------- Distance + ETA helpers ----------
-
-function haversineKm(a: Coords, b: Coords): number {
-    const toRad = (deg: number) => (deg * Math.PI) / 180;
-    const R = 6371; // km
-    const dLat = toRad(b.lat - a.lat);
-    const dLng = toRad(b.lng - a.lng);
-    const lat1 = toRad(a.lat);
-    const lat2 = toRad(b.lat);
-    const h =
-        Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-    return 2 * R * Math.asin(Math.sqrt(h));
-}
-
-function formatDistance(km: number): string {
-    if (km < 1) return `${Math.round(km * 1000)} m`;
-    return `${km.toFixed(1)} km`;
-}
-
-function etaMinutes(km: number): string {
-    // rough urban driving estimate: ~2.5 min per km, floor at 2 min
-    return `${Math.max(2, Math.round(km * 2.5))} min`;
-}
+/** A map marker's data. `stableId` is the index in data.restaurants, so it
+ *  survives re-sorting; `label` is the number the user sees after the sort. */
+type MapPin = {
+    lat: number;
+    lng: number;
+    label: number;
+    stableId: number;
+    title: string;
+};
 
 // ---------- Local helper components ----------
 
-const IMAGE_POOL = [
-    "1517248135467-4c7edcad34c4",
-    "1552566626-52f8b828add9",
-    "1555396273-367ea4eb4db5",
-    "1414235077428-338989a2e8c0",
-    "1600891964092-4316c288032e",
-];
-const FALLBACK_IMG =
-    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop&auto=format";
 
 // ---------- Skeleton card for loading state ----------
 
 function RestaurantCardSkeleton() {
     const shimmer: React.CSSProperties = {
-        background: "var(--cc-surface-2)",
+        background: "var(--m-cream-2)",
         borderRadius: "8px",
     };
     return (
         <div
             style={{
-                background: "var(--cc-surface)",
-                border: "1px solid var(--cc-border)",
+                background: "var(--m-card)",
+                border: "1px solid var(--m-ink-faint)",
                 borderRadius: "14px",
                 overflow: "hidden",
             }}
@@ -77,7 +62,7 @@ function RestaurantCardSkeleton() {
             {/* Photo placeholder */}
             <div
                 className="aspect-[4/3] animate-pulse"
-                style={{ background: "var(--cc-surface-2)" }}
+                style={{ background: "var(--m-cream-2)" }}
             />
             {/* Body */}
             <div style={{ padding: "14px 16px 16px" }}>
@@ -106,10 +91,10 @@ function RestaurantEmptyState() {
     return (
         <div
             className="flex flex-col items-center justify-center text-center py-12 px-6"
-            style={{ color: "var(--cc-text-tertiary)" }}
+            style={{ color: "var(--m-ink-soft)" }}
         >
             <Utensils className="w-10 h-10 mb-3" style={{ opacity: 0.4 }} />
-            <p style={{ fontSize: "16px", fontWeight: 600, color: "var(--cc-text-secondary)", marginBottom: "4px" }}>
+            <p style={{ fontSize: "16px", fontWeight: 600, color: "var(--m-ink-soft)", marginBottom: "4px" }}>
                 No restaurants found
             </p>
             <p style={{ fontSize: "13px", lineHeight: 1.5, maxWidth: "260px" }}>
@@ -133,7 +118,7 @@ const labelStyle: React.CSSProperties = {
     fontWeight: 700,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-    color: "var(--cc-text-tertiary)",
+    color: "var(--m-ink-soft)",
     marginBottom: "6px",
 };
 
@@ -156,7 +141,7 @@ function RestaurantCard({
     onSelect: (stableId: number) => void;
     cardRef?: (el: HTMLElement | null) => void;
 }) {
-    const photoId = IMAGE_POOL[stableId % IMAGE_POOL.length];
+    
     const hasCoords = typeof restaurant.lat === "number" && typeof restaurant.lng === "number";
     const dropoff: Coords | null = hasCoords
         ? { lat: restaurant.lat as number, lng: restaurant.lng as number }
@@ -185,14 +170,14 @@ function RestaurantCard({
             onMouseEnter={() => onSelect(stableId)}
             onClick={() => onSelect(stableId)}
             style={{
-                background: "var(--cc-surface)",
+                background: "var(--m-card)",
                 border: selected
-                    ? "2px solid var(--cc-accent)"
-                    : "1px solid var(--cc-border)",
+                    ? "2px solid var(--m-forest)"
+                    : "1px solid var(--m-ink-faint)",
                 borderRadius: "14px",
                 overflow: "hidden",
                 transition: "border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease",
-                boxShadow: selected ? "0 8px 24px rgba(255,107,53,0.18)" : "none",
+                boxShadow: selected ? "var(--m-shadow-lift)" : "none",
                 cursor: "pointer",
                 scrollMarginTop: "12px",
             }}
@@ -200,14 +185,14 @@ function RestaurantCard({
             {/* Thumbnail — 4:3 aspect gives photo ~60% card dominance (Sweetgreen-style) */}
             <div
                 className="aspect-[4/3] relative overflow-hidden"
-                style={{ background: "var(--cc-surface-2)" }}
+                style={{ background: "var(--m-cream-2)" }}
             >
                 <img
-                    src={`https://images.unsplash.com/photo-${photoId}?w=600&h=450&fit=crop&auto=format`}
+                    src={restaurantImage(stableId)}
                     alt={restaurant.name}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     onError={(e) => {
-                        (e.target as HTMLImageElement).src = FALLBACK_IMG;
+                        (e.target as HTMLImageElement).src = restaurantImage(0);
                     }}
                 />
 
@@ -218,11 +203,11 @@ function RestaurantCard({
                         width: "28px",
                         height: "28px",
                         borderRadius: "50%",
-                        background: "var(--cc-accent)",
-                        color: "#ffffff",
+                        background: "var(--m-forest)",
+                        color: "var(--m-on-deep)",
                         fontSize: "13px",
                         fontWeight: 700,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
+                        boxShadow: "var(--m-shadow-lift)",
                     }}
                     aria-label={`Marker ${displayNumber}`}
                 >
@@ -233,15 +218,15 @@ function RestaurantCard({
                 <div
                     className="absolute top-3 right-3 flex items-center gap-1"
                     style={{
-                        background: "rgba(0,0,0,0.85)",
+                        background: "var(--m-ink)",
                         padding: "4px 9px",
                         borderRadius: "980px",
                         fontSize: "12px",
                         fontWeight: 700,
-                        color: "#ffffff",
+                        color: "var(--m-on-deep)",
                     }}
                 >
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                    <Star className="w-3 h-3" style={{ color: "var(--m-orange)" }} fill="var(--m-orange)" />
                     {restaurant.rating}
                 </div>
             </div>
@@ -255,7 +240,7 @@ function RestaurantCard({
                         fontWeight: 700,
                         lineHeight: 1.2,
                         letterSpacing: "-0.022em",
-                        color: "var(--cc-text-primary)",
+                        color: "var(--m-ink)",
                     }}
                 >
                     {restaurant.name}
@@ -264,7 +249,7 @@ function RestaurantCard({
                     style={{
                         fontSize: "13px",
                         marginTop: "2px",
-                        color: "var(--cc-text-secondary)",
+                        color: "var(--m-ink-soft)",
                     }}
                 >
                     {restaurant.area}
@@ -275,7 +260,7 @@ function RestaurantCard({
                     className="flex items-center flex-wrap gap-x-1.5"
                     style={{
                         fontSize: "12px",
-                        color: "var(--cc-text-tertiary)",
+                        color: "var(--m-ink-soft)",
                         marginTop: "8px",
                         fontWeight: 500,
                     }}
@@ -369,209 +354,6 @@ function RestaurantCard({
     );
 }
 
-// Apple-dark map style to match the app's aesthetic.
-const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
-    { elementType: "geometry", stylers: [{ color: "#1d1d1f" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#8a8a8f" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#0b0b0d" }] },
-    { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a2a2d" }] },
-    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1a1a1c" }] },
-    { featureType: "water", elementType: "geometry", stylers: [{ color: "#0b2535" }] },
-    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-    { featureType: "transit", stylers: [{ visibility: "off" }] },
-    { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#2a2a2d" }] },
-];
-
-// Build a data-URI SVG for a numbered pin marker.
-function numberedMarkerIcon(label: number, active: boolean): google.maps.Icon {
-    const fill = active ? "#ff6b35" : "#1d1d1f";
-    const stroke = active ? "#ffffff" : "#ff6b35";
-    const text = active ? "#ffffff" : "#ff6b35";
-    const svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48">
-  <path d="M18 0C8.06 0 0 8.06 0 18c0 12.75 16.31 28.56 17 29.21.28.26.72.26 1 0C18.69 46.56 36 30.75 36 18 36 8.06 27.94 0 18 0z" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
-  <circle cx="18" cy="18" r="11" fill="${active ? "#ffffff" : "transparent"}" stroke="${active ? "#ff6b35" : "transparent"}" stroke-width="0"/>
-  <text x="18" y="23" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="${text}">${label}</text>
-</svg>`.trim();
-    return {
-        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-        scaledSize: new google.maps.Size(36, 48),
-        anchor: new google.maps.Point(18, 48),
-    };
-}
-
-type MapRestaurant = Restaurant & { lat: number; lng: number };
-
-type MapPin = {
-    lat: number;
-    lng: number;
-    label: number; // display number (post-sort)
-    stableId: number; // original index in data.restaurants
-    title: string;
-};
-
-function InteractiveRestaurantMap({
-    pins,
-    center,
-    selectedStableId,
-    onSelect,
-    apiKey,
-    embedFallbackUrl,
-}: {
-    pins: MapPin[];
-    center: Coords;
-    selectedStableId: number | null;
-    onSelect: (stableId: number) => void;
-    apiKey: string;
-    embedFallbackUrl: string | null;
-}) {
-    const { isLoaded, loadError } = useJsApiLoader({
-        id: "crave-create-maps",
-        googleMapsApiKey: apiKey,
-    });
-
-    const mapRef = useRef<google.maps.Map | null>(null);
-    const [authFailed, setAuthFailed] = useState(false);
-
-    // Google Maps calls window.gm_authFailure() when the JS API key is invalid,
-    // has referer restrictions that block this origin, or Maps JavaScript API is
-    // not enabled on the project. This fires AFTER isLoaded=true, so useJsApiLoader's
-    // loadError alone isn't enough. Hook into the global and flip to fallback.
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        const w = window as typeof window & { gm_authFailure?: () => void };
-        const prev = w.gm_authFailure;
-        w.gm_authFailure = () => {
-            setAuthFailed(true);
-        };
-        return () => {
-            w.gm_authFailure = prev;
-        };
-    }, []);
-
-    // Fit bounds once after load so all markers are visible.
-    useEffect(() => {
-        if (!isLoaded || !mapRef.current) return;
-        if (pins.length === 0) return;
-        const bounds = new google.maps.LatLngBounds();
-        pins.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
-        bounds.extend(center);
-        mapRef.current.fitBounds(bounds, 64);
-    }, [isLoaded, pins, center]);
-
-    // Pan to selected marker on change.
-    useEffect(() => {
-        if (!isLoaded || !mapRef.current || selectedStableId === null) return;
-        const p = pins.find((x) => x.stableId === selectedStableId);
-        if (!p) return;
-        mapRef.current.panTo({ lat: p.lat, lng: p.lng });
-    }, [isLoaded, selectedStableId, pins]);
-
-    if (loadError || authFailed) {
-        // The JS API script failed OR auth was rejected post-load (invalid key,
-        // referer restrictions, Maps JavaScript API not enabled). Fall back to
-        // the iframe Embed API, which is a separate service and may still work.
-        // If that's also unavailable, show a helpful error message instead.
-        return <IframeMapFallback embedUrl={embedFallbackUrl} />;
-    }
-
-    if (!isLoaded) {
-        return (
-            <div
-                className="w-full h-full animate-pulse"
-                style={{
-                    background: "var(--cc-surface-2)",
-                    borderRadius: "12px",
-                }}
-                aria-label="Loading map"
-            />
-        );
-    }
-
-    return (
-        <GoogleMap
-            mapContainerStyle={{ width: "100%", height: "100%", borderRadius: "12px" }}
-            center={center}
-            zoom={13}
-            onLoad={(map) => {
-                mapRef.current = map;
-            }}
-            options={{
-                styles: DARK_MAP_STYLE,
-                disableDefaultUI: true,
-                zoomControl: true,
-                clickableIcons: false,
-                backgroundColor: "#1d1d1f",
-                gestureHandling: "greedy",
-            }}
-        >
-            {/* User location marker */}
-            <Marker
-                position={center}
-                icon={{
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 8,
-                    fillColor: "#4285F4",
-                    fillOpacity: 1,
-                    strokeColor: "#ffffff",
-                    strokeWeight: 2,
-                }}
-                title="You"
-                zIndex={1}
-            />
-
-            {/* Numbered restaurant markers */}
-            {pins.map((p) => {
-                const active = selectedStableId === p.stableId;
-                return (
-                    <Marker
-                        key={p.stableId}
-                        position={{ lat: p.lat, lng: p.lng }}
-                        icon={numberedMarkerIcon(p.label, active)}
-                        onClick={() => onSelect(p.stableId)}
-                        zIndex={active ? 999 : 10 + p.label}
-                        title={p.title}
-                    />
-                );
-            })}
-        </GoogleMap>
-    );
-}
-
-function MapErrorFallback({ message }: { message: string }) {
-    return (
-        <div
-            className="flex flex-col items-center justify-center h-full p-6 text-center gap-2"
-            style={{ color: "var(--cc-text-tertiary)" }}
-        >
-            <AlertCircle className="w-6 h-6" />
-            <p style={{ fontSize: "14px" }}>{message}</p>
-        </div>
-    );
-}
-
-function IframeMapFallback({ embedUrl }: { embedUrl: string | null }) {
-    if (!embedUrl) {
-        return (
-            <MapErrorFallback
-                message="Map unavailable — set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to enable."
-            />
-        );
-    }
-    return (
-        <iframe
-            src={embedUrl}
-            title="Restaurant map"
-            width="100%"
-            height="100%"
-            style={{ border: 0, display: "block", borderRadius: "12px" }}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            allowFullScreen
-        />
-    );
-}
-
 // ---------- Filter chips ----------
 
 type SortKey = "default" | "rating" | "distance" | "price";
@@ -614,14 +396,14 @@ function FilterChips({
                             padding: "6px 14px",
                             borderRadius: "980px",
                             border: active
-                                ? "1px solid var(--cc-accent)"
-                                : "1px solid var(--cc-border)",
-                            background: active ? "var(--cc-accent)" : "transparent",
+                                ? "1px solid var(--m-forest)"
+                                : "1px solid var(--m-ink-faint)",
+                            background: active ? "var(--m-forest)" : "transparent",
                             color: active
-                                ? "#ffffff"
+                                ? "var(--m-on-deep)"
                                 : disabled
-                                ? "var(--cc-text-tertiary)"
-                                : "var(--cc-text-primary)",
+                                ? "var(--m-ink-soft)"
+                                : "var(--m-ink)",
                             cursor: disabled ? "not-allowed" : "pointer",
                             opacity: disabled ? 0.5 : 1,
                             transition: "all 160ms ease",
@@ -646,11 +428,6 @@ function priceScore(priceRange: string | undefined): number {
     return Number.isFinite(numeric) ? numeric : 0;
 }
 
-function ratingScore(rating: string | undefined): number {
-    if (!rating) return 0;
-    const n = parseFloat(rating);
-    return Number.isFinite(n) ? n : 0;
-}
 
 function RestaurantMap({
     pins,
@@ -667,26 +444,27 @@ function RestaurantMap({
     apiKey: string;
     embedFallbackUrl: string | null;
 }) {
+    // Delegates to components/web/MeshiMap — the shared w7c-styled map, which
+    // also backs /dine-out. The Google Maps wiring is unchanged (same loader
+    // id, fitBounds, panTo, gm_authFailure hook and both fallbacks); only the
+    // cartography and the pins were redesigned. Keeping ONE map implementation
+    // is the point: two would drift the way `mm-dot` did.
     return (
-        <div
-            className="relative w-full overflow-hidden h-[320px] md:h-[500px]"
-            style={{
-                borderRadius: "12px",
-                background: "var(--cc-surface-2)",
-            }}
-        >
-            {apiKey && pins.length > 0 ? (
-                <InteractiveRestaurantMap
-                    pins={pins}
-                    center={center}
-                    selectedStableId={selectedStableId}
-                    onSelect={onSelect}
-                    apiKey={apiKey}
-                    embedFallbackUrl={embedFallbackUrl}
-                />
-            ) : (
-                <IframeMapFallback embedUrl={embedFallbackUrl} />
-            )}
+        <div className="relative w-full overflow-hidden h-[320px] md:h-[500px]">
+            <MeshiMap
+                pins={pins.map((p) => ({
+                    id: p.stableId,
+                    lat: p.lat,
+                    lng: p.lng,
+                    label: p.label,
+                    title: p.title,
+                }))}
+                center={center}
+                selectedId={selectedStableId}
+                onSelect={onSelect}
+                apiKey={apiKey}
+                embedFallbackUrl={embedFallbackUrl}
+            />
         </div>
     );
 }
@@ -739,7 +517,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
         if (sortKey === "rating") {
             sorted.sort(
                 (a, b) =>
-                    ratingScore(b.restaurant.rating) - ratingScore(a.restaurant.rating)
+                    ratingNumber(b.restaurant.rating) - ratingNumber(a.restaurant.rating)
             );
         } else if (sortKey === "price") {
             sorted.sort(
@@ -870,8 +648,8 @@ export function RestaurantView({ data }: RestaurantViewProps) {
         <Card
             className="w-full overflow-hidden shadow-none border-0"
             style={{
-                background: "var(--cc-surface)",
-                color: "var(--cc-text-primary)",
+                background: "var(--m-card)",
+                color: "var(--m-ink)",
                 borderRadius: "12px",
                 padding: "28px",
             }}
@@ -879,7 +657,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
             {/* Header */}
             <div style={{ marginBottom: "24px" }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: "8px" }}>
-                    <div className="flex items-center gap-2" style={{ color: "var(--cc-accent)" }}>
+                    <div className="flex items-center gap-2" style={{ color: "var(--m-forest)" }}>
                         <Utensils className="w-4 h-4" />
                         <span
                             style={{
@@ -898,8 +676,8 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                     fontWeight: 700,
                                     padding: "2px 8px",
                                     borderRadius: "980px",
-                                    background: "var(--cc-accent-dim)",
-                                    color: "var(--cc-accent)",
+                                    background: "var(--m-tint-green)",
+                                    color: "var(--m-forest)",
                                 }}
                             >
                                 {sortedEntries.length}
@@ -917,7 +695,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                         fontWeight: 600,
                         lineHeight: 1.14,
                         letterSpacing: "0.007em",
-                        color: "var(--cc-text-primary)",
+                        color: "var(--m-ink)",
                     }}
                 >
                     Restaurant Suggestions
@@ -928,11 +706,31 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                         fontSize: "14px",
                         lineHeight: 1.43,
                         letterSpacing: "-0.016em",
-                        color: "var(--cc-text-secondary)",
+                        color: "var(--m-ink-soft)",
                     }}
                 >
                     {data.reason}
                 </p>
+
+                {/* Full dine-out view (w9e/w7c). Hands the SAME suggestion object
+                    to /dine-out through the existing sessionStorage bridge, so the
+                    list, the map and the ride screen all read one source. */}
+                <div className="flex gap-2 flex-wrap" style={{ marginTop: "12px" }}>
+                    <button
+                        onClick={() => {
+                            setActiveRestaurants(data);
+                            router.push("/dine-out");
+                        }}
+                        className="dchip"
+                        style={{ background: "var(--m-forest)", color: "var(--m-on-deep)", height: 36 }}
+                        aria-label="Open the full dine-out view"
+                    >
+                        <MapIcon width={14} height={14} aria-hidden />
+                        {(data.restaurants?.length ?? 0) > 1
+                            ? `See all ${data.restaurants?.length} on a map`
+                            : "See it on a map"}
+                    </button>
+                </div>
 
                 {/* Delivery order buttons */}
                 {data.dishName && location && (
@@ -943,7 +741,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                 router.push(`/chat?agent=1&q=${encodeURIComponent(prompt)}`);
                             }}
                             className="inline-flex items-center gap-1.5 text-white transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "#fc8019" }}
+                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "#fc8019" }} // hex-ok: Swiggy brand orange
                             aria-label="Use the agent to order via Swiggy Food"
                         >
                             <Bot className="w-3 h-3" /> Order via agent
@@ -954,7 +752,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                 router.push(`/chat?agent=1&q=${encodeURIComponent(prompt)}`);
                             }}
                             className="inline-flex items-center gap-1.5 transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "var(--cc-surface-2)", color: "var(--cc-text-primary)", border: "1px solid var(--cc-border)" }}
+                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "var(--m-cream-2)", color: "var(--m-ink)", border: "1px solid var(--m-ink-faint)" }}
                             aria-label="Use the agent to book a DineOut table"
                         >
                             <CalendarCheck className="w-3 h-3" /> Book a table
@@ -1016,13 +814,13 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                         <span style={{
                             fontSize: "13px",
                             fontWeight: 600,
-                            color: "var(--cc-text-secondary)",
+                            color: "var(--m-ink-soft)",
                         }}>
                             {sortedEntries.length} restaurants
                         </span>
                         <span style={{
                             fontSize: "12px",
-                            color: "var(--cc-text-tertiary)",
+                            color: "var(--m-ink-soft)",
                             display: "flex",
                             alignItems: "center",
                             gap: "4px",
@@ -1069,8 +867,8 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                     borderRadius: "3px",
                                     background:
                                         selectedStableId === entry.stableId
-                                            ? "var(--cc-accent)"
-                                            : "var(--cc-text-tertiary)",
+                                            ? "var(--m-forest)"
+                                            : "var(--m-ink-soft)",
                                     opacity: selectedStableId === entry.stableId ? 1 : 0.35,
                                     border: "none",
                                     padding: 0,
@@ -1117,8 +915,8 @@ export function RestaurantViewSkeleton() {
         <Card
             className="w-full overflow-hidden shadow-none border-0"
             style={{
-                background: "var(--cc-surface)",
-                color: "var(--cc-text-primary)",
+                background: "var(--m-card)",
+                color: "var(--m-ink)",
                 borderRadius: "12px",
                 padding: "28px",
             }}
@@ -1127,15 +925,15 @@ export function RestaurantViewSkeleton() {
             <div style={{ marginBottom: "24px" }}>
                 <div
                     className="animate-pulse"
-                    style={{ width: "80px", height: "14px", borderRadius: "6px", background: "var(--cc-surface-2)", marginBottom: "12px" }}
+                    style={{ width: "80px", height: "14px", borderRadius: "6px", background: "var(--m-cream-2)", marginBottom: "12px" }}
                 />
                 <div
                     className="animate-pulse"
-                    style={{ width: "65%", height: "24px", borderRadius: "8px", background: "var(--cc-surface-2)", marginBottom: "8px" }}
+                    style={{ width: "65%", height: "24px", borderRadius: "8px", background: "var(--m-cream-2)", marginBottom: "8px" }}
                 />
                 <div
                     className="animate-pulse"
-                    style={{ width: "90%", height: "14px", borderRadius: "6px", background: "var(--cc-surface-2)" }}
+                    style={{ width: "90%", height: "14px", borderRadius: "6px", background: "var(--m-cream-2)" }}
                 />
             </div>
 
@@ -1150,7 +948,7 @@ export function RestaurantViewSkeleton() {
                     className="animate-pulse"
                     style={{
                         borderRadius: "12px",
-                        background: "var(--cc-surface-2)",
+                        background: "var(--m-cream-2)",
                         height: "500px",
                     }}
                 />
@@ -1162,7 +960,7 @@ export function RestaurantViewSkeleton() {
                     className="animate-pulse"
                     style={{
                         borderRadius: "12px",
-                        background: "var(--cc-surface-2)",
+                        background: "var(--m-cream-2)",
                         height: "320px",
                         marginBottom: "16px",
                     }}

@@ -42,7 +42,7 @@ export function SwiggyExpiryBanner() {
               href="https://mcp.swiggy.com/builders/access/"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "var(--cc-link)", textDecoration: "underline" }}
+              style={{ color: "var(--m-forest)", textDecoration: "underline" }}
             >
               admin needs credentials
             </a>
@@ -61,7 +61,7 @@ export function SwiggyExpiryBanner() {
         body={
           <>
             Your Swiggy session expired (v1 has no refresh tokens).{" "}
-            <Link href="/settings/notifications" style={{ color: "var(--cc-link)", textDecoration: "underline" }}>
+            <Link href="/settings/notifications" style={{ color: "var(--m-forest)", textDecoration: "underline" }}>
               Reconnect
             </Link>{" "}
             to keep ordering.
@@ -79,7 +79,7 @@ export function SwiggyExpiryBanner() {
         body={
           <>
             Swiggy session expires soon.{" "}
-            <Link href="/settings/notifications" style={{ color: "var(--cc-link)", textDecoration: "underline" }}>
+            <Link href="/settings/notifications" style={{ color: "var(--m-forest)", textDecoration: "underline" }}>
               Reconnect
             </Link>{" "}
             now to avoid mid-order dropouts.
@@ -97,7 +97,7 @@ export function SwiggyExpiryBanner() {
         body={
           <>
             You aren&apos;t connected to Swiggy yet —{" "}
-            <Link href="/settings/notifications" style={{ color: "var(--cc-link)", textDecoration: "underline" }}>
+            <Link href="/settings/notifications" style={{ color: "var(--m-forest)", textDecoration: "underline" }}>
               connect in Settings
             </Link>{" "}
             to let the agent order on your behalf.
@@ -111,18 +111,22 @@ export function SwiggyExpiryBanner() {
 }
 
 function BannerShell({ tone, body, onDismiss }: { tone: "info" | "warn"; body: React.ReactNode; onDismiss: () => void }) {
-  const color = tone === "warn" ? "#ff9f0a" : "#0a84ff";
-  const bg = tone === "warn" ? "rgba(255,159,10,0.08)" : "rgba(10,132,255,0.06)";
-  const border = tone === "warn" ? "rgba(255,159,10,0.25)" : "rgba(10,132,255,0.20)";
+  // warn = burnt, info = plum — the same semantic pairing as
+  // components/planner/CoachPanel.tsx and components/cc/status-pill.tsx, so a
+  // given meaning is one colour across the whole product.
+  const hue = tone === "warn" ? "var(--m-burnt)" : "var(--m-plum)";
+  const color = `color-mix(in srgb, ${hue} 50%, var(--m-ink))`;
+  const bg = `color-mix(in srgb, ${hue} 10%, transparent)`;
+  const border = `color-mix(in srgb, ${hue} 26%, transparent)`;
   return (
     <div
       className="flex items-center gap-2 px-4 py-2"
       style={{
         background: bg,
-        border: `1px solid ${border}`,
+        border: `1.5px solid ${border}`,
         borderRadius: "10px",
         fontSize: "12px",
-        color: "var(--cc-text-secondary)",
+        color: "var(--m-ink-soft)",
       }}
     >
       <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color }} />
@@ -130,7 +134,7 @@ function BannerShell({ tone, body, onDismiss }: { tone: "info" | "warn"; body: R
       <button
         onClick={onDismiss}
         className="p-1 transition-opacity hover:opacity-70"
-        style={{ color: "var(--cc-text-tertiary)" }}
+        style={{ color: "var(--m-ink-soft)" }}
         aria-label="Dismiss"
       >
         <X className="w-3.5 h-3.5" />

@@ -1,4 +1,5 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth-guard";
 import { sendWhatsApp } from "@/lib/twilio";
 
 export const maxDuration = 10;
@@ -8,11 +9,9 @@ export const maxDuration = 10;
  * Requires whatsapp_status='active' (i.e. they completed the JOIN flow).
  */
 export async function POST() {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireUser();
+  if (guard instanceof Response) return guard;
+  const { user } = guard;
 
   const service = await createServiceClient();
   const { data, error } = await service

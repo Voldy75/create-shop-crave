@@ -39,41 +39,6 @@ export function isFavorited(type: "recipe" | "restaurant", name: string): boolea
   );
 }
 
-// --- Chat History ---
-
-export interface ChatSession {
-  id: string;
-  title: string;
-  messages: Array<{ role: string; content: string; id: string }>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const CHAT_SESSIONS_KEY = "crave_chatSessions";
-
-export function getChatSessions(): ChatSession[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem(CHAT_SESSIONS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveChatSession(session: ChatSession): void {
-  const sessions = getChatSessions().filter((s) => s.id !== session.id);
-  sessions.unshift(session);
-  // Keep only last 20 sessions
-  const trimmed = sessions.slice(0, 20);
-  localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(trimmed));
-}
-
-export function deleteChatSession(id: string): void {
-  const sessions = getChatSessions().filter((s) => s.id !== id);
-  localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(sessions));
-}
-
 // --- Meal Plan ---
 
 export interface MealSlot {
@@ -92,6 +57,16 @@ export type WeekPlan = Record<string, DayPlan>;
 
 const MEAL_PLAN_KEY = "crave_mealPlan";
 
+/**
+ * Fired after any saveMealPlan() write.
+ *
+ * AddToPlanDialog (reached from a recipe) wrote the plan without telling the
+ * planner page, so an open planner kept showing stale data until it remounted —
+ * add a dish from a recipe, switch to the Plan tab, and it was not there. Any
+ * new writer must go through saveMealPlan so this stays true.
+ */
+export const MEAL_PLAN_EVENT = "crave:meal-plan-changed";
+
 export function getMealPlan(): WeekPlan {
   if (typeof window === "undefined") return {};
   try {
@@ -104,6 +79,9 @@ export function getMealPlan(): WeekPlan {
 
 export function saveMealPlan(plan: WeekPlan): void {
   localStorage.setItem(MEAL_PLAN_KEY, JSON.stringify(plan));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(MEAL_PLAN_EVENT));
+  }
 }
 
 // --- Meal Log (tracker) ---

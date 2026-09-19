@@ -50,30 +50,30 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+      style={{ background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)", backdropFilter: "blur(8px)" }}
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="w-full sm:max-w-md"
         style={{
-          background: "var(--cc-surface)",
+          background: "var(--m-card)",
           borderRadius: "20px 20px 0 0",
-          border: "1px solid var(--cc-border)",
+          border: "1px solid var(--m-ink-faint)",
         }}
       >
         <div
           className="flex items-start justify-between px-5 py-4"
-          style={{ borderBottom: "1px solid var(--cc-border)" }}
+          style={{ borderBottom: "1px solid var(--m-ink-faint)" }}
         >
           <div className="min-w-0 pr-2">
-            <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: 700, color: "var(--m-ink)" }}>
               Add to plan
             </h2>
             <p
               style={{
                 fontSize: "12px",
-                color: "var(--cc-text-tertiary)",
+                color: "var(--m-ink-soft)",
                 marginTop: "2px",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -86,7 +86,7 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
           <button
             onClick={onClose}
             className="p-1.5 rounded-full flex-shrink-0"
-            style={{ color: "var(--cc-text-tertiary)", background: "var(--cc-surface-2)" }}
+            style={{ color: "var(--m-ink-soft)", background: "var(--m-cream-2)" }}
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -104,9 +104,9 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
                   style={{
                     fontSize: "11px",
                     fontWeight: 600,
-                    background: day === d ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                    color: day === d ? "#fff" : "var(--cc-text-secondary)",
-                    border: day === d ? "1px solid var(--cc-accent)" : "1px solid var(--cc-border)",
+                    background: day === d ? "var(--m-forest)" : "var(--m-cream-2)",
+                    color: day === d ? "var(--m-on-deep)" : "var(--m-ink-soft)",
+                    border: day === d ? "1px solid var(--m-forest)" : "1px solid var(--m-ink-faint)",
                     borderRadius: "8px",
                   }}
                 >
@@ -126,10 +126,10 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
                   style={{
                     fontSize: "12px",
                     fontWeight: 600,
-                    background: mealType === mt ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                    color: mealType === mt ? "#fff" : "var(--cc-text-secondary)",
+                    background: mealType === mt ? "var(--m-forest)" : "var(--m-cream-2)",
+                    color: mealType === mt ? "var(--m-on-deep)" : "var(--m-ink-soft)",
                     border:
-                      mealType === mt ? "1px solid var(--cc-accent)" : "1px solid var(--cc-border)",
+                      mealType === mt ? "1px solid var(--m-forest)" : "1px solid var(--m-ink-faint)",
                     borderRadius: "980px",
                   }}
                 >
@@ -143,21 +143,21 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
             <div
               className="px-3 py-2.5"
               style={{
-                background: "rgba(255,159,10,0.10)",
-                border: "1px solid rgba(255,159,10,0.30)",
+                background: "var(--m-tint-peach)",
+                border: "1.5px solid color-mix(in srgb, var(--m-burnt) 32%, transparent)",
                 borderRadius: "10px",
-                color: "var(--cc-text-secondary)",
+                color: "var(--m-ink-soft)",
                 fontSize: "12px",
               }}
             >
-              Replaces <strong style={{ color: "var(--cc-text-primary)" }}>{existing.dish}</strong> in this slot.
+              Replaces <strong style={{ color: "var(--m-ink)" }}>{existing.dish}</strong> in this slot.
             </div>
           )}
         </div>
 
         <div
           className="px-5 py-4 flex gap-2 justify-end"
-          style={{ borderTop: "1px solid var(--cc-border)" }}
+          style={{ borderTop: "1px solid var(--m-ink-faint)" }}
         >
           <button
             onClick={onClose}
@@ -165,7 +165,7 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
             style={{
               fontSize: "13px",
               fontWeight: 600,
-              color: "var(--cc-text-secondary)",
+              color: "var(--m-ink-soft)",
               borderRadius: "980px",
             }}
           >
@@ -177,7 +177,7 @@ export function AddToPlanDialog({ open, recipe, onClose, onAdded }: Props) {
             style={{
               fontSize: "13px",
               fontWeight: 600,
-              background: "var(--cc-accent)",
+              background: "var(--m-forest)",
               borderRadius: "980px",
             }}
           >
@@ -197,7 +197,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
         style={{
           fontSize: "11px",
           fontWeight: 700,
-          color: "var(--cc-text-tertiary)",
+          color: "var(--m-ink-soft)",
           textTransform: "uppercase",
           letterSpacing: "0.04em",
           marginBottom: "8px",

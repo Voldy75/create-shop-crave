@@ -1,21 +1,24 @@
-import { createClient } from "@/lib/supabase/server";
-import { clearToken, getStoredToken } from "@/lib/swiggy-mcp";
-import { revokeToken } from "@/lib/swiggy-oauth";
+import { requireUser } from "@/lib/auth-guard";
+import { getProvider } from "@/lib/mcp/registry";
+import { getConnection, deleteConnection } from "@/lib/mcp/connections";
+import { revokeToken } from "@/lib/mcp/oauth";
 
 export const maxDuration = 10;
 
-/** Revoke at Swiggy + delete the local row. */
+/** Revoke at the provider + delete the local row. */
 export async function POST() {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireUser();
+  if (guard instanceof Response) return guard;
+  const { user } = guard;
 
-  const existing = await getStoredToken(user.id);
-  if (existing) {
-    await revokeToken(existing.accessToken); // best-effort
+  const provider = await getProvider("swiggy");
+  const existing = await getConnection(user.id, "swiggy");
+
+  if (existing && provider) {
+    await revokeToken(provider, existing.accessToken); // best-effort
   }
-  await clearToken(user.id);
+  // Delete regardless: a failed remote revoke must not leave a local row the
+  // user believes they disconnected.
+  await deleteConnection(user.id, "swiggy");
   return Response.json({ ok: true });
 }

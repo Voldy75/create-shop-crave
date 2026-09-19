@@ -67,6 +67,32 @@ export function lastNDates(n: number, end: Date = new Date()): string[] {
 }
 
 /**
+ * Consecutive-day logging streak ending today (or yesterday — so the streak
+ * doesn't visually "break" before the user has logged anything today). Counts
+ * back from today while each calendar day has at least one meal logged. Pure:
+ * derives only from the logs' dates.
+ */
+export function loggingStreak(logs: MealLog[], today: Date = new Date()): number {
+  if (logs.length === 0) return 0;
+  const logged = new Set(logs.map((l) => l.date));
+  const todayKey = localDateKey(today);
+  const yesterdayKey = localDateKey(new Date(today.getTime() - 86_400_000));
+  // Anchor: if nothing logged today yet, start counting from yesterday so an
+  // existing streak still shows until the day actually lapses.
+  let cursor: Date;
+  if (logged.has(todayKey)) cursor = today;
+  else if (logged.has(yesterdayKey)) cursor = new Date(today.getTime() - 86_400_000);
+  else return 0;
+
+  let streak = 0;
+  while (logged.has(localDateKey(cursor))) {
+    streak++;
+    cursor = new Date(cursor.getTime() - 86_400_000);
+  }
+  return streak;
+}
+
+/**
  * 42-cell month grid (6 weeks × 7 days), Monday-first.
  * Includes trailing days from previous month and leading from next month so
  * the calendar always renders as a clean rectangle.

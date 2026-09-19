@@ -1,5 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { getStoredToken, isExpired } from "@/lib/swiggy-mcp";
+import { requireUser } from "@/lib/auth-guard";
+import { getProvider, clientIdFor } from "@/lib/mcp/registry";
+import { getConnection, isExpired } from "@/lib/mcp/connections";
 
 export const maxDuration = 5;
 
@@ -8,21 +9,21 @@ export const maxDuration = 5;
  *   { connected: false }
  *   { connected: true, expiresAt, expiringWithin24h, expired }
  *
- * Doesn't leak the access token to the browser — just the metadata.
+ * Doesn't leak the access token to the browser — just the metadata. (The
+ * mcp_connections column grants enforce that at the DB level too, so even a
+ * direct PostgREST read cannot return access_token.)
  */
 export async function GET() {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireUser();
+  if (guard instanceof Response) return guard;
+  const { user } = guard;
 
-  const token = await getStoredToken(user.id);
+  const provider = await getProvider("swiggy");
+  const configured = Boolean(provider && clientIdFor(provider));
+
+  const token = await getConnection(user.id, "swiggy");
   if (!token) {
-    return Response.json({
-      connected: false,
-      configured: Boolean(process.env.SWIGGY_CLIENT_ID),
-    });
+    return Response.json({ connected: false, configured });
   }
 
   const expired = isExpired(token);
@@ -32,6 +33,6 @@ export async function GET() {
     expiresAt: token.expiresAt,
     expiringWithin24h: !expired && ms < 24 * 60 * 60 * 1000,
     expired,
-    configured: true,
+    configured,
   });
 }

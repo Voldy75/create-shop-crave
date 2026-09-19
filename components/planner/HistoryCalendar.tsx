@@ -14,28 +14,32 @@ interface Props {
 const DOW = ["M", "T", "W", "T", "F", "S", "S"];
 
 /**
- * Background intensity scale by % of daily calorie goal:
- *  - 0%        → blank surface
- *  - 1–60%     → faint accent
- *  - 60–90%    → medium accent
- *  - 90–110%   → full accent
- *  - >110%     → red
+ * Intensity scale by % of daily calorie goal.
+ *
+ * The old scale ramped through tints of the retired Midnight Kitchen orange,
+ * so this grid was the last place on the tracker still painting that brand.
+ * It now ramps the meshi greens — pale tint → lime → forest — which reads as
+ * "closer to goal" the way the old one did, with red still reserved for over.
+ *
+ * Background and foreground are returned together: the old version re-derived
+ * the text colour by string-comparing the background, which silently breaks
+ * the moment a value is edited.
  */
-function intensityBg(cal: number, goal: number): string {
-  if (cal <= 0) return "var(--cc-surface-2)";
+function intensity(cal: number, goal: number): { bg: string; fg: string } {
+  if (cal <= 0) return { bg: "var(--m-cream-2)", fg: "var(--m-ink-soft)" };
   const pct = cal / Math.max(goal, 1);
-  if (pct > 1.1) return "rgba(255, 69, 58, 0.7)";
-  if (pct >= 0.9) return "var(--cc-accent)";
-  if (pct >= 0.6) return "rgba(255, 107, 53, 0.45)";
-  return "rgba(255, 107, 53, 0.18)";
+  if (pct > 1.1) return { bg: "var(--m-red)", fg: "var(--m-on-deep)" };
+  if (pct >= 0.9) return { bg: "var(--m-forest)", fg: "var(--m-on-deep)" };
+  if (pct >= 0.6) return { bg: "var(--m-lime)", fg: "var(--m-forest-2)" };
+  return { bg: "var(--m-tint-green)", fg: "var(--m-ink)" };
 }
 
-function fgFor(bg: string): string {
-  // White text on full-color backgrounds; dim on the faintest fill
-  if (bg === "rgba(255, 107, 53, 0.18)") return "var(--cc-text-secondary)";
-  if (bg === "var(--cc-surface-2)") return "var(--cc-text-tertiary)";
-  return "#ffffff";
-}
+const LEGEND: { bg: string; label: string }[] = [
+  { bg: "var(--m-tint-green)", label: "< 60%" },
+  { bg: "var(--m-lime)", label: "60–90%" },
+  { bg: "var(--m-forest)", label: "At goal" },
+  { bg: "var(--m-red)", label: "Over" },
+];
 
 export function HistoryCalendar({ byDay, goal, selectedDate, onSelectDate }: Props) {
   const today = new Date();
@@ -71,48 +75,37 @@ export function HistoryCalendar({ byDay, goal, selectedDate, onSelectDate }: Pro
   const monthLabel = `${MONTH_NAMES[cursor.month]} ${cursor.year}`;
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between" style={{ marginBottom: "12px" }}>
-        <div className="flex items-center gap-1">
+    <div style={{ width: "100%" }}>
+      <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
+        <div className="hstack" style={{ gap: 2 }}>
           <button
             onClick={goPrev}
-            className="p-1.5 transition-colors"
-            style={{ borderRadius: "999px", color: "var(--cc-text-secondary)" }}
+            className="icon-btn"
+            style={{ width: 30, height: 30, borderRadius: 9, boxShadow: "none", background: "transparent" }}
             aria-label="Previous month"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft width={16} height={16} />
           </button>
-          <h3 style={{ fontSize: "14px", fontWeight: 700, color: "var(--cc-text-primary)", minWidth: "140px", textAlign: "center" }}>
-            {monthLabel}
-          </h3>
+          <span className="t-h2" style={{ minWidth: 140, textAlign: "center" }}>{monthLabel}</span>
           <button
             onClick={goNext}
-            className="p-1.5 transition-colors"
-            style={{ borderRadius: "999px", color: "var(--cc-text-secondary)" }}
+            className="icon-btn"
+            style={{ width: 30, height: 30, borderRadius: 9, boxShadow: "none", background: "transparent" }}
             aria-label="Next month"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight width={16} height={16} />
           </button>
         </div>
-        <span style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
-          {loggedDaysInMonth > 0 ? `${loggedDaysInMonth} logged · ${monthTotal.toLocaleString()} kcal` : "No logs this month"}
+        <span className="t-cap">
+          {loggedDaysInMonth > 0
+            ? `${loggedDaysInMonth} logged · ${monthTotal.toLocaleString()} kcal`
+            : "No logs this month"}
         </span>
       </div>
 
-      <div className="grid grid-cols-7 gap-1" style={{ marginBottom: "4px" }}>
+      <div className="grid grid-cols-7 gap-1" style={{ marginBottom: 4 }}>
         {DOW.map((d, i) => (
-          <div
-            key={i}
-            className="text-center"
-            style={{
-              fontSize: "10px",
-              fontWeight: 700,
-              color: "var(--cc-text-tertiary)",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              padding: "4px 0",
-            }}
-          >
+          <div key={i} className="t-micro" style={{ textAlign: "center", padding: "4px 0" }}>
             {d}
           </div>
         ))}
@@ -120,10 +113,8 @@ export function HistoryCalendar({ byDay, goal, selectedDate, onSelectDate }: Pro
 
       <div className="grid grid-cols-7 gap-1">
         {cells.map((cell) => {
-          const totals = byDay[cell.date];
-          const cal = totals?.calories || 0;
-          const bg = intensityBg(cal, goal);
-          const fg = fgFor(bg);
+          const cal = byDay[cell.date]?.calories || 0;
+          const { bg, fg } = intensity(cal, goal);
           const isSelected = cell.date === selectedDate;
           const day = parseInt(cell.date.split("-")[2], 10);
           const isFuture = cell.date > new Date().toISOString().split("T")[0];
@@ -137,18 +128,21 @@ export function HistoryCalendar({ byDay, goal, selectedDate, onSelectDate }: Pro
                 background: cell.inMonth ? bg : "transparent",
                 opacity: cell.inMonth ? (isFuture ? 0.3 : 1) : 0.35,
                 color: fg,
-                border: isSelected ? "2px solid var(--cc-text-primary)" : cell.isToday ? "1px solid var(--cc-text-secondary)" : "1px solid transparent",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: cal > 0 ? 700 : 500,
+                border: isSelected
+                  ? "2px solid var(--m-ink)"
+                  : cell.isToday
+                    ? "1.5px solid var(--m-ink-soft)"
+                    : "1.5px solid transparent",
+                borderRadius: 10,
+                font: `${cal > 0 ? 800 : 600} 12px var(--m-font-display)`,
                 cursor: isFuture ? "not-allowed" : "pointer",
-                minHeight: "36px",
+                minHeight: 36,
               }}
               aria-label={cell.date + (cal > 0 ? ` · ${cal} kcal` : "")}
             >
               <span>{day}</span>
               {cal > 0 && (
-                <span style={{ fontSize: "8px", fontWeight: 500, opacity: 0.85 }}>
+                <span style={{ fontSize: 8, fontWeight: 600, opacity: 0.85 }}>
                   {cal >= 1000 ? `${(cal / 1000).toFixed(1)}k` : cal}
                 </span>
               )}
@@ -157,22 +151,15 @@ export function HistoryCalendar({ byDay, goal, selectedDate, onSelectDate }: Pro
         })}
       </div>
 
-      <div className="flex items-center gap-3 mt-3" style={{ fontSize: "10px", color: "var(--cc-text-tertiary)" }}>
-        <span>Intensity:</span>
-        <Legend bg="rgba(255, 107, 53, 0.18)" label="< 60%" />
-        <Legend bg="rgba(255, 107, 53, 0.45)" label="60–90%" />
-        <Legend bg="var(--cc-accent)" label="At goal" />
-        <Legend bg="rgba(255, 69, 58, 0.7)" label="Over" />
+      <div className="hstack" style={{ gap: 12, marginTop: 12, flexWrap: "wrap" }}>
+        <span className="t-cap">Intensity:</span>
+        {LEGEND.map(({ bg, label }) => (
+          <span key={label} className="hstack" style={{ gap: 5 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: bg }} />
+            <span className="t-cap">{label}</span>
+          </span>
+        ))}
       </div>
     </div>
-  );
-}
-
-function Legend({ bg, label }: { bg: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1">
-      <span style={{ width: "10px", height: "10px", borderRadius: "3px", background: bg }} />
-      {label}
-    </span>
   );
 }

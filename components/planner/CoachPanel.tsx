@@ -35,6 +35,8 @@ interface DietChartResponse {
 interface Props {
   isSignedIn: boolean;
   dietaryPreferences: string[];
+  /** Soft taste signal. Threaded from the planner, which owns UserContext. */
+  favoriteCuisines: string[];
   weekPlan: WeekPlan;
   onPlanUpdated: (plan: WeekPlan) => void;
 }
@@ -43,9 +45,9 @@ const SEVERITY_STYLE: Record<
   Insight["severity"],
   { color: string; bg: string; icon: React.ComponentType<{ className?: string }> }
 > = {
-  info: { color: "#0a84ff", bg: "rgba(10,132,255,0.10)", icon: Info },
-  nudge: { color: "var(--cc-accent)", bg: "rgba(255,107,53,0.10)", icon: Lightbulb },
-  warn: { color: "#ff9f0a", bg: "rgba(255,159,10,0.10)", icon: AlertTriangle },
+  info: { color: "var(--m-plum)", bg: "var(--m-tint-lav)", icon: Info },
+  nudge: { color: "var(--m-forest)", bg: "var(--m-tint-green)", icon: Lightbulb },
+  warn: { color: "var(--m-burnt)", bg: "var(--m-tint-peach)", icon: AlertTriangle },
 };
 
 // Sort priority: lower = earlier. warn first so users see action items above the fold.
@@ -55,7 +57,7 @@ const SEVERITY_ORDER: Record<Insight["severity"], number> = {
   info: 2,
 };
 
-function buildPayload(logs: MealLog[], goals: NutritionGoals, dietaryPreferences: string[]) {
+function buildPayload(logs: MealLog[], goals: NutritionGoals, dietaryPreferences: string[], favoriteCuisines: string[]) {
   // Limit to last 7 days to keep tokens cheap
   const cutoffSet = new Set(lastNDates(7));
   const trimmed = logs
@@ -80,10 +82,13 @@ function buildPayload(logs: MealLog[], goals: NutritionGoals, dietaryPreferences
       goal: goals.goal,
     },
     dietaryPreferences,
+    // Soft taste signal — kept separate from the strict dietary array on
+    // purpose; see lib/taste-prompt.ts.
+    favoriteCuisines,
   };
 }
 
-export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpdated }: Props) {
+export function CoachPanel({ isSignedIn, dietaryPreferences, favoriteCuisines, weekPlan, onPlanUpdated }: Props) {
   const [insights, setInsights] = useState<Insight[] | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [insightsError, setInsightsError] = useState<string | null>(null);
@@ -104,7 +109,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
     if (!goals) {
       throw new Error("Set your daily goals first.");
     }
-    const payload = { mode, ...buildPayload(logs, goals, dietaryPreferences) };
+    const payload = { mode, ...buildPayload(logs, goals, dietaryPreferences, favoriteCuisines) };
     const res = await fetch("/api/coach", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -127,7 +132,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
       const logs = getMealLogs();
       const goals = getNutritionGoals();
       if (!goals) throw Object.assign(new Error("Set your daily goals first."), { code: "missing_goals" });
-      const payload = { mode: "insights" as const, ...buildPayload(logs, goals, dietaryPreferences) };
+      const payload = { mode: "insights" as const, ...buildPayload(logs, goals, dietaryPreferences, favoriteCuisines) };
       const res = await fetch("/api/coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -218,16 +223,11 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
   if (!isSignedIn) {
     return (
       <div
-        className="flex flex-col items-center text-center px-6 py-16"
-        style={{
-          background: "var(--cc-surface)",
-          border: "1px solid var(--cc-border)",
-          borderRadius: "16px",
-          color: "var(--cc-text-secondary)",
-        }}
+        className="card flex flex-col items-center text-center px-6 py-16"
+        style={{ color: "var(--m-ink-soft)" }}
       >
-        <Lock className="w-6 h-6" style={{ color: "var(--cc-text-tertiary)", marginBottom: "10px" }} />
-        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+        <Lock className="w-6 h-6" style={{ color: "var(--m-ink-soft)", marginBottom: "10px" }} />
+        <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--m-ink)" }}>
           Sign in to use Coach
         </h3>
         <p style={{ fontSize: "13px", marginTop: "6px", maxWidth: "340px" }}>
@@ -241,19 +241,14 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
     <div className="flex flex-col gap-6">
       {/* Insights card */}
       <div
-        className="p-5 sm:p-6"
-        style={{
-          background: "var(--cc-surface)",
-          border: "1px solid var(--cc-border)",
-          borderRadius: "16px",
-        }}
+        className="card p-5 sm:p-6"
       >
         <div className="flex items-start justify-between gap-3" style={{ marginBottom: "12px" }}>
           <div>
-            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--m-ink)" }}>
               Insights
             </h3>
-            <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)", marginTop: "2px" }}>
+            <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "2px" }}>
               Specific observations from the last 7 days of logs.
             </p>
           </div>
@@ -262,7 +257,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               onClick={handleGenerateInsights}
               disabled={insightsLoading}
               className="p-2 rounded-full transition-colors"
-              style={{ background: "var(--cc-surface-2)", color: "var(--cc-text-secondary)" }}
+              style={{ background: "var(--m-cream-2)", color: "var(--m-ink-soft)" }}
               aria-label="Refresh insights"
             >
               {insightsLoading ? (
@@ -278,10 +273,10 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
           <div
             className="flex items-start gap-2 p-3"
             style={{
-              background: "rgba(255,69,58,0.08)",
-              border: "1px solid rgba(255,69,58,0.3)",
+              background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+              border: "1.5px solid color-mix(in srgb, var(--m-red) 32%, transparent)",
               borderRadius: "10px",
-              color: "#ff453a",
+              color: "var(--m-red)",
               marginBottom: "12px",
             }}
           >
@@ -293,24 +288,22 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
         {!insights && !insightsLoading && (
           <div className="flex flex-col items-start gap-3">
             {!dataReady && (
-              <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)" }}>
+              <p style={{ fontSize: "12px", color: "var(--m-ink-soft)" }}>
                 Log a couple of meals first so Coach has something to work with.
               </p>
             )}
             <button
               onClick={handleGenerateInsights}
               disabled={!dataReady}
-              className="flex items-center gap-1.5 px-4 py-2 text-white transition-colors"
+              className="xbtn xbtn-f"
               style={{
-                fontSize: "13px",
-                fontWeight: 600,
-                background: dataReady ? "var(--cc-accent)" : "var(--cc-surface-2)",
-                color: dataReady ? "#fff" : "var(--cc-text-tertiary)",
-                borderRadius: "980px",
+                background: dataReady ? "var(--m-forest)" : "var(--m-cream-2)",
+                color: dataReady ? "var(--m-on-deep)" : "var(--m-ink-soft)",
+                boxShadow: dataReady ? undefined : "none",
                 cursor: dataReady ? "pointer" : "not-allowed",
               }}
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="xspk w-4 h-4" />
               Generate insights
             </button>
           </div>
@@ -322,10 +315,10 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               <div
                 className="flex items-center gap-2 px-3 py-3"
                 style={{
-                  background: "var(--cc-surface-2)",
-                  border: "1px solid var(--cc-border)",
+                  background: "var(--m-cream-2)",
+                  border: "1px solid var(--m-ink-faint)",
                   borderRadius: "12px",
-                  color: "var(--cc-text-secondary)",
+                  color: "var(--m-ink-soft)",
                 }}
               >
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -356,10 +349,10 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--m-ink)" }}>
                       {ins.title}
                     </p>
-                    <p style={{ fontSize: "12px", color: "var(--cc-text-secondary)", marginTop: "2px", lineHeight: 1.45 }}>
+                    <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "2px", lineHeight: 1.45 }}>
                       {ins.body}
                     </p>
                   </div>
@@ -370,10 +363,10 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               <div
                 className="flex items-center gap-2 px-3 py-3"
                 style={{
-                  background: "var(--cc-surface-2)",
-                  border: "1px dashed var(--cc-border-strong)",
+                  background: "var(--m-cream-2)",
+                  border: "1px dashed var(--m-ink-faint)",
                   borderRadius: "12px",
-                  color: "var(--cc-text-tertiary)",
+                  color: "var(--m-ink-soft)",
                 }}
               >
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -386,33 +379,28 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
 
       {/* Diet chart card */}
       <div
-        className="p-5 sm:p-6"
-        style={{
-          background: "var(--cc-surface)",
-          border: "1px solid var(--cc-border)",
-          borderRadius: "16px",
-        }}
+        className="card p-5 sm:p-6"
       >
         <div className="flex items-start justify-between gap-3" style={{ marginBottom: "12px" }}>
           <div>
-            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
+            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--m-ink)" }}>
               7-day diet chart
             </h3>
-            <p style={{ fontSize: "12px", color: "var(--cc-text-tertiary)", marginTop: "2px" }}>
+            <p style={{ fontSize: "12px", color: "var(--m-ink-soft)", marginTop: "2px" }}>
               Personalized to your goal, dietary prefs, and recent intake. One tap to apply to the planner.
             </p>
           </div>
-          <ChefHat className="w-5 h-5" style={{ color: "var(--cc-accent)" }} />
+          <ChefHat className="w-5 h-5" style={{ color: "var(--m-forest)" }} />
         </div>
 
         {chartError && (
           <div
             className="flex items-start gap-2 p-3"
             style={{
-              background: "rgba(255,69,58,0.08)",
-              border: "1px solid rgba(255,69,58,0.3)",
+              background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
+              border: "1.5px solid color-mix(in srgb, var(--m-red) 32%, transparent)",
               borderRadius: "10px",
-              color: "#ff453a",
+              color: "var(--m-red)",
               marginBottom: "12px",
             }}
           >
@@ -425,13 +413,11 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
           <button
             onClick={handleGenerateChart}
             disabled={chartLoading}
-            className="flex items-center gap-1.5 px-4 py-2 text-white transition-colors"
+            className="xbtn xbtn-l"
             style={{
-              fontSize: "13px",
-              fontWeight: 600,
-              background: chartLoading ? "var(--cc-surface-2)" : "var(--cc-accent)",
-              color: chartLoading ? "var(--cc-text-tertiary)" : "#fff",
-              borderRadius: "980px",
+              background: chartLoading ? "var(--m-cream-2)" : "var(--m-lime)",
+              color: chartLoading ? "var(--m-ink-soft)" : "var(--m-forest-2)",
+              boxShadow: chartLoading ? "none" : undefined,
               cursor: chartLoading ? "not-allowed" : "pointer",
             }}
           >
@@ -442,7 +428,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
               </>
             ) : (
               <>
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="xspk w-4 h-4" />
                 {chart ? "Generate again" : "Generate plan"}
               </>
             )}
@@ -450,15 +436,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, weekPlan, onPlanUpd
           {chart && !chartOpen && (
             <button
               onClick={() => setChartOpen(true)}
-              className="px-4 py-2 transition-colors"
-              style={{
-                fontSize: "13px",
-                fontWeight: 600,
-                background: "var(--cc-surface-2)",
-                color: "var(--cc-text-primary)",
-                border: "1px solid var(--cc-border)",
-                borderRadius: "980px",
-              }}
+              className="chip"
             >
               View last plan
             </button>

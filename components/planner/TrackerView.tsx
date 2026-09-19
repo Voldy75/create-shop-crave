@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Plus, Settings } from "lucide-react";
+import { Camera, Settings } from "lucide-react";
 import {
   deleteMealLog,
   getMealLogs,
@@ -10,7 +10,6 @@ import {
   saveNutritionGoals,
   takePendingMealLog,
   updateMealLog,
-  type PendingMealLog,
   type WeekPlan,
 } from "@/lib/storage";
 import {
@@ -19,7 +18,7 @@ import {
   localDateKey,
   logsByDay,
 } from "@/lib/nutrition";
-import type { MealLog, NutritionGoals } from "@/lib/types";
+import type { MealLog, MealType, NutritionGoals } from "@/lib/types";
 import { deleteMealLogRemote, pushMealLog, pushNutritionGoals } from "@/lib/meal-sync";
 import { TRACKER_SYNC_EVENT } from "@/app/context/UserContext";
 import { CalorieRing } from "./CalorieRing";
@@ -38,12 +37,44 @@ const DEFAULT_GOALS: NutritionGoals = {
   goal: "maintain",
 };
 
+/**
+ * Everything LogMealSheet's own `Prefill` accepts. Declared here because that
+ * type is not exported and a "Log now" row only ever supplies a meal type —
+ * `PendingMealLog` cannot express that, since it requires a name and macros.
+ */
+type SheetPrefill = {
+  name?: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  source?: MealLog["source"];
+  mealType?: MealType;
+  notes?: string;
+};
+
 interface Props {
   weekPlan: WeekPlan;
   isSignedIn: boolean;
   autoOpenLog?: boolean;
 }
 
+/**
+ * Tracker — artboard w4b.
+ *
+ * Layout is the artboard's: a two-up row of [calorie ring + macros] and [week
+ * chart], then a full-width meals card below. On the artboard that row is a
+ * fixed `wgrid2`; here it collapses to one column under 900px, because the
+ * ring and the seven-bar chart both stop being readable side by side well
+ * before the sidebar breakpoint.
+ *
+ * Two controls the artboard does not draw are kept, because removing them
+ * would remove the only way to reach a real feature:
+ *   - **Goals** (the gear by the headline) — nothing else sets the targets
+ *     every number on this screen is measured against.
+ *   - **week / month** — the month calendar is the only route to a past day
+ *     outside the last seven.
+ */
 export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props) {
   const today = useMemo(() => localDateKey(), []);
   const weekDates = useMemo(() => lastNDates(7), []);
@@ -53,8 +84,9 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [pendingPrefill, setPendingPrefill] = useState<PendingMealLog | null>(null);
+  const [pendingPrefill, setPendingPrefill] = useState<SheetPrefill | null>(null);
   const [editingLog, setEditingLog] = useState<MealLog | null>(null);
+  const [historyMode, setHistoryMode] = useState<"week" | "month">("week");
 
   useEffect(() => {
     // localStorage hydration on mount — the setState-in-effect rule doesn't apply
@@ -90,8 +122,6 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
 
   const effectiveGoals = goals ?? DEFAULT_GOALS;
 
-  const [historyMode, setHistoryMode] = useState<"week" | "month">("week");
-
   const todaysLogs = useMemo(
     () => logs.filter((l) => l.date === selectedDate),
     [logs, selectedDate],
@@ -105,6 +135,18 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
     const allDates = Array.from(new Set(logs.map((l) => l.date)));
     return logsByDay(logs, allDates);
   }, [logs]);
+
+  /**
+   * The week average, and the day count it covers. Stating the count matters:
+   * "avg 1,820 kcal" across a 7-day chart with 3 days logged is a quietly
+   * misleading number — the same decision the mobile week screen took.
+   */
+  const weekAvg = useMemo(() => {
+    const logged = weekDates.filter((d) => (byDay[d]?.calories || 0) > 0);
+    if (logged.length === 0) return null;
+    const sum = logged.reduce((s, d) => s + (byDay[d]?.calories || 0), 0);
+    return { avg: Math.round(sum / logged.length), days: logged.length };
+  }, [weekDates, byDay]);
 
   const handleSaveLog = (input: Omit<MealLog, "id" | "loggedAt">) => {
     const saved = saveMealLog(input);
@@ -134,62 +176,52 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
     if (isSignedIn) pushNutritionGoals(next).catch(() => {});
   };
 
+  const openSheet = (prefill: SheetPrefill | null) => {
+    setEditingLog(null);
+    setPendingPrefill(prefill);
+    setSheetOpen(true);
+  };
+
   if (!hydrated) {
-    // Three card-shaped skeletons matching the final layout. Pulses gently to
-    // signal loading without showing a bare spinner.
     return (
-      <div className="flex flex-col gap-6">
-        <SkeletonCard heightPx={210} />
-        <SkeletonCard heightPx={200} />
+      <div className="vstack" style={{ gap: 18 }}>
+        <div className="tracker-grid">
+          <SkeletonCard heightPx={194} />
+          <SkeletonCard heightPx={194} />
+        </div>
         <SkeletonCard heightPx={260} />
       </div>
     );
   }
 
   const isToday = selectedDate === today;
+  const left = effectiveGoals.dailyCalories - totals.calories;
+  const over = left < 0;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Top: ring + macros + actions */}
-      <div
-        className="p-5 sm:p-6"
-        style={{
-          background: "var(--cc-surface)",
-          borderRadius: "16px",
-          border: "1px solid var(--cc-border)",
-        }}
-      >
-        <div className="flex items-start justify-between gap-4" style={{ marginBottom: "16px" }}>
-          <div>
-            <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--cc-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-              {isToday ? "Today" : selectedDate}
-            </p>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "var(--cc-text-primary)", marginTop: "2px" }}>
-              {totals.calories} <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--cc-text-tertiary)" }}>kcal logged</span>
-            </h2>
-          </div>
-          <button
-            onClick={() => setGoalsOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 transition-colors flex-shrink-0"
-            style={{
-              fontSize: "12px",
-              fontWeight: 600,
-              color: "var(--cc-text-secondary)",
-              background: "var(--cc-surface-2)",
-              border: "1px solid var(--cc-border)",
-              borderRadius: "980px",
-              minHeight: "32px",
-            }}
-            aria-label="Edit goals"
-          >
-            <Settings className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Goals</span>
-          </button>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center sm:items-stretch gap-6">
+    <div className="vstack" style={{ gap: 18 }}>
+      <div className="tracker-grid">
+        {/* ── Ring + macros ── */}
+        <div className="card" style={{ padding: 22, display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>
           <CalorieRing consumed={totals.calories} goal={effectiveGoals.dailyCalories} />
-          <div className="flex-1 w-full flex flex-col justify-center">
+          <div className="vstack grow" style={{ gap: 14, minWidth: 190 }}>
+            <div className="hstack" style={{ justifyContent: "space-between", gap: 8 }}>
+              <span className="t-h1">
+                {over ? "Over by: " : "Calories left: "}
+                <span style={{ color: over ? "var(--m-red)" : "var(--m-forest)" }}>
+                  {Math.abs(left).toLocaleString()}
+                </span>
+              </span>
+              <button
+                onClick={() => setGoalsOpen(true)}
+                className="icon-btn"
+                style={{ width: 34, height: 34, borderRadius: 11, flex: "none" }}
+                aria-label="Edit goals"
+                title="Edit goals"
+              >
+                <Settings width={16} height={16} />
+              </button>
+            </div>
             <MacroBars
               protein={{ current: totals.protein, goal: effectiveGoals.protein }}
               carbs={{ current: totals.carbs, goal: effectiveGoals.carbs }}
@@ -197,90 +229,60 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
             />
           </div>
         </div>
-      </div>
 
-      {/* History (week or month) */}
-      <div
-        className="p-5 sm:p-6"
-        style={{
-          background: "var(--cc-surface)",
-          borderRadius: "16px",
-          border: "1px solid var(--cc-border)",
-        }}
-      >
-        <div className="flex justify-end" style={{ marginBottom: "12px" }}>
-          <div
-            role="tablist"
-            className="inline-flex p-0.5 gap-0.5"
-            style={{
-              background: "var(--cc-surface-2)",
-              border: "1px solid var(--cc-border)",
-              borderRadius: "999px",
-            }}
-          >
-            {(["week", "month"] as const).map((m) => (
-              <button
-                key={m}
-                role="tab"
-                aria-selected={historyMode === m}
-                onClick={() => setHistoryMode(m)}
-                className="px-3 py-1 capitalize transition-colors"
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  background: historyMode === m ? "var(--cc-accent)" : "transparent",
-                  color: historyMode === m ? "#fff" : "var(--cc-text-secondary)",
-                  borderRadius: "999px",
-                }}
-              >
-                {m}
-              </button>
-            ))}
+        {/* ── Week chart / month calendar ── */}
+        <div className="card" style={{ padding: 22, display: "flex", flexDirection: "column" }}>
+          <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 16, gap: 10, flexWrap: "wrap" }}>
+            <span className="t-h1">{historyMode === "week" ? "This week" : "History"}</span>
+            <div className="hstack" style={{ gap: 10 }}>
+              {historyMode === "week" && (
+                <span className="t-cap" style={{ color: "var(--m-forest)" }}>
+                  {weekAvg
+                    ? `avg ${weekAvg.avg.toLocaleString()} · ${weekAvg.days} day${weekAvg.days === 1 ? "" : "s"}`
+                    : "nothing logged yet"}
+                </span>
+              )}
+              <div className="seg" role="group" aria-label="History range">
+                {(["week", "month"] as const).map((m) => (
+                  <button
+                    key={m}
+                    className={historyMode === m ? "seg-on" : ""}
+                    aria-pressed={historyMode === m}
+                    onClick={() => setHistoryMode(m)}
+                    style={{ height: 28, padding: "0 12px", textTransform: "capitalize" }}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+          {historyMode === "week" ? (
+            <WeeklyChart
+              dates={weekDates}
+              byDay={byDay}
+              goal={effectiveGoals.dailyCalories}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+            />
+          ) : (
+            <HistoryCalendar
+              byDay={byDate}
+              goal={effectiveGoals.dailyCalories}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+            />
+          )}
         </div>
-        {historyMode === "week" ? (
-          <WeeklyChart
-            dates={weekDates}
-            byDay={byDay}
-            goal={effectiveGoals.dailyCalories}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-          />
-        ) : (
-          <HistoryCalendar
-            byDay={byDate}
-            goal={effectiveGoals.dailyCalories}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-          />
-        )}
       </div>
 
-      {/* Logged meals + add */}
-      <div
-        className="p-5 sm:p-6"
-        style={{
-          background: "var(--cc-surface)",
-          borderRadius: "16px",
-          border: "1px solid var(--cc-border)",
-        }}
-      >
-        <div className="flex items-center justify-between" style={{ marginBottom: "12px" }}>
-          <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--cc-text-primary)" }}>
-            {isToday ? "Today's meals" : "Meals"}
-          </h3>
-          <button
-            onClick={() => setSheetOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-white transition-colors"
-            style={{
-              fontSize: "13px",
-              fontWeight: 600,
-              background: "var(--cc-accent)",
-              borderRadius: "980px",
-            }}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Log meal
+      {/* ── Meals ── */}
+      <div className="card" style={{ padding: 20, display: "flex", flexDirection: "column" }}>
+        <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 14, gap: 10, flexWrap: "wrap" }}>
+          <span className="t-h1">{isToday ? "Today's meals" : `Meals · ${selectedDate}`}</span>
+          <button className="pill-primary pill-sm" style={{ gap: 8 }} onClick={() => openSheet(null)}>
+            <Camera width={16} height={16} />
+            Log a meal
           </button>
         </div>
         <MealLogList
@@ -291,6 +293,7 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
             setPendingPrefill(null);
             setSheetOpen(true);
           }}
+          onLog={(mealType) => openSheet({ mealType })}
         />
       </div>
 
@@ -323,13 +326,8 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
 function SkeletonCard({ heightPx }: { heightPx: number }) {
   return (
     <div
-      className="animate-pulse"
-      style={{
-        height: `${heightPx}px`,
-        background: "var(--cc-surface)",
-        border: "1px solid var(--cc-border)",
-        borderRadius: "16px",
-      }}
+      className="card animate-pulse"
+      style={{ height: `${heightPx}px`, background: "var(--m-cream-2)", boxShadow: "none" }}
     />
   );
 }
