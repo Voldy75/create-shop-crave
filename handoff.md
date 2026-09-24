@@ -2129,12 +2129,21 @@ the same false claim the earlier audit removed from the stats band. Now
   **No screenshot:** the landing's `whileInView` sections start at opacity 0
   and capture as a void in this harness (Dead End 2), so this is verified by
   measurement, not by eye.
-- **The forest band in LIGHT is still sub-AA** and is now the ONLY thing
-  between it and clean: `--band-text-tertiary` 4.04 (the STATS descriptions
-  and the hero tick list) and the 12px lime eyebrow 4.43. One token each —
-  tertiary needs alpha ≥ .68, the eyebrow needs a slightly lighter lime — but
-  both change the designed light band, so they wait for a yes.
-- **Brand marks, both themes:** Zomato's red wordmark on the plum strip 2.44;
+- ~~**The forest band in LIGHT**~~ — **FIXED 2026-09-24**, two tokens:
+  `--band-text-tertiary` 62% → **70%** on-deep (4.04 → 4.71 light, and 5.53 in
+  dark), and a new eyebrow value of **90% lime + 10% on-deep** (4.43 → 4.68
+  light, 5.72 dark) — still lime, just off the pure hue. `--band-accent` stays
+  PURE lime deliberately: it is also `.btn-pill-primary`'s BACKGROUND, and the
+  large display words beside the eyebrow already clear their 3:1.
+  **LAYERING TRAP, hit and fixed during this change:** the eyebrow value was
+  first written into the `.band-deep` block inside `@layer`, where the
+  UNLAYERED `.band-deep` rule further down silently beat it — dead code that
+  measured as no change. Band token values must go in the unlayered rule. This
+  is the same trap as `.side`, `.t-micro` and `.chat-input-bar` before it.
+  Verified on the real page: all 4 deep bands (forest ×3 + plum), 35 elements
+  per theme, text and icons — **zero band failures in either theme**.
+- **Brand marks, both themes — now the ONLY thing left on the landing:**
+  Zomato's red wordmark on the plum strip 2.44;
   the WhatsApp glyph (white on WhatsApp green) 1.98 on `/m/settings/notifications`.
   Brand-guideline territory, so flagged rather than recoloured.
 - Unchanged from before: light burnt text 3.61, `.badge-burnt` 2.87 dark, lime

@@ -371,7 +371,11 @@
      lime. */
   .band-deep {
     --band-text-secondary: color-mix(in srgb, var(--m-on-deep) 82%, transparent);
-    --band-text-tertiary: color-mix(in srgb, var(--m-on-deep) 62%, transparent);
+    /* 62% measured 4.05:1 on the LIGHT forest band — under AA for the 12px
+       STATS descriptions and the hero's tick list that use it. 70% gives 4.70
+       light / 5.70 on plum / 5.60 on the dark band, with the band still
+       reading as a clear three-step hierarchy against secondary's 82%. */
+    --band-text-tertiary: color-mix(in srgb, var(--m-on-deep) 70%, transparent);
     --band-border-strong: color-mix(in srgb, var(--m-on-deep) 28%, transparent);
     --band-accent: var(--m-lime);
     --band-accent-hover: var(--m-lime);
@@ -965,7 +969,16 @@
   --text-burnt:    color-mix(in srgb, var(--m-burnt) 70%, var(--m-ink));
   --text-red:      color-mix(in srgb, var(--m-red) 60%, var(--m-ink));
 }
-.band-deep       { --band-accent-text: var(--m-lime); }
+/* Eyebrows are 12px/700 and need the full 4.5 — plain --m-lime measured 4.43
+   on the light forest band. Ten percent of --m-on-deep lifts it to 4.68 (6.02
+   on plum, 5.80 on the dark band) and still reads as lime. ONLY the eyebrow
+   token: --band-accent stays pure lime because it is also a BACKGROUND
+   (.btn-pill-primary), and the large display words beside it already clear
+   the 3:1 they need.
+   This lives HERE, not in the layered .band-deep block above: that block is
+   inside @layer, and an unlayered rule beats a layered one whatever the
+   specificity — so a value set there would be silently dead. */
+.band-deep       { --band-accent-text: color-mix(in srgb, var(--m-lime) 90%, var(--m-on-deep)); }
 .band-deep .card { --band-accent-text: var(--figure-accent); }
 
 /* ── Sidebar active item + secondary pill, dark (approved 2026-09-17) ──
