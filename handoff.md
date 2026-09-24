@@ -34,10 +34,14 @@ section with the detail; this list is a map, not the territory. When you finish
 something, update BOTH this index and the section it points to.
 
 **A. Hard blockers — nothing ships past these, and they are all yours (no code)**
-1. **Vercel env vars** — `ADMIN_EMAIL`, `NEXT_PUBLIC_ADMIN_EMAIL`, `RAZORPAY_*`,
-   `STRIPE_*` (both projects); `SWIGGY_CLIENT_ID`, `NEXT_PUBLIC_SITE_URL` (web
-   project). → "Blocked on you" §1–2. Unblocks Phase 5 cutover, payments, and
-   the admin console (never once rendered).
+1. **Vercel env vars — VERIFIED against the live projects 2026-09-24**, not
+   assumed. The web project has 13 vars set (Supabase ×3,
+   `GOOGLE_GENERATIVE_AI_API_KEY`, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, VAPID ×3,
+   Twilio ×4, `CRON_SECRET`). **Only the five payment vars actually block:**
+   `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `STRIPE_SECRET_KEY`,
+   `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_PRICE_ID`. Everything else on the site
+   works without them. → "Blocked on you" §1. **The admin vars are NOT
+   blockers** (seed a role instead) and `SWIGGY_CLIENT_ID` is obsolete (DCR).
 2. **Supabase redirect URL** — add `com.cravecreate.app://auth/callback`. →
    "Blocked on you" §3. One minute; de-risks the highest-risk unverified path.
 3. **Native toolchain + accounts** — toolchain is DONE for both platforms: iOS
@@ -68,7 +72,9 @@ something, update BOTH this index and the section it points to.
    surfaced".
 
 **C. Verification gaps (built, not proven)**
-8. **Admin console** — never rendered by anyone; needs `ADMIN_EMAIL` (A1).
+8. **Admin console** — never rendered by anyone; needs an admin identity, and
+   the cheapest is seeding `user_profiles.role = 'admin'` (SQL in "Blocked on
+   you" §1), not an env var.
 9. **`/m/settings/notifications` (7c) + the 7d prompt** — verified signed-OUT
    only; the push/WhatsApp/test-send paths need a real session. → "What's
    actually next".
@@ -242,20 +248,63 @@ project before the merge.
 
 ## Blocked on you — nothing proceeds past these
 
-**1. Vercel env vars.** Neither project has `ADMIN_EMAIL`,
-`NEXT_PUBLIC_ADMIN_EMAIL`, `RAZORPAY_*`, or `STRIPE_*`. Consequences today:
-payments have never worked in production, and the admin console is unreachable
-by anyone including you. `requireAdmin` is correctly fail-closed, so the
-console stays dead until `ADMIN_EMAIL` is set (you said you would do this) or a
-`user_profiles.role = 'admin'` row is seeded.
+**1. Vercel env vars — read from the live projects, 2026-09-24.**
+`vercel env ls` on both (the repo is now linked; `.vercel/` is gitignored).
 
-`.env.local` also still contains the literal placeholder `your-email@gmail.com`
-for both admin vars, which is why admin never worked locally either.
+**Web project `create-shop-crave` has 13 set:** Supabase ×3,
+`GOOGLE_GENERATIVE_AI_API_KEY`, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, VAPID ×3,
+Twilio ×4, `CRON_SECRET`. **Mobile project** additionally has
+`NEXT_PUBLIC_SITE_URL` and `SWIGGY_CLIENT_ID`, but its Gemini key is under the
+OLD name `GOOGLE_AI_API_KEY` — current code reads
+`GOOGLE_GENERATIVE_AI_API_KEY`, so if that project keeps serving `/m` after the
+merge it has no Gemini key.
 
-**2. Before Phase 5 cutover** the web Vercel project must gain
-`NEXT_PUBLIC_SITE_URL` — it exists only on the mobile project, and it pins the
-OAuth redirect URI Swiggy allowlists by exact match. Set it to
-`https://create-shop-crave.vercel.app`.
+**The only true blockers are the five payment vars** — `RAZORPAY_KEY_ID`,
+`RAZORPAY_KEY_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+`STRIPE_PRO_PRICE_ID`. Without them checkout cannot run; nothing else breaks.
+
+**The admin vars are NOT blockers — prefer seeding the role.** `requireAdmin`
+(`lib/auth-guard.ts`) accepts EITHER `user_profiles.role = 'admin'` OR
+`user.email === ADMIN_EMAIL`. The dual check is a documented migration step
+whose intended end state is role-only, and the env branch is meant to be
+deleted afterwards. So the durable move is one statement, no env var, no
+redeploy:
+
+```sql
+update public.user_profiles
+   set role = 'admin'
+ where id = (select id from auth.users where email = 'you@example.com');
+```
+
+(You must have signed in once so the profile row exists; run it as service
+role — `user_profiles` writes are service-role only.)
+
+**Do NOT set `NEXT_PUBLIC_ADMIN_EMAIL`.** Its only consumer is
+`AccountSection.tsx`, which uses it to show an Admin link — the auth-guard
+comment says plainly it "hides UI but protects nothing". `NEXT_PUBLIC_*` values
+are compiled into the client bundle, so setting it publishes your email address
+to anyone reading source, in exchange for a link you can reach by typing
+`/admin`. The real enforcement is the server: `app/(web)/admin/layout.tsx`
+redirects non-admins, and 9 `/api/admin/*` routes return 403.
+
+**Env changes need a redeploy** to take effect on Vercel, and `NEXT_PUBLIC_*`
+ones are inlined at BUILD time.
+
+`.env.local` still contains the placeholder `your-email@gmail.com` for both
+admin vars, which is why admin never worked locally either — the same role seed
+fixes local too, since local points at the same Supabase project.
+
+**2. `NEXT_PUBLIC_SITE_URL` — insurance, not a blocker.** Single consumer:
+`callbackUrlFor` in `lib/mcp/oauth.ts`, which falls back to the request host.
+On `create-shop-crave.vercel.app` the fallback produces exactly the URI Swiggy
+allowlisted, so Swiggy works with or without it. What it buys: production keeps
+sending the registered string no matter which alias served the request, so a
+future custom domain becomes a deliberate re-registration rather than a silent
+breakage. Set it to `https://create-shop-crave.vercel.app`.
+**It does not make preview deploys work** — with it the callback lands on
+production where the preview's PKCE cookies are unreadable (state check fails);
+without it Swiggy rejects the unlisted preview host. Swiggy OAuth is
+production-only either way.
 **`SWIGGY_CLIENT_ID` is NO LONGER REQUIRED** — Swiggy issues no client id and we
 self-register via DCR (see "Swiggy MCP: Dynamic Client Registration" below). It
 remains supported as an override if they ever do issue one.
@@ -363,7 +412,7 @@ deliberate pass rather than a rushed one — but "looks low" is not "patched":
   `size`, which is SDK-internal and not attacker-reachable.
 - The rest are moderate/low and all sit in the same SDK tree.
 
-**Do it as its own piece of work**, with `ADMIN_EMAIL` and a real account
+**Do it as its own piece of work**, with admin access and a real account
 available so chat, the Swiggy agent, coach and photo analysis can each be
 exercised after the upgrade.
 
@@ -795,7 +844,7 @@ reserved `.invalid` TLD) and both correctly surfaced Supabase's own validation
 error — proving the call reaches Supabase and the response renders correctly.
 What was deliberately NOT tested: sending to a real inbox, which would need
 the project's email/SMTP configuration to actually be checked (same category
-of gap as blocker 1's `ADMIN_EMAIL` — infrastructure, not code).
+of gap as blocker 1's admin access — infrastructure, not code).
 
 **`components/BottomNav.tsx` stays web-only, not deleted.** It is the
 navigation below `md`, where the sidebar hides. The plan's "BottomNav becomes
@@ -2349,11 +2398,12 @@ the 190KB file out of context. Flow line offsets are found with
 
 Two things that can happen in parallel and unblock more than they cost:
 
-- **Set `ADMIN_EMAIL`** (Vercel + `.env.local`, which still holds the
-  `your-email@gmail.com` placeholder). Until then the entire admin console
-  built in Phases 7–8 has never been seen rendered — it has only been verified
-  through API responses and the redirect. That is the largest untested surface
-  in this branch.
+- **Seed `user_profiles.role = 'admin'`** (SQL in "Blocked on you" §1 — NOT
+  the `ADMIN_EMAIL` env var, which is the migration path and puts your email in
+  the client bundle if you also set the public twin). Until then the entire
+  admin console built in Phases 7–8 has never been seen rendered — only
+  verified through API responses and the redirect. That is the largest
+  untested surface in this branch.
 - **Add `com.cravecreate.app://auth/callback`** to Supabase redirect URLs. It
   costs a minute and de-risks the single highest-risk unverified path in the
   whole project (native sign-in), which otherwise surfaces at TestFlight after
