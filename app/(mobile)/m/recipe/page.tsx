@@ -208,7 +208,10 @@ export default function MobileRecipe() {
           <div className="hstack" style={{ gap: 6, flex: "none" }}>
             {cookTime && <span className="badge badge-forest"><b>{cookTime.replace("m", "")}</b>min</span>}
             <span className="badge badge-plum"><b>{portions}</b>ppl</span>
-            <span className="badge badge-burnt"><b>{difficultyFor(recipe.instructions.length)}</b>diff</span>
+            {/* badge-brown, not badge-burnt: cream on --m-burnt measures 4.04 light /
+                2.87 dark for this 10.5px label. --m-brown is the designed sibling
+                that passes both (7.82 / 5.12). */}
+            <span className="badge badge-brown"><b>{difficultyFor(recipe.instructions.length)}</b>diff</span>
           </div>
         </div>
 

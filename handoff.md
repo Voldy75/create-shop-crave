@@ -2146,8 +2146,18 @@ the same false claim the earlier audit removed from the stats band. Now
   Zomato's red wordmark on the plum strip 2.44;
   the WhatsApp glyph (white on WhatsApp green) 1.98 on `/m/settings/notifications`.
   Brand-guideline territory, so flagged rather than recoloured.
-- Unchanged from before: light burnt text 3.61, `.badge-burnt` 2.87 dark, lime
-  pills 4.43.
+- ~~`.badge-burnt` / lime pills~~ — **FIXED 2026-09-24.** Lime grounds
+  (`.pill-lime`, `.chip-active`, `.chip-tag`, `.xbtn-l`, `.ing-add`) keep the
+  lime, but in DARK their text cuts `--m-forest-2` 80/20 with the dark
+  background: 4.43 → **5.20** (light untouched at 6.22). `.badge-burnt` needed
+  the ground moved — cream is already the lightest text — so its two usages
+  switched to the EXISTING `.badge-brown` variant (2.87 dark / 4.04 light →
+  **5.12 / 7.82**), which needs no design-system override at all. **Do not use
+  `.badge-burnt`**; it still fails in both themes wherever it is used.
+  Verified: 22 lime/badge elements per theme, zero dark failures.
+- **Light burnt small text 3.61** is the LAST open contrast item (`--text-burnt`
+  on peach/cream: the ₹₹₹ chip, "Order again?", streak M/S, onboarding's step
+  circles). One token — its light value — but it changes the designed colour.
 - **Not rendered:** signed-in web screens (chat, settings, admin, home) and
   text over photos. Their swaps were verified by reading each site's ground in
   code, which is weaker than measuring.

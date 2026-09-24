@@ -32,3 +32,23 @@
 :root:not([data-theme="dark"]) {
   --m-ink-soft: #806342;
 }
+
+
+/* Text on LIME grounds, dark only (approved 2026-09-24).
+ *
+ * meshi-b pairs every lime surface with --m-forest-2. That measures 6.22:1 in
+ * light, but meshi-b lightens --m-forest-2 for dark (#14421F -> #1E5A34), so
+ * the same pairing drops to 4.43 — just under AA for the 13.5–16px/700 labels
+ * these carry (.pill-lime, .chip-active, .chip-tag, and the lime buttons and
+ * ingredient-add disc in meshi-app.css).
+ *
+ * Dark cuts forest-2 with the dark app background, the same move the landing's
+ * forest band uses: 5.20:1, and visually still the dark green the design
+ * pairs with lime. Light is untouched.
+ *
+ * The lime GROUND is deliberately unchanged — it is the accent that makes
+ * these read as the primary/active state.
+ */
+[data-theme="dark"] :is(.pill-lime, .chip-active, .chip-tag, .xbtn-l, .ing-add) {
+  color: color-mix(in srgb, var(--m-forest-2) 80%, var(--m-cream));
+}

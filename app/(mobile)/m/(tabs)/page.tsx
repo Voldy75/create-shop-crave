@@ -33,7 +33,7 @@ const CRAVINGS = [
 
 const PICKS = [
   { name: "Green goddess bowl", mins: 25, rating: 4, duo: "duo-forest", badge: "badge-brown" },
-  { name: "Nonna's red pizza", mins: 40, rating: 5, duo: "duo-plum", badge: "badge-burnt" },
+  { name: "Nonna's red pizza", mins: 40, rating: 5, duo: "duo-plum", badge: "badge-brown" },
 ];
 
 function greeting(d: Date): string {
