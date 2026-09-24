@@ -1024,6 +1024,29 @@ authorize redirect: registration, grant support, and the token error contract.
 until it runs, `client_id` / `registration_path` / `refresh_token` do not exist
 and the code falls back to the env var.
 
+## Removed: `/api/places` (2026-09-24)
+
+Deleted. It was a public GET that returned **500 `{"error":"API Key missing"}`
+on BOTH production deployments** — verified live, with a no-params control
+returning 400 to prove the route ran and the 500 was specifically the absent
+`GOOGLE_MAPS_API_KEY` (which is set on neither project). Unchanged since April
+and identical on `main`, so this was long-standing, not a cutover regression.
+
+**It had ZERO callers.** Restaurant search never used it: `/api/chat` returns a
+`restaurantSuggestion`, `RestaurantView` renders it, and the map draws
+client-side with `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, which IS set.
+
+**Worth carrying as a method lesson:** the missing key was briefly written up
+as a launch blocker on the strength of the route existing, before anything
+checked who called it. An endpoint's existence says nothing about its use —
+grep the callers before sizing the impact.
+
+`GOOGLE_MAPS_API_KEY` is therefore NOT a launch blocker. Its only other reader
+is `/api/admin/config`, which reports key presence as a health indicator, so
+without it the admin console will show Maps as unconfigured. Cosmetic.
+
+Route count is now **76**.
+
 ## Dead ends — do not retry
 
 1. **Swiggy MCP OAuth from a web origin.** Gated to an allowlist of AI clients;
