@@ -177,7 +177,7 @@ export default function ProfileTab() {
 
         {/* Plan */}
         <button className="row" onClick={() => router.push("/m/paywall")} style={{ width: "100%", textAlign: "left", border: "none" }}>
-          <span className="icon-btn tint-lav" style={{ boxShadow: "none", color: "var(--m-plum)", flex: "none" }}>
+          <span className="icon-btn tint-lav" style={{ boxShadow: "none", color: "var(--text-plum)", flex: "none" }}>
             <Sparkles width={20} height={20} />
           </span>
           <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>

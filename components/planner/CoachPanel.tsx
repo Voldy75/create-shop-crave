@@ -45,9 +45,9 @@ const SEVERITY_STYLE: Record<
   Insight["severity"],
   { color: string; bg: string; icon: React.ComponentType<{ className?: string }> }
 > = {
-  info: { color: "var(--m-plum)", bg: "var(--m-tint-lav)", icon: Info },
-  nudge: { color: "var(--m-forest)", bg: "var(--m-tint-green)", icon: Lightbulb },
-  warn: { color: "var(--m-burnt)", bg: "var(--m-tint-peach)", icon: AlertTriangle },
+  info: { color: "var(--text-plum)", bg: "var(--m-tint-lav)", icon: Info },
+  nudge: { color: "var(--figure-accent)", bg: "var(--m-tint-green)", icon: Lightbulb },
+  warn: { color: "var(--text-burnt)", bg: "var(--m-tint-peach)", icon: AlertTriangle },
 };
 
 // Sort priority: lower = earlier. warn first so users see action items above the fold.
@@ -276,7 +276,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, favoriteCuisines, w
               background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
               border: "1.5px solid color-mix(in srgb, var(--m-red) 32%, transparent)",
               borderRadius: "10px",
-              color: "var(--m-red)",
+              color: "var(--text-red)",
               marginBottom: "12px",
             }}
           >
@@ -390,7 +390,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, favoriteCuisines, w
               Personalized to your goal, dietary prefs, and recent intake. One tap to apply to the planner.
             </p>
           </div>
-          <ChefHat className="w-5 h-5" style={{ color: "var(--m-forest)" }} />
+          <ChefHat className="w-5 h-5" style={{ color: "var(--figure-accent)" }} />
         </div>
 
         {chartError && (
@@ -400,7 +400,7 @@ export function CoachPanel({ isSignedIn, dietaryPreferences, favoriteCuisines, w
               background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
               border: "1.5px solid color-mix(in srgb, var(--m-red) 32%, transparent)",
               borderRadius: "10px",
-              color: "var(--m-red)",
+              color: "var(--text-red)",
               marginBottom: "12px",
             }}
           >

@@ -153,7 +153,7 @@ export default function CookPage({ params }: { params: Promise<{ slug: string }>
         <AppTopbar title="Recipe not found" onBack="/recipes" />
         <main className="mbody">
           <div className="card vstack" style={{ margin: "40px auto", maxWidth: 520, padding: 34, gap: 13, alignItems: "center", textAlign: "center" }}>
-            <ChefHat width={28} height={28} style={{ color: "var(--m-forest)" }} aria-hidden />
+            <ChefHat width={28} height={28} style={{ color: "var(--figure-accent)" }} aria-hidden />
             <span className="t-d2">We don&rsquo;t have this one</span>
             {/* Honest about WHY, because it is a real property of the design:
                 recipes live in this browser, not on a server. */}
@@ -329,7 +329,7 @@ export default function CookPage({ params }: { params: Promise<{ slug: string }>
           <div className="hstack" style={{ gap: 7, flexWrap: "wrap" }}>
             {kcalEach !== null && (
               <span className="chip pill-sm">
-                <Flame width={13} height={13} style={{ color: "var(--m-burnt)" }} aria-hidden /> {kcalEach} kcal
+                <Flame width={13} height={13} style={{ color: "var(--text-burnt)" }} aria-hidden /> {kcalEach} kcal
               </span>
             )}
             {recipe.nutritionEstimate?.protein && <span className="chip pill-sm">{recipe.nutritionEstimate.protein} protein</span>}
@@ -345,10 +345,10 @@ export default function CookPage({ params }: { params: Promise<{ slug: string }>
           <div className="grow" />
 
           <div className="card tint-peach hstack" style={{ boxShadow: "none", padding: 15, gap: 11 }}>
-            <ChefHat width={24} height={24} style={{ color: "var(--m-burnt)", flex: "none", animation: "mm-bob 3.3s ease-in-out infinite" }} aria-hidden />
+            <ChefHat width={24} height={24} style={{ color: "var(--text-burnt)", flex: "none", animation: "mm-bob 3.3s ease-in-out infinite" }} aria-hidden />
             <div className="vstack" style={{ gap: 1, minWidth: 0 }}>
               <span className="t-h2" style={{ fontSize: 14 }}>Log it when you&rsquo;re done</span>
-              <Link href="/planner?tab=tracker&log=1" className="t-cap" style={{ color: "var(--m-forest)" }}>
+              <Link href="/planner?tab=tracker&log=1" className="t-cap" style={{ color: "var(--figure-accent)" }}>
                 Adds to today&rsquo;s tracker
               </Link>
             </div>

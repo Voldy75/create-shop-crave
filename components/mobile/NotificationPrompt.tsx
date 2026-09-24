@@ -99,15 +99,15 @@ export function NotificationPrompt({ streak }: { streak: number }) {
 
         <div className="vstack" style={{ gap: 10, width: "100%", marginTop: 2 }}>
           <div className="hstack" style={{ gap: 12 }}>
-            <Flame width={22} height={22} style={{ color: "var(--m-burnt)", flex: "none" }} />
+            <Flame width={22} height={22} style={{ color: "var(--text-burnt)", flex: "none" }} />
             <span className="t-body">Keep your streak alive with a daily reminder</span>
           </div>
           <div className="hstack" style={{ gap: 12 }}>
-            <Bell width={22} height={22} style={{ color: "var(--m-forest)", flex: "none" }} />
+            <Bell width={22} height={22} style={{ color: "var(--figure-accent)", flex: "none" }} />
             <span className="t-body">Live order &amp; delivery updates</span>
           </div>
           <div className="hstack" style={{ gap: 12 }}>
-            <Sparkles width={22} height={22} style={{ color: "var(--m-plum)", flex: "none" }} />
+            <Sparkles width={22} height={22} style={{ color: "var(--text-plum)", flex: "none" }} />
             <span className="t-body">Dinner ideas the moment you&rsquo;re hungry</span>
           </div>
         </div>

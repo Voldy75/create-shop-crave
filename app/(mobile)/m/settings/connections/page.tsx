@@ -133,7 +133,7 @@ export default function MobileConnectionsPage() {
           <div className="hstack" style={{ gap: 12 }}>
             <span
               className="icon-btn"
-              style={{ boxShadow: "none", flex: "none", background: "var(--m-tint-peach)", color: "var(--m-burnt)" }}
+              style={{ boxShadow: "none", flex: "none", background: "var(--m-tint-peach)", color: "var(--text-burnt)" }}
               aria-hidden
             >
               <Utensils width={20} height={20} />

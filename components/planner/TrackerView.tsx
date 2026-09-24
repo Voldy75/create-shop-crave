@@ -236,7 +236,7 @@ export function TrackerView({ weekPlan, isSignedIn, autoOpenLog = false }: Props
             <span className="t-h1">{historyMode === "week" ? "This week" : "History"}</span>
             <div className="hstack" style={{ gap: 10 }}>
               {historyMode === "week" && (
-                <span className="t-cap" style={{ color: "var(--m-forest)" }}>
+                <span className="t-cap" style={{ color: "var(--figure-accent)" }}>
                   {weekAvg
                     ? `avg ${weekAvg.avg.toLocaleString()} · ${weekAvg.days} day${weekAvg.days === 1 ? "" : "s"}`
                     : "nothing logged yet"}

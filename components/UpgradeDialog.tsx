@@ -245,11 +245,11 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
                 padding: 12,
                 borderRadius: 12,
                 background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-                color: "var(--m-red)",
+                color: "var(--text-red)",
               }}
             >
               <AlertCircle width={16} height={16} style={{ flex: "none" }} />
-              <span className="t-cap" style={{ color: "var(--m-red)" }}>{error}</span>
+              <span className="t-cap" style={{ color: "var(--text-red)" }}>{error}</span>
             </div>
           )}
 
@@ -280,7 +280,7 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
                       <span className="t-h2">
                         {intervalLabel(o.interval)} · {formatPrice(o.amount_minor, o.currency)}
                       </span>
-                      <span className="t-cap" style={on ? { color: "var(--m-forest)" } : undefined}>
+                      <span className="t-cap" style={on ? { color: "var(--figure-accent)" } : undefined}>
                         {pm ?? "Everything on the left, unlocked"}
                       </span>
                     </div>
@@ -371,7 +371,7 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
                   style={{ background: "none", border: "none", outline: "none", color: "var(--m-ink)", font: "600 15px var(--m-font-body)" }}
                 />
               </div>
-              {byokError && <span className="t-cap" style={{ color: "var(--m-red)" }}>{byokError}</span>}
+              {byokError && <span className="t-cap" style={{ color: "var(--text-red)" }}>{byokError}</span>}
 
               <button className="pill-primary" style={{ width: "100%" }} onClick={handleBYOKSave}>
                 Use this key

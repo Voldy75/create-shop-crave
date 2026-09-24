@@ -29,7 +29,7 @@ export function AdminNav() {
               className={cn(
                 "px-3 py-1.5 rounded-[var(--m-r-pill)] text-sm font-medium transition-colors",
                 active
-                  ? "bg-[var(--m-tint-green)] text-[var(--m-forest)]"
+                  ? "bg-[var(--m-tint-green)] text-[var(--figure-accent)]"
                   : "text-[var(--m-ink-soft)] hover:bg-[var(--m-cream-2)] hover:text-[var(--m-ink)]"
               )}
             >

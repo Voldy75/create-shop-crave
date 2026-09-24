@@ -182,7 +182,7 @@ export function NotificationsSection() {
         detail={
           <>
             {!pushSupport.supported && <Note color="color-mix(in srgb, var(--m-burnt) 50%, var(--m-ink))">This browser doesn&apos;t support web push.</Note>}
-            {pushSupport.supported && pushSupport.permission === "denied" && <Note color="var(--m-red)">Permission blocked. Allow in site settings.</Note>}
+            {pushSupport.supported && pushSupport.permission === "denied" && <Note color="var(--text-red)">Permission blocked. Allow in site settings.</Note>}
             {sub?.webPushEnabled && (
               <SmallButton onClick={handleSendTest} loading={testing} icon={Send}>Send test</SmallButton>
             )}
@@ -350,5 +350,5 @@ function WhatsAppDetail({ sub, phoneInput, setPhoneInput, enrollLoading, joinIns
       </div>
     );
   }
-  return <Note color="var(--m-red)">Channel revoked. Toggle off and on, then re-send JOIN.</Note>;
+  return <Note color="var(--text-red)">Channel revoked. Toggle off and on, then re-send JOIN.</Note>;
 }

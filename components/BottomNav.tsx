@@ -37,7 +37,7 @@ export function BottomNav() {
             key={href}
             onClick={() => router.push(href)}
             className="flex flex-col items-center gap-0.5 px-4 py-1 transition-all min-h-[44px] min-w-[64px]"
-            style={{ color: isActive ? "var(--m-forest)" : "var(--m-ink-soft)" }}
+            style={{ color: isActive ? "var(--figure-accent)" : "var(--m-ink-soft)" }} /* forest was 2.75:1 active in dark */
             aria-label={label}
             aria-current={isActive ? "page" : undefined}
           >

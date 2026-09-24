@@ -72,8 +72,8 @@ export default function StreakPage() {
       {/* Streak hero */}
       <div className="card tint-peach" style={{ boxShadow: "none", padding: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
         <div className="hstack" style={{ gap: 10 }}>
-          <Flame width={34} height={34} style={{ color: "var(--m-burnt)" }} />
-          <span style={{ font: "800 52px/1 var(--m-font-display)", color: "var(--m-burnt)" }}>{streak}</span>
+          <Flame width={34} height={34} style={{ color: "var(--text-burnt)" }} />
+          <span style={{ font: "800 52px/1 var(--m-font-display)", color: "var(--text-burnt)" }}>{streak}</span>
         </div>
         <span className="t-h2" style={{ color: "var(--text-brown)", textAlign: "center" }}>
           {streak === 0

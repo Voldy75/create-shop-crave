@@ -177,7 +177,7 @@ export default function MobileRecipe() {
             onClick={toggleSave}
             aria-label={saved ? "Remove from saved" : "Save recipe"}
             aria-pressed={saved}
-            style={{ color: "var(--m-red)" }}
+            style={{ color: "var(--text-red)" }}
           >
             <Heart width={20} height={20} fill={saved ? "currentColor" : "none"} />
           </button>

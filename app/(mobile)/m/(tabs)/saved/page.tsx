@@ -120,7 +120,7 @@ export default function SavedTab() {
               <button
                 onClick={() => unsave(it.id)}
                 aria-label={`Remove ${name} from saved`}
-                style={{ background: "none", border: "none", padding: 0, color: "var(--m-red)", flex: "none" }}
+                style={{ background: "none", border: "none", padding: 0, color: "var(--text-red)", flex: "none" }}
               >
                 <Heart width={20} height={20} fill="currentColor" />
               </button>

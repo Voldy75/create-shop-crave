@@ -148,7 +148,7 @@ export function MealLogList({ logs, onDelete, onEdit, onLog }: Props) {
               <button
                 onClick={() => onDelete(log.id)}
                 className="icon-btn"
-                style={{ width: 30, height: 30, borderRadius: 9, boxShadow: "none", background: "transparent", color: "var(--m-red)" }}
+                style={{ width: 30, height: 30, borderRadius: 9, boxShadow: "none", background: "transparent", color: "var(--text-red)" }}
                 aria-label={`Delete ${log.name}`}
               >
                 <Trash2 width={14} height={14} />

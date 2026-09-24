@@ -657,7 +657,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
             {/* Header */}
             <div style={{ marginBottom: "24px" }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: "8px" }}>
-                    <div className="flex items-center gap-2" style={{ color: "var(--m-forest)" }}>
+                    <div className="flex items-center gap-2" style={{ color: "var(--figure-accent)" }}>
                         <Utensils className="w-4 h-4" />
                         <span
                             style={{
@@ -677,7 +677,7 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                     padding: "2px 8px",
                                     borderRadius: "980px",
                                     background: "var(--m-tint-green)",
-                                    color: "var(--m-forest)",
+                                    color: "var(--figure-accent)",
                                 }}
                             >
                                 {sortedEntries.length}

@@ -20,9 +20,9 @@ import { foodImage } from "@/lib/food-images";
 // hex-ok-start: partners' own brand colours — identity, not theme, so they
 // deliberately do not follow the palette. DESIGN.md allowlist.
 const INTEGRATIONS = [
-  { name: "Swiggy", letter: "S", brand: "#FC8019", ink: "#ffffff" },
-  { name: "Zomato", letter: "Z", brand: "#E23744", ink: "#ffffff" },
-  { name: "Instacart", letter: "I", brand: "#0AAD0A", ink: "#ffffff" },
+  { name: "Swiggy", letter: "S", brand: "#FC8019", ink: "#0A0A0A" }, // white measured sub-AA here
+  { name: "Zomato", letter: "Z", brand: "#E23744", ink: "#0A0A0A" }, // white measured sub-AA here
+  { name: "Instacart", letter: "I", brand: "#0AAD0A", ink: "#0A0A0A" }, // white measured sub-AA here
   { name: "Uber", letter: "U", brand: "#000000", ink: "#ffffff" },
 ] as const;
 // hex-ok-end
@@ -46,31 +46,31 @@ const DIETARY_OPTIONS = [
 const FEATURES = [
   {
     title: "Chat with Bo",
-    desc: "Four models, one buddy. Ask in plain words — get a recipe, a plan and a list.",
+    desc: "Three models, one buddy. Ask in plain words — get a recipe, a plan and a list.", // lib/providers.ts: gemini, openai, anthropic
     icon: MessageCircle,
     tint: "var(--m-tint-lav)",
-    ink: "var(--m-plum)",
+    ink: "var(--text-plum)",
   },
   {
     title: "Shop in one tap",
     desc: "Bo turns any recipe into a Swiggy Instamart or Instacart cart, then checks out.",
     icon: ShoppingCart,
     tint: "var(--m-tint-green)",
-    ink: "var(--m-forest)",
+    ink: "var(--figure-accent)",
   },
   {
     title: "Find & dine out",
     desc: "Best tables nearby on a live map, with Zomato links and an Uber pre-filled.",
     icon: MapPin,
     tint: "var(--m-tint-peach)",
-    ink: "var(--m-burnt)",
+    ink: "var(--text-burnt)",
   },
   {
     title: "Track effortlessly",
     desc: "Snap a plate or log a bite. Bo does the macros and keeps your streak alive.",
     icon: LineChart,
     tint: "var(--m-tint-green)",
-    ink: "var(--m-forest)",
+    ink: "var(--figure-accent)",
   },
 ] as const;
 
@@ -217,7 +217,7 @@ export default function LandingPage() {
   if (!hydrated) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[var(--m-cream)]">
-        <Loader2 className="w-5 h-5 animate-spin text-[var(--m-forest)]" />
+        <Loader2 className="w-5 h-5 animate-spin text-[var(--figure-accent)]" />
       </main>
     );
   }
@@ -271,14 +271,14 @@ export default function LandingPage() {
           >
             {/* The old pill was an orange-on-orange badge; wLa's is a peach
                 chip with a spark. */}
-            <span className="chip inline-flex items-center gap-2 bg-[var(--m-tint-peach)] text-[var(--m-burnt)] shadow-none">
+            <span className="chip inline-flex items-center gap-2 bg-[var(--m-tint-peach)] text-[var(--text-burnt)] shadow-none">
               <Sparkles className="h-[15px] w-[15px]" />
               AI food buddy · now on desktop
             </span>
 
             <h1 className="headline-hero">
               Cook what you crave.{" "}
-              <span className="text-[var(--m-forest)]">Bo does the rest.</span>
+              <span className="text-[var(--figure-accent)]">Bo does the rest.</span>
             </h1>
 
             <p className="mx-auto max-w-[460px] text-[17px] leading-[1.45] text-[var(--m-ink-soft)] md:mx-0">
@@ -383,7 +383,7 @@ export default function LandingPage() {
                     </span>
                   </div>
                   {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("error") && (
-                    <div className="flex items-center gap-2 rounded-xl p-3 text-[14px]" style={{ background: "color-mix(in srgb, var(--m-red) 10%, transparent)", color: "var(--m-red)" }}>
+                    <div className="flex items-center gap-2 rounded-xl p-3 text-[14px]" style={{ background: "color-mix(in srgb, var(--m-red) 10%, transparent)", color: "var(--text-red)" }}>
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>Sign-in failed. Please try again.</span>
                     </div>
@@ -556,7 +556,7 @@ export default function LandingPage() {
                       );
                     })()}
                     <div className="flex min-w-0 flex-col gap-0.5">
-                      <span className="t-micro text-[var(--m-burnt)]">Recipe</span>
+                      <span className="t-micro text-[var(--text-burnt)]">Recipe</span>
                       <span className="t-h2">{msg.name}</span>
                       <span className="t-cap">{msg.meta}</span>
                       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -657,6 +657,7 @@ export default function LandingPage() {
                 )}
                 {i === 2 && (
                   <span className="hiw-badge" aria-hidden="true" style={{ animation: "mm-deliver 2.6s ease-in-out infinite" }}>
+                    {/* raw --m-forest-2: .hiw-badge is a LIME disc, so the text token (lime in dark) would vanish. */}
                     <ShoppingBag width={18} height={18} style={{ color: "var(--m-forest-2)" }} />
                   </span>
                 )}
@@ -695,7 +696,7 @@ export default function LandingPage() {
           {AT_A_GLANCE.map((s) => (
             <div key={s.value} className="card flex flex-col gap-2 p-[26px]">
               <span className="headline-tile">{s.value}</span>
-              <span className="t-cap" style={{ color: "var(--m-forest)" }}>{s.label}</span>
+              <span className="t-cap" style={{ color: "var(--figure-accent)" }}>{s.label}</span>
               <span className="t-body-soft">{s.desc}</span>
             </div>
           ))}

@@ -453,7 +453,7 @@ export default function MobileLog() {
           would be wrong — say so plainly. */}
       {result?.needsConfirmation && (
         <div className="card tint-peach hstack" style={{ boxShadow: "none", padding: "12px 14px", gap: 10 }}>
-          <AlertTriangle width={18} height={18} style={{ color: "var(--m-burnt)", flex: "none" }} />
+          <AlertTriangle width={18} height={18} style={{ color: "var(--text-burnt)", flex: "none" }} />
           <span className="t-cap" style={{ color: "var(--text-burnt)" }}>
             {result.notes ?? "Bo isn't confident here — check the numbers before logging."}
           </span>
@@ -484,7 +484,7 @@ export default function MobileLog() {
 
       {/* Where this lands you */}
       <div className="row">
-        <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--m-forest)", flex: "none" }}>
+        <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--figure-accent)", flex: "none" }}>
           <Sparkles width={20} height={20} />
         </span>
         <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
@@ -528,7 +528,7 @@ export default function MobileLog() {
 
       {streak > 0 && (
         <div className="card tint-peach hstack" style={{ boxShadow: "none", padding: "12px 16px", gap: 12 }}>
-          <Flame width={26} height={26} style={{ color: "var(--m-burnt)", flex: "none" }} />
+          <Flame width={26} height={26} style={{ color: "var(--text-burnt)", flex: "none" }} />
           <span className="t-h2" style={{ color: "var(--text-burnt)" }}>Logging this lights Day {streak + 1} 🔥</span>
         </div>
       )}

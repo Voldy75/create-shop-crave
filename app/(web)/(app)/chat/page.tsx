@@ -407,13 +407,13 @@ function ChatPageInner() {
           <BoBowl width={34} height={34} style={{ flex: "none" }} />
           <div className="vstack" style={{ gap: 0, minWidth: 0 }}>
             <span className="t-h2">Bo</span>
-            <span className="t-cap" style={{ color: "var(--m-forest)" }}>{statusCaption}</span>
+            <span className="t-cap" style={{ color: "var(--figure-accent)" }}>{statusCaption}</span>
           </div>
 
           <div className="grow" />
 
           {agentMode && (
-            <span className="chip-tag chip" style={{ background: "var(--m-tint-peach)", color: "var(--m-burnt)" }}>
+            <span className="chip-tag chip" style={{ background: "var(--m-tint-peach)", color: "var(--text-burnt)" }}>
               Swiggy agent
             </span>
           )}
@@ -442,7 +442,7 @@ function ChatPageInner() {
             ))}
           </div>
 
-          <button onClick={() => router.push("/arena")} className="wlink" style={{ color: "var(--m-plum)", background: "none", border: "none" }}>
+          <button onClick={() => router.push("/arena")} className="wlink" style={{ color: "var(--text-plum)", background: "none", border: "none" }}>
             <Sparkles width={16} height={16} />
             Arena
           </button>
@@ -486,7 +486,7 @@ function ChatPageInner() {
               >
                 {(agentMode ? AGENT_SUGGESTION_PROMPTS : SUGGESTION_PROMPTS).map(({ label, icon: Icon }) => (
                   <Chip key={label} onClick={() => handleSuggestionClick(label)} className="inline-flex items-center gap-1.5" style={{ fontSize: 13 }}>
-                    <Icon width={14} height={14} style={{ color: "var(--m-forest)" }} />
+                    <Icon width={14} height={14} style={{ color: "var(--figure-accent)" }} />
                     {label}
                   </Chip>
                 ))}
@@ -611,7 +611,7 @@ function ChatPageInner() {
 
           {error && (
             <div className="mx-auto w-full max-w-3xl flex justify-start pl-9">
-              <div className="hstack" style={{ gap: 8, padding: "12px 16px", background: "color-mix(in srgb, var(--m-red) 12%, transparent)", color: "var(--m-red)", borderRadius: 12 }} role="alert">
+              <div className="hstack" style={{ gap: 8, padding: "12px 16px", background: "color-mix(in srgb, var(--m-red) 12%, transparent)", color: "var(--text-red)", borderRadius: 12 }} role="alert">
                 <AlertCircle width={16} height={16} style={{ flex: "none" }} />
                 <span className="t-cap" style={{ color: "inherit" }}>{error}</span>
                 <button onClick={() => setError(null)} className="t-cap" style={{ background: "none", border: "none", textDecoration: "underline", color: "inherit" }}>
@@ -786,8 +786,8 @@ function ChatPageInner() {
           {!isPro && (
             <div className="card tint-lav vstack" style={{ boxShadow: "none", padding: 16, gap: 10 }}>
               <div className="hstack" style={{ gap: 10 }}>
-                <Sparkles width={20} height={20} style={{ color: "var(--m-plum)" }} />
-                <span className="t-h2" style={{ color: "var(--m-plum)" }}>Loving Bo?</span>
+                <Sparkles width={20} height={20} style={{ color: "var(--text-plum)" }} />
+                <span className="t-h2" style={{ color: "var(--text-plum)" }}>Loving Bo?</span>
               </div>
               <span className="t-cap">Go Pro for unlimited chats, or bring your own key.</span>
               <button onClick={() => setShowUpgradeDialog(true)} className="pill-plum" style={{ width: "100%" }}>
@@ -834,7 +834,7 @@ function RecipeSummaryCard({ recipe, onJump }: { recipe: RecipeData; onJump: () 
       <div className="hstack" style={{ gap: 16, margin: "14px 0" }}>
         {kcal !== null && (
           <div className="vstack" style={{ gap: 0, alignItems: "center" }}>
-            <span className="t-d2" style={{ color: "var(--m-forest)" }}>{kcal}</span>
+            <span className="t-d2" style={{ color: "var(--figure-accent)" }}>{kcal}</span>
             <span className="t-cap">kcal</span>
           </div>
         )}

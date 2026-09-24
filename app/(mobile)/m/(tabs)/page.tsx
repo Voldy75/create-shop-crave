@@ -103,7 +103,7 @@ export default function MeshiHome() {
             <span className="grow" style={{ color: "var(--m-ink-soft)" }}>
               Ramen? Tacos? Feelings?
             </span>
-            <Mic width={19} height={19} style={{ color: "var(--m-forest)" }} />
+            <Mic width={19} height={19} style={{ color: "var(--figure-accent)" }} />
           </button>
         </div>
 

@@ -344,7 +344,7 @@ function RestaurantsCard({ sugg, onMap }: { sugg: RestaurantSuggestion; onMap: (
         <button
           onClick={() => onMap(sugg)}
           className="t-cap"
-          style={{ background: "none", border: "none", padding: 0, color: "var(--m-forest)", fontWeight: 700 }}
+          style={{ background: "none", border: "none", padding: 0, color: "var(--figure-accent)", fontWeight: 700 }}
         >
           Map ›
         </button>

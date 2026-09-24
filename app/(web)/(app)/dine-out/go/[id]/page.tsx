@@ -93,7 +93,7 @@ export default function GoTherePage({ params }: { params: Promise<{ id: string }
         <AppTopbar title="Getting there" onBack="/dine-out" />
         <main className="mbody">
           <div className="card vstack" style={{ margin: "40px auto", maxWidth: 520, padding: 34, gap: 13, alignItems: "center", textAlign: "center" }}>
-            <MapPin width={28} height={28} style={{ color: "var(--m-forest)" }} aria-hidden />
+            <MapPin width={28} height={28} style={{ color: "var(--figure-accent)" }} aria-hidden />
             <span className="t-d2">We lost the place</span>
             <span className="t-body-soft">
               Dine-out matches are held for the current session only, so this link
@@ -130,7 +130,7 @@ export default function GoTherePage({ params }: { params: Promise<{ id: string }
               </div>
               <i style={{ height: 1, background: "var(--m-ink-faint)", display: "block" }} aria-hidden />
               <div className="hstack" style={{ gap: 11 }}>
-                <MapPin width={17} height={17} style={{ color: "var(--m-forest)", flex: "none" }} aria-hidden />
+                <MapPin width={17} height={17} style={{ color: "var(--figure-accent)", flex: "none" }} aria-hidden />
                 <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
                   <span className="t-cap">Drop</span>
                   <span className="t-body">{restaurant.name}</span>

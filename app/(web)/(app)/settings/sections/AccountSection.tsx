@@ -63,7 +63,7 @@ export function AccountSection() {
               style={{
                 fontSize: "10px",
                 fontWeight: 700,
-                color: "var(--m-forest)",
+                color: "var(--figure-accent)",
                 background: "var(--m-tint-green)",
                 padding: "2px 8px",
                 borderRadius: "980px",
@@ -96,7 +96,7 @@ export function AccountSection() {
               height: "36px",
               borderRadius: "10px",
               background: "var(--m-tint-green)",
-              color: "var(--m-forest)",
+              color: "var(--figure-accent)",
             }}
           >
             <Shield className="w-4 h-4" />
@@ -144,7 +144,7 @@ export function AccountSection() {
         style={{
           fontSize: "14px",
           fontWeight: 600,
-          color: "var(--m-red)",
+          color: "var(--text-red)",
           background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
           border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
           borderRadius: "12px",

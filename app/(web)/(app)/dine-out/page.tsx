@@ -143,7 +143,7 @@ function DineOutInner() {
         <AppTopbar title="Dine out" caption="Places Bo matched for you" />
         <main className="mbody">
           <div className="card vstack" style={{ margin: "40px auto", maxWidth: 520, padding: 34, gap: 13, alignItems: "center", textAlign: "center" }}>
-            <Utensils width={28} height={28} style={{ color: "var(--m-forest)" }} aria-hidden />
+            <Utensils width={28} height={28} style={{ color: "var(--figure-accent)" }} aria-hidden />
             <span className="t-d2">Nothing matched yet</span>
             <span className="t-body-soft">
               Ask Bo where to eat and the matches land here, with routes and rides.
@@ -184,7 +184,7 @@ function DineOutInner() {
           <div className="vstack" style={{ gap: 20, padding: "22px 32px 40px", maxWidth: 1240, margin: "0 auto", width: "100%" }}>
             {dish && (
               <div className="card hstack" style={{ padding: 16, gap: 13, flexWrap: "wrap" }}>
-                <Sparkles width={20} height={20} style={{ color: "var(--m-forest)", flex: "none" }} aria-hidden />
+                <Sparkles width={20} height={20} style={{ color: "var(--figure-accent)", flex: "none" }} aria-hidden />
                 <div className="vstack grow" style={{ gap: 2, minWidth: 0 }}>
                   <span className="t-h2">Instead of cooking · {dish}</span>
                   {data?.reason && <span className="t-cap">{data.reason}</span>}
@@ -281,7 +281,7 @@ function PlaceCard({
           <span className="t-cap" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta}</span>
         </span>
         <span className="vstack" style={{ gap: 1, alignItems: "flex-end", flex: "none" }}>
-          <span className="t-h2" style={{ fontSize: 13, color: "var(--m-forest)" }}>{r.rating}</span>
+          <span className="t-h2" style={{ fontSize: 13, color: "var(--figure-accent)" }}>{r.rating}</span>
           {km !== null && <span className="t-cap" style={{ fontSize: 11 }}>{etaMinutes(km)}</span>}
         </span>
       </div>
@@ -377,7 +377,7 @@ function MapMode({
         <div className="card dineout-float-tl">
           <div className="hstack" style={{ gap: 10, marginBottom: 11 }}>
             <span style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--m-tint-green)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }} aria-hidden>
-              <Utensils width={19} height={19} style={{ color: "var(--m-forest)" }} />
+              <Utensils width={19} height={19} style={{ color: "var(--figure-accent)" }} />
             </span>
             <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
               <span className="t-h2" style={{ fontSize: 15 }}>

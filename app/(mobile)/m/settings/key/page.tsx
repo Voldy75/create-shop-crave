@@ -113,7 +113,7 @@ function KeyInner() {
 
       {saved && (
         <div className="card hstack" style={{ padding: "14px 16px", gap: 12 }}>
-          <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--m-forest)", flex: "none" }}>
+          <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--figure-accent)", flex: "none" }}>
             <Check width={20} height={20} />
           </span>
           <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
@@ -124,7 +124,7 @@ function KeyInner() {
             className="icon-btn"
             onClick={remove}
             aria-label="Remove key"
-            style={{ flex: "none", color: "var(--m-burnt)" }}
+            style={{ flex: "none", color: "var(--text-burnt)" }}
           >
             <Trash2 width={18} height={18} />
           </button>

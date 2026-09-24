@@ -73,6 +73,7 @@ export default function OrderConfirmed() {
                       background: done ? "var(--m-lime)" : "var(--m-cream-2)",
                     }}
                   >
+                    {/* raw --m-forest-2, NOT --text-forest-2: this sits on a LIME circle, and the text token turns lime in dark (lime-on-lime, 1.00:1). */}
                     {done && <Check width={14} height={14} style={{ color: "var(--m-forest-2)" }} />}
                   </span>
                   <span className="t-micro" style={{ textAlign: "center", lineHeight: 1.15, ...(done ? { color: "var(--figure-accent)" } : {}) }}>
@@ -92,7 +93,7 @@ export default function OrderConfirmed() {
       <span className="t-h1">While you wait</span>
 
       <button className="row" onClick={() => router.push("/m/recipe")} style={{ width: "100%", textAlign: "left", border: "none" }}>
-        <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--m-forest)", flex: "none" }}>
+        <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--figure-accent)", flex: "none" }}>
           <ChefHat width={20} height={20} />
         </span>
         <div className="vstack grow" style={{ gap: 0, minWidth: 0 }}>
@@ -103,7 +104,7 @@ export default function OrderConfirmed() {
       </button>
 
       <button className="row" onClick={() => router.push("/m/plan")} style={{ width: "100%", textAlign: "left", border: "none" }}>
-        <span className="icon-btn tint-lav" style={{ boxShadow: "none", color: "var(--m-plum)", flex: "none" }}>
+        <span className="icon-btn tint-lav" style={{ boxShadow: "none", color: "var(--text-plum)", flex: "none" }}>
           <Utensils width={20} height={20} />
         </span>
         <div className="vstack grow" style={{ gap: 0, minWidth: 0 }}>

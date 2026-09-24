@@ -31,7 +31,11 @@ Key rules:
   `meshi-b.css` + `meshi-motion.css` + `m/mobile.css`. Mascot keyframes belong
   only in `meshi-motion.css`. **A class defined in one tree does not exist in the other** —
   grep the stylesheets that tree actually imports before using one.
-- Measure text contrast in BOTH light and dark themes.
+- Measure text contrast in BOTH light and dark themes — icons too (3:1).
+- For TEXT and ICON colour use `--figure-accent` (forest) and `--text-forest-2`
+  / `--text-plum` / `--text-brown` / `--text-burnt` / `--text-red`, never the
+  raw `--m-*` hue — the raw hues fail in dark. Two exceptions: backgrounds, and
+  anything sitting on a LIME ground (the tokens turn lime in dark and vanish).
 - Hover states use CSS classes, not JS onMouseEnter handlers.
 - Never quote a Tailwind bracket-arbitrary-value class verbatim in docs or
   comments — the content scanner compiles it and can break the build.

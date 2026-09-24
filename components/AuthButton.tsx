@@ -94,7 +94,7 @@ export function AuthButton() {
 
       {sent ? (
         <div className="card tint-green" style={{ boxShadow: "none", padding: "12px 14px", width: "100%", textAlign: "center" }}>
-          <span className="t-body" style={{ color: "var(--m-forest-2)" }}>Check {email} for a sign-in link.</span>
+          <span className="t-body" style={{ color: "var(--text-forest-2)" }}>Check {email} for a sign-in link.</span>
         </div>
       ) : (
         <>
@@ -114,7 +114,7 @@ export function AuthButton() {
             {sending && <Loader2 width={16} height={16} className="animate-spin" />}
             {sending ? "Sending…" : "Email me a magic link"}
           </button>
-          {error && <span className="t-cap" style={{ color: "var(--m-red)" }}>{error}</span>}
+          {error && <span className="t-cap" style={{ color: "var(--text-red)" }}>{error}</span>}
         </>
       )}
     </div>

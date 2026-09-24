@@ -410,7 +410,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                         style={{
                           fontSize: "11px",
                           fontWeight: 600,
-                          color: "var(--m-forest)",
+                          color: "var(--figure-accent)",
                           padding: "4px 10px",
                           borderRadius: "980px",
                           background: "var(--m-tint-green)",
@@ -527,7 +527,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                 background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
                 border: "1.5px solid color-mix(in srgb, var(--m-red) 32%, transparent)",
                 borderRadius: "10px",
-                color: "var(--m-red)",
+                color: "var(--text-red)",
               }}
             >
               <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -541,7 +541,7 @@ export function LogMealSheet({ open, date, weekPlan, prefill, editLog, isSignedI
                 background: "color-mix(in srgb, var(--m-burnt) 10%, transparent)",
                 border: "1.5px solid color-mix(in srgb, var(--m-burnt) 32%, transparent)",
                 borderRadius: "10px",
-                color: "var(--m-burnt)",
+                color: "var(--text-burnt)",
               }}
             >
               <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />

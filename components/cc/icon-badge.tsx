@@ -20,7 +20,7 @@ export function IconBadge({ icon: Icon, accent = false, size = "md", className, 
         "flex shrink-0 items-center justify-center rounded-[var(--m-r-tile)]",
         size === "md" ? "w-9 h-9" : "w-7 h-7",
         accent
-          ? "bg-[var(--m-tint-green)] text-[var(--m-forest)]"
+          ? "bg-[var(--m-tint-green)] text-[var(--figure-accent)]"
           : "bg-[var(--m-cream-2)] text-[var(--m-ink-soft)]",
         className
       )}

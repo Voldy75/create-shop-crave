@@ -193,8 +193,8 @@ function CartPageInner() {
               <div className="card tint-lav hstack" style={{ boxShadow: "none", padding: "12px 16px", gap: 12 }}>
                 <BoBowl width={34} height={34} style={{ flex: "none" }} />
                 <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
-                  <span className="t-micro" style={{ color: "var(--m-plum)" }}>Smart check</span>
-                  <span className="t-body" style={{ color: "var(--m-plum)" }}>
+                  <span className="t-micro" style={{ color: "var(--text-plum)" }}>Smart check</span>
+                  <span className="t-body" style={{ color: "var(--text-plum)" }}>
                     You probably already have{" "}
                     {pantryHits.slice(0, 2).map((p) => p.item.toLowerCase()).join(" & ")}
                     {pantrySaving > 0 ? `. Skipping saves about ₹${pantrySaving}.` : "."}
@@ -209,7 +209,7 @@ function CartPageInner() {
                 <button
                   onClick={() => setOff(new Set())}
                   className="wlink"
-                  style={{ background: "none", border: "none", color: "var(--m-forest)" }}
+                  style={{ background: "none", border: "none", color: "var(--figure-accent)" }}
                 >
                   Select all
                 </button>
@@ -306,7 +306,7 @@ function CartPageInner() {
             <i style={{ height: 1.5, background: "var(--m-ink-faint)", display: "block" }} />
             <div className="hstack" style={{ justifyContent: "space-between" }}>
               <span className="t-h2">Estimated</span>
-              <span className="t-h2" style={{ color: "var(--m-forest)" }}>₹{subtotal}</span>
+              <span className="t-h2" style={{ color: "var(--figure-accent)" }}>₹{subtotal}</span>
             </div>
             {/* Deliberately explicit. These are the recipe's own estimates, not
                 live prices — no platform gives us a price feed. */}
@@ -329,10 +329,10 @@ function CartPageInner() {
           }}
         >
           <div className="hstack" style={{ gap: 10, marginBottom: 10 }}>
-            <Sparkles width={18} height={18} style={{ color: "var(--m-forest)", flex: "none" }} />
+            <Sparkles width={18} height={18} style={{ color: "var(--figure-accent)", flex: "none" }} />
             <span className="t-h2" style={{ fontSize: 14 }}>Swiggy Instamart</span>
           </div>
-          <span className="t-cap" style={{ color: "var(--m-forest)" }}>
+          <span className="t-cap" style={{ color: "var(--figure-accent)" }}>
             Bo builds the cart and asks you before placing anything.
           </span>
           <button className="pill-primary" style={{ width: "100%", marginTop: 12 }} onClick={askBo} disabled={selected.length === 0}>
@@ -346,7 +346,7 @@ function CartPageInner() {
             rel="noopener noreferrer"
             onClick={() => record("instamart")}
             className="wlink"
-            style={{ marginTop: 10, justifyContent: "center", width: "100%", color: "var(--m-forest)" }}
+            style={{ marginTop: 10, justifyContent: "center", width: "100%", color: "var(--figure-accent)" }}
           >
             or open Instamart yourself <ExternalLink width={13} height={13} />
           </a>
@@ -395,7 +395,7 @@ function RecentRuns({
   return (
     <div className="card vstack" style={{ padding: 18, gap: 14, ...style }}>
       <div className="hstack" style={{ gap: 10, flexWrap: "wrap" }}>
-        <History width={18} height={18} style={{ color: "var(--m-forest)", flex: "none" }} aria-hidden />
+        <History width={18} height={18} style={{ color: "var(--figure-accent)", flex: "none" }} aria-hidden />
         <span className="t-d2" style={{ fontSize: 18 }}>Recently sent</span>
         <span className="chip pill-sm">{runs.length}</span>
         <div className="grow" />

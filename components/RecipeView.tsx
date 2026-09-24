@@ -131,7 +131,7 @@ export function RecipeView({ data }: RecipeViewProps) {
                     <div className="hstack" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div className="vstack" style={{ gap: 6 }}>
                             {data.dietaryTags && data.dietaryTags.length > 0 && (
-                                <span className="t-cap" style={{ color: "var(--m-forest)" }}>
+                                <span className="t-cap" style={{ color: "var(--figure-accent)" }}>
                                     {data.dietaryTags.join(" · ")}
                                 </span>
                             )}
@@ -148,8 +148,8 @@ export function RecipeView({ data }: RecipeViewProps) {
                     {data.nutritionEstimate && (
                         <div className="hstack" style={{ gap: 16, flexWrap: "wrap" }}>
                             <span className="hstack" style={{ gap: 6 }}>
-                                <Flame width={14} height={14} style={{ color: "var(--m-burnt)" }} />
-                                <span className="t-cap" style={{ color: "var(--m-burnt)" }}>{data.nutritionEstimate.calories}</span>
+                                <Flame width={14} height={14} style={{ color: "var(--text-burnt)" }} />
+                                <span className="t-cap" style={{ color: "var(--text-burnt)" }}>{data.nutritionEstimate.calories}</span>
                             </span>
                             <span className="t-cap">{data.nutritionEstimate.protein} protein</span>
                             <span className="t-cap">{data.nutritionEstimate.carbs} carbs</span>
@@ -281,7 +281,7 @@ export function RecipeView({ data }: RecipeViewProps) {
                                     <Mascot width={34} height={34} />
                                     <span className="t-cap" style={{ color: "var(--m-ink)", fontWeight: 700, textAlign: "center" }}>{ing.item}</span>
                                     {ing.quantity && <span className="t-cap">{ing.quantity}</span>}
-                                    <span className="t-cap" style={{ color: "var(--m-forest)", fontWeight: 800 }}>{ing.price}</span>
+                                    <span className="t-cap" style={{ color: "var(--figure-accent)", fontWeight: 800 }}>{ing.price}</span>
                                 </a>
                             );
                         })}

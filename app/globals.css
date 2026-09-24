@@ -523,7 +523,7 @@
   align-items: center;
   justify-content: center;
   background: var(--m-tint-green);
-  color: var(--m-forest);
+  color: var(--figure-accent); /* forest was 2.45:1 on the dark tint */
   font: 800 14px var(--m-font-display);
 }
 .snav { text-decoration: none; }
@@ -919,6 +919,47 @@
    token cleanup would silently drop a large number to 2.63:1. */
 :root { --figure-accent: var(--m-forest); }
 [data-theme="dark"] { --figure-accent: var(--m-lime); }
+
+/* ── Theme-aware text hues (web twin of app/(mobile)/m/mobile.css) ──
+   Screens use dark hues as TEXT and ICON colour. meshi-b's dark block never
+   redefines --m-plum or --m-red and only nudges forest-2/brown/burnt, so in
+   dark they sit on the dark card at 1.35–2.63:1. Each LIGHT value is exactly
+   the original token, so the designed light theme is unchanged; dark lifts
+   toward --m-ink (cream in dark). Use these — not raw --m-plum / --m-forest-2
+   / --m-red … — for text and icons in the web tree. Keep raw hues for
+   BACKGROUNDS: these are lighter in dark and would sink on-deep text. */
+:root {
+  --text-forest-2: var(--m-forest-2);
+  --text-plum:     var(--m-plum);
+  --text-brown:    var(--m-brown);
+  --text-burnt:    var(--m-burnt);
+  --text-red:      var(--m-red);
+  /* Text-only twin of --band-accent. --band-accent is ALSO a button
+     BACKGROUND (.btn-pill-primary), so it cannot become lime in dark; the
+     eyebrow text reads this instead. Band re-scoping is below. */
+  --band-accent-text: var(--figure-accent);
+}
+[data-theme="dark"] {
+  --text-forest-2: var(--m-lime);
+  --text-plum:     color-mix(in srgb, var(--m-plum-2) 55%, var(--m-ink));
+  --text-brown:    color-mix(in srgb, var(--m-brown) 40%, var(--m-ink));
+  --text-burnt:    color-mix(in srgb, var(--m-burnt) 70%, var(--m-ink));
+  --text-red:      color-mix(in srgb, var(--m-red) 60%, var(--m-ink));
+}
+.band-deep       { --band-accent-text: var(--m-lime); }
+.band-deep .card { --band-accent-text: var(--figure-accent); }
+
+/* ── Sidebar active item + secondary pill, dark (approved 2026-09-17) ──
+   meshi-web's .snav-active and meshi-b's .pill-secondary paint text (and the
+   pill's ring) in --m-forest: 2.45:1 on the dark tint / 2.75–3.20 on the dark
+   ground. Same forest->lime swap as the mobile tab bar. Unlayered, because
+   both vendored sheets are unlayered and would beat any @layer rule. */
+[data-theme="dark"] .snav-active,
+[data-theme="dark"] .snav-active:hover { color: var(--figure-accent); }
+[data-theme="dark"] .pill-secondary {
+  color: var(--figure-accent);
+  box-shadow: inset 0 0 0 2.5px var(--figure-accent);
+}
 
 /* ── Home dashboard — UNLAYERED, same reason as the rails ──
    Two-up cards that stop being readable side by side well above the sidebar's

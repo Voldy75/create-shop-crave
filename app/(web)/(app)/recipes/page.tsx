@@ -152,7 +152,7 @@ export default function RecipesPage() {
 
           {hydrated && rows.length === 0 && (
             <div className="card vstack" style={{ padding: "46px 30px", gap: 14, alignItems: "center", textAlign: "center" }}>
-              <ChefHat width={30} height={30} style={{ color: "var(--m-forest)" }} aria-hidden />
+              <ChefHat width={30} height={30} style={{ color: "var(--figure-accent)" }} aria-hidden />
               <span className="t-d2">No saved recipes yet</span>
               <span className="t-body-soft" style={{ maxWidth: 420 }}>
                 Ask Bo for something to cook, then tap the heart on a recipe to keep it here.
@@ -173,7 +173,7 @@ export default function RecipesPage() {
               what the screen actually is. ── */}
           {hydrated && filtered.length > 0 && (
             <div className="vstack" style={{ gap: 7, alignItems: "center", textAlign: "center" }}>
-              <span className="t-micro" style={{ color: "var(--m-burnt)" }}>Your shelf</span>
+              <span className="t-micro" style={{ color: "var(--text-burnt)" }}>Your shelf</span>
               <span className="t-d1" style={{ fontSize: 32 }}>
                 {filtered.length === 1 ? "One recipe worth keeping" : `${filtered.length} recipes worth keeping`}
               </span>
@@ -204,7 +204,7 @@ export default function RecipesPage() {
           {shelf.length > 0 && (
             <div className="card vstack" style={{ padding: 22, gap: 16 }}>
               <div className="hstack" style={{ gap: 11, flexWrap: "wrap" }}>
-                <Bookmark width={19} height={19} style={{ color: "var(--m-forest)" }} aria-hidden />
+                <Bookmark width={19} height={19} style={{ color: "var(--figure-accent)" }} aria-hidden />
                 <span className="t-d2">Saved recipes</span>
                 <span className="chip pill-sm">{shelf.length} saved</span>
                 <div className="grow" />
@@ -272,7 +272,7 @@ function HeroCard({ row, onUnsave, onCook, onBuy }: { row: Row; onUnsave: () => 
           <span className="chip pill-sm">{recipe.ingredients.length} ingredients</span>
           {kcal !== null && (
             <span className="chip pill-sm">
-              <Flame width={14} height={14} style={{ color: "var(--m-burnt)" }} aria-hidden /> {kcal} kcal
+              <Flame width={14} height={14} style={{ color: "var(--text-burnt)" }} aria-hidden /> {kcal} kcal
             </span>
           )}
         </div>

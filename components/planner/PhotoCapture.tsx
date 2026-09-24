@@ -119,7 +119,7 @@ export function PhotoCapture({ imageDataUrl, onChange, disabled }: Props) {
         </button>
       </div>
       {err && (
-        <p className="t-cap" style={{ color: "var(--m-red)" }}>{err}</p>
+        <p className="t-cap" style={{ color: "var(--text-red)" }}>{err}</p>
       )}
       <input
         ref={cameraRef}

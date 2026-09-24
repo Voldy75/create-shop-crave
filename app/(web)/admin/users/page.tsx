@@ -148,7 +148,7 @@ export default function UsersPage() {
           className="rounded-xl p-4 text-sm"
           style={{
             background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-            color: "var(--m-red)",
+            color: "var(--text-red)",
             border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
           }}
         >

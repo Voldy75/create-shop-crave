@@ -154,7 +154,7 @@ export default function AdminPage() {
           <div className="rounded-xl p-4 text-sm"
             style={{
               background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-              color: "var(--m-red)",
+              color: "var(--text-red)",
               border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
             }}>
             {error}
@@ -173,7 +173,7 @@ export default function AdminPage() {
         <div className="p-6 rounded-2xl" style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)" }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <BarChart2 className="w-4 h-4" style={{ color: "var(--m-forest)" }} />
+              <BarChart2 className="w-4 h-4" style={{ color: "var(--figure-accent)" }} />
               <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>AI Requests</h2>
             </div>
             <div className="flex gap-4 text-sm">
@@ -197,7 +197,7 @@ export default function AdminPage() {
         {/* Top users */}
         <div className="p-6 rounded-2xl" style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)" }}>
           <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: "var(--m-ink)" }}>
-            <Users className="w-4 h-4" style={{ color: "var(--m-forest)" }} />
+            <Users className="w-4 h-4" style={{ color: "var(--figure-accent)" }} />
             Top Users This Week
           </h2>
           {!stats?.topUsers?.length ? (
@@ -210,7 +210,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold w-4" style={{ color: "var(--m-ink-soft)" }}>{i + 1}</span>
                     <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ background: "var(--m-tint-green)", color: "var(--m-forest)" }}>
+                      style={{ background: "var(--m-tint-green)", color: "var(--figure-accent)" }}>
                       {u.email[0].toUpperCase()}
                     </div>
                     <p className="text-sm font-medium" style={{ color: "var(--m-ink)" }}>{u.email}</p>
@@ -218,7 +218,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2">
                     {u.is_pro && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "var(--m-tint-green)", color: "var(--m-forest)" }}>
+                        style={{ background: "var(--m-tint-green)", color: "var(--figure-accent)" }}>
                         Pro
                       </span>
                     )}

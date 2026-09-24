@@ -45,7 +45,12 @@ export function Section({
         {(eyebrow || headline || subtitle) && (
           <div className="text-center space-y-3 mb-12 md:mb-16">
             {eyebrow && (
-              /* `--band-accent`, NOT `--m-forest`. `.band-deep` re-scopes
+              /* Reads `--band-accent-text`, the text-only twin of
+                 `--band-accent` (which is also a button background, so it
+                 cannot turn lime in dark). Off a band it is --figure-accent:
+                 forest in light, lime in dark — plain forest measured
+                 2.86–3.20:1 on the dark ground.
+                 Originally `--band-accent`, NOT `--m-forest`. `.band-deep` re-scopes
                  `--band-accent` to LIME on the forest and plum bands, because
                  forest cannot be both the band and the accent on it — see
                  globals.css's "Band-scoped tokens" block. Hardcoding the meshi
@@ -54,7 +59,7 @@ export function Section({
                  retired Midnight Kitchen alias vocabulary; it is a live,
                  honestly-named scoping mechanism that happened to share a
                  prefix with it until Phase 10e separated the two. */
-              <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[var(--band-accent)]">
+              <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[var(--band-accent-text)]">
                 {eyebrow}
               </p>
             )}

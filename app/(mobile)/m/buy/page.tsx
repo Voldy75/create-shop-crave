@@ -121,7 +121,7 @@ export default function BuyPrecheck() {
         <button
           onClick={() => setOff(new Set())}
           className="t-micro"
-          style={{ background: "none", border: "none", padding: 0, color: "var(--m-forest)" }}
+          style={{ background: "none", border: "none", padding: 0, color: "var(--figure-accent)" }}
         >
           Select all
         </button>

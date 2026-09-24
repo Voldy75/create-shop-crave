@@ -76,13 +76,11 @@ something, update BOTH this index and the section it points to.
     synthetic stream; real permission/rear-camera/EXIF/iOS-autoplay still
     unproven. → the `/m/log` section, which carries the `--experimental-https`
     recipe.
-11. **Contrast** — **MOBILE: done** in both themes on all 21 routes, including
-    the approved design-system fixes (tab bar, `.pill-secondary`, light grey
-    text). **WEB DARK MODE IS NOT CLEAN** — the first compositing scan of the
-    web tree (2026-09-17) found sidebar/nav, captions, pills and the landing's
-    forest bands failing in dark. Still-open decisions: light burnt text,
-    `.badge-burnt`, lime pills. → "Dark-mode mobile: measured findings" and
-    "Web tree: dark mode".
+11. **Contrast** — **app-level DONE on both trees, both themes, text AND
+    icons** (mobile 21 routes; web's signed-out routes at 1280 and 600px).
+    What is left is only DECISIONS: the landing's forest bands in dark, three
+    brand marks, light burnt text, `.badge-burnt`, lime pills. Signed-in web
+    screens were token-verified in code, not rendered. → "Web tree: dark mode".
 12. **Any real payment**, on any provider. → "What is verified, and what is
     not" (PR #33 body).
 
@@ -2082,7 +2080,57 @@ is now tokenised too.
 | `.pill-lime` / `.chip-active` / lime `.chip-tag` | 4.43 | 4.43 | everywhere, both trees |
 | ~~`.t-cap` / `.t-micro` (`--m-ink-soft`)~~ | ok | ~~4.13–4.26~~ | **FIXED, both trees** |
 
-### Web tree: dark mode — NEW FINDING, not fixed (2026-09-17)
+### Web tree: dark mode — FIXED except the decisions below (2026-09-17)
+
+**Correction first.** The 2026-09-14 mobile commit and this file both said
+icons "keep raw hues — non-text needs 3:1 and they pass". **That was false** —
+nobody had measured an icon. Forest on the dark card is 2.63, plum 1.35: both
+fail 3:1. The scanner now measures `currentColor` SVGs against 3:1, and icons
+got the same tokens as text.
+
+**What was done.** Web got its own copy of the text tokens (globals.css,
+unlayered, next to `--figure-accent`), and a guarded script moved every
+text/icon use of a dark hue — `color`/`ink` style keys and `text-` utility
+classes — onto them in BOTH trees: 137 sites. Plus: dark overrides for
+meshi-web's `.snav-active` and web `.pill-secondary`; the sidebar initials
+avatar; BottomNav's active item (2.75 → 7.84, the 600px layout); landing brand
+letter tiles → near-black ink; and `--band-accent-text`, a TEXT-only twin of
+`--band-accent`, because `--band-accent` is also `.btn-pill-primary`'s
+BACKGROUND and must not turn lime in dark. Section eyebrows read the new one.
+
+**TRAP — lime grounds. The swap caused two real regressions, caught only by
+measuring:** a text token is LIME in dark, so on a lime background it vanishes.
+The script guarded against a lime `background` in the same style object, but
+the lime came from a PARENT element or a CSS class: `/m/buy/confirmed`'s
+stepper tick (lime circle set on the wrapper, 1.00:1) and the landing's
+`.hiw-badge` icon (lime disc from globals.css). Both reverted to raw
+`--m-forest-2` with a comment; now 4.43 dark / 6.22 light. Every swapped site
+was then checked against every stylesheet class with a lime background
+(`.pill-lime .chip-active .chip-tag .progress-lime .xsw .xbtn-l .step-seg
+.hiw-bar .hiw-badge .ing-add`) — none remain. **Rule: text tokens for text and
+icons on card/cream/tint grounds; raw hues on lime grounds and for all
+backgrounds.**
+
+**Also caught:** the landing's feature card said "Four models, one buddy" —
+the same false claim the earlier audit removed from the stats band. Now
+"Three".
+
+**Still open — decisions:**
+- **The landing's forest bands in dark.** meshi-b's dark `--m-forest` is
+  lighter, so everything ON the band sinks: lime accent/numerals/eyebrow 2.85,
+  `--band-text-tertiary` 2.92 (4.04 in LIGHT too), band body 3.88. Needs a
+  call on the band ground itself (e.g. keep the band at light-mode forest in
+  dark), not a text swap.
+- **Brand marks, both themes:** Zomato's red wordmark on the plum strip 2.44;
+  the WhatsApp glyph (white on WhatsApp green) 1.98 on `/m/settings/notifications`.
+  Brand-guideline territory, so flagged rather than recoloured.
+- Unchanged from before: light burnt text 3.61, `.badge-burnt` 2.87 dark, lime
+  pills 4.43.
+- **Not rendered:** signed-in web screens (chat, settings, admin, home) and
+  text over photos. Their swaps were verified by reading each site's ground in
+  code, which is weaker than measuring.
+
+#### Original finding (kept for the numbers)
 
 The earlier claim that the web screens were "measured in both themes" does not
 survive the compositing scanner. First web scan, signed out, so only `/`,
@@ -2129,10 +2177,9 @@ their sections). What genuinely remains as code work:
   BLOCKED, not merely unwritten — the same risk profile as the `ai` upgrade.
 - **`ai` v3→v7 upgrade** — still deferred; needs a real account and there is no
   test suite. → "The remaining 14".
-- **Web dark-mode contrast** — real code work, found 2026-09-17: sidebar nav
-  2.45 on every app screen, web `.pill-secondary`, captions, the landing's
-  forest bands and brand tiles. The mobile fix pattern transfers. → "Web tree:
-  dark mode".
+- **Contrast decisions only** (app-level code is DONE on both trees): the
+  landing's forest bands in dark (2.85–3.88), Zomato wordmark 2.44 and the
+  WhatsApp glyph 1.98 (both themes). → "Web tree: dark mode".
 - **Contrast decisions (waiting on a yes)** — light burnt text 3.61 (one token),
   `.badge-burnt` 2.87 dark, lime pills 4.43. Tab bar, mobile pill-secondary and
   light grey text are DONE. → "Dark-mode mobile".

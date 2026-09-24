@@ -137,7 +137,7 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
             className="rounded-xl p-3 text-sm"
             style={{
             background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-            color: "var(--m-red)",
+            color: "var(--text-red)",
             border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
           }}
           >

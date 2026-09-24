@@ -197,7 +197,7 @@ export default function HomePage() {
       >
         {streak > 0 && (
           <span className="chip pill-sm">
-            <Flame width={14} height={14} style={{ color: "var(--m-burnt)" }} aria-hidden />
+            <Flame width={14} height={14} style={{ color: "var(--text-burnt)" }} aria-hidden />
             {streak} day{streak === 1 ? "" : "s"}
           </span>
         )}
@@ -212,7 +212,7 @@ export default function HomePage() {
           <div className="home-grid">
             <div className="card vstack" style={{ padding: 20, gap: 13 }}>
               <div className="hstack" style={{ gap: 10 }}>
-                <TrendingUp width={19} height={19} style={{ color: "var(--m-forest)", flex: "none" }} aria-hidden />
+                <TrendingUp width={19} height={19} style={{ color: "var(--figure-accent)", flex: "none" }} aria-hidden />
                 <span className="t-d2" style={{ fontSize: 18 }}>Today</span>
               </div>
               <div className="hstack" style={{ gap: 22, flexWrap: "wrap" }}>
@@ -257,7 +257,7 @@ export default function HomePage() {
             {/* ── Suggestions, each with its reason ── */}
             <div className="card vstack" style={{ padding: 20, gap: 13 }}>
               <div className="hstack" style={{ gap: 10 }}>
-                <Sparkles width={19} height={19} style={{ color: "var(--m-plum)", flex: "none" }} aria-hidden />
+                <Sparkles width={19} height={19} style={{ color: "var(--text-plum)", flex: "none" }} aria-hidden />
                 <span className="t-d2" style={{ fontSize: 18 }}>What Bo noticed</span>
                 <div className="grow" />
                 <span className="t-cap">last {PAST_DAYS} days</span>
@@ -291,7 +291,7 @@ export default function HomePage() {
           {saved.length > 0 && (
             <div className="card vstack" style={{ padding: 20, gap: 14 }}>
               <div className="hstack" style={{ gap: 10, flexWrap: "wrap" }}>
-                <ChefHat width={19} height={19} style={{ color: "var(--m-forest)", flex: "none" }} aria-hidden />
+                <ChefHat width={19} height={19} style={{ color: "var(--figure-accent)", flex: "none" }} aria-hidden />
                 <span className="t-d2" style={{ fontSize: 18 }}>Back to your shelf</span>
                 <div className="grow" />
                 <Link href="/recipes" className="wlink" style={{ textDecoration: "none" }}>
@@ -326,7 +326,7 @@ export default function HomePage() {
             {threads.length > 0 && (
               <div className="card vstack" style={{ padding: 20, gap: 12 }}>
                 <div className="hstack" style={{ gap: 10 }}>
-                  <MessageSquare width={18} height={18} style={{ color: "var(--m-forest)", flex: "none" }} aria-hidden />
+                  <MessageSquare width={18} height={18} style={{ color: "var(--figure-accent)", flex: "none" }} aria-hidden />
                   <span className="t-d2" style={{ fontSize: 18 }}>Pick up where you left off</span>
                 </div>
                 <div className="vstack" style={{ gap: 7 }}>
@@ -352,7 +352,7 @@ export default function HomePage() {
             {runs.length > 0 && (
               <div className="card vstack" style={{ padding: 20, gap: 12 }}>
                 <div className="hstack" style={{ gap: 10 }}>
-                  <ShoppingBag width={18} height={18} style={{ color: "var(--m-forest)", flex: "none" }} aria-hidden />
+                  <ShoppingBag width={18} height={18} style={{ color: "var(--figure-accent)", flex: "none" }} aria-hidden />
                   <span className="t-d2" style={{ fontSize: 18 }}>Recently sent to a store</span>
                   <div className="grow" />
                   <Link href="/cart" className="wlink" style={{ textDecoration: "none" }}>Groceries</Link>

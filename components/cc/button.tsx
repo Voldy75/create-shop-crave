@@ -30,7 +30,7 @@ const ccButtonVariants = cva(
         ghost:
           "bg-transparent text-[var(--m-ink-soft)] hover:bg-[var(--m-cream-2)] hover:text-[var(--m-ink)] active:translate-y-[2px]",
         destructive:
-          "bg-transparent text-[var(--m-red)] hover:bg-[color-mix(in_srgb,var(--m-red)_10%,transparent)] active:translate-y-[2px]",
+          "bg-transparent text-[var(--text-red)] hover:bg-[color-mix(in_srgb,var(--m-red)_10%,transparent)] active:translate-y-[2px]",
       },
       size: {
         sm: "text-xs px-3 py-1.5 min-h-8",

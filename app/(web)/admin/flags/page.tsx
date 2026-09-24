@@ -73,7 +73,7 @@ function FeatureFlagsPanel() {
     <div className="p-6 rounded-2xl" style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)" }}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-bold flex items-center gap-2" style={{ color: "var(--m-ink)" }}>
-          <Flag className="w-4 h-4" style={{ color: "var(--m-forest)" }} />
+          <Flag className="w-4 h-4" style={{ color: "var(--figure-accent)" }} />
           Feature Flags
         </h2>
         <button

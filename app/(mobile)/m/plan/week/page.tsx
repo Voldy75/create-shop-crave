@@ -116,7 +116,7 @@ export default function WeeklyPlan() {
           {avg > 0 && (
             <span
               className="chip-tag chip"
-              style={onTrack ? { flex: "none" } : { flex: "none", background: "var(--m-tint-peach)", color: "var(--m-burnt)" }}
+              style={onTrack ? { flex: "none" } : { flex: "none", background: "var(--m-tint-peach)", color: "var(--text-burnt)" }}
             >
               {onTrack ? "On track" : "Over"}
             </span>

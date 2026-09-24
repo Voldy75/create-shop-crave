@@ -42,7 +42,7 @@ export function SwiggyExpiryBanner() {
               href="https://mcp.swiggy.com/builders/access/"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "var(--m-forest)", textDecoration: "underline" }}
+              style={{ color: "var(--figure-accent)", textDecoration: "underline" }}
             >
               admin needs credentials
             </a>
@@ -61,7 +61,7 @@ export function SwiggyExpiryBanner() {
         body={
           <>
             Your Swiggy session expired (v1 has no refresh tokens).{" "}
-            <Link href="/settings/notifications" style={{ color: "var(--m-forest)", textDecoration: "underline" }}>
+            <Link href="/settings/notifications" style={{ color: "var(--figure-accent)", textDecoration: "underline" }}>
               Reconnect
             </Link>{" "}
             to keep ordering.
@@ -79,7 +79,7 @@ export function SwiggyExpiryBanner() {
         body={
           <>
             Swiggy session expires soon.{" "}
-            <Link href="/settings/notifications" style={{ color: "var(--m-forest)", textDecoration: "underline" }}>
+            <Link href="/settings/notifications" style={{ color: "var(--figure-accent)", textDecoration: "underline" }}>
               Reconnect
             </Link>{" "}
             now to avoid mid-order dropouts.
@@ -97,7 +97,7 @@ export function SwiggyExpiryBanner() {
         body={
           <>
             You aren&apos;t connected to Swiggy yet —{" "}
-            <Link href="/settings/notifications" style={{ color: "var(--m-forest)", textDecoration: "underline" }}>
+            <Link href="/settings/notifications" style={{ color: "var(--figure-accent)", textDecoration: "underline" }}>
               connect in Settings
             </Link>{" "}
             to let the agent order on your behalf.

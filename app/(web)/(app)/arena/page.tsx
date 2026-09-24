@@ -220,7 +220,7 @@ export default function ArenaPage() {
           </button>
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-lg" style={{ background: "var(--m-tint-green)" }}>
-              <Sparkles className="w-4 h-4" style={{ color: "var(--m-forest)" }} />
+              <Sparkles className="w-4 h-4" style={{ color: "var(--figure-accent)" }} />
             </div>
             <div>
               <h1 className="font-bold text-lg tracking-tight" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>

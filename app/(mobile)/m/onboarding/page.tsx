@@ -471,7 +471,7 @@ export default function Onboarding() {
             is blocked upstream (Dead End 1). Promising five connections here
             would be a claim the product cannot honour. */}
         <div className="card tint-green" style={{ boxShadow: "none", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <Lock width={22} height={22} style={{ color: "var(--m-forest)", flex: "none" }} />
+          <Lock width={22} height={22} style={{ color: "var(--figure-accent)", flex: "none" }} />
           <span className="t-cap" style={{ color: "var(--text-forest-2)" }}>
             Connect accounts anytime in Settings — Bo works without them too.
           </span>
@@ -502,7 +502,7 @@ export default function Onboarding() {
             <span style={{ position: "absolute", inset: 36, borderRadius: "50%", background: "var(--m-card)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Tomato width={42} height={42} style={{ animation: "mm-bob 2.4s ease-in-out infinite" }} />
             </span>
-            <MapPin width={26} height={26} style={{ position: "absolute", top: 2, right: 8, color: "var(--m-forest)" }} />
+            <MapPin width={26} height={26} style={{ position: "absolute", top: 2, right: 8, color: "var(--figure-accent)" }} />
           </div>
           <span className="t-cap" style={{ color: "var(--figure-accent)" }}>
             Tomato has already scoped the block.
@@ -628,7 +628,7 @@ export default function Onboarding() {
                 onClick={() => toggleAvoid(a)}
                 className="chip"
                 aria-pressed={on}
-                style={on ? { background: "var(--m-tint-peach)", boxShadow: "none", color: "var(--m-red)" } : undefined}
+                style={on ? { background: "var(--m-tint-peach)", boxShadow: "none", color: "var(--text-red)" } : undefined}
               >
                 {a}{on ? " ✕" : ""}
               </button>
@@ -687,7 +687,7 @@ export default function Onboarding() {
                 <span className="t-h2">{label}</span>
                 <span className="t-cap">{sub}</span>
               </div>
-              {on && <Check width={20} height={20} style={{ color: "var(--m-forest)" }} />}
+              {on && <Check width={20} height={20} style={{ color: "var(--figure-accent)" }} />}
             </button>
           );
         })}
@@ -764,8 +764,8 @@ export default function Onboarding() {
           }}
         >
           <div className="hstack" style={{ gap: 8 }}>
-            <Bell width={26} height={26} style={{ color: "var(--m-burnt)" }} />
-            <span style={{ font: "800 40px/1 var(--m-font-display)", color: "var(--m-burnt)" }}>Day 1</span>
+            <Bell width={26} height={26} style={{ color: "var(--text-burnt)" }} />
+            <span style={{ font: "800 40px/1 var(--m-font-display)", color: "var(--text-burnt)" }}>Day 1</span>
           </div>
           <span className="t-h2" style={{ color: "var(--text-brown)" }}>
             Log a meal a day, grow your streak,<br />adopt the whole veggie gang.
@@ -791,7 +791,7 @@ export default function Onboarding() {
         </div>
 
         <button className="row" style={{ marginTop: 10, width: "100%", border: "none", textAlign: "left" }} onClick={() => setNotifOn((v) => !v)}>
-          <span className="icon-btn tint-peach" style={{ boxShadow: "none", color: "var(--m-burnt)", flex: "none" }}>
+          <span className="icon-btn tint-peach" style={{ boxShadow: "none", color: "var(--text-burnt)", flex: "none" }}>
             <Bell width={20} height={20} />
           </span>
           <div className="vstack grow" style={{ gap: 1 }}>
@@ -802,7 +802,7 @@ export default function Onboarding() {
         </button>
 
         <button className="row" style={{ width: "100%", border: "none", textAlign: "left" }} onClick={() => setCamOn((v) => !v)}>
-          <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--m-forest)", flex: "none" }}>
+          <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--figure-accent)", flex: "none" }}>
             <Camera width={20} height={20} />
           </span>
           <div className="vstack grow" style={{ gap: 1 }}>

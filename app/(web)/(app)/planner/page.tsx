@@ -302,13 +302,13 @@ function PlanView({
                                             <div className="xcell xfilled group">
                                                 <div className="xmeal">
                                                     <div className="hstack" style={{ alignItems: "flex-start", gap: 6 }}>
-                                                        <ChefHat width={13} height={13} style={{ color: "var(--m-forest)", marginTop: 2, flex: "none" }} />
+                                                        <ChefHat width={13} height={13} style={{ color: "var(--figure-accent)", marginTop: 2, flex: "none" }} />
                                                         <p className="t-cap line-clamp-3" style={{ color: "var(--m-ink)" }}>{slot.dish}</p>
                                                     </div>
                                                     <button
                                                         onClick={() => onRemoveMeal(day, meal)}
                                                         className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                                                        style={{ background: "none", border: "none", color: "var(--m-red)", cursor: "pointer", padding: 2 }}
+                                                        style={{ background: "none", border: "none", color: "var(--text-red)", cursor: "pointer", padding: 2 }}
                                                         aria-label={`Remove ${meal} for ${day}`}
                                                     >
                                                         <X width={13} height={13} />
@@ -339,7 +339,7 @@ function PlanView({
             {uniqueDishes.length > 0 && (
                 <div className="card" style={{ padding: 20 }}>
                     <div className="hstack" style={{ gap: 8, marginBottom: 4 }}>
-                        <ShoppingCart width={16} height={16} style={{ color: "var(--m-forest)" }} />
+                        <ShoppingCart width={16} height={16} style={{ color: "var(--figure-accent)" }} />
                         <span className="t-h1">Shopping list</span>
                         <span className="chip-tag chip">{uniqueDishes.length} dishes</span>
                     </div>

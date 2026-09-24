@@ -237,7 +237,7 @@ export default function MobileNotifications() {
         disabled={!user || busy === "push"}
         aria-pressed={pushOn}
       >
-        <span className="icon-btn tint-peach" style={{ boxShadow: "none", color: "var(--m-burnt)", flex: "none" }}>
+        <span className="icon-btn tint-peach" style={{ boxShadow: "none", color: "var(--text-burnt)", flex: "none" }}>
           <Bell width={20} height={20} />
         </span>
         <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
@@ -262,7 +262,7 @@ export default function MobileNotifications() {
         disabled={!user || busy === "whatsapp"}
         aria-pressed={waOn}
       >
-        <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--m-forest)", flex: "none" }}>
+        <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--figure-accent)", flex: "none" }}>
           <MessageCircle width={20} height={20} />
         </span>
         <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>

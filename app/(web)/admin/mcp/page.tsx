@@ -211,7 +211,7 @@ export default function McpAdminPage() {
           className="rounded-xl p-4 text-sm"
           style={{
             background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-            color: "var(--m-red)",
+            color: "var(--text-red)",
             border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
           }}
         >
@@ -444,7 +444,7 @@ function ServerList({
                   onClick={() => remove(s.serviceKey)}
                   disabled={busyKey === s.serviceKey}
                   aria-label={`Delete ${s.serviceKey}`}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-[color-mix(in_srgb,var(--m-red)_12%,transparent)] hover:text-[var(--m-red)]"
+                  className="p-1.5 rounded-lg transition-colors hover:bg-[color-mix(in_srgb,var(--m-red)_12%,transparent)] hover:text-[var(--text-red)]"
                   style={{ color: "var(--m-ink-soft)" }}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
