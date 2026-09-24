@@ -340,7 +340,26 @@
 
   .band-cream  { background: var(--m-cream);   color: var(--m-ink); }
   .band-cream2 { background: var(--m-cream-2); color: var(--m-ink); }
-  .band-forest { background: var(--m-forest);  color: var(--m-on-deep); }
+  /* The band GROUND, not the text, is what fails in dark. meshi-b lightens
+     --m-forest for dark (#1E5A34 -> #2E7A48) because it is primarily an
+     ACTION colour there; as a full-bleed band that lifts the ground under
+     everything on it, and the lime accent, the eyebrow and the body copy all
+     sink with it — measured 2.85 / 2.85 / 3.88, plus --band-text-tertiary at
+     2.92. Recolouring each of those would fight the band instead of fixing it.
+
+     So dark gets its own deeper ground: --m-forest-2 cut with the dark app
+     background, which keeps it unmistakably forest while restoring headroom.
+     Measured on it: lime 5.48, tertiary 4.76, secondary 7.01, full on-deep
+     9.52 — every one now clears AA, and all of them beat the LIGHT band's
+     own numbers (4.43 / 4.05 / 5.80 / 7.70).
+
+     Light is deliberately untouched here: its two sub-AA values (tertiary
+     4.05, the 12px lime eyebrow 4.43) are a separate, open decision in
+     handoff.md, because raising them changes the designed light band. */
+  .band-forest { background: var(--band-forest-bg, var(--m-forest)); color: var(--m-on-deep); }
+  [data-theme="dark"] .band-forest {
+    --band-forest-bg: color-mix(in srgb, var(--m-forest-2) 75%, var(--m-cream));
+  }
   .band-plum   { background: var(--m-plum);    color: var(--m-on-deep); }
   /* Inside a forest or plum band the whole text scale has to flip. Rather
      than chase each rule, RE-SCOPE THE TOKENS on the band. Everything

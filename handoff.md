@@ -2116,11 +2116,24 @@ the same false claim the earlier audit removed from the stats band. Now
 "Three".
 
 **Still open — decisions:**
-- **The landing's forest bands in dark.** meshi-b's dark `--m-forest` is
-  lighter, so everything ON the band sinks: lime accent/numerals/eyebrow 2.85,
-  `--band-text-tertiary` 2.92 (4.04 in LIGHT too), band body 3.88. Needs a
-  call on the band ground itself (e.g. keep the band at light-mode forest in
-  dark), not a text swap.
+- ~~**The landing's forest bands in dark**~~ — **FIXED 2026-09-24.** The
+  GROUND was the problem, not the text: meshi-b lightens `--m-forest` for dark
+  (it is primarily an action colour there), which lifted the ground under
+  everything on the band. `.band-forest` now takes `--band-forest-bg`, defined
+  in dark only as `--m-forest-2` cut 75/25 with the dark app background —
+  still unmistakably forest, with the headroom back. Measured on the real
+  page, all three bands, every text node and icon (27 elements): **zero
+  failures in dark**, and every value beats the LIGHT band's own (lime 5.48 vs
+  4.43, tertiary 4.76 vs 4.05, secondary 7.01 vs 5.80, body 9.52 vs 7.70).
+  Light deliberately untouched — see below.
+  **No screenshot:** the landing's `whileInView` sections start at opacity 0
+  and capture as a void in this harness (Dead End 2), so this is verified by
+  measurement, not by eye.
+- **The forest band in LIGHT is still sub-AA** and is now the ONLY thing
+  between it and clean: `--band-text-tertiary` 4.04 (the STATS descriptions
+  and the hero tick list) and the 12px lime eyebrow 4.43. One token each —
+  tertiary needs alpha ≥ .68, the eyebrow needs a slightly lighter lime — but
+  both change the designed light band, so they wait for a yes.
 - **Brand marks, both themes:** Zomato's red wordmark on the plum strip 2.44;
   the WhatsApp glyph (white on WhatsApp green) 1.98 on `/m/settings/notifications`.
   Brand-guideline territory, so flagged rather than recoloured.
