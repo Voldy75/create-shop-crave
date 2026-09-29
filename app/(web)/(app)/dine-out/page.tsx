@@ -3,6 +3,29 @@
 /**
  * /dine-out — matched places, in two view modes.
  *
+ * w7a AND w7b ARE DELIBERATELY NOT BUILT (recorded 2026-09-29, retroactively
+ * — the original conversion never wrote a reason down, which is why this
+ * paragraph exists). The design file carries FIVE treatments of dine-out, and
+ * labels w7a "canonical": a SPLIT list + cartographic map with pins dropping
+ * in. w7b is an editorial gallery — food-forward cards with the map reduced to
+ * a ribbon. What shipped is w9e's list and w7c's full-bleed map behind a
+ * toggle, with w9d's sort control.
+ *
+ * Why the toggle stands:
+ *  - The two modes already collapse to one column below ~1100px, so a split
+ *    would be a desktop-only layout that reverts to a toggle on the widths
+ *    most of this audience uses (DESIGN.md: "mostly mobile, mostly Android").
+ *  - w7a's most distinctive element — mascot pins rather than generic markers
+ *    — IS built: MeshiMap renders them as OverlayViewF so they reuse the real
+ *    mascot components. The gap is the side-by-side layout, not the map.
+ *  - A split view means one map instance mounted alongside a scrolling list,
+ *    with selection driving both. That is a real behavioural change, not a
+ *    restyle, and it would fork the state this route currently shares.
+ *
+ * NOT a claim that the toggle is better than w7a. It is a smaller, shipped
+ * answer to the same screen. If the split view is wanted, w7a is the board to
+ * build against and the map layer is already there.
+ *
  * ONE ROUTE, NOT THREE. w9d, w9e and w7c all print the SAME fake URL
  * (app.meshi.app/bo/dine-out), so they are three treatments of one screen, not
  * three screens: w9e's accordion is the list mode, w7c's full-bleed map is the

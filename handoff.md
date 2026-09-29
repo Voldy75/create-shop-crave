@@ -1670,7 +1670,33 @@ to the end of this section.
 **Read this before touching any web screen.** The design file was REPLACED, not
 extended. `Meshi Redesign - Web.dc.html` no longer contains `w1b, w2a, w3a,
 w3b, w4a, w4b, w5a` — the nine boards Phase 10c was built against. It now holds
-15: `w1a, wLa, w6a, w7a/b/c, w8a–w8d, w9a–w9e`. Anything above that cites w2a
+15: `w1a, wLa, w6a, w7a/b/c, w8a–w8d, w9a–w9e`.
+
+**Coverage, re-verified against the LIVE design file 2026-09-29** (not from
+this file's own memory — the web design file has been replaced once already).
+All 15 boards extracted from it: w1a + wLa → `/`; w6a → `/chat`; w8a → the
+chat conversation rail; w8b → `/settings`; w8c → `/planner`; w8d → the Coach
+tab; w9a → `/recipes`; w9b → `/recipes/[slug]/cook`; w9c → `/dine-out/go/[id]`;
+w9d + w9e + w7c → `/dine-out`. **13 of 15 are shipped. No route-level screen is
+missing.**
+
+**w7a and w7b are NOT built, and until 2026-09-29 no reason had been recorded
+anywhere** — every other skipped board had one, so this was a genuine hole in
+the record rather than a documented call. It matters because the design file
+labels **w7a "canonical dine-out"**: a SPLIT list + map with dropping mascot
+pins. w7b is an editorial gallery with the map as a ribbon. `/dine-out` instead
+toggles w9e's list against w7c's map, and its header comment documented
+consolidating w9d/w9e/w7c while never mentioning w7a or w7b.
+
+The decision is now written into `app/(web)/(app)/dine-out/page.tsx`'s header:
+the toggle stands because both modes already collapse to one column below
+~1100px (so a split is desktop-only), because w7a's distinctive mascot pins ARE
+built (MeshiMap uses OverlayViewF with the real mascot components), and because
+a split view forks the selection state rather than restyling it. **That is a
+"smaller shipped answer", not a claim it beats w7a** — if the split is wanted,
+w7a is the board and the map layer already exists.
+
+Anything above that cites w2a
 or w3a is describing a board that is gone; those codes now only name
 already-shipped screens.
 
