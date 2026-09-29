@@ -42,7 +42,13 @@
   --text-plum:     var(--m-plum);
   --text-brown:    var(--m-brown);
   --text-burnt:    var(--m-burnt);
-  --text-red:      var(--m-red);
+  /* NOT raw --m-red: as TEXT, #D9453A measures 4.24 on the card, 3.99 on cream,
+     3.66 on cream-2 and ~3.6 on its own 10-12% error tint — under AA on every
+     light ground it is actually used on (error banners, sign-out, failed
+     saves). Mixing 30% ink keeps it unmistakably red and clears AA everywhere:
+     5.84 card / 5.50 cream / 5.04 cream-2 / 4.97 on the tint. Red GROUNDS and
+     borders keep raw --m-red — this is the text value only. */
+  --text-red:      color-mix(in srgb, var(--m-red) 70%, var(--m-ink));
 }
 [data-theme="dark"] {
   --text-forest-2: var(--m-lime);

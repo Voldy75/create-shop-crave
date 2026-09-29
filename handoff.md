@@ -1119,9 +1119,26 @@ sweep that found these:
 grep -rnoE '\b(bg|text|border)-(white|black|indigo|gray|slate|zinc|neutral|blue|purple)(-[0-9]{2,3})?\b' app components | grep '\.tsx:'
 ```
 
-Still outstanding from that sweep: **`components/ApiKeyDialog.tsx`** — the BYOK
-key dialog opened from web chat, ~30 off-palette classes, entirely pre-meshi
-and user-facing. `components/RestaurantView.tsx`'s hits are partner brand
+**`components/ApiKeyDialog.tsx` is now converted** (2026-09-29) — it was the
+last user-facing pre-meshi screen, ~30 off-palette classes. Measured in both
+themes: 19 elements, zero failures. Two traps it surfaced:
+- **A cross-tree class was nearly used.** The mobile twin marks the chosen
+  provider with `.offer-selected`, defined ONLY in `m/mobile.css`. On web that
+  styles nothing, silently — the `chip-solid` bug again. The selected state is
+  an inset ring in `--figure-accent` instead (forest light / lime dark, so it
+  clears 3:1 either way).
+- **meshi-b's `.input` styles only the WRAPPER.** There is no rule for a nested
+  `<input>`, so the element keeps its own background and border and draws a box
+  inside the pill. The mobile screen sets those explicitly; this one now does
+  too. Do not assume a reset.
+
+**`--text-red` was systemically under-contrast in LIGHT, and is fixed.** Raw
+`--m-red` as TEXT measured 4.24 on the card, 3.99 on cream, 3.66 on cream-2 and
+~3.6 on its own error tint — under AA on every light ground it is actually used
+on (error banners, sign-out, failed saves, the BYOK error). The light value is
+now `--m-red` 70% mixed with `--m-ink`: 5.84 / 5.50 / 5.04 / 4.97. Red GROUNDS
+and borders still use raw `--m-red`; this is the text value only, in both
+trees. `components/RestaurantView.tsx`'s hits are partner brand
 buttons (Maps blue, Uber black, Swiggy orange, Zomato red) — legitimate
 grounds, but their white text is the same contrast question the web `.mp-*`
 brand chips already had to fix, and has not been measured.

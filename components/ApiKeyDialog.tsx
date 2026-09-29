@@ -1,9 +1,30 @@
 "use client";
 
-import { useState } from "react";
+/**
+ * BYOK key dialog — opened from web chat when the daily limit is hit, and from
+ * the model picker.
+ *
+ * Converted to meshi 2026-09-29. It was the last user-facing pre-meshi screen:
+ * a white card, generic grey text and an indigo accent — a palette this project
+ * has never used. It survived the whole conversion because `check:hex` only
+ * catches hex/rgba LITERALS and this screen was built from Tailwind colour
+ * UTILITIES, which the gate cannot see. See app/(web)/error.tsx for the same
+ * story and the grep that finds this class of drift.
+ *
+ * CROSS-TREE TRAP AVOIDED: the mobile twin (app/(mobile)/m/settings/key) marks
+ * the chosen provider with `.offer-selected`, which is defined ONLY in
+ * m/mobile.css. The web tree never loads that file, so the class would have
+ * styled nothing here — silently, exactly like the `chip-solid` and
+ * `class="chip active"` bugs before it. The selected state is drawn with an
+ * inset ring in --figure-accent instead (theme-aware: forest in light, lime in
+ * dark, so the ring clears 3:1 on both grounds).
+ *
+ * Behaviour is unchanged apart from two additions this modal was missing:
+ * Escape closes, and so does a click on the scrim.
+ */
+
+import { useEffect, useRef, useState } from "react";
 import { X, Key, AlertCircle, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PROVIDERS, type Provider } from "@/lib/providers";
 
 interface ApiKeyDialogProps {
@@ -22,8 +43,18 @@ export function ApiKeyDialog({ onSave, onClose, error }: ApiKeyDialogProps) {
   const [selectedProvider, setSelectedProvider] = useState<Provider>("gemini");
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const providerInfo = PROVIDERS.find((p) => p.id === selectedProvider)!;
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const handleSave = () => {
     if (!apiKey.trim()) return;
@@ -31,119 +62,185 @@ export function ApiKeyDialog({ onSave, onClose, error }: ApiKeyDialogProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{
+        background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)",
+        backdropFilter: "blur(8px)",
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="card vstack"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="byok-title"
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: "100%", maxWidth: 460, padding: 22, gap: 16 }}
+      >
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-              <Key className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Daily Limit Reached</h2>
-              <p className="text-sm text-gray-500">Add your API key to continue</p>
-            </div>
+        <div className="hstack" style={{ gap: 12, alignItems: "flex-start" }}>
+          <span
+            className="icon-btn tint-green"
+            style={{ boxShadow: "none", color: "var(--figure-accent)", flex: "none" }}
+            aria-hidden
+          >
+            <Key width={19} height={19} />
+          </span>
+          <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+            <span className="t-h2" id="byok-title">
+              Daily limit reached
+            </span>
+            <span className="t-cap">Add your own API key to keep going</span>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+            className="icon-btn"
+            style={{ flex: "none", boxShadow: "none" }}
             aria-label="Close dialog"
           >
-            <X className="w-5 h-5" />
+            <X width={18} height={18} />
           </button>
         </div>
 
-        {/* Limit explanation */}
-        <p className="text-sm text-gray-600 bg-gray-50 rounded-xl p-3">
-          You&apos;ve used your <strong>2 free requests</strong> for today. Your key is stored locally
-          in your browser only — never sent to our servers for storage. Resets at midnight UTC.
-        </p>
-
-        {/* Provider selection */}
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-            AI Provider
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {PROVIDERS.map((provider) => (
-              <button
-                key={provider.id}
-                onClick={() => {
-                  setSelectedProvider(provider.id);
-                  setApiKey("");
-                }}
-                className={`p-3 rounded-xl border text-center transition-all text-xs font-medium ${
-                  selectedProvider === provider.id
-                    ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                    : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {provider.label}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 mt-1">{providerInfo.description}</p>
+        {/* Where the key lives — the same promise the mobile screen makes. */}
+        <div className="toast tint-green" style={{ boxShadow: "none" }}>
+          You&apos;ve used your 2 free requests for today. Your key is stored in this
+          browser only — never sent to our servers for storage. Resets at midnight UTC.
         </div>
 
-        {/* API Key input */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              API Key
-            </label>
+        {/* Provider */}
+        <div className="vstack" style={{ gap: 8 }}>
+          <span className="t-micro">AI provider</span>
+          <div className="hstack" style={{ gap: 8 }}>
+            {PROVIDERS.map((p) => {
+              const on = selectedProvider === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedProvider(p.id);
+                    setApiKey("");
+                  }}
+                  aria-pressed={on}
+                  className="card grow"
+                  style={{
+                    padding: "12px 8px",
+                    border: "none",
+                    textAlign: "center",
+                    cursor: "pointer",
+                    opacity: on ? 1 : 0.55,
+                    boxShadow: on ? "inset 0 0 0 2.5px var(--figure-accent)" : "none",
+                  }}
+                >
+                  <span className="t-h2" style={{ fontSize: 14 }}>
+                    {p.label.split(" ").pop()}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <span className="t-cap">{providerInfo.description}</span>
+        </div>
+
+        {/* Key */}
+        <div className="vstack" style={{ gap: 8 }}>
+          <div className="hstack" style={{ justifyContent: "space-between" }}>
+            <span className="t-micro">API key</span>
             <a
               href={KEY_DOCS[selectedProvider]}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800"
+              className="t-cap hstack"
+              style={{ gap: 4, color: "var(--figure-accent)", fontWeight: 700 }}
             >
-              Get key <ExternalLink className="w-3 h-3" />
+              Get a key <ExternalLink width={12} height={12} />
             </a>
           </div>
-          <div className="relative">
-            <Input
+          <div className="input" style={{ height: 48 }}>
+            <Key width={17} height={17} style={{ color: "var(--m-ink-soft)", flex: "none" }} aria-hidden />
+            <input
+              ref={inputRef}
               type={showKey ? "text" : "password"}
               placeholder={providerInfo.keyPlaceholder}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSave()}
-              className="pr-16 font-mono text-sm"
-              autoFocus
+              /* meshi-b's .input styles only the WRAPPER — it has no rule for a
+                 nested <input>, so the element keeps its own background and
+                 border and renders a box inside the pill. The mobile twin sets
+                 these explicitly for the same reason; do not rely on a reset. */
+              style={{
+                flex: 1,
+                minWidth: 0,
+                background: "none",
+                border: "none",
+                padding: 0,
+                font: "inherit",
+                color: "inherit",
+                fontFamily: "ui-monospace, Menlo, monospace",
+                fontSize: 13,
+                outline: "none",
+              }}
             />
             <button
               type="button"
               onClick={() => setShowKey(!showKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600"
+              className="t-cap"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                flex: "none",
+                color: "var(--figure-accent)",
+                fontWeight: 700,
+              }}
             >
               {showKey ? "Hide" : "Show"}
             </button>
           </div>
         </div>
 
-        {/* Error state */}
+        {/* Error */}
         {error && (
-          <div className="flex items-start gap-2 p-3 bg-red-50 rounded-xl text-sm text-red-600">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{error}</span>
+          <div
+            className="hstack"
+            role="alert"
+            style={{
+              gap: 8,
+              padding: "12px 14px",
+              borderRadius: 12,
+              background: "color-mix(in srgb, var(--m-red) 12%, transparent)",
+              color: "var(--text-red)",
+            }}
+          >
+            <AlertCircle width={16} height={16} style={{ flex: "none" }} aria-hidden />
+            <span className="t-cap" style={{ color: "inherit" }}>
+              {error}
+            </span>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex gap-3 pt-1">
-          <Button
-            variant="ghost"
-            onClick={onClose}
-            className="flex-1 text-gray-500 hover:text-gray-900"
-          >
+        <div className="hstack" style={{ gap: 10, marginTop: 2 }}>
+          <button type="button" onClick={onClose} className="pill-secondary" style={{ flex: 1 }}>
             Cancel
-          </Button>
-          <Button
+          </button>
+          <button
+            type="button"
             onClick={handleSave}
             disabled={!apiKey.trim()}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="pill-primary"
+            style={{
+              flex: 1,
+              opacity: apiKey.trim() ? 1 : 0.5,
+              cursor: apiKey.trim() ? "pointer" : "not-allowed",
+            }}
           >
-            Save & Continue
-          </Button>
+            Save &amp; continue
+          </button>
         </div>
       </div>
     </div>
