@@ -1096,6 +1096,67 @@ without it the admin console will show Maps as unconfigured. Cosmetic.
 
 Route count is now **76**.
 
+## Design coverage gaps + the gate's blind spot (2026-09-29)
+
+Audited what exists as a SCREEN against what exists as a FLOW. No route-level
+screen is missing from the design file (13 of 15 boards shipped, w7a/w7b
+decided above). These are gaps of a different kind.
+
+### The hex gate cannot see off-palette Tailwind classes
+
+`npm run check:hex` catches hex and rgba **literals only**. A screen written
+with utility CLASS NAMES — a white ground, generic greys, an indigo button —
+is invisible to it, and CI stays green. That is how `app/(web)/error.tsx` and
+`not-found.tsx` kept an **indigo** button through both the Midnight Kitchen era
+AND the whole meshi conversion: indigo has never been in any palette this
+project used. **Both are now converted** and measured in light and dark (404
+numeral 7.55 light / 9.11 dark, body 5.13 / 7.47, buttons ≥ 4.95).
+
+**When auditing a surface, grep for colour UTILITIES as well as hex.** The
+sweep that found these:
+
+```bash
+grep -rnoE '\b(bg|text|border)-(white|black|indigo|gray|slate|zinc|neutral|blue|purple)(-[0-9]{2,3})?\b' app components | grep '\.tsx:'
+```
+
+Still outstanding from that sweep: **`components/ApiKeyDialog.tsx`** — the BYOK
+key dialog opened from web chat, ~30 off-palette classes, entirely pre-meshi
+and user-facing. `components/RestaurantView.tsx`'s hits are partner brand
+buttons (Maps blue, Uber black, Swiggy orange, Zomato red) — legitimate
+grounds, but their white text is the same contrast question the web `.mp-*`
+brand chips already had to fix, and has not been measured.
+
+**`app/(web)/not-found.tsx` is currently unreachable**, which is worth knowing
+before someone "tests" it: nothing in the web tree calls `notFound()` (the cook
+route renders its own inline not-found), and an unmatched top-level URL has no
+route group so it hits `app/global-not-found.tsx` instead. It was verified via
+temporary, never-committed scratch routes that raise `notFound()` and throw;
+`find app -ipath "*scratch*"` confirms none remain.
+
+### Flows that exist on mobile but NOT on web
+
+- **Onboarding / preferences.** Mobile collects location, diet, tastes, goal,
+  calories and a streak opt-in across 10 steps. Web has a sign-in modal and
+  nothing else. Consequence, verified: `favoriteCuisines` is READ in four web
+  files (chat, planner, arena) and WRITTEN in none, diet preferences are
+  settable only from the pre-auth landing chips, and weight goal is
+  unreachable. All three feed the AI prompts, so web-only users get worse
+  results with no way to fix it. Settings has three tabs — Account,
+  Connections, Notifications — and no Preferences.
+
+### Missing from BOTH trees
+
+- **Account deletion and data export.** Zero matches anywhere. The App Store
+  requires account deletion for apps offering account creation, so this blocks
+  the iOS submission, and it is the most destructive flow in the product.
+
+### Briefs are written
+
+`design/BRIEFS.md` holds paste-ready Claude Design briefs for the three
+(web onboarding/preferences, account deletion + export, admin console), each
+self-contained because Claude Design cannot see this repo, and each carrying
+the honest-data rule that every earlier board broke.
+
 ## Dead ends — do not retry
 
 1. **Swiggy MCP OAuth from a web origin.** Gated to an allowlist of AI clients;
