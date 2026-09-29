@@ -994,6 +994,15 @@
    both vendored sheets are unlayered and would beat any @layer rule. */
 [data-theme="dark"] .snav-active,
 [data-theme="dark"] .snav-active:hover { color: var(--figure-accent); }
+/* ── Partner brand pills (RestaurantView) — UNLAYERED, deliberately ──
+   Their ink and ground are set INLINE per brand (see components/RestaurantView.tsx:
+   meshi-b's unlayered `a { color: var(--m-forest) }` beats any text- utility, which
+   is why the previous `text-white` never applied). Inline styles also mean hover
+   cannot be a colour utility any more, so darken the ground instead — one rule for
+   every brand, and it cannot drift out of step with the inks. */
+.brand-pill:hover  { filter: brightness(0.94); }
+.brand-pill:active { filter: brightness(0.88); }
+
 [data-theme="dark"] .pill-secondary {
   color: var(--figure-accent);
   box-shadow: inset 0 0 0 2.5px var(--figure-accent);

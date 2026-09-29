@@ -105,6 +105,39 @@ function RestaurantEmptyState() {
 }
 
 // Shared pill styles. Keep CTAs consistent across groups.
+/**
+ * Partner brand pills. GROUND stays the partner's, INK is chosen per ground —
+ * the same call the web .mp-* chips and the landing tiles already made, and it
+ * is deliberately NOT uniform.
+ *
+ * WHY THIS EXISTS. These were Tailwind palette classes plus `text-white`, and
+ * the white NEVER APPLIED: meshi-b.css sets `a { color: var(--m-forest) }`
+ * UNLAYERED, which beats a `text-white` utility inside @layer regardless of
+ * specificity. So every one of these rendered forest-on-brand — measured
+ * 1.56/2.57/2.54/2.83/2.15 in light and as low as 1.00 (Directions, dark),
+ * against a 4.5 requirement for their 12px/600 labels. Setting ink INLINE is
+ * what defeats that rule rather than fighting it.
+ *
+ * The grounds are also the partners' REAL colours now; the Tailwind palette
+ * approximations disagreed with the same brands elsewhere in the app — the
+ * orange here was a different orange from the one meshi-app.css and the
+ * landing tiles use for Swiggy. (Stated without the literals: check:hex reads
+ * comments too, and rightly flagged them.)
+ *
+ * Measured with the ink below: Maps 4.51, Uber 17.4, Ola 5.84, Swiggy 7.77,
+ * Zomato 4.59 — all clear AA, and unchanged by theme since both sides are
+ * fixed brand values.
+ */
+// hex-ok-start: partners' own brand colours + the ink measured against each.
+const BRAND = {
+  maps:   { bg: "#1A73E8", ink: "#FFFFFF" },
+  uber:   { bg: "#1A1A1A", ink: "#FFFFFF" },
+  ola:    { bg: "#0FA05A", ink: "#0A0A0A" },
+  swiggy: { bg: "#FC8019", ink: "#0A0A0A" },
+  zomato: { bg: "#E23744", ink: "#0A0A0A" },
+} as const;
+// hex-ok-end
+
 const pillStyle: React.CSSProperties = {
     fontSize: "12px",
     fontWeight: 600,
@@ -288,8 +321,8 @@ function RestaurantCard({
                                     href={directionsUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                                    style={pillStyle}
+                                    className="inline-flex items-center gap-1 brand-pill transition-colors"
+                                    style={{ ...pillStyle, background: BRAND.maps.bg, color: BRAND.maps.ink }}
                                 >
                                     <Navigation className="w-3 h-3" /> Directions
                                 </a>
@@ -299,8 +332,8 @@ function RestaurantCard({
                                     href={uberUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-white bg-black hover:bg-neutral-800 transition-colors"
-                                    style={pillStyle}
+                                    className="inline-flex items-center gap-1 brand-pill transition-colors"
+                                    style={{ ...pillStyle, background: BRAND.uber.bg, color: BRAND.uber.ink }}
                                 >
                                     Uber
                                 </a>
@@ -310,8 +343,8 @@ function RestaurantCard({
                                     href={olaUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-white bg-green-600 hover:bg-green-700 transition-colors"
-                                    style={pillStyle}
+                                    className="inline-flex items-center gap-1 brand-pill transition-colors"
+                                    style={{ ...pillStyle, background: BRAND.ola.bg, color: BRAND.ola.ink }}
                                 >
                                     Ola
                                 </a>
@@ -329,8 +362,8 @@ function RestaurantCard({
                                     href={swiggySearchUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-white bg-orange-500 hover:bg-orange-600 transition-colors"
-                                    style={pillStyle}
+                                    className="inline-flex items-center gap-1 brand-pill transition-colors"
+                                    style={{ ...pillStyle, background: BRAND.swiggy.bg, color: BRAND.swiggy.ink }}
                                 >
                                     Swiggy <ExternalLink className="w-3 h-3" />
                                 </a>
@@ -340,8 +373,8 @@ function RestaurantCard({
                                     href={zomatoSearchUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-white bg-red-500 hover:bg-red-600 transition-colors"
-                                    style={pillStyle}
+                                    className="inline-flex items-center gap-1 brand-pill transition-colors"
+                                    style={{ ...pillStyle, background: BRAND.zomato.bg, color: BRAND.zomato.ink }}
                                 >
                                     Zomato <ExternalLink className="w-3 h-3" />
                                 </a>
@@ -740,8 +773,10 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                                 const prompt = `Order ${data.dishName} for delivery via Swiggy Food. Pick a top-rated nearby restaurant.`;
                                 router.push(`/chat?agent=1&q=${encodeURIComponent(prompt)}`);
                             }}
-                            className="inline-flex items-center gap-1.5 text-white transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: "#fc8019" }} // hex-ok: Swiggy brand orange
+                            className="inline-flex items-center gap-1.5 brand-pill transition-colors"
+                            /* a <button>, not an <a>, so its white text DID apply — and white on
+                               Swiggy orange measures 2.55. Same near-black ink as the rest. */
+                            style={{ fontSize: "12px", fontWeight: 700, padding: "8px 16px", borderRadius: "980px", background: BRAND.swiggy.bg, color: BRAND.swiggy.ink }}
                             aria-label="Use the agent to order via Swiggy Food"
                         >
                             <Bot className="w-3 h-3" /> Order via agent
@@ -761,8 +796,8 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                             href={buildSwiggyOrderLink(data.dishName, location.lat, location.lng)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-white bg-orange-500 hover:bg-orange-600 transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "980px" }}
+                            className="inline-flex items-center gap-1.5 brand-pill transition-colors"
+                            style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "980px", background: BRAND.swiggy.bg, color: BRAND.swiggy.ink }}
                         >
                             Open Swiggy <ExternalLink className="w-3 h-3" />
                         </a>
@@ -770,8 +805,8 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                             href={buildZomatoOrderLink(data.dishName)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-white bg-red-500 hover:bg-red-600 transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "980px" }}
+                            className="inline-flex items-center gap-1.5 brand-pill transition-colors"
+                            style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "980px", background: BRAND.zomato.bg, color: BRAND.zomato.ink }}
                         >
                             Open Zomato <ExternalLink className="w-3 h-3" />
                         </a>

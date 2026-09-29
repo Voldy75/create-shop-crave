@@ -1138,10 +1138,31 @@ themes: 19 elements, zero failures. Two traps it surfaced:
 on (error banners, sign-out, failed saves, the BYOK error). The light value is
 now `--m-red` 70% mixed with `--m-ink`: 5.84 / 5.50 / 5.04 / 4.97. Red GROUNDS
 and borders still use raw `--m-red`; this is the text value only, in both
-trees. `components/RestaurantView.tsx`'s hits are partner brand
-buttons (Maps blue, Uber black, Swiggy orange, Zomato red) — legitimate
-grounds, but their white text is the same contrast question the web `.mp-*`
-brand chips already had to fix, and has not been measured.
+trees. `components/RestaurantView.tsx`'s hits were partner brand buttons, assumed
+"legitimate white on brand grounds". **Measured 2026-09-29, and that assumption
+was wrong in a way reading the classes could never reveal: the white NEVER
+APPLIED.** meshi-b.css line 62 sets `a { color: var(--m-forest) }` UNLAYERED,
+which beats a `text-white` utility inside `@layer` whatever the specificity —
+Trap 1 again, after `.side`, `.t-micro` and `.chat-input-bar`. Every one of
+these rendered forest-on-brand: Directions **1.56 light / 1.00 dark**
+(invisible), Ola 2.54/1.63, Zomato 2.15/1.38, Swiggy 2.83/1.82, Uber 2.57/3.99
+— all against 4.5 for their 12px/600 labels, on a screen that renders inline in
+web chat.
+
+**Fixed:** one measured `BRAND` map in that file, ink set INLINE (which is what
+actually defeats an unlayered rule — do not fight it with another class), and
+the grounds moved to the partners' REAL colours, since the Tailwind palette
+approximations disagreed with the same brands in meshi-app.css and the landing.
+Ink is deliberately NOT uniform: white on Maps blue 4.51 and Uber 17.4,
+near-black on Ola 5.84, Swiggy 7.77, Zomato 4.59. Identical in both themes,
+because both sides are fixed brand values. Hover moved to `.brand-pill` in
+globals.css (a brightness filter) since inline ink cannot use hover utilities.
+
+**An eighth control was found while fixing:** the "Order via agent" `<button>`
+— not an `<a>`, so its white DID apply, giving white on Swiggy orange at 2.55.
+Same near-black now. Seven of the eight were measured in the browser; the agent
+button needs a location in context to render, so its pairing is verified by
+construction (it reads the same BRAND entry as the measured Swiggy pills).
 
 **`app/(web)/not-found.tsx` is currently unreachable**, which is worth knowing
 before someone "tests" it: nothing in the web tree calls `notFound()` (the cook
