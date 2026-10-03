@@ -1248,6 +1248,58 @@ because the boards drew things with nothing behind them (user's choices):
 - Verified behind a temporary TEMP-VERIFY auth bypass (grep confirms none
   left): all three steps + Preferences, both themes, zero contrast failures.
 
+### Phase 2 — WF11 web deletion + export, shipped
+
+**Backend** (`lib/account.ts`, `app/api/account/{,delete,export}`):
+- Deletion relies on every user table referencing `auth.users` ON DELETE
+  CASCADE (verified: ten references) — removing the auth user removes every
+  server row in one go. No user files exist in Supabase Storage.
+- **STRIPE IS RECURRING, AND THAT IS A BILLING HAZARD.** Stripe checkout uses
+  `mode: "subscription"` (monthly), while Razorpay is a one-time 31-day pass.
+  Deleting an account with a live Stripe subscription would keep charging the
+  card with nothing left to cancel it from. So deletion cancels Stripe FIRST
+  and ABORTS ENTIRELY (502, nothing deleted) if that fails. Never reorder it or
+  make it best-effort. The board's "a one-time purchase, doesn't renew" copy is
+  only true for Razorpay; the screens now branch on provider.
+- `/api/account/delete` requires JSON (blocks a cross-site `<form>` POST),
+  `confirm === "DELETE"` server-side, and an explicit pass acknowledgement
+  (409 otherwise). Not gated on `restricted` — deletion and export are rights.
+- `/api/account/export` builds one ZIP (fflate) in the request: server rows +
+  this browser's localStorage sent by the client. NEVER exports OAuth tokens,
+  push keys, notification payloads, admin moderation fields, or the BYOK key.
+
+**Device-local data.** Saved recipes, meal plan, diet/tastes/goal, Bo threads
+and grocery history live in the browser. The client wipes every `crave_*` AND
+`meshi_*` key (both storages) except `crave_theme`. **Two prefixes** — Bo's
+conversation history is `meshi_conversations`; a `crave_*`-only wipe would
+have left the user's own chat history behind. Other devices keep their copy,
+and the confirm screen and landing say so.
+
+**Screens:** Account tab (w11a + w11f inline), blocked (w11b, per provider),
+confirm with typed DELETE (w11c), full-screen progress (w11d), signed-out
+`/account-deleted` (w11e). Progress rows tick when their REAL phase finishes
+(server request → local wipe → sign-out), not on a timer.
+- Sign out is now a NEUTRAL row (it was red, which blurred which action is
+  dangerous) and stays, because the sidebar menu holding it is hidden <768px.
+- Admin entry comes from the server (`isAdmin`), no longer from
+  NEXT_PUBLIC_ADMIN_EMAIL.
+- Delete button: board's white-on-red is 4.32:1; fixed `#BD4032` is 5.33.
+- Checkbox / radio outlines raised from the board's 30–35% ink (1.78–1.98:1)
+  to 60% (3.68 light / 5.12 dark) — WCAG 1.4.11.
+
+**Verified without deleting anything.** Guards against the live endpoints
+(text/plain → 415, no session → 401); the abort path via a fake user (only the
+billing step runs); the export ZIP unpacked and checked (11 files, CSV
+escaping, no secrets). UI flows driven with a browser-side `fetch` intercept, so
+no deletion code was modified for testing: Razorpay + Stripe blocked copy, exact
+DELETE arming, the full success path (all keys wiped but `crave_theme`), and the
+billing-abort path (nothing wiped). Contrast clean in both themes. **A real
+deletion has never run** — it needs a real session and a throwaway account.
+
+**npm audit drifted 14 → 34 advisories** since September, all on existing
+dependencies (fflate, the one addition, has no deps and is not flagged). The
+"remaining 14" section above is stale; re-triage before launch.
+
 ## Dead ends — do not retry
 
 1. **Swiggy MCP OAuth from a web origin.** Gated to an allowlist of AI clients;

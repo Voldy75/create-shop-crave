@@ -393,7 +393,7 @@
 /* Ring + dot use --figure-accent, not bare forest: forest is 2.63:1 on the
    dark card, under the 3:1 a selection indicator needs. */
 .ob-goal.is-on{background:var(--m-tint-green);box-shadow:0 0 0 2.5px var(--figure-accent)}
-.ob-dot{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1.8px color-mix(in srgb,var(--m-ink) 30%,transparent);flex:none;transition:box-shadow .2s ease}
+.ob-dot{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1.8px color-mix(in srgb,var(--m-ink) 60%,transparent);flex:none;transition:box-shadow .2s ease}
 .ob-goal.is-on .ob-dot{box-shadow:inset 0 0 0 6px var(--figure-accent)}
 /* The first-run step rail (top bar). */
 .ob-step{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 6px;border-radius:999px;font:700 13px var(--m-font-body);white-space:nowrap;background:var(--m-cream-2);color:var(--m-ink-soft)}
@@ -414,3 +414,47 @@
 .dlsp{display:block;width:18px;height:18px;margin:2px;border-radius:50%;border:2.5px solid var(--m-ink-faint);border-top-color:var(--figure-accent);animation:dl-rot .8s linear infinite;flex:none}
 @keyframes dl-rot{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.dlsp{animation-duration:2.4s}.ob-chip.is-on .obi,.ob-goal:hover .gm{animation:none}}
+
+/* ════════════════════════════════════════════════════════════════════════
+   WF11 · account deletion + data export (web). Same porting rules as WF10:
+   the board's :has(.xck:checked) state is ported as `.is-*` modifiers, and its
+   light-only literals become theme-aware values.
+   ════════════════════════════════════════════════════════════════════════ */
+/* The quiet delete row — never a button (the board's own rule). */
+.dlrow{display:flex;gap:14px;align-items:center;text-decoration:none;color:inherit;border-radius:14px;padding:12px 10px;transition:background .16s ease;width:100%;background:none;border:none;cursor:pointer;text-align:left;font:inherit}
+.dlrow:hover{background:var(--m-cream-2)}
+.dlrow:focus-visible{outline:2.5px solid var(--figure-accent);outline-offset:2px}
+/* The one destructive button. Board: white on --m-red, which measures 4.32:1 —
+   under AA for a 15px/700 label on the most consequential action in the app.
+   A FIXED darker red (red with 20% of the light ink) measures 5.33:1. Fixed,
+   not color-mix with --m-ink: that token turns cream in dark and would LIGHTEN
+   the button there, which is the opposite of what is needed. */
+.dlred{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:46px;padding:0 22px;border-radius:999px;background:#BD4032;color:#fff;font:700 15px var(--m-font-body);text-decoration:none;box-shadow:0 4px 0 #8F2B23;border:none;cursor:pointer;transition:transform .13s ease,box-shadow .13s ease,opacity .2s ease,filter .2s ease}
+.dlred:active{transform:translateY(3px);box-shadow:0 1px 0 #8F2B23}
+.dlred:focus-visible{outline:2.5px solid var(--m-red);outline-offset:3px}
+/* Disarmed until the confirmation is satisfied. A real `disabled` attribute
+   carries the semantics; this is only how it looks. */
+.dlgo:disabled,.dlgo[aria-disabled="true"]{opacity:.38;pointer-events:none;filter:saturate(.2)}
+/* Boundary at 60% ink, not the board's 30-35%: a checkbox or radio outline is
+   the only thing telling you there is a control to tick, so WCAG 1.4.11 wants
+   3:1 against the card. The board's values measured 1.78-1.98 in light. 60%
+   gives 3.68 light / 5.12 dark. */
+.dlbox{width:22px;height:22px;border-radius:7px;box-shadow:inset 0 0 0 1.8px color-mix(in srgb,var(--m-ink) 60%,transparent);color:transparent;display:flex;align-items:center;justify-content:center;flex:none;transition:background .18s ease,color .18s ease}
+.dlack{display:flex;gap:12px;align-items:flex-start;cursor:pointer;background:none;border:none;padding:0;text-align:left;font:inherit;color:inherit}
+.dlack.is-on .dlbox{background:var(--m-forest);color:var(--m-on-deep);box-shadow:none}
+.dlack:focus-visible{outline:2.5px solid var(--figure-accent);outline-offset:4px;border-radius:8px}
+.dlin{height:48px;width:100%;box-sizing:border-box;border:none;outline:none;border-radius:14px;background:var(--m-card);box-shadow:inset 0 0 0 1.5px var(--m-ink-faint);padding:0 16px;font:800 17px var(--m-font-body);letter-spacing:.14em;color:var(--m-ink)}
+.dlin::placeholder{color:color-mix(in srgb,var(--m-ink) 25%,transparent)}
+.dlin:focus{box-shadow:inset 0 0 0 2px var(--m-ink-soft)}
+.dlin.is-armed{box-shadow:inset 0 0 0 2px var(--m-red);color:var(--text-red)}
+/* Red-tinted disc behind the warning icon (board: a light-only pink). */
+.dlwarn{width:48px;height:48px;border-radius:50%;background:color-mix(in srgb,var(--m-red) 14%,var(--m-card));color:var(--text-red);display:flex;align-items:center;justify-content:center;flex:none}
+/* Progress rows: spinner while the step is in flight, a tick once confirmed. */
+.dlstep{display:flex;gap:12px;align-items:center}
+.dlstep .dltick{display:none;width:22px;height:22px;border-radius:50%;background:var(--m-forest);color:var(--m-on-deep);align-items:center;justify-content:center;flex:none;animation:bk-pop .4s cubic-bezier(.34,1.56,.64,1)}
+.dlstep.is-done .dlsp{display:none}
+.dlstep.is-done .dltick{display:inline-flex}
+.dlstep.is-pending .dlsp{opacity:.35;animation-play-state:paused}
+.dlscrim{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:70px 24px;overflow:auto;background:color-mix(in srgb,var(--m-forest-2) 55%,transparent);backdrop-filter:blur(8px)}
+.dlpanel{width:580px;max-width:100%;padding:28px 30px;display:flex;flex-direction:column;gap:18px;box-shadow:var(--m-shadow-lift);animation:din-up .38s cubic-bezier(.25,.1,.25,1) both}
+@media (prefers-reduced-motion:reduce){.dlpanel,.dlstep .dltick{animation:none}}
