@@ -1,18 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+import { requireAdmin } from "@/lib/auth-guard";
 
 export async function GET() {
-  // Auth check
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
-  // Admin gate — must match ADMIN_EMAIL env var
-  if (!ADMIN_EMAIL || user.email !== ADMIN_EMAIL) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const guard = await requireAdmin();
+  if (guard instanceof Response) return guard;
 
   const svc = await createServiceClient();
 

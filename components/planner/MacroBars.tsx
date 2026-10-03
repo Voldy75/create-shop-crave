@@ -9,45 +9,42 @@ interface Props {
   fat: { current: number; goal: number };
 }
 
+/**
+ * Macro bars — artboard w4b.
+ *
+ * Tones are the artboard's, and match the mobile plan tab's `Macro` helper so
+ * the same nutrient is the same colour on both surfaces: protein lime, carbs
+ * orange, fat plum. Bars use meshi-b's `.progress` component rather than a
+ * hand-rolled track — `.progress-lime` is the only tone with a class, so the
+ * other two set `background` on the inner `<i>`.
+ */
 const MACROS = [
-  { key: "protein" as const, label: "Protein", color: "#34c759" },
-  { key: "carbs" as const, label: "Carbs", color: "#0a84ff" },
-  { key: "fat" as const, label: "Fat", color: "#ff9f0a" },
+  { key: "protein" as const, label: "Protein", fill: null },
+  { key: "carbs" as const, label: "Carbs", fill: "var(--m-orange)" },
+  { key: "fat" as const, label: "Fat", fill: "var(--m-plum-2)" },
 ];
 
 export function MacroBars({ protein, carbs, fat }: Props) {
   const data = { protein, carbs, fat };
   return (
-    <div className="flex flex-col gap-3 w-full">
-      {MACROS.map(({ key, label, color }) => {
+    <div className="vstack" style={{ gap: 11, width: "100%" }}>
+      {MACROS.map(({ key, label, fill }) => {
         const { current, goal } = data[key];
         const pct = pctOf(current, goal);
         const over = current > goal && goal > 0;
         return (
           <div key={key}>
-            <div className="flex items-baseline justify-between" style={{ marginBottom: "4px" }}>
-              <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--cc-text-secondary)" }}>
-                {label}
-              </span>
-              <span style={{ fontSize: "11px", color: "var(--cc-text-tertiary)" }}>
-                <span style={{ color: over ? "#ff453a" : "var(--cc-text-primary)", fontWeight: 600 }}>{Math.round(current)}</span>
-                {" / "}{goal}g
+            <div className="hstack" style={{ justifyContent: "space-between", marginBottom: 5 }}>
+              <span className="t-cap" style={{ color: "var(--m-ink)" }}>{label}</span>
+              <span className="t-cap" style={{ color: over ? "var(--m-red)" : undefined }}>
+                {Math.round(current)} / {goal}g
               </span>
             </div>
-            <div
-              style={{
-                height: "6px",
-                borderRadius: "999px",
-                background: "var(--cc-surface-2)",
-                overflow: "hidden",
-              }}
-            >
-              <div
+            <div className={`progress ${fill === null ? "progress-lime" : ""}`}>
+              <i
                 style={{
                   width: `${pct}%`,
-                  height: "100%",
-                  background: over ? "#ff453a" : color,
-                  borderRadius: "999px",
+                  background: over ? "var(--m-red)" : fill ?? undefined,
                   transition: "width 0.4s ease-out, background 0.2s",
                 }}
               />

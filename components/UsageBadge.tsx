@@ -13,16 +13,22 @@ export function UsageBadge({ count, limit, onClick }: UsageBadgeProps) {
   const isExhausted = remaining === 0;
   const isLow = remaining <= 1;
 
+  // Tones follow components/cc/status-pill.tsx: red for exhausted, burnt for
+  // "running low" (DESIGN.md's heat/attention colour). Text is the hue mixed
+  // into --m-ink rather than the hue itself — --m-ink is chocolate in light
+  // and cream in dark, so lightness tracks the theme by construction and the
+  // label stays legible on the tint in both. See that file for the measured
+  // ratios behind this formula.
   const bg = isExhausted
-    ? "rgba(255,69,58,0.12)"
+    ? "color-mix(in srgb, var(--m-red) 18%, transparent)"
     : isLow
-    ? "rgba(255,159,10,0.12)"
-    : "var(--cc-surface-2)";
+    ? "color-mix(in srgb, var(--m-burnt) 18%, transparent)"
+    : "var(--m-cream-2)";
   const color = isExhausted
-    ? "#ff453a"
+    ? "color-mix(in srgb, var(--m-red) 50%, var(--m-ink))"
     : isLow
-    ? "#ff9f0a"
-    : "var(--cc-text-secondary)";
+    ? "color-mix(in srgb, var(--m-burnt) 50%, var(--m-ink))"
+    : "var(--m-ink-soft)";
 
   return (
     <button
@@ -41,7 +47,7 @@ export function UsageBadge({ count, limit, onClick }: UsageBadgeProps) {
         borderRadius: "980px",
         background: bg,
         color,
-        border: isExhausted ? "1px solid rgba(255,69,58,0.25)" : "none",
+        border: isExhausted ? "1.5px solid color-mix(in srgb, var(--m-red) 28%, transparent)" : "none",
         cursor: onClick ? "pointer" : "default",
         whiteSpace: "nowrap",
       }}

@@ -1,7 +1,8 @@
 import { generateObject } from "ai";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementPhotoUsage } from "@/lib/photo-quota";
+import { checkAndIncrementUsage } from "@/lib/rate-limit";
 import { getModel, getServerModel, type Provider } from "@/lib/providers";
 
 export const maxDuration = 30;
@@ -50,15 +51,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const guard = await requireUser();
+    if (guard instanceof Response) return guard;
+    const { user, profile } = guard;
 
-    if (authError || !user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Must precede the BYOK branch below: BYOK skips quota entirely, so
+    // without this a restricted user just supplies their own key.
+    const restricted = denyIfRestricted(profile);
+    if (restricted) return restricted;
 
     // Pick model
     let model;
@@ -80,9 +80,28 @@ export async function POST(req: Request) {
             { status: 429 },
           );
         }
+      } else {
+        // Previously unmetered ("cheap; revisit if abuse appears"). It is a
+        // server-paid LLM call on our key with a user-supplied string
+        // interpolated into the prompt, so an authenticated user could loop it
+        // for unlimited generation. It also silently escaped the moderation
+        // model: a restricted user's zeroed quota does not apply to a branch
+        // that never checks quota.
+        //
+        // Charged against the chat bucket, matching /api/ingredients which
+        // spends one point for a batch of up to 30 dishes.
+        const quota = await checkAndIncrementUsage(user.id);
+        if (!quota.allowed) {
+          return Response.json(
+            {
+              error: "rate_limit_exceeded",
+              needsKey: true,
+              message: "Daily AI limit reached. Add an API key or upgrade for unlimited.",
+            },
+            { status: 429 },
+          );
+        }
       }
-      // dish-name estimates are very cheap; share with chat quota would punish users — skip
-      // the check here for now; revisit if abuse appears.
       model = getServerModel();
     }
 

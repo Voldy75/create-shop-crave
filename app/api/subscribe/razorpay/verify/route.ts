@@ -1,14 +1,11 @@
 import crypto from "crypto";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth-guard";
 import { grantProAccess } from "@/lib/subscription";
 
 export async function POST(req: Request) {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireUser();
+  if (guard instanceof Response) return guard;
+  const { user } = guard;
 
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json();
 

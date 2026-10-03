@@ -1,0 +1,54 @@
+/* meshi — accessibility adjustments to the vendored design system.
+ *
+ * WHY A SEPARATE FILE: design/meshi-b.css must stay a faithful copy of the
+ * Claude Design source (DesignSync project bdb767d1-…), so a re-vendor from
+ * that source would silently undo any edit made inside it. Deliberate,
+ * user-approved deviations live here instead, imported IMMEDIATELY AFTER
+ * meshi-b.css by every entry point that loads it:
+ *   app/(web)/layout.tsx, app/(mobile)/layout.tsx, app/global-not-found.tsx
+ * If you re-vendor meshi-b, re-check whether each rule below is still needed.
+ * Record every rule here in DESIGN.md's decisions log.
+ */
+
+/* --m-ink-soft, LIGHT theme only (approved 2026-09-17).
+ *
+ * The system's secondary-text colour, #8A6B47, measured 4.13–4.26:1 on the
+ * light grounds it sits on most (cream-2, all three tints) — under WCAG AA's
+ * 4.5 for its typical 10–13px captions (.t-cap, .t-micro, sidebar/topbar
+ * labels), on BOTH trees. #806342 keeps the exact hue and saturation and drops
+ * HSL lightness .410 -> .380, the smallest step that clears 4.6 on every light
+ * ground: cream 5.13, cream-2 4.70, card 5.45, tint-green 4.81, tint-lav 4.70,
+ * tint-peach 4.66.
+ *
+ * SELECTOR TRAP: this must NOT be a bare `:root`. meshi-b sets the dark value
+ * with `[data-theme="dark"]`, which has the same specificity as `:root`, so a
+ * later bare `:root` would override DARK too and put this dark brown on the
+ * dark background. `:root:not([data-theme="dark"])` outranks both and matches
+ * only light (attribute unset or "light"). Dark keeps meshi-b's #C4A97E.
+ *
+ * The two Google Maps style JSONs mirror this value as a literal (Maps cannot
+ * read CSS variables): components/web/MeshiMap.tsx, components/mobile/RestaurantMap.tsx.
+ */
+:root:not([data-theme="dark"]) {
+  --m-ink-soft: #806342;
+}
+
+
+/* Text on LIME grounds, dark only (approved 2026-09-24).
+ *
+ * meshi-b pairs every lime surface with --m-forest-2. That measures 6.22:1 in
+ * light, but meshi-b lightens --m-forest-2 for dark (#14421F -> #1E5A34), so
+ * the same pairing drops to 4.43 — just under AA for the 13.5–16px/700 labels
+ * these carry (.pill-lime, .chip-active, .chip-tag, and the lime buttons and
+ * ingredient-add disc in meshi-app.css).
+ *
+ * Dark cuts forest-2 with the dark app background, the same move the landing's
+ * forest band uses: 5.20:1, and visually still the dark green the design
+ * pairs with lime. Light is untouched.
+ *
+ * The lime GROUND is deliberately unchanged — it is the accent that makes
+ * these read as the primary/active state.
+ */
+[data-theme="dark"] :is(.pill-lime, .chip-active, .chip-tag, .xbtn-l, .ing-add, .ob-ta.is-on) {
+  color: color-mix(in srgb, var(--m-forest-2) 80%, var(--m-cream));
+}

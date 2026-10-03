@@ -1,0 +1,190 @@
+/* ============================================================
+   meshi design system — v1 "Kitchef-inspired"
+   Warm cream base · pastel section tints · deep veggie accents
+   VARIANT B — Display+Body: Montserrat (Gotham-style geometric grotesque)
+   Load fonts:
+   https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap
+   ============================================================ */
+
+:root {
+  /* Base surfaces */
+  --m-cream:      #FBF6E3;  /* app background */
+  --m-cream-2:    #F4ECD2;  /* inset / pressed surface */
+  --m-card:       #FFFDF4;  /* raised card */
+
+  /* Section tints (pastels) */
+  --m-tint-green: #EAF3CC;
+  --m-tint-lav:   #F2E9F8;
+  --m-tint-peach: #FBE9CD;
+
+  /* Ink */
+  --m-ink:        #4B2E12;  /* chocolate brown — primary text */
+  --m-ink-soft:   #8A6B47;  /* secondary text */
+  --m-ink-faint:  rgba(75,46,18,.12); /* hairlines */
+
+  /* Deep accents */
+  --m-forest:     #1E5A34;  /* PRIMARY action */
+  --m-forest-2:   #14421F;
+  --m-plum:       #5C2B67;
+  --m-plum-2:     #9C5BBE;
+  --m-burnt:      #C05F16;  /* streaks / heat */
+  --m-orange:     #F19A2E;  /* carrot / ratings */
+  --m-brown:      #7A3E12;
+  --m-red:        #D9453A;  /* destructive only */
+
+  /* Bright accents */
+  --m-lime:       #9BCF37;  /* likes, success, highlights */
+  --m-lime-2:     #A6D34D;
+
+  --m-on-deep:    #FDF8E7;  /* text on deep accents */
+
+  /* Shape & elevation */
+  --m-r-card: 20px;
+  --m-r-tile: 16px;
+  --m-r-pill: 999px;
+  --m-shadow: 0 2px 0 rgba(75,46,18,.10);
+  --m-shadow-lift: 0 6px 18px rgba(75,46,18,.14);
+
+  --m-font-display: 'Montserrat', system-ui, sans-serif;
+  --m-font-body: 'Montserrat', system-ui, sans-serif;
+}
+
+/* ---------- Type scale ---------- */
+.t-d1 { font: 800 29px/1.05 var(--m-font-display); letter-spacing: -.5px; color: var(--m-ink); }
+.t-d2 { font: 800 22px/1.08 var(--m-font-display); letter-spacing: -.4px; color: var(--m-ink); }
+.t-h1 { font: 700 20px/1.15 var(--m-font-display); color: var(--m-ink); }
+.t-h2 { font: 700 16.5px/1.2 var(--m-font-display); color: var(--m-ink); }
+.t-body { font: 600 15px/1.45 var(--m-font-body); color: var(--m-ink); }
+.t-body-soft { font: 600 14px/1.45 var(--m-font-body); color: var(--m-ink-soft); }
+.t-cap { font: 700 12.5px/1.35 var(--m-font-body); color: var(--m-ink-soft); }
+.t-micro { font: 800 10.5px/1.2 var(--m-font-body); letter-spacing: .6px; text-transform: uppercase; color: var(--m-ink-soft); }
+
+a { color: var(--m-forest); text-decoration: none; }
+a:hover { color: var(--m-forest-2); text-decoration: underline; }
+
+/* ---------- Layout utilities ---------- */
+.hstack { display: flex; align-items: center; gap: 12px; }
+.vstack { display: flex; flex-direction: column; gap: 12px; }
+.grow { flex: 1; min-width: 0; }
+
+/* ---------- Cards & tints ---------- */
+.card { background: var(--m-card); border-radius: var(--m-r-card); box-shadow: var(--m-shadow); }
+.tint-green { background: var(--m-tint-green); }
+.tint-lav   { background: var(--m-tint-lav); }
+.tint-peach { background: var(--m-tint-peach); }
+.tint-cream { background: var(--m-cream-2); }
+
+/* Photo fill + duotone gradient overlays (title legibility on recipe cards) */
+.imgfill { background-size: cover; background-position: center; background-color: var(--m-cream-2); }
+.duo { position: relative; overflow: hidden; border-radius: var(--m-r-card); }
+.duo::after { content: ""; position: absolute; inset: 0; }
+.duo-forest::after { background: linear-gradient(185deg, rgba(30,90,52,0) 38%, rgba(20,66,31,.92) 88%); }
+.duo-plum::after   { background: linear-gradient(185deg, rgba(92,43,103,0) 38%, rgba(63,22,74,.92) 88%); }
+.duo-orange::after { background: linear-gradient(185deg, rgba(192,95,22,0) 38%, rgba(122,62,18,.94) 88%); }
+.duo > .duo-body { position: absolute; inset: 0; z-index: 1; }
+
+/* ---------- Buttons ---------- */
+.pill-primary, .pill-secondary, .pill-lime, .pill-plum {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 52px; padding: 0 26px; border-radius: var(--m-r-pill); border: none;
+  font: 700 16px var(--m-font-display); cursor: pointer; white-space: nowrap;
+}
+.pill-primary { background: var(--m-forest); color: var(--m-on-deep); }
+.pill-primary:active { background: var(--m-forest-2); }
+.pill-secondary { background: transparent; color: var(--m-forest); box-shadow: inset 0 0 0 2.5px var(--m-forest); }
+.pill-lime { background: var(--m-lime); color: var(--m-forest-2); }
+.pill-plum { background: var(--m-plum); color: var(--m-on-deep); }
+.pill-sm { height: 38px; padding: 0 18px; font-size: 14px; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 14px; background: var(--m-card); box-shadow: var(--m-shadow); border: none; color: var(--m-ink); }
+
+/* ---------- Chips ---------- */
+.chip { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 15px; border-radius: var(--m-r-pill); background: var(--m-card); box-shadow: inset 0 0 0 1.5px var(--m-ink-faint); font: 700 13.5px var(--m-font-body); color: var(--m-ink); white-space: nowrap; }
+.chip-active { background: var(--m-lime); box-shadow: none; color: var(--m-forest-2); }
+.chip-tag { height: 28px; padding: 0 12px; background: var(--m-lime); box-shadow: none; color: var(--m-forest-2); font: 700 12px var(--m-font-body); }
+
+/* ---------- Badges (time / price / difficulty on cards) ---------- */
+.badge { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 48px; padding: 7px 9px 5px; border-radius: 14px; color: var(--m-on-deep); font: 700 10.5px/1 var(--m-font-display); }
+.badge b { font: 800 18px/1 var(--m-font-display); }
+.badge-forest { background: var(--m-forest); }
+.badge-plum   { background: var(--m-plum); }
+.badge-brown  { background: var(--m-brown); }
+.badge-burnt  { background: var(--m-burnt); }
+
+/* ---------- Streak chip ---------- */
+.streak-chip { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 10px; border-radius: var(--m-r-pill); background: var(--m-tint-peach); color: var(--m-burnt); font: 800 14px var(--m-font-display); }
+
+/* ---------- Toasts (mascot messages) ---------- */
+.toast { display: flex; align-items: center; gap: 12px; padding: 12px 18px 12px 12px; border-radius: 18px; font: 700 14px/1.3 var(--m-font-body); color: var(--m-ink); box-shadow: var(--m-shadow-lift); }
+
+/* ---------- Inputs ---------- */
+.input { display: flex; align-items: center; gap: 10px; height: 52px; border-radius: var(--m-r-pill); background: var(--m-card); box-shadow: inset 0 0 0 1.5px var(--m-ink-faint); padding: 0 18px; font: 600 15px var(--m-font-body); color: var(--m-ink); }
+.input ::placeholder { color: var(--m-ink-soft); }
+
+/* ---------- Progress ---------- */
+.progress { height: 9px; border-radius: 99px; background: var(--m-ink-faint); overflow: hidden; }
+.progress > i { display: block; height: 100%; border-radius: 99px; background: var(--m-plum-2); }
+.progress-lime > i { background: var(--m-lime); }
+
+/* ---------- Tab bar ---------- */
+.tabbar { position: absolute; z-index: 5; bottom: 0; left: 0; right: 0; height: 86px; background: var(--m-card); border-top: 1.5px solid var(--m-ink-faint); display: flex; align-items: flex-start; padding: 10px 8px 0; }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; color: #A98F66; font: 800 10px var(--m-font-body); background: none; border: none; }
+.tab .tab-ic { display: flex; align-items: center; justify-content: center; width: 52px; height: 32px; border-radius: 99px; }
+.tab-active { color: var(--m-forest); }
+.tab-active .tab-ic { background: var(--m-tint-green); }
+
+/* ---------- Mascot tiles (ingredient-level, no-photo treatment) ---------- */
+.mascot-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border-radius: var(--m-r-tile); padding: 12px 8px; text-align: center; }
+.mascot-locked { filter: grayscale(1); opacity: .38; }
+
+/* ---------- Carrot rating ---------- */
+.rating { display: inline-flex; align-items: flex-end; gap: 3px; }
+.rating .off { opacity: .28; filter: saturate(.25); }
+
+/* ---------- List rows ---------- */
+.row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--m-card); border-radius: var(--m-r-tile); box-shadow: var(--m-shadow); }
+
+/* Dark-mode ready: redefine the custom properties under
+   [data-theme="dark"] later — components only reference tokens. */
+
+/* ---------- Dark mode (token pass) ---------- */
+[data-theme="dark"] {
+  --m-cream:      #241C10;
+  --m-cream-2:    #2F2514;
+  --m-card:       #362B18;
+  --m-tint-green: #26361D;
+  --m-tint-lav:   #342639;
+  --m-tint-peach: #3E2C15;
+  --m-ink:        #F4E8CF;
+  --m-ink-soft:   #C4A97E;
+  --m-ink-faint:  rgba(244,232,207,.14);
+  --m-forest:     #2E7A48;
+  --m-forest-2:   #1E5A34;
+  --m-burnt:      #E0782A;
+  --m-brown:      #9A5A24;
+  --m-shadow: 0 2px 0 rgba(0,0,0,.35);
+  --m-shadow-lift: 0 6px 18px rgba(0,0,0,.5);
+}
+
+/* ---------- Provider badges (sign-in) ---------- */
+.prov-badge { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font:800 13px var(--m-font-display); flex:none; }
+
+/* ---------- Button micro-interactions (chunky sticker press) ---------- */
+.pill-primary, .pill-lime, .pill-plum { transition: transform .13s cubic-bezier(.34,1.56,.64,1), box-shadow .13s ease; }
+.pill-primary { box-shadow: 0 5px 0 var(--m-forest-2); }
+.pill-primary:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--m-forest-2); background: var(--m-forest-2); }
+.pill-lime { box-shadow: 0 5px 0 #7BA82A; }
+.pill-lime:active { transform: translateY(4px); box-shadow: 0 1px 0 #7BA82A; }
+.pill-plum { box-shadow: 0 5px 0 #3F164A; }
+.pill-plum:active { transform: translateY(4px); box-shadow: 0 1px 0 #3F164A; }
+.pill-secondary { transition: transform .13s ease; }
+.pill-secondary:active { transform: scale(.97); }
+@keyframes mm-pop { 0%,100%{transform:scale(1)} 45%{transform:scale(1.045)} }
+.pill-attn { animation: mm-pop 2s ease-in-out infinite; }
+@keyframes mm-slideup { 0%{transform:translateY(130%);opacity:0} 100%{transform:translateY(0);opacity:1} }
+.pill-float { position:absolute; left:16px; right:16px; bottom:22px; z-index:20; height:58px; border-radius:99px; background:var(--m-forest); color:var(--m-on-deep); display:flex; align-items:center; justify-content:space-between; padding:0 10px 0 22px; box-shadow:0 12px 28px rgba(30,90,52,.42); animation:mm-slideup .5s cubic-bezier(.34,1.56,.64,1) both; font:800 15px var(--m-font-display); }
+
+/* ---------- Bo-centric nav (raised primary action) ---------- */
+.tabbar { overflow: visible; }
+.tab-bo { position: relative; justify-content: flex-start; color: var(--m-forest); }
+.tab-bo .tab-bo-btn { width:58px; height:58px; border-radius:50%; background:var(--m-card); display:flex; align-items:center; justify-content:center; margin-top:-28px; margin-bottom:3px; box-shadow:0 8px 18px rgba(30,90,52,.30), 0 0 0 4px var(--m-forest); transition:transform .16s cubic-bezier(.34,1.56,.64,1); }
+.tab-bo:active .tab-bo-btn { transform: scale(.9); }
