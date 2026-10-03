@@ -419,3 +419,41 @@ a { color: inherit; text-decoration: none; }
   color: var(--figure-accent);
   box-shadow: inset 0 0 0 2.5px var(--figure-accent);
 }
+/* ════════════════════════════════════════════════════════════════════════
+   F10 · account deletion + data export (mobile)
+   The web copies of these live in design/meshi-app.css, which the mobile tree
+   NEVER loads — so they are restated here rather than imported (a class from
+   one tree does not exist in the other). Same porting rules as web: React
+   drives `.is-*` state instead of the board's :has(:checked), and the board's
+   light-only literals are theme-aware values, measured in both themes.
+   ════════════════════════════════════════════════════════════════════════ */
+.dlrow{display:flex;gap:14px;align-items:center;color:inherit;border-radius:14px;padding:12px 10px;width:100%;background:none;border:none;cursor:pointer;text-align:left;font:inherit}
+.dlrow:active{background:var(--m-cream-2)}
+/* Fixed darker red: white on --m-red is 4.32:1; this is 5.33 (see meshi-app.css). */
+.dlred{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:52px;padding:0 22px;border-radius:999px;background:#BD4032;color:#fff;font:700 16px var(--m-font-body);box-shadow:0 4px 0 #8F2B23;border:none;width:100%}
+.dlred:active{transform:translateY(3px);box-shadow:0 1px 0 #8F2B23}
+.dlgo:disabled{opacity:.38;filter:saturate(.2)}
+/* 60% ink, not the board's 35%: a checkbox outline needs 3:1 (WCAG 1.4.11). */
+.dlbox{width:22px;height:22px;border-radius:7px;box-shadow:inset 0 0 0 1.8px color-mix(in srgb,var(--m-ink) 60%,transparent);color:transparent;display:flex;align-items:center;justify-content:center;flex:none}
+.dlack{display:flex;gap:12px;align-items:flex-start;background:none;border:none;padding:0;text-align:left;font:inherit;color:inherit}
+.dlack.is-on .dlbox{background:var(--m-forest);color:var(--m-on-deep);box-shadow:none}
+.dlin{height:50px;width:100%;box-sizing:border-box;border:none;outline:none;border-radius:14px;background:var(--m-card);box-shadow:inset 0 0 0 1.5px var(--m-ink-faint);padding:0 16px;font:800 17px var(--m-font-body);letter-spacing:.14em;color:var(--m-ink)}
+.dlin::placeholder{color:color-mix(in srgb,var(--m-ink) 25%,transparent)}
+.dlin.is-armed{box-shadow:inset 0 0 0 2px var(--m-red);color:var(--text-red)}
+.dlwarn{width:44px;height:44px;border-radius:50%;background:color-mix(in srgb,var(--m-red) 14%,var(--m-card));color:var(--text-red);display:flex;align-items:center;justify-content:center;flex:none}
+.dlsp{display:block;width:18px;height:18px;margin:2px;border-radius:50%;border:2.5px solid var(--m-ink-faint);border-top-color:var(--figure-accent);animation:dl-rot .8s linear infinite;flex:none}
+@keyframes dl-rot{to{transform:rotate(360deg)}}
+.dlstep{display:flex;gap:12px;align-items:center}
+.dlstep .dltick{display:none;width:22px;height:22px;border-radius:50%;background:var(--m-forest);color:var(--m-on-deep);align-items:center;justify-content:center;flex:none;animation:dl-pop .4s cubic-bezier(.34,1.56,.64,1)}
+.dlstep.is-done .dlsp{display:none}
+.dlstep.is-done .dltick{display:inline-flex}
+@keyframes dl-pop{0%{transform:scale(.5)}60%{transform:scale(1.28)}100%{transform:scale(1)}}
+/* Bottom sheet for 10b (the board's blocked step sits over the Account screen). */
+.dlsheet{width:100%;max-width:520px;background:var(--m-cream);border-radius:28px 28px 0 0;padding:12px 22px calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;flex-direction:column;gap:16px;animation:mm-slideup .38s cubic-bezier(.34,1.56,.64,1) both}
+.dlsheet .dlhandle{width:42px;height:5px;border-radius:99px;background:var(--m-ink-faint);align-self:center}
+@media (prefers-reduced-motion:reduce){.dlsp{animation-duration:2.4s}.dlstep .dltick,.dlsheet{animation:none}}
+
+/* Visually hidden, still announced. Tailwind provides this on web, but the
+   mobile tree does not load Tailwind — without this rule the progress rows'
+   "— in progress" status text renders on screen. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}

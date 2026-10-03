@@ -1300,6 +1300,49 @@ deletion has never run** — it needs a real session and a throwaway account.
 dependencies (fflate, the one addition, has no deps and is not flagged). The
 "remaining 14" section above is stale; re-triage before launch.
 
+### Phase 3 — F10 mobile deletion + export, shipped
+
+Same backend, and the same client helper — `lib/account-client.ts` now owns
+the "what goes" list (`buildDeletionRows`), the three-phase run
+(`runDeletion`) and the error copy, and BOTH web and mobile render from it, so
+the platforms cannot describe or perform a deletion differently.
+
+Screens: Profile → **Account** row → `/m/settings/account` (10a) with 10b's
+blocked step as a bottom sheet; `/m/settings/account/delete` (10c confirm,
+10d progress); `/m/settings/data` (10f); `/m/account-deleted` (10e).
+
+**Deviations from the board, all deliberate:**
+- Confirmation is typed DELETE, not Google re-auth (decided 2026-10-03 —
+  native OAuth has never run end-to-end). Switch once it is verified.
+- 10a's **"Preferences" row is not built**: mobile has NO screen that edits
+  diet/tastes/goal after onboarding, so it would be a dead link. A real gap —
+  web has Settings → Preferences (WF10); mobile still needs one.
+- 10e's "Sign in with Google" genuinely signs in (`GoogleSignInButton`, the
+  same call onboarding makes). Linking to /m/onboarding would have dropped the
+  user at step one under a sign-in label; adding a step deep-link would have
+  forced onboarding behind Suspense and blanked its first paint for everyone.
+- 10f's "you can close this screen, it'll be here" is not used (generated on
+  request, as on web).
+
+**Saving the export on native is UNVERIFIED.** A normal download does nothing
+inside the WebView and `@capacitor/filesystem` is not installed, so the screen
+uses the Web Share API with a File where the WebView supports it (iOS: the
+sheet with Save to Files), falling back to a plain download. Needs a device.
+
+**Cross-tree catches while building** (the documented trap, three times):
+F10's classes had to be restated in `m/mobile.css` because `meshi-app.css`
+is web-only; `bk-pop`/`din-up` are web-only so the mobile tick has its own
+`dl-pop`; and `sr-only` is a Tailwind utility the mobile tree does not load —
+without the rule now in `mobile.css`, every progress row would have shown
+"— in progress" on screen.
+
+Verified with a temporary bypass on the three guarded screens plus a
+browser-side fetch intercept (none left): Razorpay + Stripe sheets, the ack
+carried through (`?ack=1` → `acknowledgePass: true`), exact DELETE arming, the
+success path (only `crave_theme` survives), the abort path (local data
+untouched), export states, contrast both themes. The mobile avatar was 18px
+(3.61:1 needs large text) and is now 19px/800 like web.
+
 ## Dead ends — do not retry
 
 1. **Swiggy MCP OAuth from a web origin.** Gated to an allowlist of AI clients;

@@ -40,23 +40,31 @@ import {
 import { useUser } from "@/app/context/UserContext";
 import {
   type AccountSummary,
-  clearLocalAccountData,
-  deleteAccountRequest,
+  type DeletionPhase,
+  type DeletionRow,
+  buildDeletionRows,
+  deletionErrorCopy,
   deviceCounts,
   formatDate,
+  runDeletion,
 } from "@/lib/account-client";
 import { BoBowl } from "@/components/mascots";
 
 type Phase = "blocked" | "confirm" | "progress" | "error";
-type StepPhase = "server" | "local" | "signout";
 
-interface Row {
-  key: string;
-  label: string;
-  sub?: string;
-  icon: React.ElementType;
-  phase: StepPhase;
-}
+/** Icons per row. The rows themselves come from lib/account-client so web and
+ *  mobile can never describe a deletion differently. */
+const ICON: Record<DeletionRow["key"], React.ElementType> = {
+  billing: CreditCard,
+  recipes: BookmarkX,
+  logs: Utensils,
+  goals: Target,
+  prefs: Salad,
+  chats: MessageSquareX,
+  notif: BellOff,
+  store: Plug,
+  signout: LogOut,
+};
 
 export function DeleteAccountFlow({
   summary,
@@ -73,93 +81,34 @@ export function DeleteAccountFlow({
   const [phase, setPhase] = useState<Phase>(pass ? "blocked" : "confirm");
   const [ack, setAck] = useState(false);
   const [typed, setTyped] = useState("");
-  const [done, setDone] = useState<Set<StepPhase>>(new Set());
+  const [done, setDone] = useState<Set<DeletionPhase>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const counts = useMemo(() => deviceCounts(), []);
 
   const armed = typed.trim() === "DELETE";
 
-  const rows: Row[] = useMemo(() => {
-    const r: Row[] = [];
-    if (pass?.recurring) {
-      r.push({ key: "billing", label: "meshi+ subscription", sub: "Cancelled — you won’t be charged again", icon: CreditCard, phase: "server" });
-    }
-    r.push(
-      {
-        key: "recipes",
-        label: "Saved recipes",
-        sub:
-          `${counts.savedRecipes} saved in this browser` +
-          (counts.savedPlaces ? ` · ${counts.savedPlaces} saved place${counts.savedPlaces === 1 ? "" : "s"}` : ""),
-        icon: BookmarkX,
-        phase: "local",
-      },
-      {
-        key: "logs",
-        label: "Meal logs and streak",
-        sub:
-          `${Math.max(counts.mealLogs, summary?.serverMealLogs ?? 0)} logged meals` +
-          (counts.streak > 0 ? ` · your ${counts.streak}-day streak ends` : ""),
-        icon: Utensils,
-        phase: "server",
-      },
-      { key: "goals", label: "Nutrition goals", sub: "Calorie target and weight goal", icon: Target, phase: "server" },
-      { key: "prefs", label: "Dietary preferences", sub: "Diet, allergies and cuisine tastes", icon: Salad, phase: "local" },
-      { key: "chats", label: "Bo conversations", sub: "Chat history kept in this browser", icon: MessageSquareX, phase: "local" },
-      { key: "notif", label: "Notification subscriptions", sub: "Web push and WhatsApp nudges stop", icon: BellOff, phase: "server" }
-    );
-    if ((summary?.storeConnections ?? 0) > 0) {
-      r.push({
-        key: "store",
-        label: "Connected store account",
-        sub: "Swiggy is disconnected from meshi. Your Swiggy account itself is not touched.",
-        icon: Plug,
-        phase: "server",
-      });
-    }
-    return r;
-  }, [counts, pass, summary]);
+  const rows = useMemo(() => buildDeletionRows(summary, counts), [summary, counts]);
 
   const runDelete = async () => {
     setPhase("progress");
     setDone(new Set());
     setError(null);
-
-    const result = await deleteAccountRequest(!!pass);
+    const result = await runDeletion(!!pass, signOut, (phases) => setDone(new Set(phases)));
     if (!result.ok) {
       if (result.error === "pass_active") {
         setPhase("blocked");
         return;
       }
-      setError(
-        result.error === "billing_not_stopped"
-          ? "We couldn’t cancel your meshi+ subscription, so nothing was deleted and you are still subscribed. Please try again in a minute."
-          : result.error === "network"
-            ? "Couldn’t reach meshi. Nothing was confirmed as deleted — check your connection and try again."
-            : "Something went wrong and your account was not fully deleted. Please try again."
-      );
+      setError(deletionErrorCopy(result.error));
       setPhase("error");
       return;
     }
-    setDone(new Set<StepPhase>(["server"]));
-
-    clearLocalAccountData();
-    setDone(new Set<StepPhase>(["server", "local"]));
-
-    try {
-      await signOut();
-    } catch {
-      // The auth user no longer exists, so the server may refuse the sign-out
-      // call. The local session is what matters, and the wipe above already
-      // removed this browser's data; carry on to the signed-out landing.
-    }
-    setDone(new Set<StepPhase>(["server", "local", "signout"]));
     router.replace("/account-deleted");
   };
 
   // ── In progress (w11d): full-screen, no way to wander off mid-delete ──
   if (phase === "progress") {
-    const signRow: Row = { key: "signout", label: "Signing you out", icon: LogOut, phase: "signout" };
+    const signRow: DeletionRow = { key: "signout", label: "Signing you out", phase: "signout" };
     return (
       <div
         role="dialog"
@@ -271,7 +220,9 @@ export function DeleteAccountFlow({
               nothing can be restored later.
             </span>
             <ul className="vstack" style={{ gap: 12, listStyle: "none", margin: 0, padding: 0 }}>
-              {rows.map(({ key, label, sub, icon: Icon }) => (
+              {rows.map(({ key, label, sub }) => {
+                const Icon = ICON[key];
+                return (
                 <li key={key} className="hstack" style={{ gap: 12, alignItems: "flex-start" }}>
                   <Icon width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none", marginTop: 2 }} aria-hidden />
                   <div className="vstack grow" style={{ gap: 1 }}>
@@ -279,7 +230,8 @@ export function DeleteAccountFlow({
                     {sub && <span className="t-cap">{sub}</span>}
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
             {/* Device-local data: say what this can and cannot reach. */}
             <span className="t-cap" style={{ padding: "10px 12px", borderRadius: 12, background: "var(--m-cream-2)" }}>

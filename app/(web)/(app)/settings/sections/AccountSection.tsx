@@ -105,8 +105,7 @@ export function AccountSection() {
         <div className="vstack grow" style={{ gap: 3, minWidth: 0 }}>
           <span className="t-d2" style={{ fontSize: 19 }}>{userName || user?.email?.split("@")[0] || "You"}</span>
           <span className="t-cap" style={{ overflowWrap: "anywhere" }}>
-            {user?.email}
-            {provider ? ` · signed in with ${provider}` : ""}
+            {[user?.email, provider && `signed in with ${provider}`].filter(Boolean).join(" · ")}
           </span>
         </div>
       </div>

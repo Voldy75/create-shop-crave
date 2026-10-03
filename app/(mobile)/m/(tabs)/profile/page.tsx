@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Settings, ChevronRight, LogOut, Sparkles, Heart, MapPin, Utensils } from "lucide-react";
+import { Settings, ChevronRight, LogOut, Sparkles, Heart, MapPin, Utensils, UserCog } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import { getFavorites, getMealLogs } from "@/lib/storage";
@@ -186,6 +186,20 @@ export default function ProfileTab() {
           </div>
           <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none" }} />
         </button>
+
+        {/* F10 10a — Profile → Account (data export, deletion). */}
+        {user && (
+          <button className="row" onClick={() => router.push("/m/settings/account")} style={{ width: "100%", textAlign: "left", border: "none" }}>
+            <span className="icon-btn" style={{ boxShadow: "none", flex: "none" }} aria-hidden>
+              <UserCog width={20} height={20} />
+            </span>
+            <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+              <span className="t-h2">Account</span>
+              <span className="t-cap">Download your data, delete account</span>
+            </div>
+            <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none" }} />
+          </button>
+        )}
 
         {user && (
           <button onClick={() => signOut()} className="pill-secondary" style={{ width: "100%", marginTop: 4 }}>
