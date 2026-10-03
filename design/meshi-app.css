@@ -359,3 +359,58 @@
   .dnc.is-open .dnc-open, .xrow.is-on .xdet { animation: none !important; }
   .din-lift, .din-zoom, .thr, .ingr, .xcell, .xmeal, .dnc, .rideo, .xrev { transition: none !important; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   WF10 · web first-run (/welcome) + Settings → Preferences
+   Vendored from "Meshi Redesign - Web" wf10. Two deliberate deviations:
+   1. STATE. The board drives chips/goals with hidden checkboxes and
+      :has(.xck:checked); React owns that state here, so each :checked
+      branch is ported as an `.is-on` modifier (same convention as w6a–w9e).
+   2. COLOUR. The board paints the allergy card and the "on" allergy chip with
+      LIGHT-ONLY literals (a pale pink card, a dark red ink). On the dark ground
+      those render as a bright pink slab. They are expressed as red mixed into
+      the theme's own card/ink instead, and measured in both themes.
+   Diet (forest, a filter), allergies (red + struck through, strict) and tastes
+   (lime, soft) are three visibly different kinds of choice on purpose — a
+   taste must never read as a restriction.
+   ════════════════════════════════════════════════════════════════════════ */
+.ob-chip{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border-radius:999px;background:var(--m-card);box-shadow:inset 0 0 0 1.5px var(--m-ink-faint);font:700 14px var(--m-font-body);color:var(--m-ink);cursor:pointer;user-select:none;border:none;transition:background .18s ease,color .18s ease,box-shadow .18s ease,transform .16s cubic-bezier(.34,1.56,.64,1)}
+.ob-chip:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--m-ink) 35%,transparent)}
+.ob-chip:focus-visible,.ob-goal:focus-visible{outline:2.5px solid var(--figure-accent);outline-offset:2px}
+.ob-chip .obi{display:none;flex:none}
+.ob-al .obi{display:inline-flex;opacity:.4;color:var(--text-red)}
+.ob-chip.is-on{background:var(--m-forest);color:var(--m-on-deep);box-shadow:0 3px 0 var(--m-forest-2)}
+.ob-chip.is-on .obi{display:inline-flex;animation:bk-pop .4s cubic-bezier(.34,1.56,.64,1)}
+.ob-ta.is-on{background:var(--m-lime);color:var(--m-forest-2);box-shadow:none}
+.ob-al.is-on{background:color-mix(in srgb,var(--m-red) 14%,var(--m-card));color:var(--text-red);box-shadow:inset 0 0 0 2px var(--m-red)}
+.ob-al.is-on .obi{opacity:1}
+.ob-al.is-on .obt{text-decoration:line-through;text-decoration-thickness:2px}
+.ob-alcard{background:color-mix(in srgb,var(--m-red) 4%,var(--m-card));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--m-red) 28%,transparent)}
+.ob-alcard .ob-alhead{color:var(--text-red)}
+.ob-goal{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding:18px;border-radius:20px;background:var(--m-card);box-shadow:inset 0 0 0 1.5px var(--m-ink-faint);cursor:pointer;border:none;text-align:left;color:var(--m-ink);transition:box-shadow .2s ease,transform .18s cubic-bezier(.34,1.56,.64,1),background .2s ease}
+.ob-goal:hover{transform:translateY(-3px)}
+.ob-goal:hover .gm{animation:mm-bob 1.4s ease-in-out infinite}
+/* Ring + dot use --figure-accent, not bare forest: forest is 2.63:1 on the
+   dark card, under the 3:1 a selection indicator needs. */
+.ob-goal.is-on{background:var(--m-tint-green);box-shadow:0 0 0 2.5px var(--figure-accent)}
+.ob-dot{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1.8px color-mix(in srgb,var(--m-ink) 30%,transparent);flex:none;transition:box-shadow .2s ease}
+.ob-goal.is-on .ob-dot{box-shadow:inset 0 0 0 6px var(--figure-accent)}
+/* The first-run step rail (top bar). */
+.ob-step{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 6px;border-radius:999px;font:700 13px var(--m-font-body);white-space:nowrap;background:var(--m-cream-2);color:var(--m-ink-soft)}
+.ob-step .ob-stepn{width:23px;height:23px;border-radius:50%;background:var(--m-card);color:var(--m-ink-soft);display:flex;align-items:center;justify-content:center;font:800 11.5px var(--m-font-body)}
+.ob-step.is-current{background:var(--m-forest);color:var(--m-on-deep)}
+/* The board's disc is 18% white over the pill. On dark-mode forest that lifts
+   the disc so far the numeral measured 3.52:1; a solid forest-2 disc keeps it
+   distinct from the pill and clears AA in both themes. */
+.ob-step.is-current .ob-stepn{background:var(--m-forest-2);color:var(--m-on-deep)}
+.ob-step.is-done{background:var(--m-tint-green);color:var(--figure-accent)}
+.ob-step.is-done .ob-stepn{background:var(--m-forest);color:var(--m-on-deep)}
+.ob-step.is-skipped{background:transparent;height:31px;border:1.5px dashed color-mix(in srgb,var(--m-ink) 32%,transparent)}
+.ob-step.is-skipped .ob-stepn{background:var(--m-cream-2)}
+.ob-step .ob-stepnote{font:600 11.5px var(--m-font-body);opacity:.8}
+
+/* Spinner shared by WF10 (location), WF11 (export/delete) and WF12 (loading).
+   dl-rot was not in the repo; vendored with it. */
+.dlsp{display:block;width:18px;height:18px;margin:2px;border-radius:50%;border:2.5px solid var(--m-ink-faint);border-top-color:var(--figure-accent);animation:dl-rot .8s linear infinite;flex:none}
+@keyframes dl-rot{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.dlsp{animation-duration:2.4s}.ob-chip.is-on .obi,.ob-goal:hover .gm{animation:none}}

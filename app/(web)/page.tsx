@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useUser } from "@/app/context/UserContext";
+import { needsWebFirstRun } from "@/lib/preferences";
 import { AuthButton } from "@/components/AuthButton";
 import { MapPin, Loader2, AlertCircle, ArrowRight, Check, ChevronDown, Plus, Minus, ShoppingCart, ShoppingBag, Sparkles, MessageCircle, LineChart } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -183,12 +184,20 @@ export default function LandingPage() {
     locationError,
     dietaryPreferences,
     setDietaryPreferences,
+    favoriteCuisines,
   } = useUser();
   const router = useRouter();
   const [showAuthCard, setShowAuthCard] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
+    // WF10: a signed-in user on this device who has neither finished the
+    // first-run nor told us anything goes through /welcome once. It handles
+    // location itself (step 3), so it does not wait for one.
+    if (hydrated && user && needsWebFirstRun(dietaryPreferences, favoriteCuisines)) {
+      router.replace("/welcome");
+      return;
+    }
     if (hydrated && user && location) {
       // Signed-in users get the dashboard, not chat. `/` stays the marketing
       // landing for everyone else. Before /home existed this sent people to
@@ -196,7 +205,7 @@ export default function LandingPage() {
       // immediately bounced them back out of it.
       router.replace("/home");
     }
-  }, [hydrated, user, location, router]);
+  }, [hydrated, user, location, router, dietaryPreferences, favoriteCuisines]);
 
   const toggleDietaryPref = (pref: string) => {
     if (dietaryPreferences.includes(pref)) {

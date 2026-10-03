@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useChat } from "ai/react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
+import { getWeightGoal } from "@/lib/preferences";
 import { Send, Bot, Sparkles, RotateCcw, ArrowLeft, Lock } from "lucide-react";
 import { LottiePlayer } from "@/components/LottiePlayer";
 import { RecipeView } from "@/components/RecipeView";
@@ -139,7 +140,7 @@ export default function ArenaPage() {
     setByok(getStoredBYOK());
   }, [user]);
 
-  const userContext = { userName, location, dietaryPreferences, favoriteCuisines };
+  const userContext = { userName, location, dietaryPreferences, favoriteCuisines, weightGoal: getWeightGoal() };
 
   const leftChat = useChat({
     api: "/api/chat",

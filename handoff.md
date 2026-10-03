@@ -1195,6 +1195,59 @@ temporary, never-committed scratch routes that raise `notFound()` and throw;
 self-contained because Claude Design cannot see this repo, and each carrying
 the honest-data rule that every earlier board broke.
 
+## WF10–WF12 + F10: the boards built from design/BRIEFS.md (2026-10-03)
+
+The three briefs in `design/BRIEFS.md` came back from Claude Design as WF10
+(web first-run + Preferences), WF11 (web deletion + export), WF12 (admin) and
+mobile F10 (deletion + export). 26 artboards. Decisions taken BEFORE building,
+because the boards drew things with nothing behind them (user's choices):
+
+- **Data export is generated on request**, not a background job. The boards
+  say "leave and come back — it'll be here when ready", which implies a
+  persisted job + file storage. The data is small, so one request builds the
+  file; that copy is not used, because it would be false.
+- **Location is browser-only.** The boards show a city name ("Powai, Mumbai")
+  and a "Type a city" field. Location is raw lat/lng and nothing geocodes (the
+  server Maps key is not set), so neither is drawn.
+- **Mobile deletion confirms by typing DELETE**, like web, not by Google
+  re-auth as F10 draws. Native Google sign-in has never run end-to-end (the
+  Supabase redirect URL is still a pending blocker), so re-auth would have made
+  deletion the least-tested path in the app. Switch once native OAuth is
+  verified on a device.
+
+### Phase 1 — WF10, shipped
+
+- **`/welcome`** (`app/(web)/welcome`, outside `(app)` because the board has no
+  sidebar): three steps, each skippable, "Skip to app" always visible, choices
+  save as you tap. "Skip this step" and "Nothing applies" are recorded
+  differently — skipping marks the rail and step 2 then says nothing will be
+  filtered. Gate: the landing sends a signed-in user here once, only if this
+  device has no diet/tastes and has not finished it (`needsWebFirstRun`).
+- **Settings → Preferences** tab, the same four cards (literally the same
+  components in `components/web/PreferenceControls.tsx`).
+- **Storage did not change** — `lib/preferences.ts` wraps it: diets lowercase
+  in `dietaryPreferences`, allergies as `avoid <x>` tags in the same strict
+  array (the mobile encoding), tastes in `favoriteCuisines`.
+- **Never drops what it doesn't render.** Mobile onboarding uses different
+  lists (Pescatarian, Low-carb; dish "tastes" like Ramen; Cilantro, Olives).
+  Those show as extra selected chips and survive every save — verified by
+  seeding mobile values and editing around them.
+- **The weight goal now reaches Bo.** The board's line "a goal changes how Bo
+  balances portions" was FALSE: `/api/chat` never read the goal; only the
+  planner's Coach saw calorie targets. Added `goalLine` beside `tastesLine` in
+  `lib/taste-prompt.ts` — a soft signal that spends its words on what the model
+  must NOT do (no refusing, no calorie warnings, no mentioning it). The goal has
+  its own key `crave_weightGoal` because NutritionGoals requires a calorie
+  target that `defaultGoalsFromProfile` cannot compute without age/height/
+  weight. Reads fall back to the planner's goal; an explicit "none" beats that.
+- **Colour deviations from the board:** the board paints the allergy card with
+  light-only pinks; on the dark ground that is a bright slab, so it is red mixed
+  into the theme's own card. The current-step disc was 18% white (3.52:1 in
+  dark) and is now solid forest-2. Selected taste chips joined the dark
+  lime-ground fix in `meshi-a11y.css`.
+- Verified behind a temporary TEMP-VERIFY auth bypass (grep confirms none
+  left): all three steps + Preferences, both themes, zero contrast failures.
+
 ## Dead ends — do not retry
 
 1. **Swiggy MCP OAuth from a web origin.** Gated to an allowlist of AI clients;

@@ -49,6 +49,6 @@
  * The lime GROUND is deliberately unchanged — it is the accent that makes
  * these read as the primary/active state.
  */
-[data-theme="dark"] :is(.pill-lime, .chip-active, .chip-tag, .xbtn-l, .ing-add) {
+[data-theme="dark"] :is(.pill-lime, .chip-active, .chip-tag, .xbtn-l, .ing-add, .ob-ta.is-on) {
   color: color-mix(in srgb, var(--m-forest-2) 80%, var(--m-cream));
 }

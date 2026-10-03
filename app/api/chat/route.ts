@@ -2,11 +2,11 @@ import { streamText } from "ai";
 import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementUsage } from "@/lib/rate-limit";
 import { getModel, getServerModel, type Provider } from "@/lib/providers";
-import { tastesLine } from "@/lib/taste-prompt";
+import { tastesLine, goalLine } from "@/lib/taste-prompt";
 
 export const maxDuration = 30;
 
-const systemPrompt = (userName: string, location: string, dietaryPrefs: string, tastes: string) => `
+const systemPrompt = (userName: string, location: string, dietaryPrefs: string, tastes: string, goal: string) => `
 You are a helpful AI food companion. Your goal is to help the user decide what to eat based on their input (Dish Type) and optional Occasion.
 
 User Context:
@@ -14,6 +14,7 @@ Name: ${userName}
 Location: ${location}
 ${dietaryPrefs}
 ${tastes}
+${goal}
 
 You should analyze the user's request and provide a response in a structured JSON format inside a code block, followed by a brief conversational message.
 
@@ -106,6 +107,8 @@ export async function POST(req: Request) {
     // Tastes are a SOFT signal and deliberately separate from dietaryPrefs —
     // see lib/taste-prompt.ts for why merging them corrupts the strict filter.
     const tastes = tastesLine(userContext?.favoriteCuisines);
+    // Also soft, and also separate — see goalLine in lib/taste-prompt.ts.
+    const goal = goalLine(userContext?.weightGoal);
 
     const locationStr = userContext?.location
       ? `${userContext.location.lat}, ${userContext.location.lng}`
@@ -146,7 +149,7 @@ export async function POST(req: Request) {
     );
     const result = await streamText({
       model,
-      system: systemPrompt(userName, locationStr, dietaryPrefs, tastes),
+      system: systemPrompt(userName, locationStr, dietaryPrefs, tastes, goal),
       messages: safeMessages,
     });
 

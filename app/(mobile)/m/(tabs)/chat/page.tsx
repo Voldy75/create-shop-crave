@@ -5,6 +5,7 @@ import { useChat } from "ai/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Camera, ArrowUp } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
+import { getWeightGoal } from "@/lib/preferences";
 import { getStoredBYOK } from "@/lib/byok";
 import { setActiveRecipe, setActiveRestaurants } from "@/lib/mobile-handoff";
 import { foodImage } from "@/lib/food-images";
@@ -80,7 +81,7 @@ function ChatInner() {
   const { messages, input, handleInputChange, handleSubmit, append, isLoading } = useChat({
     api: agentMode ? "/api/agent" : "/api/chat",
     body: {
-      userContext: { userName, location, dietaryPreferences, favoriteCuisines },
+      userContext: { userName, location, dietaryPreferences, favoriteCuisines, weightGoal: getWeightGoal() },
       ...(byok ? { provider: byok.provider, apiKey: byok.apiKey } : {}),
     },
     onResponse: (res) => {

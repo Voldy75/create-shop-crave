@@ -2,13 +2,14 @@
 
 import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bell, Plug, User, Loader2 } from "lucide-react";
+import { Bell, Plug, User, Loader2, SlidersHorizontal } from "lucide-react";
 import { AppTopbar } from "@/components/web/AppTopbar";
 import { useUser } from "@/app/context/UserContext";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { NotificationsSection } from "./sections/NotificationsSection";
 import { ConnectionsSection } from "./sections/ConnectionsSection";
 import { AccountSection } from "./sections/AccountSection";
+import { PreferencesSection } from "./sections/PreferencesSection";
 
 /**
  * /settings — rebuilt to artboard w8b.
@@ -36,12 +37,15 @@ import { AccountSection } from "./sections/AccountSection";
  *     enrolment state and nudge preferences.
  */
 
-type Tab = "notifications" | "connections" | "account";
+type Tab = "notifications" | "connections" | "account" | "preferences";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "connections", label: "Connections", icon: Plug },
   { id: "account", label: "Account", icon: User },
+  // w10e. Fourth because the board puts it fourth; reachable directly as
+  // /settings?tab=preferences, which is where /welcome's copy points people.
+  { id: "preferences", label: "Preferences", icon: SlidersHorizontal },
 ];
 
 export default function SettingsPage() {
@@ -61,7 +65,7 @@ function SettingsPageInner() {
 
   const requested = params.get("tab");
   const [activeTab, setActiveTab] = useState<Tab>(
-    requested === "connections" || requested === "account" ? requested : "notifications"
+    requested === "connections" || requested === "account" || requested === "preferences" ? requested : "notifications"
   );
 
   useEffect(() => {
@@ -81,7 +85,10 @@ function SettingsPageInner() {
   return (
     <>
       {/* No back arrow: the sidebar is the way out of a top-level screen. */}
-      <AppTopbar title="Settings" caption="Notifications, connections and your account" />
+      <AppTopbar
+        title="Settings"
+        caption={activeTab === "preferences" ? "Changes save as you tap" : "Notifications, connections and your account"}
+      />
 
       {/* w8b's underline tabs. `.utab` lives in design/meshi-app.css. */}
       <div className="utabs" role="tablist" aria-label="Settings sections">
@@ -106,6 +113,7 @@ function SettingsPageInner() {
             <ConnectionsSection flags={flags} flagsLoading={flagsLoading} />
           )}
           {activeTab === "account" && <AccountSection />}
+          {activeTab === "preferences" && <PreferencesSection />}
         </div>
       </main>
     </>

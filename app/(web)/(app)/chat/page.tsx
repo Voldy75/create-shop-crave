@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "rea
 import { useChat } from "ai/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
+import { getWeightGoal } from "@/lib/preferences";
 import { RotateCcw, AlertCircle, ArrowUp, ArrowDown, ChefHat, MapPin, Leaf, Users, Timer, Store, ShoppingCart, Utensils, Package, Sparkles, X, MapPinned, ShoppingBag } from "lucide-react";
 import { Chip } from "@/components/cc/chip";
 import { LottiePlayer } from "@/components/LottiePlayer";
@@ -199,7 +200,7 @@ function ChatPageInner() {
     (overrideBYOK?: { provider: Provider; apiKey: string } | null) => {
       const activeBYOK = overrideBYOK !== undefined ? overrideBYOK : byok;
       return {
-        userContext: { userName, location, dietaryPreferences, favoriteCuisines },
+        userContext: { userName, location, dietaryPreferences, favoriteCuisines, weightGoal: getWeightGoal() },
         ...(activeBYOK ? { provider: activeBYOK.provider, apiKey: activeBYOK.apiKey } : {}),
       };
     },

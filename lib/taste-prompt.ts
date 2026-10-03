@@ -49,3 +49,34 @@ export function cuisinesHintFrom(favoriteCuisines: string[] | undefined | null):
   if (!favoriteCuisines?.length) return undefined;
   return favoriteCuisines.slice(0, MAX_CUISINES).join(", ");
 }
+
+/**
+ * The weight goal as a SOFT signal — same shape and same caution as tastes.
+ *
+ * Added for WF10, whose first-run and Preferences screens say "A goal changes
+ * how Bo balances portions and protein. Leave it blank and suggestions stay
+ * neutral." Before this, /api/chat never read the goal at all — only the
+ * planner's Coach saw calorie targets — so that sentence would have shipped
+ * false. This makes it true without turning a preference into a rule.
+ *
+ * The defensive wording matters more here than for tastes: a model told
+ * "the user wants to lose weight" can drift into refusing dishes, lecturing,
+ * or attaching calorie warnings to everything. The goal is about portion and
+ * balance, never about withholding a dish the user actually asked for.
+ */
+const GOAL_PHRASE: Record<string, string> = {
+  lose: "lose weight — lean toward lighter portions and more fibre",
+  maintain: "maintain their weight — keep suggestions balanced, with no calorie push either way",
+  gain: "gain weight — lean toward more protein and energy-dense options",
+};
+
+export function goalLine(goal: string | undefined | null): string {
+  const phrase = goal ? GOAL_PHRASE[goal] : undefined;
+  if (!phrase) return "";
+  return (
+    `Goal (soft preference, NOT a restriction): the user wants to ${phrase}. ` +
+    `Let this shape portions and balance only. Never refuse, discourage or add ` +
+    `calorie warnings to a dish the user asked for, and do not mention the goal ` +
+    `unless they bring it up.`
+  );
+}
