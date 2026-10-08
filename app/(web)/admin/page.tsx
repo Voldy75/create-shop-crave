@@ -1,11 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Users, Zap, Crown, TrendingUp, BarChart2, RefreshCw } from "lucide-react";
+/**
+ * Admin → Dashboard, built to w12a (loading: w12g).
+ *
+ * Every number is real, and labelled for what it actually measures:
+ *   - "Chatted with Bo today" — the board says "Daily actives · Signed in
+ *     today", but admin_dau counts users with a usage row today, i.e. who
+ *     talked to Bo. Signing in alone writes nothing, so the label says so.
+ *   - Est. MRR — active meshi+ per checkout provider × that provider's own
+ *     price from plan_prices, in its own currency. The old tile was
+ *     count × $9 shown as rupees via a hardcoded 84 rate; the board's ₹299 is
+ *     not our price either. A Razorpay pass is one-time per 31 days, so the
+ *     tile says "estimate".
+ *   - AI requests has no "cap": there is no global daily cap in config.
+ */
+
+import { useCallback, useEffect, useState } from "react";
+import { AdminError, AdminLoading, AdminTop } from "./admin-shell";
 
 interface DayData { usage_date: string; total: number }
 interface TopUser { user_id: string; email: string; total_requests: number; is_pro: boolean }
+interface Price { provider: string; amount_minor: number; currency: string; interval: "one_time" | "month" | "year" }
 
 interface Stats {
   dau: number;
@@ -15,224 +30,231 @@ interface Stats {
   requestsWeek: number;
   dailyRequests: DayData[];
   topUsers: TopUser[];
+  paidByProvider: Record<string, number>;
+  proPrices: Price[];
+  usersByPlatform: Record<"web" | "ios" | "android" | "unknown", number>;
+  generatedAt: string;
+}
+
+const PROVIDER_NAME: Record<string, string> = { razorpay: "Razorpay", stripe: "Stripe", apple: "App Store", google: "Play" };
+
+const money = (minor: number, currency: string) =>
+  new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: minor % 100 === 0 ? 0 : 2 }).format(minor / 100);
+
+const shortDate = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+
+function revenue(stats: Stats) {
+  const totals = new Map<string, number>();
+  const parts: string[] = [];
+  let unpriced = 0;
+  for (const [provider, count] of Object.entries(stats.paidByProvider)) {
+    const price = stats.proPrices.find((p) => p.provider === provider);
+    const name = PROVIDER_NAME[provider] ?? provider;
+    if (!price) {
+      unpriced += count;
+      continue;
+    }
+    // Yearly is spread over 12 months; a 31-day pass is counted as one month.
+    const monthly = price.interval === "year" ? Math.round(price.amount_minor / 12) : price.amount_minor;
+    totals.set(price.currency, (totals.get(price.currency) ?? 0) + count * monthly);
+    const per = price.interval === "one_time" ? " per 31 days" : price.interval === "year" ? "/yr" : "/mo";
+    parts.push(`${count} via ${name} × ${money(price.amount_minor, price.currency)}${per}`);
+  }
+  if (unpriced) parts.push(`${unpriced} with no listed price`);
+  const value = totals.size ? [...totals].map(([c, m]) => money(m, c)).join(" + ") : money(0, stats.proPrices[0]?.currency ?? "INR");
+  return { value, sub: parts.length ? `${parts.join(" · ")} · estimate` : "No active meshi+ yet" };
 }
 
 function Sparkline({ data }: { data: DayData[] }) {
-  if (data.length === 0) return (
-    <div className="h-12 rounded-lg" style={{ background: "var(--m-cream-2)" }} />
-  );
+  const W = 860;
+  const H = 110;
+  const base = 102;
   const max = Math.max(...data.map((d) => d.total), 1);
+  const step = data.length > 1 ? W / (data.length - 1) : W;
+  const pts = data.map((d, i) => `${(i * step).toFixed(1)},${(base - (d.total / max) * 84).toFixed(1)}`).join(" ");
+  const total = data.reduce((s, d) => s + d.total, 0);
   return (
-    <div className="flex items-end gap-1 h-12">
-      {data.map((d) => (
-        <div
-          key={d.usage_date}
-          className="flex-1 rounded-sm transition-opacity hover:opacity-100"
-          style={{
-            height: `${Math.max(4, (d.total / max) * 100)}%`,
-            background: "var(--m-forest)",
-            opacity: 0.7,
-          }}
-          title={`${d.usage_date}: ${d.total} requests`}
-        />
-      ))}
+    <svg
+      width="100%"
+      height={H}
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      style={{ display: "block" }}
+      role="img"
+      aria-label={`AI requests per day for the last ${data.length} days, ${total} in total, peak ${max === 1 && total === 0 ? 0 : max}`}
+    >
+      <line x1="0" x2={W} y1={base} y2={base} stroke="var(--m-ink-faint)" />
+      {data.length > 0 && (
+        <>
+          <polygon points={`0,${base} ${pts} ${W},${base}`} fill="color-mix(in srgb, var(--figure-accent) 10%, transparent)" />
+          <polyline points={pts} fill="none" stroke="var(--figure-accent)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function Tile({ label, value, sub }: { label: string; value: React.ReactNode; sub: string }) {
+  return (
+    <div className="ad-card" style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+      <span className="ad-lbl">{label}</span>
+      <span className="ad-num">{value}</span>
+      <span className="ad-cap">{sub}</span>
     </div>
   );
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  sub,
-  iconColor,
-}: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: any;
-  label: string;
-  value: number | string;
-  sub?: string;
-  /** A CSS colour VALUE — pass a `var(--m-*)` token, not a literal. */
-  iconColor: string;
-}) {
+function Skeleton() {
   return (
-    <div className="p-5" style={{ background: "var(--m-card)", borderRadius: "12px" }}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--m-ink-soft)", letterSpacing: "0.08em" }}>{label}</p>
-          <p className="text-3xl font-bold mt-1" style={{ color: "var(--m-ink)", letterSpacing: "-0.03em" }}>{value}</p>
-          {sub && <p className="text-xs mt-0.5" style={{ color: "var(--m-ink-soft)" }}>{sub}</p>}
-        </div>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{
-            background: `color-mix(in srgb, ${iconColor} 14%, transparent)`,
-            color: iconColor,
-          }}>
-          <Icon className="w-5 h-5" />
-        </div>
+    <>
+      <div className="ad-grid4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="ad-card" style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 9 }}>
+            <span className="ad-sk" style={{ width: 60, height: 10 }} />
+            <span className="ad-sk" style={{ width: 70, height: 24 }} />
+            <span className="ad-sk" style={{ width: "85%", height: 10 }} />
+          </div>
+        ))}
       </div>
-    </div>
+      <div className="ad-card" style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <span className="ad-sk" style={{ width: 140, height: 12 }} />
+        <span className="ad-sk" style={{ width: "100%", height: 110 }} />
+      </div>
+      <div className="ad-card" style={{ padding: "4px 0" }}>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="hstack" style={{ gap: 14, padding: "11px 14px" }}>
+            <span className="ad-sk" style={{ width: 26, height: 26 }} />
+            <span className="ad-sk" style={{ width: "28%", height: 11 }} />
+            <span className="ad-sk" style={{ width: "12%", height: 11 }} />
+            <div className="grow" />
+            <span className="ad-sk" style={{ width: "12%", height: 11 }} />
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
-export default function AdminPage() {
-  const router = useRouter();
+export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/admin/stats");
-      if (res.status === 403) { setError("forbidden"); setLoading(false); return; }
-      if (!res.ok) throw new Error("Failed to fetch stats");
-      const data = await res.json();
-      setStats(data);
-      setLastRefresh(new Date());
+      if (!res.ok) throw new Error();
+      setStats(await res.json());
     } catch {
-      setError("Failed to load stats. Check your connection.");
+      setError("Couldn’t load the dashboard. Check your connection and refresh.");
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchStats();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (loading && !stats) {
-    return (
-      <div className="flex items-center justify-center h-screen" style={{ background: "var(--m-cream)" }}>
-        <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: "var(--m-forest)", borderTopColor: "transparent" }} />
-      </div>
-    );
-  }
+  useEffect(() => {
+     
+    void fetchStats();
+  }, [fetchStats]);
 
-  const conversionRate = stats && stats.totalUsers > 0
-    ? ((stats.proCount / stats.totalUsers) * 100).toFixed(1)
-    : "0";
-
-  const mrr = stats ? stats.proCount * 9 : 0;
+  const days = stats?.dailyRequests ?? [];
+  const peak = Math.max(0, ...days.map((d) => d.total));
+  const total = days.reduce((s, d) => s + d.total, 0);
+  const p = stats?.usersByPlatform;
+  const rev = stats ? revenue(stats) : null;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--m-cream)" }}>
-      <header className="glass-nav px-6 flex items-center justify-between sticky top-0 z-10" style={{ height: "48px" }}>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push("/chat")}
-            className="p-2 rounded-full transition-colors text-[var(--m-ink-soft)] hover:bg-[var(--m-cream-2)]"
-            aria-label="Back to chat"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <h1 className="font-bold text-lg" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
-              Admin Dashboard
-            </h1>
-            <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>
-              Last updated: {lastRefresh.toLocaleTimeString()}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={fetchStats}
-          disabled={loading}
-          className="btn-pill-secondary flex items-center gap-1.5 text-xs h-8 px-4 disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+    <>
+      <AdminTop title="Dashboard">
+        {loading ? (
+          <AdminLoading />
+        ) : (
+          stats && (
+            <span className="ad-cap">
+              Updated {new Date(stats.generatedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )
+        )}
+        <button type="button" className="ad-btn" onClick={() => void fetchStats()} disabled={loading}>
           Refresh
         </button>
-      </header>
-
-      <main className="max-w-5xl mx-auto p-6 space-y-8">
-        {error && error !== "forbidden" && (
-          <div className="rounded-xl p-4 text-sm"
-            style={{
-              background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-              color: "var(--text-red)",
-              border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
-            }}>
-            {error}
-          </div>
-        )}
-
-        {/* KPI grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? 0} iconColor="var(--m-plum)" />
-          <StatCard icon={Zap} label="DAU" value={stats?.dau ?? 0} sub="active today" iconColor="var(--m-forest)" />
-          <StatCard icon={Crown} label="Pro Subscribers" value={stats?.proCount ?? 0} sub={`${conversionRate}% conversion`} iconColor="var(--m-burnt)" />
-          <StatCard icon={TrendingUp} label="Est. MRR" value={`$${mrr}`} sub={`₹${mrr * 84} / month`} iconColor="var(--m-lime)" />
-        </div>
-
-        {/* Request stats + sparkline */}
-        <div className="p-6 rounded-2xl" style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)" }}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <BarChart2 className="w-4 h-4" style={{ color: "var(--figure-accent)" }} />
-              <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>AI Requests</h2>
+      </AdminTop>
+      <div className="ad-body">
+        {error && <AdminError>{error}</AdminError>}
+        {!stats ? (
+          loading && <Skeleton />
+        ) : (
+          <>
+            <div className="ad-grid4">
+              <Tile
+                label="Users"
+                value={stats.totalUsers}
+                sub={`${p?.web ?? 0} web · ${p?.ios ?? 0} iOS · ${p?.android ?? 0} Android${p?.unknown ? ` · ${p.unknown} unknown` : ""}`}
+              />
+              <Tile label="Chatted with Bo" value={stats.dau} sub="Today · used Bo at least once" />
+              <Tile label="Est. MRR" value={rev!.value} sub={rev!.sub} />
+              <Tile label="AI requests" value={stats.requestsToday} sub={`Today · ${stats.requestsWeek} this week`} />
             </div>
-            <div className="flex gap-4 text-sm">
-              <div className="text-center">
-                <p className="font-bold" style={{ color: "var(--m-ink)" }}>{stats?.requestsToday ?? 0}</p>
-                <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>Today</p>
+
+            <div className="ad-card" style={{ padding: "14px 16px 12px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div className="hstack" style={{ gap: 10, flexWrap: "wrap" }}>
+                <h2 className="ad-h">AI requests</h2>
+                <span className="ad-cap">Last {days.length} days · daily count</span>
+                <div className="grow" />
+                <span className="ad-cap">
+                  Peak {peak} · total {total}
+                </span>
               </div>
-              <div className="text-center">
-                <p className="font-bold" style={{ color: "var(--m-ink)" }}>{stats?.requestsWeek ?? 0}</p>
-                <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>This week</p>
+              <Sparkline data={days} />
+              <div className="hstack" style={{ justifyContent: "space-between" }}>
+                <span className="ad-cap" style={{ fontSize: 10.5 }}>{days[0] ? shortDate(days[0].usage_date) : ""}</span>
+                <span className="ad-cap" style={{ fontSize: 10.5 }}>{days[7] ? shortDate(days[7].usage_date) : ""}</span>
+                <span className="ad-cap" style={{ fontSize: 10.5 }}>Today</span>
               </div>
             </div>
-          </div>
-          <Sparkline data={stats?.dailyRequests ?? []} />
-          <div className="flex justify-between mt-1">
-            <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>14 days ago</p>
-            <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>Today</p>
-          </div>
-        </div>
 
-        {/* Top users */}
-        <div className="p-6 rounded-2xl" style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)" }}>
-          <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: "var(--m-ink)" }}>
-            <Users className="w-4 h-4" style={{ color: "var(--figure-accent)" }} />
-            Top Users This Week
-          </h2>
-          {!stats?.topUsers?.length ? (
-            <p className="text-sm" style={{ color: "var(--m-ink-soft)" }}>No requests yet this week.</p>
-          ) : (
-            <div className="space-y-2">
-              {stats.topUsers.map((u, i) => (
-                <div key={u.user_id} className="flex items-center justify-between p-3 rounded-xl"
-                  style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold w-4" style={{ color: "var(--m-ink-soft)" }}>{i + 1}</span>
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{ background: "var(--m-tint-green)", color: "var(--figure-accent)" }}>
-                      {u.email[0].toUpperCase()}
-                    </div>
-                    <p className="text-sm font-medium" style={{ color: "var(--m-ink)" }}>{u.email}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {u.is_pro && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "var(--m-tint-green)", color: "var(--figure-accent)" }}>
-                        Pro
-                      </span>
-                    )}
-                    <span className="text-sm font-bold" style={{ color: "var(--m-ink)" }}>
-                      {u.total_requests} req
-                    </span>
-                  </div>
+            <div className="ad-card" style={{ overflow: "hidden" }}>
+              <div className="hstack" style={{ gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--m-ink-faint)" }}>
+                <h2 className="ad-h grow">Most active this week</h2>
+                <span className="ad-cap">By AI requests</span>
+              </div>
+              {stats.topUsers.length === 0 ? (
+                <p className="ad-cap" style={{ padding: "18px 14px", margin: 0 }}>No requests yet this week.</p>
+              ) : (
+                <div className="ad-scroll">
+                  <table className="ad-tbl">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Plan</th>
+                        <th style={{ textAlign: "right" }}>Requests</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.topUsers.map((u) => (
+                        <tr key={u.user_id}>
+                          <td>
+                            <div className="hstack" style={{ gap: 9 }}>
+                              <span className="ad-av-sm" aria-hidden>{(u.email?.[0] ?? "?").toUpperCase()}</span>
+                              <span style={{ overflowWrap: "anywhere" }}>{u.email}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`ad-pill ${u.is_pro ? "ad-plus" : "ad-mute"}`}>{u.is_pro ? "meshi+" : "Free"}</span>
+                          </td>
+                          <td style={{ textAlign: "right", fontWeight: 700 }}>{u.total_requests}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
-
-      </main>
-    </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }

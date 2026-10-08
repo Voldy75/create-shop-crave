@@ -32,6 +32,59 @@ interface UserProfileRow {
   created_at: string;
 }
 
+/**
+ * Drawer detail for one user (WF12 w12b): how they sign in, and the admin
+ * actions taken on them, newest first, from admin_audit_log. The board also
+ * draws a free-text "admin note"; there is no column for one, so it is not
+ * built — status_reason (required for restrict/ban) is the recorded "why".
+ */
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const guard = await requireAdmin();
+  if (guard instanceof Response) return guard;
+
+  const { id } = await params;
+  if (!id) {
+    return Response.json({ error: "Missing user id" }, { status: 400 });
+  }
+
+  const svc = await createServiceClient();
+  const [authUser, audit] = await Promise.all([
+    svc.auth.admin.getUserById(id),
+    svc
+      .from("admin_audit_log")
+      .select("id, actor_user_id, action, before, after, created_at")
+      .eq("target_type", "user")
+      .eq("target_id", id)
+      .order("created_at", { ascending: false })
+      .limit(20),
+  ]);
+
+  if (audit.error) {
+    return Response.json({ error: audit.error.message }, { status: 500 });
+  }
+
+  const actorIds = [...new Set((audit.data ?? []).map((a) => a.actor_user_id as string))];
+  const { data: actors } = actorIds.length
+    ? await svc.from("user_profiles").select("user_id, email").in("user_id", actorIds)
+    : { data: [] as { user_id: string; email: string | null }[] };
+  const emailOf = new Map((actors ?? []).map((a) => [a.user_id, a.email]));
+
+  return Response.json({
+    signInProvider: (authUser.data.user?.app_metadata?.provider as string | undefined) ?? null,
+    actions: (audit.data ?? []).map((a) => ({
+      id: a.id,
+      action: a.action,
+      before: a.before,
+      after: a.after,
+      created_at: a.created_at,
+      actor: emailOf.get(a.actor_user_id as string) ?? null,
+    })),
+  });
+}
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

@@ -1343,6 +1343,76 @@ success path (only `crave_theme` survives), the abort path (local data
 untouched), export states, contrast both themes. The mobile avatar was 18px
 (3.61:1 needs large text) and is now 19px/800 like web.
 
+### Phase 4 — WF12 admin console, shipped
+
+All six screens (w12a–f) plus loading (w12g), empty (w12h) and permission
+denied (w12i) are restyled to the board. Each screen keeps its existing
+fetch/mutation logic. The `ad-*` CSS is vendored into `design/meshi-app.css`
+with tokens instead of the board's light-only literals, and `@keyframes ad-sh`
+came with it. Shell: `app/(web)/admin/admin-shell.tsx` (side nav, top bar,
+loading/error/denied helpers); `admin-nav.tsx` and `plans/price-editor.tsx` are
+deleted.
+
+**Bound to real data, not the board's numbers:**
+- Dashboard: `/api/admin/stats` now returns `paidByProvider`, `proPrices`
+  (active web `plan_prices` for `pro`) and `usersByPlatform`
+  (`first_seen_platform`), and zero-fills the 14-day series. "Est. MRR" is
+  each provider's count × its own price in its own currency. The old tile was
+  `proCount × $9` shown in rupees at a hardcoded rate of 84; the board's ₹299
+  is not our price either. Yearly prices are spread over 12 months.
+- "Daily actives / Signed in today" is labelled **"Chatted with Bo · Today"**:
+  `admin_dau` counts users with a usage row, not sign-ins.
+- AI requests tile shows today + this week. There is no "cap", because no
+  global cap exists.
+- Env pill comes from `VERCEL_ENV` (PRODUCTION / PREVIEW / LOCAL), not a
+  hardcoded PRODUCTION.
+- Flags, plans, providers and config keys are whatever is in the DB. None of
+  the board's example keys are used.
+
+**Board → build deviations:**
+- w12b drawer: the **admin note is NOT built** (no column for it). The
+  restrict/ban reason (`status_reason`, required) is the recorded "why".
+- w12b drawer: **"Admin actions" is real.** The new
+  `GET /api/admin/users/[id]` reads `admin_audit_log` for the user, plus the
+  sign-in provider.
+- w12b drawer: Plan, Role and Ban are kept although not drawn, because they
+  are the only place to change those.
+- w12b users list: search is by email only (the API filters email).
+  "Banned" is a filter too. Paging is cursor "Load more", not numbered pages.
+- w12c Plans: prices are typed in major units (749, not 74900) and saved
+  together. "Add price" (provider/platform/billing) is kept.
+- w12d Flags: the switch never flips optimistically. A failed save marks the
+  row and raises the toast with Retry.
+- w12e MCP: the "Client ID env var" column became **"Client"**, because Swiggy
+  uses DCR and has no env var. It shows Set / Registered (DCR) / Registers on
+  first connect / Not needed / Missing. A provider with no way to get a client
+  can't be switched on.
+- w12e MCP: **"Add provider" is NOT built** (no create API; providers are
+  seeded by `scripts/sql/mcp-registry.sql`). The endpoint editor and server
+  list stay under "Edit" on each row. Removing a server now asks to confirm.
+- w12f Config: the board's six limit keys don't exist. Editable:
+  `rate_limits.default` chat/photo. `limits.fail_mode` is read-only (nothing
+  reads it). Checkout providers per platform is kept. Health lists the env vars
+  the server actually checks.
+- w12i: a signed-in non-admin now sees "This account isn't an admin" (nav
+  hidden) instead of a silent redirect. Signed-out users still go to `/`.
+
+**A11y deviations:** input/switch boundaries are at 60% ink (the board's ~20%
+fails WCAG 1.4.11): 3.68:1 light / 5.11:1 dark. In dark, brown-on-amber at
+the board's tint measured 4.42:1, so `.ad-warn` / `.is-warn` use a lighter
+dark-only tint.
+
+**Verified:** all six screens via a temporary layout bypass and a browser
+fetch intercept (removed; grep finds 0). Text and icon contrast was scanned
+in both themes with the drawer, MCP editor, failed-flag toast and a dirty
+config row open: all pass. There is no horizontal scroll at 375px. Signed-out
+`/admin` → 307 to `/`; the new API → 401. **Not visually verified:** the
+w12i denied card. It uses the same classes, but rendering it needs a
+signed-in non-admin.
+
+**Gaps noticed, not fixed:** `/api/admin/flags` PATCH/POST write no
+`admin_audit_log` row, unlike every other admin write.
+
 ## Dead ends — do not retry
 
 1. **Swiggy MCP OAuth from a web origin.** Gated to an allowlist of AI clients;

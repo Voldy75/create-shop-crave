@@ -1,12 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
-import { CCButton } from "@/components/cc/button";
-import { CCCard } from "@/components/cc/card";
-import { ProviderHealth, type ProvidersBlock } from "./provider-health";
+/**
+ * Admin → Config, built to w12f: runtime limits on the left, key health on
+ * the right.
+ *
+ * Board → build: the board lists six limits (per-plan chats, a global AI cap,
+ * per-minute rate, reply tokens, export TTL). None of those keys exist — the
+ * config API accepts an allowlist, and the only limit the app reads from here
+ * is rate_limits.default (chat + photo per day for users with no plan;
+ * per-plan limits live on the Plans screen). Those two are what's editable.
+ * limits.fail_mode is shown read-only because nothing reads it yet.
+ * Checkout providers per platform is kept from the old screen (not drawn):
+ * it is what /api/billing/options offers each platform.
+ */
 
+import { useCallback, useEffect, useState } from "react";
+import { AdminError, AdminLoading, AdminTop } from "../admin-shell";
+import { ProviderHealth, healthChecks, type ProvidersBlock } from "./provider-health";
+
+type PlatformKey = "web" | "ios" | "android";
+const PLATFORMS: PlatformKey[] = ["web", "ios", "android"];
 const PROVIDER_OPTIONS = ["razorpay", "stripe", "apple", "google"] as const;
+const PROVIDER_NAME: Record<string, string> = { razorpay: "Razorpay", stripe: "Stripe", apple: "App Store", google: "Play" };
+const PLATFORM_NAME: Record<PlatformKey, string> = { web: "Web", ios: "iOS", android: "Android" };
 
 interface ConfigRow {
   key: string;
@@ -21,231 +37,269 @@ interface RateLimitDefault {
   photo_daily: number;
 }
 
-function findConfig(rows: ConfigRow[], key: string): ConfigRow | undefined {
-  return rows.find((r) => r.key === key);
-}
+const find = (rows: ConfigRow[], key: string) => rows.find((r) => r.key === key);
 
 export default function ConfigPage() {
   const [rows, setRows] = useState<ConfigRow[]>([]);
   const [providers, setProviders] = useState<ProvidersBlock | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkedAt, setCheckedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [chatDaily, setChatDaily] = useState("");
-  const [photoDaily, setPhotoDaily] = useState("");
+  const [chat, setChat] = useState("");
+  const [photo, setPhoto] = useState("");
   const [savingLimits, setSavingLimits] = useState(false);
-  const [limitsError, setLimitsError] = useState<string | null>(null);
+  const [limitsMsg, setLimitsMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const [platformProviders, setPlatformProviders] = useState<Record<"web" | "ios" | "android", string[]>>({
-    web: [],
-    ios: [],
-    android: [],
-  });
-  const [savingPlatform, setSavingPlatform] = useState<"web" | "ios" | "android" | null>(null);
-  const [platformError, setPlatformError] = useState<string | null>(null);
+  const [platformProviders, setPlatformProviders] = useState<Record<PlatformKey, string[]>>({ web: [], ios: [], android: [] });
+  const [savingPlatform, setSavingPlatform] = useState<PlatformKey | null>(null);
+  const [platformMsg, setPlatformMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const load = async () => {
+  const saved = (r: ConfigRow[]) => find(r, "rate_limits.default")?.value as RateLimitDefault | undefined;
+  const savedProviders = (r: ConfigRow[], p: PlatformKey) => (find(r, `payments.providers.${p}`)?.value as string[] | undefined) ?? [];
+
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/admin/config");
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data?.error ?? "Failed to load config");
+        setError(data?.error ?? "Couldn’t load config.");
         return;
       }
-      const configRows: ConfigRow[] = data.config ?? [];
-      setRows(configRows);
+      const r: ConfigRow[] = data.config ?? [];
+      setRows(r);
       setProviders(data.providers ?? null);
-
-      const rateLimit = findConfig(configRows, "rate_limits.default")?.value as RateLimitDefault | undefined;
-      setChatDaily(rateLimit?.chat_daily !== undefined ? String(rateLimit.chat_daily) : "");
-      setPhotoDaily(rateLimit?.photo_daily !== undefined ? String(rateLimit.photo_daily) : "");
-
-      setPlatformProviders({
-        web: (findConfig(configRows, "payments.providers.web")?.value as string[]) ?? [],
-        ios: (findConfig(configRows, "payments.providers.ios")?.value as string[]) ?? [],
-        android: (findConfig(configRows, "payments.providers.android")?.value as string[]) ?? [],
-      });
+      setCheckedAt(new Date());
+      const rl = saved(r);
+      setChat(rl?.chat_daily !== undefined ? String(rl.chat_daily) : "");
+      setPhoto(rl?.photo_daily !== undefined ? String(rl.photo_daily) : "");
+      setPlatformProviders({ web: savedProviders(r, "web"), ios: savedProviders(r, "ios"), android: savedProviders(r, "android") });
     } catch {
-      setError("Failed to load config. Check your connection.");
+      setError("Couldn’t load config. Check your connection.");
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    load();
   }, []);
 
-  const handleSaveLimits = async () => {
-    const chat = Number.parseInt(chatDaily, 10);
-    const photo = Number.parseInt(photoDaily, 10);
-    if (!Number.isFinite(chat) || chat < 0 || !Number.isFinite(photo) || photo < 0) {
-      setLimitsError("Both limits must be non-negative numbers");
+  useEffect(() => {
+     
+    void load();
+  }, [load]);
+
+  const patch = async (key: string, value: unknown) => {
+    const res = await fetch("/api/admin/config", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, value }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.error ?? "Couldn’t save.");
+    setRows((prev) => [...prev.filter((r) => r.key !== key), data.config]);
+  };
+
+  const rl = saved(rows);
+  const chatDirty = chat !== (rl?.chat_daily !== undefined ? String(rl.chat_daily) : "");
+  const photoDirty = photo !== (rl?.photo_daily !== undefined ? String(rl.photo_daily) : "");
+  const unsaved = Number(chatDirty) + Number(photoDirty);
+
+  const saveLimits = async () => {
+    const c = Number.parseInt(chat, 10);
+    const p = Number.parseInt(photo, 10);
+    if (!Number.isFinite(c) || c < 0 || !Number.isFinite(p) || p < 0) {
+      setLimitsMsg({ ok: false, text: "Both limits must be whole numbers, 0 or more." });
       return;
     }
     setSavingLimits(true);
-    setLimitsError(null);
+    setLimitsMsg(null);
     try {
-      const res = await fetch("/api/admin/config", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "rate_limits.default", value: { chat_daily: chat, photo_daily: photo } }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        setLimitsError(data?.error ?? "Failed to save");
-        return;
-      }
-      setRows((prev) => {
-        const next = prev.filter((r) => r.key !== "rate_limits.default");
-        return [...next, data.config];
-      });
+      await patch("rate_limits.default", { chat_daily: c, photo_daily: p });
+      setLimitsMsg({ ok: true, text: "Saved. Takes up to a minute to reach every server." });
+    } catch (e) {
+      setLimitsMsg({ ok: false, text: e instanceof Error ? e.message : "Couldn’t save." });
     } finally {
       setSavingLimits(false);
     }
   };
 
-  const toggleProvider = (platform: "web" | "ios" | "android", provider: string) => {
-    setPlatformProviders((prev) => {
-      const list = prev[platform];
-      const next = list.includes(provider) ? list.filter((p) => p !== provider) : [...list, provider];
-      return { ...prev, [platform]: next };
-    });
+  const discardLimits = () => {
+    setChat(rl?.chat_daily !== undefined ? String(rl.chat_daily) : "");
+    setPhoto(rl?.photo_daily !== undefined ? String(rl.photo_daily) : "");
+    setLimitsMsg(null);
   };
 
-  const handleSavePlatform = async (platform: "web" | "ios" | "android") => {
-    setSavingPlatform(platform);
-    setPlatformError(null);
+  const savePlatform = async (p: PlatformKey) => {
+    setSavingPlatform(p);
+    setPlatformMsg(null);
     try {
-      const res = await fetch("/api/admin/config", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: `payments.providers.${platform}`, value: platformProviders[platform] }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        setPlatformError(data?.error ?? "Failed to save");
-        return;
-      }
-      setRows((prev) => {
-        const next = prev.filter((r) => r.key !== `payments.providers.${platform}`);
-        return [...next, data.config];
-      });
+      await patch(`payments.providers.${p}`, platformProviders[p]);
+      setPlatformMsg({ ok: true, text: `${PLATFORM_NAME[p]} checkout saved.` });
+    } catch (e) {
+      setPlatformMsg({ ok: false, text: e instanceof Error ? e.message : "Couldn’t save." });
     } finally {
       setSavingPlatform(null);
     }
   };
 
-  if (loading) {
-    return (
-      <main className="max-w-3xl mx-auto p-6">
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--m-ink-soft)" }} />
-        </div>
-      </main>
-    );
-  }
+  const checks = providers ? healthChecks(providers) : [];
+  const failMode = find(rows, "limits.fail_mode")?.value;
+  const limitRows: { label: string; key: string; value: string; set: (v: string) => void; dirty: boolean; was?: number }[] = [
+    { label: "Bo chats per day", key: "chat_daily", value: chat, set: setChat, dirty: chatDirty, was: rl?.chat_daily },
+    { label: "Photo scans per day", key: "photo_daily", value: photo, set: setPhoto, dirty: photoDirty, was: rl?.photo_daily },
+  ];
 
   return (
-    <main className="max-w-3xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="font-bold text-lg" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
-          Config
-        </h1>
-      </div>
-
-      {error && (
-        <div
-          className="rounded-xl p-4 text-sm"
-          style={{
-            background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-            color: "var(--text-red)",
-            border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {/* Rate limits */}
-      <CCCard className="p-5 space-y-3">
-        <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>Default rate limits</h2>
-        <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>
-          Applied to users with no plan. Changes take up to ~60s to propagate across warm serverless instances
-          (the config cache TTL).
-        </p>
-        <div className="grid grid-cols-2 gap-3 max-w-sm">
-          <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--m-ink-soft)" }}>
-            Chat daily
-            <input
-              value={chatDaily}
-              onChange={(e) => setChatDaily(e.target.value)}
-              inputMode="numeric"
-              className="px-3 py-2 text-sm rounded-lg"
-              style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs" style={{ color: "var(--m-ink-soft)" }}>
-            Photo daily
-            <input
-              value={photoDaily}
-              onChange={(e) => setPhotoDaily(e.target.value)}
-              inputMode="numeric"
-              className="px-3 py-2 text-sm rounded-lg"
-              style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
-            />
-          </label>
-        </div>
-        {limitsError && <p className="text-xs" style={{ color: "var(--text-red)" }}>{limitsError}</p>}
-        <CCButton size="sm" onClick={handleSaveLimits} disabled={savingLimits}>
-          {savingLimits && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-          Save limits
-        </CCButton>
-      </CCCard>
-
-      {/* Payment providers per platform */}
-      <CCCard className="p-5 space-y-4">
-        <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>Checkout providers by platform</h2>
-        {platformError && <p className="text-xs" style={{ color: "var(--text-red)" }}>{platformError}</p>}
-        {(["web", "ios", "android"] as const).map((platform) => (
-          <div key={platform} className="space-y-2">
-            <p className="text-label" style={{ color: "var(--m-ink-soft)" }}>{platform}</p>
-            <div className="flex flex-wrap gap-3">
-              {PROVIDER_OPTIONS.map((provider) => (
-                <label
-                  key={provider}
-                  className="flex items-center gap-1.5 text-sm"
-                  style={{ color: "var(--m-ink-soft)" }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={platformProviders[platform].includes(provider)}
-                    onChange={() => toggleProvider(platform, provider)}
-                  />
-                  {provider}
-                </label>
-              ))}
+    <>
+      <AdminTop title="Config">
+        {loading ? (
+          <AdminLoading />
+        ) : (
+          checkedAt && (
+            <span className="ad-cap">Checked {checkedAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
+          )
+        )}
+        <button type="button" className="ad-btn" onClick={() => void load()} disabled={loading || unsaved > 0} title={unsaved ? "Save or discard first" : undefined}>
+          Re-check
+        </button>
+      </AdminTop>
+      <div className="ad-body">
+        {error && <AdminError>{error}</AdminError>}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 330px), 1fr))", gap: 14, alignItems: "start" }}>
+          <div className="vstack" style={{ gap: 14 }}>
+            {/* Runtime limits */}
+            <div className="ad-card" style={{ overflow: "hidden" }}>
+              <div className="hstack" style={{ gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--m-ink-faint)" }}>
+                <h2 className="ad-h grow">Runtime limits</h2>
+                <span className="ad-cap">Applies without a deploy</span>
+              </div>
+              <table className="ad-tbl">
+                <tbody>
+                  {limitRows.map((r) => (
+                    <tr key={r.key} style={r.dirty ? { background: "color-mix(in srgb, var(--m-cream-2) 50%, var(--m-card))" } : undefined}>
+                      <td>
+                        <div className="vstack" style={{ gap: 1 }}>
+                          <label htmlFor={`cfg-${r.key}`} style={{ fontWeight: 700 }}>{r.label}</label>
+                          <span className="ad-mono" style={{ fontSize: 11, color: "var(--m-ink-soft)" }}>rate_limits.default.{r.key}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="hstack" style={{ gap: 8 }}>
+                          {loading ? (
+                            <span className="ad-sk" style={{ width: 84, height: 30 }} />
+                          ) : (
+                            <input id={`cfg-${r.key}`} className={`ad-in${r.dirty ? " is-dirty" : ""}`} style={{ width: 84 }} value={r.value} onChange={(e) => r.set(e.target.value)} inputMode="numeric" />
+                          )}
+                          {r.dirty && r.was !== undefined && <span className="ad-cap">was {r.was}</span>}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td>
+                      <div className="vstack" style={{ gap: 1 }}>
+                        <span style={{ fontWeight: 700 }}>Usage-counter failure mode</span>
+                        <span className="ad-mono" style={{ fontSize: 11, color: "var(--m-ink-soft)" }}>limits.fail_mode</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="hstack" style={{ gap: 8, flexWrap: "wrap" }}>
+                        <span className="ad-mono">{failMode === undefined ? "—" : JSON.stringify(failMode)}</span>
+                        <span className="ad-cap">Read-only · not read by the app yet</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div className="ad-foot" style={{ flexWrap: "wrap" }}>
+                <span className="ad-cap" role="status" style={limitsMsg && !limitsMsg.ok ? { color: "var(--text-red)" } : undefined}>
+                  {limitsMsg?.text ?? (unsaved ? `${unsaved} unsaved change${unsaved === 1 ? "" : "s"}` : "For users with no plan. Plan limits are on Plans.")}
+                </span>
+                <div className="grow" />
+                <button type="button" className="ad-btn" onClick={discardLimits} disabled={!unsaved || savingLimits}>
+                  Discard
+                </button>
+                <button type="button" className="ad-btn ad-btn-p" onClick={() => void saveLimits()} disabled={!unsaved || savingLimits}>
+                  {savingLimits ? "Saving…" : "Save limits"}
+                </button>
+              </div>
             </div>
-            <CCButton
-              size="sm"
-              variant="secondary"
-              onClick={() => handleSavePlatform(platform)}
-              disabled={savingPlatform === platform}
-            >
-              {savingPlatform === platform && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Save {platform}
-            </CCButton>
-          </div>
-        ))}
-      </CCCard>
 
-      {/* Provider health (read-only) */}
-      <CCCard className="p-5 space-y-3">
-        <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>Provider health</h2>
-        {providers && <ProviderHealth providers={providers} />}
-      </CCCard>
-    </main>
+            {/* Checkout providers */}
+            <div className="ad-card" style={{ overflow: "hidden" }}>
+              <div className="hstack" style={{ gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--m-ink-faint)" }}>
+                <h2 className="ad-h grow">Checkout providers</h2>
+                <span className="ad-cap">Offered at checkout, per platform</span>
+              </div>
+              <table className="ad-tbl">
+                <tbody>
+                  {PLATFORMS.map((p) => {
+                    const dirty = platformProviders[p].slice().sort().join() !== savedProviders(rows, p).slice().sort().join();
+                    return (
+                      <tr key={p}>
+                        <td style={{ fontWeight: 700, width: 90 }} id={`cfg-pl-${p}`}>{PLATFORM_NAME[p]}</td>
+                        <td>
+                          <div className="ad-seg" role="group" aria-labelledby={`cfg-pl-${p}`}>
+                            {PROVIDER_OPTIONS.map((prov) => {
+                              const on = platformProviders[p].includes(prov);
+                              return (
+                                <button
+                                  key={prov}
+                                  type="button"
+                                  className={on ? "is-on" : ""}
+                                  aria-pressed={on}
+                                  onClick={() =>
+                                    setPlatformProviders((prev) => ({
+                                      ...prev,
+                                      [p]: on ? prev[p].filter((x) => x !== prov) : [...prev[p], prov],
+                                    }))
+                                  }
+                                >
+                                  {PROVIDER_NAME[prov]}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </td>
+                        <td style={{ width: 90, textAlign: "right" }}>
+                          <button type="button" className={`ad-btn${dirty ? " ad-btn-p" : ""}`} onClick={() => void savePlatform(p)} disabled={!dirty || savingPlatform === p}>
+                            {savingPlatform === p ? "Saving…" : "Save"}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div className="ad-foot">
+                <span className="ad-cap" role="status" style={platformMsg && !platformMsg.ok ? { color: "var(--text-red)" } : undefined}>
+                  {platformMsg?.text ?? "A provider is only offered once it also has a price on Plans."}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Health */}
+          <div className="ad-card" style={{ overflow: "hidden" }}>
+            <div className="hstack" style={{ gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--m-ink-faint)" }}>
+              <h2 className="ad-h grow">Health</h2>
+              {providers && <span className="ad-cap">{checks.filter((c) => c.present).length} of {checks.length} set</span>}
+            </div>
+            {providers ? (
+              <ProviderHealth providers={providers} />
+            ) : (
+              <div className="vstack" style={{ gap: 10, padding: 14 }}>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <span key={i} className="ad-sk" style={{ width: "90%", height: 12 }} />
+                ))}
+              </div>
+            )}
+            <div className="ad-foot">
+              <span className="ad-cap">Shows whether each key exists. Values are never read back. Set them in Vercel → Environment Variables.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

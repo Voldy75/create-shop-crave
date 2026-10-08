@@ -1,11 +1,3 @@
-import { StatusPill } from "@/components/cc/status-pill";
-
-interface ProviderCheck {
-  label: string;
-  envVar: string;
-  present: boolean;
-}
-
 export interface ProvidersBlock {
   razorpay: { secretPresent: boolean; keyIdPresent: boolean };
   stripe: { secretPresent: boolean; webhookSecretPresent: boolean; priceIdPresent: boolean };
@@ -16,43 +8,38 @@ export interface ProvidersBlock {
 }
 
 /**
- * Read-only. Never renders an input for a secret value -- only whether the
- * env var is set. There is deliberately no write path here.
+ * w12f's Health card. Read-only: only whether each env var is set — there is
+ * deliberately no path that reads or writes a value. The list is the keys the
+ * server actually reads, not the board's illustrative set.
  */
-export function ProviderHealth({ providers }: { providers: ProvidersBlock }) {
-  const checks: ProviderCheck[] = [
-    { label: "Razorpay secret", envVar: "RAZORPAY_KEY_SECRET", present: providers.razorpay.secretPresent },
-    { label: "Razorpay key id", envVar: "RAZORPAY_KEY_ID", present: providers.razorpay.keyIdPresent },
-    { label: "Stripe secret", envVar: "STRIPE_SECRET_KEY", present: providers.stripe.secretPresent },
-    { label: "Stripe webhook secret", envVar: "STRIPE_WEBHOOK_SECRET", present: providers.stripe.webhookSecretPresent },
-    { label: "Stripe price id", envVar: "STRIPE_PRO_PRICE_ID", present: providers.stripe.priceIdPresent },
-    { label: "Gemini key", envVar: "GOOGLE_GENERATIVE_AI_API_KEY", present: providers.gemini.keyPresent },
-    { label: "Google Maps key", envVar: "GOOGLE_MAPS_API_KEY", present: providers.maps.keyPresent },
-    { label: "Firebase service account", envVar: "FIREBASE_SERVICE_ACCOUNT", present: providers.firebase.serviceAccountPresent },
-    { label: "Twilio auth token", envVar: "TWILIO_AUTH_TOKEN", present: providers.twilio.authTokenPresent },
+export function healthChecks(p: ProvidersBlock) {
+  return [
+    { envVar: "GOOGLE_GENERATIVE_AI_API_KEY", present: p.gemini.keyPresent },
+    { envVar: "RAZORPAY_KEY_ID", present: p.razorpay.keyIdPresent },
+    { envVar: "RAZORPAY_KEY_SECRET", present: p.razorpay.secretPresent },
+    { envVar: "STRIPE_SECRET_KEY", present: p.stripe.secretPresent },
+    { envVar: "STRIPE_WEBHOOK_SECRET", present: p.stripe.webhookSecretPresent },
+    { envVar: "STRIPE_PRO_PRICE_ID", present: p.stripe.priceIdPresent },
+    { envVar: "GOOGLE_MAPS_API_KEY", present: p.maps.keyPresent },
+    { envVar: "FIREBASE_SERVICE_ACCOUNT", present: p.firebase.serviceAccountPresent },
+    { envVar: "TWILIO_AUTH_TOKEN", present: p.twilio.authTokenPresent },
   ];
+}
 
+export function ProviderHealth({ providers }: { providers: ProvidersBlock }) {
   return (
-    <div className="space-y-2">
-      {checks.map((c) => (
-        <div
+    <ul className="vstack" style={{ gap: 0, listStyle: "none", margin: 0, padding: 0 }}>
+      {healthChecks(providers).map((c) => (
+        <li
           key={c.envVar}
-          className="flex items-center justify-between p-3 rounded-xl"
-          style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}
+          className="hstack"
+          style={{ gap: 8, padding: "7px 14px", borderBottom: "1px solid color-mix(in srgb, var(--m-ink) 6%, transparent)" }}
         >
-          <div>
-            <p className="text-sm" style={{ color: "var(--m-ink)" }}>{c.label}</p>
-            <code className="text-xs" style={{ color: "var(--m-ink-soft)" }}>{c.envVar}</code>
-          </div>
-          <StatusPill tone={c.present ? "active" : "error"}>
-            {c.present ? "Present" : "Missing"}
-          </StatusPill>
-        </div>
+          <span className="ad-dot" style={{ background: c.present ? "var(--m-forest)" : "var(--m-red)" }} aria-hidden />
+          <span className="ad-mono grow" style={{ fontSize: 11.5 }}>{c.envVar}</span>
+          <span className={`ad-pill ${c.present ? "ad-ok" : "ad-bad"}`}>{c.present ? "Set" : "Missing"}</span>
+        </li>
       ))}
-      <p className="text-xs pt-1" style={{ color: "var(--m-ink-soft)" }}>
-        Set missing values in the Vercel dashboard (Project → Settings → Environment Variables). Secrets are never
-        read or written here.
-      </p>
-    </div>
+    </ul>
   );
 }

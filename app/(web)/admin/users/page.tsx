@@ -1,11 +1,23 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Search, Loader2 } from "lucide-react";
-import { Chip } from "@/components/cc/chip";
-import { StatusPill } from "@/components/cc/status-pill";
+/**
+ * Admin → Users, built to w12b (empty state: w12h).
+ *
+ * Kept from the old screen, because the API works this way: search is by
+ * email (the board says "name or email"; the API filters email only), the
+ * Platform filter is the LAST-seen platform, and paging is a cursor, so the
+ * footer offers "Load more" rather than the board's numbered Prev/Next.
+ * "Banned" stays as a status — the board only draws Active/Restricted, but
+ * the API has three states and hiding one would hide those users.
+ */
+
+import { useCallback, useEffect, useState } from "react";
+import { Search } from "lucide-react";
+import { Pea } from "@/components/mascots";
+import { AdminError, AdminLoading, AdminTop } from "../admin-shell";
 import { UserDrawer } from "./user-drawer";
-import type { AdminUserRow, AdminPlan, UserStatus, Platform } from "./types";
+import type { AdminPlan, AdminUserRow, Platform, UserStatus } from "./types";
+import { PLATFORM_LABEL, STATUS_PILL, relDay, shortDate, userInitials } from "./format";
 
 const STATUS_FILTERS: { value: UserStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -21,12 +33,6 @@ const PLATFORM_FILTERS: { value: Platform | "all"; label: string }[] = [
   { value: "android", label: "Android" },
 ];
 
-const STATUS_TONE: Record<UserStatus, "active" | "pending" | "error"> = {
-  active: "active",
-  restricted: "pending",
-  banned: "error",
-};
-
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -40,7 +46,7 @@ export default function UsersPage() {
   const [platform, setPlatform] = useState<Platform | "all">("all");
 
   const [plans, setPlans] = useState<AdminPlan[]>([]);
-  const [selectedUser, setSelectedUser] = useState<AdminUserRow | null>(null);
+  const [selected, setSelected] = useState<AdminUserRow | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q.trim()), 350);
@@ -69,13 +75,13 @@ export default function UsersPage() {
         const res = await fetch(`/api/admin/users?${params.toString()}`);
         const data = await res.json().catch(() => null);
         if (!res.ok) {
-          setError(data?.error ?? "Failed to load users");
+          setError(data?.error ?? "Couldn’t load users.");
           return;
         }
         setUsers((prev) => (cursor ? [...prev, ...(data.users ?? [])] : data.users ?? []));
         setNextCursor(data.nextCursor ?? null);
       } catch {
-        setError("Failed to load users. Check your connection.");
+        setError("Couldn’t load users. Check your connection.");
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -85,162 +91,170 @@ export default function UsersPage() {
   );
 
   useEffect(() => {
-    fetchUsers(null);
+     
+    void fetchUsers(null);
   }, [fetchUsers]);
 
   const handleUpdated = (updated: AdminUserRow) => {
     setUsers((prev) => prev.map((u) => (u.user_id === updated.user_id ? { ...u, ...updated } : u)));
-    setSelectedUser(updated);
+    setSelected(updated);
   };
 
+  const planName = (id: string | null) => (id ? plans.find((p) => p.id === id)?.name ?? id : null);
+  const filtered = status !== "all" || platform !== "all" || !!debouncedQ;
+  const clearFilters = () => {
+    setStatus("all");
+    setPlatform("all");
+    setQ("");
+  };
+
+  const emptyCopy = (() => {
+    if (debouncedQ) return { title: `No users match “${debouncedQ}”`, sub: "Search looks at email addresses." };
+    if (status !== "all" && platform === "all")
+      return {
+        title: `No ${STATUS_PILL[status].label.toLowerCase()} users`,
+        sub: status === "active" ? "Every account is restricted or banned." : "Users you restrict or ban from the detail drawer appear here.",
+      };
+    if (platform !== "all" && status === "all")
+      return { title: `No users on ${PLATFORM_LABEL[platform]}`, sub: "Platform is where each user was last seen." };
+    if (filtered) return { title: "No users match these filters", sub: "Try clearing a filter." };
+    return { title: "No users yet", sub: "Accounts appear here after their first sign-in." };
+  })();
+
   return (
-    <main className="max-w-6xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="font-bold text-lg" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
-          Users
-        </h1>
-        <p className="text-xs mt-0.5" style={{ color: "var(--m-ink-soft)" }}>
-          {users.length} loaded
-        </p>
-      </div>
-
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search
-          className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: "var(--m-ink-soft)" }}
-        />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search by email"
-          className="w-full pl-9 pr-3 py-2 text-sm rounded-lg"
-          style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
-        />
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xs" style={{ color: "var(--m-ink-soft)" }}>Status</span>
-          <div className="flex gap-1.5">
-            {STATUS_FILTERS.map((f) => (
-              <Chip key={f.value} active={status === f.value} onClick={() => setStatus(f.value)}>
-                {f.label}
-              </Chip>
-            ))}
+    <div style={{ display: "flex", flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        <AdminTop title="Users">
+          {loading ? <AdminLoading /> : <span className="ad-cap">{users.length}{nextCursor ? "+" : ""} shown</span>}
+        </AdminTop>
+        <div className="ad-body">
+          <div className="hstack" style={{ gap: 14, flexWrap: "wrap" }}>
+            <label className="ad-search">
+              <Search width={15} height={15} aria-hidden />
+              <span className="sr-only">Search by email</span>
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search email" type="search" />
+            </label>
+            <span className="ad-lbl" id="ad-f-status">Status</span>
+            <div className="ad-seg" role="group" aria-labelledby="ad-f-status">
+              {STATUS_FILTERS.map((f) => (
+                <button key={f.value} type="button" className={status === f.value ? "is-on" : ""} aria-pressed={status === f.value} onClick={() => setStatus(f.value)}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <span className="ad-lbl" id="ad-f-platform">Platform</span>
+            <div className="ad-seg" role="group" aria-labelledby="ad-f-platform">
+              {PLATFORM_FILTERS.map((f) => (
+                <button key={f.value} type="button" className={platform === f.value ? "is-on" : ""} aria-pressed={platform === f.value} onClick={() => setPlatform(f.value)}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs" style={{ color: "var(--m-ink-soft)" }}>Platform</span>
-          <div className="flex gap-1.5">
-            {PLATFORM_FILTERS.map((f) => (
-              <Chip key={f.value} active={platform === f.value} onClick={() => setPlatform(f.value)}>
-                {f.label}
-              </Chip>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {error && (
-        <div
-          className="rounded-xl p-4 text-sm"
-          style={{
-            background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-            color: "var(--text-red)",
-            border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
-          }}
-        >
-          {error}
-        </div>
-      )}
+          {error && <AdminError>{error}</AdminError>}
 
-      {/* Table */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)" }}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: "1px solid var(--m-ink-faint)" }}>
-                {["Email", "Status", "Plan", "Last-seen platform", "7d requests", "Created"].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-4 py-3 text-label"
-                    style={{ color: "var(--m-ink-soft)" }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="py-10 text-center">
-                    <Loader2 className="w-5 h-5 animate-spin inline-block" style={{ color: "var(--m-ink-soft)" }} />
-                  </td>
-                </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-10 text-center text-sm" style={{ color: "var(--m-ink-soft)" }}>
-                    No users match these filters.
-                  </td>
-                </tr>
-              ) : (
-                users.map((u) => (
-                  <tr
-                    key={u.user_id}
-                    onClick={() => setSelectedUser(u)}
-                    className="cursor-pointer transition-colors hover:bg-[var(--m-cream-2)]"
-                    style={{ borderBottom: "1px solid var(--m-ink-faint)" }}
-                  >
-                    <td className="px-4 py-3" style={{ color: "var(--m-ink)" }}>
-                      {u.email ?? u.user_id}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusPill tone={STATUS_TONE[u.status]}>{u.status}</StatusPill>
-                    </td>
-                    <td className="px-4 py-3" style={{ color: "var(--m-ink-soft)" }}>
-                      {u.plan_id ?? "—"}
-                    </td>
-                    <td className="px-4 py-3" style={{ color: "var(--m-ink-soft)" }}>
-                      {u.last_seen_platform ?? "—"}
-                    </td>
-                    <td className="px-4 py-3" style={{ color: "var(--m-ink-soft)" }}>
-                      {u.chat_usage_7d}
-                    </td>
-                    <td className="px-4 py-3" style={{ color: "var(--m-ink-soft)" }}>
-                      {new Date(u.created_at).toLocaleDateString()}
-                    </td>
+          <div className="ad-card" style={{ overflow: "hidden" }}>
+            <div className="ad-scroll">
+              <table className="ad-tbl">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Platform</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Last seen</th>
                   </tr>
-                ))
+                </thead>
+                <tbody>
+                  {loading ? (
+                    [0, 1, 2, 3, 4].map((i) => (
+                      <tr key={i}>
+                        <td><div className="hstack" style={{ gap: 9 }}><span className="ad-sk" style={{ width: 26, height: 26, borderRadius: "50%" }} /><span className="ad-sk" style={{ width: 150, height: 11 }} /></div></td>
+                        <td><span className="ad-sk" style={{ width: 40, height: 11 }} /></td>
+                        <td><span className="ad-sk" style={{ width: 50, height: 11 }} /></td>
+                        <td><span className="ad-sk" style={{ width: 54, height: 11 }} /></td>
+                        <td><span className="ad-sk" style={{ width: 60, height: 11 }} /></td>
+                        <td><span className="ad-sk" style={{ width: 60, height: 11 }} /></td>
+                      </tr>
+                    ))
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ padding: "54px 12px" }}>
+                        <div className="vstack" style={{ gap: 8, alignItems: "center", textAlign: "center" }}>
+                          <Pea width={64} height={64} aria-hidden style={{ animation: "mm-bob 3.4s ease-in-out infinite" }} />
+                          <span className="ad-h">{emptyCopy.title}</span>
+                          <span className="ad-cap" style={{ fontSize: 12 }}>{emptyCopy.sub}</span>
+                          {filtered && (
+                            <button type="button" className="ad-btn" style={{ marginTop: 4 }} onClick={clearFilters}>
+                              Show all users
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    users.map((u) => {
+                      const plan = planName(u.plan_id);
+                      const isSel = selected?.user_id === u.user_id;
+                      return (
+                        <tr
+                          key={u.user_id}
+                          className={`is-click${isSel ? " is-sel" : ""}`}
+                          tabIndex={0}
+                          aria-selected={isSel}
+                          onClick={() => setSelected(u)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setSelected(u);
+                            }
+                          }}
+                        >
+                          <td>
+                            <div className="hstack" style={{ gap: 9 }}>
+                              <span className="ad-av-sm" aria-hidden>{userInitials(u)}</span>
+                              <div className="vstack" style={{ gap: 0, minWidth: 0 }}>
+                                <span style={{ fontWeight: 700 }}>{u.display_name || u.email?.split("@")[0] || "—"}</span>
+                                <span className="ad-cap">{u.email ?? u.user_id}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td>{u.last_seen_platform ? PLATFORM_LABEL[u.last_seen_platform] : "—"}</td>
+                          <td>
+                            <span className={`ad-pill ${plan && u.plan_id !== "free" ? "ad-plus" : "ad-mute"}`}>{plan ?? "Free"}</span>
+                          </td>
+                          <td>
+                            <span className={`ad-pill ${STATUS_PILL[u.status].cls}`}>{STATUS_PILL[u.status].label}</span>
+                          </td>
+                          <td style={{ whiteSpace: "nowrap" }}>{shortDate(u.created_at)}</td>
+                          <td style={{ whiteSpace: "nowrap" }}>{relDay(u.last_seen_at)}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="ad-foot">
+              <span className="ad-cap">
+                {loading ? "Loading…" : `${users.length} shown${nextCursor ? " · more available" : ""}`}
+              </span>
+              <div className="grow" />
+              {nextCursor && !loading && (
+                <button type="button" className="ad-btn" onClick={() => void fetchUsers(nextCursor)} disabled={loadingMore}>
+                  {loadingMore ? "Loading…" : "Load more"}
+                </button>
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
       </div>
 
-      {nextCursor && !loading && (
-        <div className="flex justify-center">
-          <button
-            onClick={() => fetchUsers(nextCursor)}
-            disabled={loadingMore}
-            className="btn-pill-secondary flex items-center gap-1.5 text-xs h-8 px-4 disabled:opacity-50"
-          >
-            {loadingMore && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            Load more
-          </button>
-        </div>
+      {selected && (
+        <UserDrawer user={selected} plans={plans} onClose={() => setSelected(null)} onUpdated={handleUpdated} />
       )}
-
-      {selectedUser && (
-        <UserDrawer
-          user={selectedUser}
-          plans={plans}
-          onClose={() => setSelectedUser(null)}
-          onUpdated={handleUpdated}
-        />
-      )}
-    </main>
+    </div>
   );
 }

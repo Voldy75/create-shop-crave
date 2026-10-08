@@ -1,10 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2 } from "lucide-react";
-import { CCButton } from "@/components/cc/button";
-import { CCCard } from "@/components/cc/card";
-import { StatusPill } from "@/components/cc/status-pill";
+/**
+ * Admin → MCP providers, built to w12e.
+ *
+ * Board → build:
+ *   - The board's "Client ID env var" column assumes every provider is given a
+ *     client id by hand (SWIGGY_MCP_CLIENT_ID). Swiggy no longer works that
+ *     way: the client registers itself (Dynamic Client Registration) and the id
+ *     is cached on the provider row. So the column is "Client", and says how
+ *     the id is obtained: an env var (Set / Missing), Registered via DCR,
+ *     Registers on first connect, or Not needed. Values are never shown.
+ *   - A provider with no way to get a client id can't be switched on (the
+ *     board greys Zomato's switch for the same reason). Switching OFF is
+ *     always allowed.
+ *   - "Add provider": NOT built — there is no API to create a provider row;
+ *     providers are seeded by scripts/sql/mcp-registry.sql.
+ *   - Kept from the old screen (not drawn): the endpoint/scopes editor and
+ *     the per-provider server list, under "Edit" on each row.
+ */
+
+import { useCallback, useEffect, useState } from "react";
+import { ChevronDown, ChevronUp, Plug, Plus, Trash2 } from "lucide-react";
+import { AdminError, AdminLoading, AdminTop } from "../admin-shell";
 
 interface McpServerRow {
   providerId: string;
@@ -26,109 +43,53 @@ interface McpProviderRow {
   revokePath: string | null;
   scopes: string | null;
   clientIdEnv: string | null;
-  icon: string | null;
+  registrationPath: string | null;
+  clientId: string | null;
+  clientIdIssuedAt: string | null;
   notes: string | null;
   servers: McpServerRow[];
   clientIdPresent: boolean;
   connectionCount: number;
 }
 
-const inputStyle = {
-  background: "var(--m-cream-2)",
-  border: "1px solid var(--m-ink-faint)",
-  color: "var(--m-ink)",
-} as const;
+type ClientState = { cls: string; label: string; usable: boolean };
 
-const labelStyle = { color: "var(--m-ink-soft)" } as const;
-
-function TextField({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <label className="flex flex-col gap-1 text-xs" style={labelStyle}>
-      {label}
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="px-3 py-2 text-sm rounded-lg"
-        style={inputStyle}
-      />
-    </label>
-  );
-}
-
-function Toggle({
-  checked,
-  onChange,
-  busy,
-  label,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  busy?: boolean;
-  label: string;
-}) {
-  return (
-    <button
-      onClick={() => onChange(!checked)}
-      disabled={busy}
-      aria-label={label}
-      type="button"
-      className="shrink-0 relative w-10 h-6 rounded-full transition-colors"
-      style={{ background: checked ? "var(--m-forest)" : "var(--m-cream-2)" }}
-    >
-      {busy ? (
-        <Loader2
-          className="w-3.5 h-3.5 absolute animate-spin"
-          style={{ top: "5px", left: checked ? "19px" : "3px", color: checked ? "var(--m-on-deep)" : "var(--m-ink-soft)" }}
-        />
-      ) : (
-        <span
-          className="absolute top-0.5 rounded-full w-5 h-5 bg-white shadow-sm transition-transform"
-          style={{ left: checked ? "18px" : "2px" }}
-        />
-      )}
-    </button>
-  );
+function clientState(p: McpProviderRow): ClientState {
+  if (p.authType === "none") return { cls: "ad-mute", label: "Not needed", usable: true };
+  if (p.clientIdEnv && p.clientIdPresent) return { cls: "ad-ok", label: "Set", usable: true };
+  if (p.clientId) return { cls: "ad-ok", label: "Registered (DCR)", usable: true };
+  if (p.registrationPath) return { cls: "ad-mute", label: "Registers on first connect", usable: true };
+  return { cls: "ad-bad", label: "Missing", usable: false };
 }
 
 export default function McpAdminPage() {
   const [providers, setProviders] = useState<McpProviderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async (initial = false) => {
+    if (initial) setLoading(true);
     try {
       const res = await fetch("/api/admin/mcp");
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data?.error ?? "Failed to load MCP providers");
+        setError(data?.error ?? "Couldn’t load MCP providers.");
         return;
       }
       setProviders(data.providers ?? []);
     } catch {
-      setError("Failed to load MCP providers. Check your connection.");
+      setError("Couldn’t load MCP providers. Check your connection.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    load();
-  }, []);
+     
+    void load(true);
+  }, [load]);
 
   const patchProvider = async (id: string, patch: Record<string, unknown>) => {
     const res = await fetch("/api/admin/mcp", {
@@ -138,192 +99,241 @@ export default function McpAdminPage() {
     });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      setError(data?.error ?? "Failed to save provider");
+      setError(data?.error ?? "Couldn’t save the provider.");
       return false;
     }
     return true;
   };
 
-  const handleToggleEnabled = async (p: McpProviderRow) => {
-    setTogglingId(p.id);
-    const ok = await patchProvider(p.id, { enabled: !p.enabled });
-    if (ok) {
+  const toggle = async (p: McpProviderRow) => {
+    setToggling(p.id);
+    setError(null);
+    if (await patchProvider(p.id, { enabled: !p.enabled })) {
       setProviders((prev) => prev.map((row) => (row.id === p.id ? { ...row, enabled: !p.enabled } : row)));
     }
-    setTogglingId(null);
+    setToggling(null);
   };
 
-  const handleSaveFields = async (p: McpProviderRow) => {
-    setSavingId(p.id);
-    setError(null);
-    const ok = await patchProvider(p.id, {
-      authorize_base: p.authorizeBase,
-      authorize_path: p.authorizePath,
-      token_path: p.tokenPath,
-      revoke_path: p.revokePath,
-      scopes: p.scopes,
-      client_id_env: p.clientIdEnv,
-      notes: p.notes,
-    });
-    if (ok) await load();
-    setSavingId(null);
-  };
-
-  const updateField = (id: string, field: keyof McpProviderRow, value: string) => {
-    setProviders((prev) =>
-      prev.map((row) => (row.id === id ? { ...row, [field]: value === "" ? null : value } : row))
-    );
-  };
-
-  if (loading) {
-    return (
-      <main className="max-w-3xl mx-auto p-6">
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--m-ink-soft)" }} />
-        </div>
-      </main>
-    );
-  }
+  const blocked = providers.filter((p) => !clientState(p).usable);
 
   return (
-    <main className="max-w-3xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="font-bold text-lg" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
-          MCP Providers
-        </h1>
-      </div>
+    <>
+      <AdminTop title="MCP providers">{loading ? <AdminLoading /> : <span className="ad-cap">{providers.length} providers</span>}</AdminTop>
+      <div className="ad-body">
+        {error && <AdminError>{error}</AdminError>}
 
-      <div
-        className="rounded-xl p-4 text-sm leading-relaxed"
-        style={{
-          background: "color-mix(in srgb, var(--m-burnt) 10%, transparent)",
-          color: "color-mix(in srgb, var(--m-burnt) 50%, var(--m-ink))",
-          border: "1.5px solid color-mix(in srgb, var(--m-burnt) 22%, transparent)",
-        }}
-      >
-        Enabling a provider here makes the app offer it. It cannot make the provider accept us — Swiggy&apos;s MCP
-        OAuth is gated to an allowlist of AI clients, and Instacart/Uber/Zomato have no known public MCP endpoint.
-        These are placeholders until access is confirmed.
-      </div>
-
-      {error && (
-        <div
-          className="rounded-xl p-4 text-sm"
-          style={{
-            background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-            color: "var(--text-red)",
-            border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
-          }}
-        >
-          {error}
+        <div className="ad-card" style={{ overflow: "hidden" }}>
+          <div className="ad-scroll">
+            <table className="ad-tbl">
+              <thead>
+                <tr>
+                  <th style={{ width: 170 }}>Provider</th>
+                  <th>Server endpoints</th>
+                  <th>Client</th>
+                  <th style={{ width: 96 }}>Enabled</th>
+                  <th style={{ width: 80 }} aria-label="Edit" />
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  [0, 1, 2].map((i) => (
+                    <tr key={i}>
+                      <td><span className="ad-sk" style={{ width: 100, height: 11 }} /></td>
+                      <td><span className="ad-sk" style={{ width: "70%", height: 11 }} /></td>
+                      <td><span className="ad-sk" style={{ width: 120, height: 11 }} /></td>
+                      <td><span className="ad-sk" style={{ width: 50, height: 19, borderRadius: 99 }} /></td>
+                      <td />
+                    </tr>
+                  ))
+                ) : providers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="ad-cap" style={{ padding: "22px 12px" }}>
+                      No providers. Run scripts/sql/mcp-registry.sql.
+                    </td>
+                  </tr>
+                ) : (
+                  providers.flatMap((p) => {
+                    const c = clientState(p);
+                    const isOpen = open === p.id;
+                    const rows = [
+                      <tr key={p.id} className={isOpen ? "is-sel" : undefined}>
+                        <td>
+                          <div className="vstack" style={{ gap: 1 }}>
+                            <span style={{ fontWeight: 700 }}>{p.name}</span>
+                            <span className="ad-cap">
+                              {p.connectionCount} connection{p.connectionCount === 1 ? "" : "s"}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          {p.servers.length === 0 ? (
+                            <span className="ad-cap">No servers</span>
+                          ) : (
+                            <div className="vstack" style={{ gap: 2 }}>
+                              {p.servers.map((s) => (
+                                <span key={s.serviceKey} className="ad-mono" style={{ opacity: s.enabled ? 1 : 0.6 }}>
+                                  {s.url}
+                                  {!s.enabled && " (off)"}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <div className="hstack" style={{ gap: 8, flexWrap: "wrap" }}>
+                            {p.clientIdEnv && <span className="ad-mono">{p.clientIdEnv}</span>}
+                            <span className={`ad-pill ${c.cls}`}>{c.label}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={p.enabled}
+                            aria-label={`${p.name} enabled`}
+                            className={`ad-fl${p.enabled ? " is-on" : ""}${toggling === p.id ? " is-busy" : ""}`}
+                            disabled={toggling === p.id || (!p.enabled && !c.usable)}
+                            onClick={() => void toggle(p)}
+                          >
+                            <span className="ad-sw" aria-hidden><i /></span>
+                            {p.enabled ? "On" : "Off"}
+                          </button>
+                        </td>
+                        <td>
+                          <button type="button" className="ad-btn" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : p.id)}>
+                            Edit
+                            {isOpen ? <ChevronUp width={14} height={14} aria-hidden /> : <ChevronDown width={14} height={14} aria-hidden />}
+                          </button>
+                        </td>
+                      </tr>,
+                    ];
+                    if (isOpen)
+                      rows.push(
+                        <tr key={`${p.id}-edit`}>
+                          <td colSpan={5} style={{ background: "var(--m-cream)" }}>
+                            <ProviderEditor
+                              provider={p}
+                              patchProvider={patchProvider}
+                              onChanged={() => void load()}
+                              setError={setError}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    return rows;
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
 
-      {providers.map((p) => (
-        <ProviderCard
-          key={p.id}
-          provider={p}
-          saving={savingId === p.id}
-          toggling={togglingId === p.id}
-          onToggleEnabled={() => handleToggleEnabled(p)}
-          onFieldChange={(field, value) => updateField(p.id, field, value)}
-          onSave={() => handleSaveFields(p)}
-          onServersChanged={load}
-          setError={setError}
-        />
-      ))}
-    </main>
+        {blocked.map((p) => (
+          <div key={p.id} className="ad-notice is-warn">
+            <Plug width={16} height={16} aria-hidden style={{ flex: "none", marginTop: 1 }} />
+            <span>
+              {p.name} can’t be enabled until{" "}
+              {p.clientIdEnv ? (
+                <>
+                  <span className="ad-mono">{p.clientIdEnv}</span> is set in the server environment
+                </>
+              ) : (
+                "it has a client id env var or a registration path"
+              )}
+              . Values are never shown here.
+            </span>
+          </div>
+        ))}
+
+        <span className="ad-cap">
+          Enabling a provider makes the app offer it. It can’t make the provider accept us — that depends on the provider granting access.
+        </span>
+      </div>
+    </>
   );
 }
 
-function ProviderCard({
-  provider: p,
-  saving,
-  toggling,
-  onToggleEnabled,
-  onFieldChange,
-  onSave,
-  onServersChanged,
+function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <label className="vstack" style={{ gap: 5 }}>
+      <span className="ad-lbl">{label}</span>
+      <input className="ad-in" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    </label>
+  );
+}
+
+function ProviderEditor({
+  provider,
+  patchProvider,
+  onChanged,
   setError,
 }: {
   provider: McpProviderRow;
-  saving: boolean;
-  toggling: boolean;
-  onToggleEnabled: () => void;
-  onFieldChange: (field: keyof McpProviderRow, value: string) => void;
-  onSave: () => void;
-  onServersChanged: () => void;
+  patchProvider: (id: string, patch: Record<string, unknown>) => Promise<boolean>;
+  onChanged: () => void;
   setError: (e: string | null) => void;
 }) {
+  const [draft, setDraft] = useState({
+    authorizeBase: provider.authorizeBase ?? "",
+    authorizePath: provider.authorizePath ?? "",
+    tokenPath: provider.tokenPath ?? "",
+    revokePath: provider.revokePath ?? "",
+    scopes: provider.scopes ?? "",
+    clientIdEnv: provider.clientIdEnv ?? "",
+    notes: provider.notes ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (k: keyof typeof draft) => (v: string) => setDraft((d) => ({ ...d, [k]: v }));
+  const orNull = (v: string) => (v.trim() === "" ? null : v.trim());
+
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    const ok = await patchProvider(provider.id, {
+      authorize_base: orNull(draft.authorizeBase),
+      authorize_path: draft.authorizePath.trim(),
+      token_path: draft.tokenPath.trim(),
+      revoke_path: orNull(draft.revokePath),
+      scopes: orNull(draft.scopes),
+      client_id_env: orNull(draft.clientIdEnv),
+      notes: orNull(draft.notes),
+    });
+    if (ok) onChanged();
+    setSaving(false);
+  };
+
   return (
-    <CCCard className="p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-bold" style={{ color: "var(--m-ink)" }}>{p.name}</h2>
-            <code className="text-xs" style={labelStyle}>{p.id}</code>
-          </div>
-          <p className="text-xs mt-0.5" style={labelStyle}>
-            {p.authType} · {p.connectionCount} connection{p.connectionCount === 1 ? "" : "s"}
-          </p>
-        </div>
-        <Toggle checked={p.enabled} onChange={onToggleEnabled} busy={toggling} label={`Toggle ${p.id}`} />
+    <div className="vstack" style={{ gap: 12, padding: "6px 2px" }}>
+      <div className="hstack" style={{ gap: 8, flexWrap: "wrap" }}>
+        <span className="ad-mono" style={{ color: "var(--m-ink-soft)" }}>{provider.id}</span>
+        <span className="ad-pill ad-mute">{provider.authType}</span>
+        {provider.clientIdIssuedAt && (
+          <span className="ad-cap">Client registered {new Date(provider.clientIdIssuedAt).toLocaleDateString()}</span>
+        )}
       </div>
-
-      {/* Client-id health */}
-      <div
-        className="flex items-center justify-between p-3 rounded-xl"
-        style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}
-      >
-        <div>
-          <p className="text-sm" style={{ color: "var(--m-ink)" }}>Client ID</p>
-          <code className="text-xs" style={labelStyle}>{p.clientIdEnv ?? "(no env var configured)"}</code>
-        </div>
-        <StatusPill tone={p.clientIdPresent ? "active" : "error"}>
-          {p.clientIdPresent ? "Present" : "Missing"}
-        </StatusPill>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+        <Field label="Authorize base" value={draft.authorizeBase} onChange={set("authorizeBase")} />
+        <Field label="Authorize path" value={draft.authorizePath} onChange={set("authorizePath")} />
+        <Field label="Token path" value={draft.tokenPath} onChange={set("tokenPath")} />
+        <Field label="Revoke path" value={draft.revokePath} onChange={set("revokePath")} />
+        <Field label="Scopes" value={draft.scopes} onChange={set("scopes")} />
+        <Field label="Client ID env var" value={draft.clientIdEnv} onChange={set("clientIdEnv")} placeholder="Empty when the provider uses DCR" />
       </div>
-      {!p.clientIdPresent && p.clientIdEnv && (
-        <p className="text-xs -mt-2" style={labelStyle}>
-          Set <code>{p.clientIdEnv}</code> in the Vercel dashboard (Project → Settings → Environment Variables).
-        </p>
-      )}
-
-      {p.notes && (
-        <p className="text-xs italic" style={labelStyle}>{p.notes}</p>
-      )}
-
-      {/* Editable endpoint fields */}
-      <div className="grid grid-cols-2 gap-3">
-        <TextField label="Authorize base" value={p.authorizeBase ?? ""} onChange={(v) => onFieldChange("authorizeBase", v)} />
-        <TextField label="Authorize path" value={p.authorizePath ?? ""} onChange={(v) => onFieldChange("authorizePath", v)} />
-        <TextField label="Token path" value={p.tokenPath ?? ""} onChange={(v) => onFieldChange("tokenPath", v)} />
-        <TextField label="Revoke path" value={p.revokePath ?? ""} onChange={(v) => onFieldChange("revokePath", v)} />
-        <TextField label="Scopes" value={p.scopes ?? ""} onChange={(v) => onFieldChange("scopes", v)} />
-        <TextField label="Client ID env var" value={p.clientIdEnv ?? ""} onChange={(v) => onFieldChange("clientIdEnv", v)} placeholder="MCP_FOO_CLIENT_ID" />
-      </div>
-      <label className="flex flex-col gap-1 text-xs" style={labelStyle}>
-        Notes
-        <textarea
-          value={p.notes ?? ""}
-          onChange={(e) => onFieldChange("notes", e.target.value)}
-          rows={2}
-          className="px-3 py-2 text-sm rounded-lg"
-          style={inputStyle}
-        />
+      <label className="vstack" style={{ gap: 5 }}>
+        <span className="ad-lbl">Notes</span>
+        <textarea className="ad-in" rows={2} value={draft.notes} onChange={(e) => set("notes")(e.target.value)} />
       </label>
-
-      <CCButton size="sm" variant="secondary" onClick={onSave} disabled={saving}>
-        {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-        Save
-      </CCButton>
-
-      {/* Servers */}
-      <div className="pt-2 border-t" style={{ borderColor: "var(--m-ink-faint)" }}>
-        <h3 className="text-sm font-semibold mb-2" style={{ color: "var(--m-ink)" }}>Servers</h3>
-        <ServerList providerId={p.id} servers={p.servers} onChanged={onServersChanged} setError={setError} />
+      <div className="hstack" style={{ gap: 8 }}>
+        <button type="button" className="ad-btn ad-btn-p" onClick={() => void save()} disabled={saving}>
+          {saving ? "Saving…" : "Save provider"}
+        </button>
       </div>
-    </CCCard>
+
+      <div className="vstack" style={{ gap: 8, paddingTop: 10, borderTop: "1px solid var(--m-ink-faint)" }}>
+        <h3 className="ad-h" style={{ fontSize: 12.5 }}>Servers</h3>
+        <ServerList providerId={provider.id} servers={provider.servers} onChanged={onChanged} setError={setError} />
+      </div>
+    </div>
   );
 }
 
@@ -335,17 +345,20 @@ interface ServerDraft {
   enabled: boolean;
 }
 
-function toDraft(s: McpServerRow): ServerDraft {
-  return {
-    serviceKey: s.serviceKey,
-    label: s.label ?? "",
-    url: s.url,
-    toolAllowlist: (s.toolAllowlist ?? []).join(", "),
-    enabled: s.enabled,
-  };
-}
+const toDraft = (s: McpServerRow): ServerDraft => ({
+  serviceKey: s.serviceKey,
+  label: s.label ?? "",
+  url: s.url,
+  toolAllowlist: (s.toolAllowlist ?? []).join(", "),
+  enabled: s.enabled,
+});
 
 const EMPTY_DRAFT: ServerDraft = { serviceKey: "", label: "", url: "", toolAllowlist: "", enabled: true };
+
+const parseAllowlist = (raw: string): string[] | null => {
+  const t = raw.trim();
+  return t ? t.split(",").map((x) => x.trim()).filter(Boolean) : null;
+};
 
 function ServerList({
   providerId,
@@ -358,24 +371,17 @@ function ServerList({
   onChanged: () => void;
   setError: (e: string | null) => void;
 }) {
-  const [drafts, setDrafts] = useState<Record<string, ServerDraft>>(() =>
-    Object.fromEntries(servers.map((s) => [s.serviceKey, toDraft(s)]))
-  );
+  const [drafts, setDrafts] = useState<Record<string, ServerDraft>>(() => Object.fromEntries(servers.map((s) => [s.serviceKey, toDraft(s)])));
   const [newDraft, setNewDraft] = useState<ServerDraft>(EMPTY_DRAFT);
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   useEffect(() => {
+     
     setDrafts(Object.fromEntries(servers.map((s) => [s.serviceKey, toDraft(s)])));
   }, [servers]);
 
-  const parseAllowlist = (raw: string): string[] | null => {
-    const trimmed = raw.trim();
-    if (!trimmed) return null;
-    return trimmed.split(",").map((t) => t.trim()).filter(Boolean);
-  };
-
-  const save = async (key: string, draft: ServerDraft, isNew: boolean) => {
-    setBusyKey(key || "__new__");
+  const save = async (draft: ServerDraft, isNew: boolean) => {
+    setBusyKey(isNew ? "__new__" : draft.serviceKey);
     setError(null);
     try {
       const res = await fetch("/api/admin/mcp/servers", {
@@ -383,16 +389,16 @@ function ServerList({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           provider_id: providerId,
-          service_key: draft.serviceKey,
-          label: draft.label || null,
-          url: draft.url,
+          service_key: draft.serviceKey.trim(),
+          label: draft.label.trim() || null,
+          url: draft.url.trim(),
           tool_allowlist: parseAllowlist(draft.toolAllowlist),
           enabled: draft.enabled,
         }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data?.error ?? "Failed to save server");
+        setError(data?.error ?? "Couldn’t save the server.");
         return;
       }
       if (isNew) setNewDraft(EMPTY_DRAFT);
@@ -403,6 +409,7 @@ function ServerList({
   };
 
   const remove = async (key: string) => {
+    if (!window.confirm(`Remove the ${key} server? Connected users lose its tools.`)) return;
     setBusyKey(key);
     setError(null);
     try {
@@ -413,7 +420,7 @@ function ServerList({
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data?.error ?? "Failed to delete server");
+        setError(data?.error ?? "Couldn’t remove the server.");
         return;
       }
       onChanged();
@@ -422,75 +429,70 @@ function ServerList({
     }
   };
 
+  const edit = (key: string, patch: Partial<ServerDraft>) => setDrafts((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+
   return (
-    <div className="space-y-2">
+    <div className="vstack" style={{ gap: 8 }}>
       {servers.map((s) => {
-        const draft = drafts[s.serviceKey] ?? toDraft(s);
+        const d = drafts[s.serviceKey] ?? toDraft(s);
         return (
-          <div
-            key={s.serviceKey}
-            className="p-3 rounded-xl space-y-2"
-            style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}
-          >
-            <div className="flex items-center justify-between">
-              <code className="text-xs font-semibold" style={{ color: "var(--m-ink)" }}>{s.serviceKey}</code>
-              <div className="flex items-center gap-2">
-                <Toggle
-                  checked={draft.enabled}
-                  onChange={(v) => setDrafts((prev) => ({ ...prev, [s.serviceKey]: { ...draft, enabled: v } }))}
-                  label={`Toggle ${s.serviceKey}`}
-                />
-                <button
-                  onClick={() => remove(s.serviceKey)}
-                  disabled={busyKey === s.serviceKey}
-                  aria-label={`Delete ${s.serviceKey}`}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-[color-mix(in_srgb,var(--m-red)_12%,transparent)] hover:text-[var(--text-red)]"
-                  style={{ color: "var(--m-ink-soft)" }}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
+          <div key={s.serviceKey} className="ad-inset">
+            <div className="hstack" style={{ gap: 8 }}>
+              <span className="ad-mono grow" style={{ fontWeight: 700 }}>{s.serviceKey}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={d.enabled}
+                aria-label={`${s.serviceKey} enabled`}
+                className={`ad-fl${d.enabled ? " is-on" : ""}`}
+                onClick={() => edit(s.serviceKey, { enabled: !d.enabled })}
+              >
+                <span className="ad-sw" aria-hidden><i /></span>
+                {d.enabled ? "On" : "Off"}
+              </button>
+              <button
+                type="button"
+                className="ad-btn ad-btn-d"
+                style={{ width: 30, padding: 0, justifyContent: "center" }}
+                onClick={() => void remove(s.serviceKey)}
+                disabled={busyKey === s.serviceKey}
+                aria-label={`Remove ${s.serviceKey}`}
+              >
+                <Trash2 width={14} height={14} aria-hidden />
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <TextField label="Label" value={draft.label} onChange={(v) => setDrafts((prev) => ({ ...prev, [s.serviceKey]: { ...draft, label: v } }))} />
-              <TextField label="URL" value={draft.url} onChange={(v) => setDrafts((prev) => ({ ...prev, [s.serviceKey]: { ...draft, url: v } }))} />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+              <Field label="Label" value={d.label} onChange={(v) => edit(s.serviceKey, { label: v })} />
+              <Field label="URL" value={d.url} onChange={(v) => edit(s.serviceKey, { url: v })} />
             </div>
-            <TextField
-              label="Tool allowlist (comma-separated, empty = all tools)"
-              value={draft.toolAllowlist}
-              onChange={(v) => setDrafts((prev) => ({ ...prev, [s.serviceKey]: { ...draft, toolAllowlist: v } }))}
-            />
-            <CCButton size="sm" variant="secondary" onClick={() => save(s.serviceKey, draft, false)} disabled={busyKey === s.serviceKey}>
-              {busyKey === s.serviceKey && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Save
-            </CCButton>
+            <Field label="Tool allowlist (comma-separated, empty = all)" value={d.toolAllowlist} onChange={(v) => edit(s.serviceKey, { toolAllowlist: v })} />
+            <div>
+              <button type="button" className="ad-btn" onClick={() => void save(d, false)} disabled={busyKey === s.serviceKey}>
+                {busyKey === s.serviceKey ? "Saving…" : "Save server"}
+              </button>
+            </div>
           </div>
         );
       })}
 
-      {/* New server row */}
-      <div
-        className="p-3 rounded-xl space-y-2"
-        style={{ background: "var(--m-card)", border: "1px dashed var(--m-ink-faint)" }}
-      >
-        <div className="grid grid-cols-2 gap-2">
-          <TextField label="Service key" value={newDraft.serviceKey} onChange={(v) => setNewDraft({ ...newDraft, serviceKey: v })} placeholder="food" />
-          <TextField label="Label" value={newDraft.label} onChange={(v) => setNewDraft({ ...newDraft, label: v })} placeholder="Optional" />
+      <div className="ad-inset" style={{ boxShadow: "inset 0 0 0 1px var(--m-ink-faint)", background: "var(--m-card)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+          <Field label="Service key" value={newDraft.serviceKey} onChange={(v) => setNewDraft({ ...newDraft, serviceKey: v })} placeholder="food" />
+          <Field label="Label" value={newDraft.label} onChange={(v) => setNewDraft({ ...newDraft, label: v })} placeholder="Optional" />
+          <Field label="URL" value={newDraft.url} onChange={(v) => setNewDraft({ ...newDraft, url: v })} placeholder="https://…" />
         </div>
-        <TextField label="URL" value={newDraft.url} onChange={(v) => setNewDraft({ ...newDraft, url: v })} placeholder="https://mcp.example.com/food" />
-        <TextField
-          label="Tool allowlist (comma-separated, empty = all tools)"
-          value={newDraft.toolAllowlist}
-          onChange={(v) => setNewDraft({ ...newDraft, toolAllowlist: v })}
-        />
-        <CCButton
-          size="sm"
-          onClick={() => save(newDraft.serviceKey, newDraft, true)}
-          disabled={busyKey === "__new__" || !newDraft.serviceKey.trim() || !newDraft.url.trim()}
-        >
-          {busyKey === "__new__" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-          Add server
-        </CCButton>
+        <Field label="Tool allowlist (comma-separated, empty = all)" value={newDraft.toolAllowlist} onChange={(v) => setNewDraft({ ...newDraft, toolAllowlist: v })} />
+        <div>
+          <button
+            type="button"
+            className="ad-btn"
+            onClick={() => void save(newDraft, true)}
+            disabled={busyKey === "__new__" || !newDraft.serviceKey.trim() || !newDraft.url.trim()}
+          >
+            <Plus width={14} height={14} aria-hidden />
+            {busyKey === "__new__" ? "Adding…" : "Add server"}
+          </button>
+        </div>
       </div>
     </div>
   );

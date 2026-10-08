@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { AdminError, AdminLoading, AdminTop } from "../admin-shell";
 import { PlanCard } from "./plan-card";
 import type { AdminPlan } from "../users/types";
 
+/** Admin → Plans, built to w12c. */
 export default function PlansPage() {
   const [plans, setPlans] = useState<AdminPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,12 +16,12 @@ export default function PlansPage() {
       .then(async (res) => {
         const data = await res.json().catch(() => null);
         if (!res.ok) {
-          setError(data?.error ?? "Failed to load plans");
+          setError(data?.error ?? "Couldn’t load plans.");
           return;
         }
         setPlans(data.plans ?? []);
       })
-      .catch(() => setError("Failed to load plans. Check your connection."))
+      .catch(() => setError("Couldn’t load plans. Check your connection."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -29,40 +30,29 @@ export default function PlansPage() {
   };
 
   return (
-    <main className="max-w-4xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="font-bold text-lg" style={{ color: "var(--m-ink)", letterSpacing: "-0.02em" }}>
-          Plans
-        </h1>
-        <p className="text-xs mt-0.5" style={{ color: "var(--m-ink-soft)" }}>
-          Leave a limit field empty to make it unlimited.
-        </p>
+    <>
+      <AdminTop title="Plans">{loading ? <AdminLoading /> : <span className="ad-cap">{plans.length} plans</span>}</AdminTop>
+      <div className="ad-body">
+        {error && <AdminError>{error}</AdminError>}
+        <span className="ad-cap">
+          Each plan is one entitlement. Checkout picks the provider; each provider has its own price in its own currency.
+        </span>
+        {loading ? (
+          [0, 1].map((i) => (
+            <div key={i} className="ad-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <span className="ad-sk" style={{ width: 160, height: 13 }} />
+              <span className="ad-sk" style={{ width: "100%", height: 30 }} />
+              <span className="ad-sk" style={{ width: "100%", height: 80 }} />
+            </div>
+          ))
+        ) : plans.length === 0 && !error ? (
+          <div className="ad-card" style={{ padding: 18 }}>
+            <span className="ad-cap">No plans in the database. Run scripts/sql/admin-console.sql.</span>
+          </div>
+        ) : (
+          plans.map((plan) => <PlanCard key={plan.id} plan={plan} onUpdated={handleUpdated} />)
+        )}
       </div>
-
-      {error && (
-        <div
-          className="rounded-xl p-4 text-sm"
-          style={{
-            background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-            color: "var(--text-red)",
-            border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "var(--m-ink-soft)" }} />
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {plans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} onUpdated={handleUpdated} />
-          ))}
-        </div>
-      )}
-    </main>
+    </>
   );
 }

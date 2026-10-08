@@ -1,16 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { X, Loader2 } from "lucide-react";
-import { CCButton } from "@/components/cc/button";
-import { StatusPill } from "@/components/cc/status-pill";
-import type { AdminUserRow, AdminPlan, UserStatus, UserRole } from "./types";
+/**
+ * User detail drawer, built to w12b's right-hand panel.
+ *
+ * Board → build:
+ *   - Details grid, Access card (Restrict / Unrestrict), "Admin actions" log:
+ *     built. The log is real — admin_audit_log rows for this user, via
+ *     GET /api/admin/users/[id].
+ *   - "Admin note" textarea: NOT built. There is no column for a free-text
+ *     note; restricting or banning requires a reason (status_reason), which is
+ *     shown in the Access card and recorded in the audit log.
+ *   - Kept from the old drawer (the board doesn't draw them, but they are the
+ *     only place these can be changed): Plan, Role, and Ban.
+ */
 
-const STATUS_TONE: Record<UserStatus, "active" | "pending" | "error"> = {
-  active: "active",
-  restricted: "pending",
-  banned: "error",
-};
+import { useCallback, useEffect, useState } from "react";
+import { Ban, X } from "lucide-react";
+import { PLATFORM_LABEL, STATUS_PILL, relDay, shortDate, userInitials } from "./format";
+import type { AdminPlan, AdminUserRow, UserRole, UserStatus } from "./types";
+
+interface AuditAction {
+  id: string;
+  action: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  created_at: string;
+  actor: string | null;
+}
 
 interface UserDrawerProps {
   user: AdminUserRow;
@@ -19,25 +35,65 @@ interface UserDrawerProps {
   onUpdated: (user: AdminUserRow) => void;
 }
 
+const describe = (a: AuditAction) => {
+  const after = a.after ?? {};
+  switch (a.action) {
+    case "user.status_change":
+      return `status → ${String(after.status ?? "?")}${after.status_reason ? ` (“${String(after.status_reason)}”)` : ""}`;
+    case "user.role_change":
+      return `role → ${String(after.role ?? "?")}`;
+    case "user.plan_change":
+      return `plan → ${String(after.plan_id ?? "none")}`;
+    default:
+      return a.action;
+  }
+};
+
 export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps) {
   const [current, setCurrent] = useState(user);
   const [role, setRole] = useState<UserRole>(user.role);
   const [planId, setPlanId] = useState<string | null>(user.plan_id);
   const [pendingStatus, setPendingStatus] = useState<UserStatus | null>(null);
   const [reason, setReason] = useState("");
-  const [savingRole, setSavingRole] = useState(false);
-  const [savingPlan, setSavingPlan] = useState(false);
-  const [savingStatus, setSavingStatus] = useState(false);
+  const [saving, setSaving] = useState<"role" | "plan" | "status" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [signIn, setSignIn] = useState<string | null>(null);
+  const [actions, setActions] = useState<AuditAction[] | null>(null);
+
+  const loadDetail = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/users/${id}`);
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setActions([]);
+        return;
+      }
+      setSignIn(data.signInProvider ?? null);
+      setActions(data.actions ?? []);
+    } catch {
+      setActions([]);
+    }
+  }, []);
 
   useEffect(() => {
+     
     setCurrent(user);
     setRole(user.role);
     setPlanId(user.plan_id);
     setPendingStatus(null);
     setReason("");
     setError(null);
-  }, [user]);
+    setSignIn(null);
+    setActions(null);
+     
+    void loadDetail(user.user_id);
+  }, [user, loadDetail]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   async function patchUser(body: Record<string, unknown>): Promise<AdminUserRow | null> {
     setError(null);
@@ -48,242 +104,227 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
     });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      setError(data?.error ?? "Something went wrong");
+      setError(data?.error ?? "Couldn’t save. Nothing was changed.");
       return null;
     }
     const updated = { ...current, ...data.user } as AdminUserRow;
     setCurrent(updated);
     onUpdated(updated);
+    void loadDetail(updated.user_id);
     return updated;
   }
 
-  const handleSaveRole = async () => {
-    if (role === current.role) return;
-    setSavingRole(true);
+  const save = async (kind: "role" | "plan", body: Record<string, unknown>) => {
+    setSaving(kind);
     try {
-      await patchUser({ role });
+      await patchUser(body);
     } finally {
-      setSavingRole(false);
+      setSaving(null);
     }
   };
 
-  const handleSavePlan = async () => {
-    if (planId === current.plan_id) return;
-    setSavingPlan(true);
-    try {
-      await patchUser({ plan_id: planId });
-    } finally {
-      setSavingPlan(false);
-    }
-  };
-
-  const handleChooseStatus = (status: UserStatus) => {
-    setPendingStatus(status);
-    setReason("");
-    setError(null);
-  };
-
-  const handleConfirmStatus = async () => {
+  const confirmStatus = async () => {
     if (!pendingStatus) return;
-    setSavingStatus(true);
+    setSaving("status");
     try {
       const body: Record<string, unknown> = { status: pendingStatus };
       if (pendingStatus !== "active") body.status_reason = reason.trim();
-      const updated = await patchUser(body);
-      if (updated) {
+      if (await patchUser(body)) {
         setPendingStatus(null);
         setReason("");
       }
     } finally {
-      setSavingStatus(false);
+      setSaving(null);
     }
   };
 
   const reasonRequired = pendingStatus !== null && pendingStatus !== "active";
-  const confirmDisabled = savingStatus || (reasonRequired && !reason.trim());
+  const pill = STATUS_PILL[current.status];
+  const planName = current.plan_id ? plans.find((p) => p.id === current.plan_id)?.name ?? current.plan_id : "Free (default)";
 
   return (
-    <div className="fixed inset-0 z-30 flex justify-end">
-      <div
-        className="absolute inset-0"
-        style={{ background: "color-mix(in srgb, var(--m-forest-2) 55%, transparent)" }}
-        onClick={onClose}
-      />
-      <div
-        className="relative w-full max-w-md h-full overflow-y-auto p-6 space-y-6"
-        style={{ background: "var(--m-card)", borderLeft: "1px solid var(--m-ink-faint)" }}
-      >
-        <div className="flex items-start justify-between">
-          <div className="min-w-0">
-            <p className="font-bold text-lg truncate" style={{ color: "var(--m-ink)" }}>
-              {current.email ?? current.user_id}
-            </p>
-            {current.display_name && (
-              <p className="text-sm" style={{ color: "var(--m-ink-soft)" }}>{current.display_name}</p>
-            )}
+    <aside className="ad-drawer" aria-label="User detail">
+      <div className="hstack" style={{ gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--m-ink-faint)" }}>
+        <h2 className="ad-h grow">User detail</h2>
+        <button type="button" className="ad-btn" style={{ width: 30, padding: 0, justifyContent: "center" }} onClick={onClose} aria-label="Close">
+          <X width={15} height={15} aria-hidden />
+        </button>
+      </div>
+
+      <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="hstack" style={{ gap: 11 }}>
+          <span className="ad-av-sm" style={{ width: 38, height: 38, fontSize: 13 }} aria-hidden>
+            {userInitials(current)}
+          </span>
+          <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+            <span style={{ font: "800 15px var(--m-font-display)", overflowWrap: "anywhere" }}>
+              {current.display_name || current.email?.split("@")[0] || "—"}
+            </span>
+            <span className="ad-cap" style={{ overflowWrap: "anywhere" }}>{current.email ?? "no email"}</span>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="p-1.5 rounded-full transition-colors hover:bg-[var(--m-cream-2)]"
-            style={{ color: "var(--m-ink-soft)" }}
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <span className={`ad-pill ${pill.cls}`}>{pill.label}</span>
         </div>
 
         {error && (
-          <div
-            className="rounded-xl p-3 text-sm"
-            style={{
-            background: "color-mix(in srgb, var(--m-red) 10%, transparent)",
-            color: "var(--text-red)",
-            border: "1.5px solid color-mix(in srgb, var(--m-red) 22%, transparent)",
-          }}
-          >
+          <div className="ad-notice is-bad" role="alert">
             {error}
           </div>
         )}
 
-        {/* Details */}
-        <div className="space-y-2 text-sm">
-          <DetailRow label="Status" value={<StatusPill tone={STATUS_TONE[current.status]}>{current.status}</StatusPill>} />
-          <DetailRow label="User ID" value={<code className="text-xs">{current.user_id}</code>} />
-          <DetailRow label="Role" value={current.role} />
-          <DetailRow label="Plan" value={current.plan_id ?? "—"} />
-          <DetailRow label="First seen" value={current.first_seen_platform ?? "—"} />
-          <DetailRow label="Last seen" value={current.last_seen_platform ?? "—"} />
-          <DetailRow
-            label="Last seen at"
-            value={current.last_seen_at ? new Date(current.last_seen_at).toLocaleString() : "—"}
-          />
-          <DetailRow label="7-day requests" value={String(current.chat_usage_7d)} />
-          <DetailRow label="Created" value={new Date(current.created_at).toLocaleDateString()} />
-          {current.status_reason && (
-            <DetailRow label="Status reason" value={current.status_reason} />
+        <dl className="ad-kv" style={{ margin: 0 }}>
+          <dt>User ID</dt>
+          <dd><span className="ad-mono">{current.user_id}</span></dd>
+          <dt>Platform</dt>
+          <dd>
+            {current.last_seen_platform ? PLATFORM_LABEL[current.last_seen_platform] : "—"}
+            {current.first_seen_platform && current.first_seen_platform !== current.last_seen_platform
+              ? ` (joined on ${PLATFORM_LABEL[current.first_seen_platform]})`
+              : ""}
+          </dd>
+          <dt>Sign-in</dt>
+          <dd>{signIn ? signIn.charAt(0).toUpperCase() + signIn.slice(1) : actions === null ? "…" : "—"}</dd>
+          <dt>Plan</dt>
+          <dd>{planName}</dd>
+          <dt>Role</dt>
+          <dd style={{ textTransform: "capitalize" }}>{current.role}</dd>
+          <dt>Joined</dt>
+          <dd>{shortDate(current.created_at)}</dd>
+          <dt>Last seen</dt>
+          <dd>
+            {current.last_seen_at
+              ? `${relDay(current.last_seen_at)}, ${new Date(current.last_seen_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`
+              : "—"}
+          </dd>
+          <dt>Bo requests</dt>
+          <dd>{current.chat_usage_7d} in the last 7 days</dd>
+        </dl>
+
+        {/* Access */}
+        <div className="ad-inset">
+          <h3 className="ad-h" style={{ fontSize: 12.5 }}>Access</h3>
+          {current.status === "active" ? (
+            <span className="ad-cap" style={{ fontSize: 12 }}>Restricting stops Bo and photo scans; they can still read their data. Banning blocks the whole app. Data is kept either way.</span>
+          ) : (
+            <span className="ad-cap" style={{ fontSize: 12, color: "var(--text-red)" }}>
+              {pill.label}
+              {current.status_changed_at ? ` ${relDay(current.status_changed_at).toLowerCase()}` : ""}
+              {current.status_reason ? ` · “${current.status_reason}”` : ""}
+            </span>
           )}
-        </div>
 
-        {/* Plan selector */}
-        <div className="space-y-2">
-          <p className="text-label">Plan</p>
-          <div className="flex gap-2">
-            <select
-              value={planId ?? ""}
-              onChange={(e) => setPlanId(e.target.value || null)}
-              className="flex-1 px-3 py-2 text-sm rounded-lg"
-              style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
-            >
-              <option value="">No plan</option>
-              {plans.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            <CCButton
-              variant="secondary"
-              size="md"
-              onClick={handleSavePlan}
-              disabled={savingPlan || planId === current.plan_id}
-            >
-              {savingPlan && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Save
-            </CCButton>
-          </div>
-        </div>
-
-        {/* Role selector */}
-        <div className="space-y-2">
-          <p className="text-label">Role</p>
-          <div className="flex gap-2">
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as UserRole)}
-              className="flex-1 px-3 py-2 text-sm rounded-lg"
-              style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
-            >
-              <option value="user">User</option>
-              <option value="support">Support</option>
-              <option value="admin">Admin</option>
-            </select>
-            <CCButton
-              variant="secondary"
-              size="md"
-              onClick={handleSaveRole}
-              disabled={savingRole || role === current.role}
-            >
-              {savingRole && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Save
-            </CCButton>
-          </div>
-        </div>
-
-        {/* Status actions */}
-        <div className="space-y-2">
-          <p className="text-label">Status actions</p>
-          <div className="flex gap-2">
-            <CCButton
-              variant={pendingStatus === "active" ? "primary" : "secondary"}
-              size="sm"
-              onClick={() => handleChooseStatus("active")}
-              disabled={current.status === "active" && pendingStatus === null}
-            >
-              Active
-            </CCButton>
-            <CCButton
-              variant={pendingStatus === "restricted" ? "primary" : "secondary"}
-              size="sm"
-              onClick={() => handleChooseStatus("restricted")}
-            >
-              Restrict
-            </CCButton>
-            <CCButton
-              variant={pendingStatus === "banned" ? "destructive" : "secondary"}
-              size="sm"
-              onClick={() => handleChooseStatus("banned")}
-            >
-              Ban
-            </CCButton>
-          </div>
-
-          {pendingStatus && (
-            <div className="mt-2 space-y-2 p-3 rounded-xl" style={{ background: "var(--m-cream-2)", border: "1px solid var(--m-ink-faint)" }}>
-              <p className="text-xs" style={{ color: "var(--m-ink-soft)" }}>
-                {pendingStatus === "active"
-                  ? "Restore this account to active status."
-                  : `${pendingStatus === "banned" ? "Banning" : "Restricting"} requires a reason (shown in the audit log).`}
-              </p>
-              {reasonRequired && (
-                <textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="Reason (required)"
-                  rows={3}
-                  className="w-full px-3 py-2 text-sm rounded-lg resize-none"
-                  style={{ background: "var(--m-card)", border: "1px solid var(--m-ink-faint)", color: "var(--m-ink)" }}
-                />
+          {pendingStatus ? (
+            <div className="vstack" style={{ gap: 8 }}>
+              {reasonRequired ? (
+                <label className="vstack" style={{ gap: 5 }}>
+                  <span className="ad-cap" style={{ fontSize: 12 }}>
+                    Reason for {pendingStatus === "banned" ? "banning" : "restricting"} (required, kept in the audit log)
+                  </span>
+                  <textarea className="ad-in" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
+                </label>
+              ) : (
+                <span className="ad-cap" style={{ fontSize: 12 }}>Restore full access for this account?</span>
               )}
-              <div className="flex gap-2">
-                <CCButton size="sm" onClick={handleConfirmStatus} disabled={confirmDisabled}>
-                  {savingStatus && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Confirm
-                </CCButton>
-                <CCButton size="sm" variant="ghost" onClick={() => { setPendingStatus(null); setReason(""); }}>
+              <div className="hstack" style={{ gap: 8 }}>
+                <button
+                  type="button"
+                  className={`ad-btn ${pendingStatus === "active" ? "ad-btn-p" : "ad-btn-d"}`}
+                  onClick={() => void confirmStatus()}
+                  disabled={saving === "status" || (reasonRequired && !reason.trim())}
+                >
+                  {saving === "status" ? "Saving…" : pendingStatus === "active" ? "Unrestrict" : pendingStatus === "banned" ? "Ban user" : "Restrict user"}
+                </button>
+                <button type="button" className="ad-btn" onClick={() => setPendingStatus(null)}>
                   Cancel
-                </CCButton>
+                </button>
               </div>
+            </div>
+          ) : (
+            <div className="hstack" style={{ gap: 8, flexWrap: "wrap" }}>
+              {current.status === "active" ? (
+                <>
+                  <button type="button" className="ad-btn ad-btn-d" onClick={() => { setReason(""); setPendingStatus("restricted"); }}>
+                    <Ban width={14} height={14} aria-hidden />
+                    Restrict user
+                  </button>
+                  <button type="button" className="ad-btn ad-btn-d" onClick={() => { setReason(""); setPendingStatus("banned"); }}>
+                    Ban
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="ad-btn" onClick={() => setPendingStatus("active")}>
+                    Unrestrict
+                  </button>
+                  {current.status === "restricted" && (
+                    <button type="button" className="ad-btn ad-btn-d" onClick={() => { setReason(""); setPendingStatus("banned"); }}>
+                      Ban
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between py-1">
-      <span style={{ color: "var(--m-ink-soft)" }}>{label}</span>
-      <span style={{ color: "var(--m-ink)" }}>{value}</span>
-    </div>
+        {/* Plan + role — not on the board; the only place to change them. */}
+        <div className="vstack" style={{ gap: 10 }}>
+          <label className="vstack" style={{ gap: 5 }}>
+            <span className="ad-h" style={{ fontSize: 12.5 }}>Plan</span>
+            <div className="hstack" style={{ gap: 8 }}>
+              <select className="ad-in grow" value={planId ?? ""} onChange={(e) => setPlanId(e.target.value || null)}>
+                <option value="">Default (free)</option>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="ad-btn"
+                onClick={() => void save("plan", { plan_id: planId })}
+                disabled={saving === "plan" || planId === current.plan_id}
+              >
+                {saving === "plan" ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </label>
+          <label className="vstack" style={{ gap: 5 }}>
+            <span className="ad-h" style={{ fontSize: 12.5 }}>Role</span>
+            <div className="hstack" style={{ gap: 8 }}>
+              <select className="ad-in grow" value={role} onChange={(e) => setRole(e.target.value as UserRole)}>
+                <option value="user">User</option>
+                <option value="support">Support</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button
+                type="button"
+                className="ad-btn"
+                onClick={() => void save("role", { role })}
+                disabled={saving === "role" || role === current.role}
+              >
+                {saving === "role" ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </label>
+        </div>
+
+        <div className="vstack" style={{ gap: 6 }}>
+          <h3 className="ad-h" style={{ fontSize: 12.5 }}>Admin actions</h3>
+          {actions === null ? (
+            <span className="ad-sk" style={{ width: "80%", height: 10 }} />
+          ) : actions.length === 0 ? (
+            <span className="ad-cap">None yet.</span>
+          ) : (
+            <ul className="vstack" style={{ gap: 4, listStyle: "none", margin: 0, padding: 0 }}>
+              {actions.map((a) => (
+                <li key={a.id} className="ad-cap" style={{ overflowWrap: "anywhere" }}>
+                  {new Date(a.created_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })} · {describe(a)}
+                  {a.actor ? ` · ${a.actor}` : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </aside>
   );
 }
