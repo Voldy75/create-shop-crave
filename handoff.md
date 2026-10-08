@@ -1,17 +1,17 @@
 # Handoff — Crave & Create (web + mobile, unified)
 
-Last updated: 2026-09-01. Written for a session with zero prior context.
+Last updated: 2026-10-08. Written for a session with zero prior context.
 Supersedes the two separate handoffs that lived in the web and mobile repos.
 
 **Latest work (newest first), so a returning reader is not misled by the older
-sections below:** the WEB tree was rebuilt against a REPLACED web design file
-(w6a–w9e) — see "The web redesign against the NEW design file"; `favoriteCuisines`
-was wired into the prompts and the signed-in theme toggle / sign-out were made
-reachable ("C-ter" in the index); mobile 7e (link accounts) shipped as
-`/m/settings/connections`, closing the last cross-shell jump; and the app-level
-dark-mode contrast failures were fixed ("Dark-mode mobile: measured findings").
-Anything below that still frames "Phase 10" as the most recent work is
-HISTORICAL — read the index and those four sections for the current picture.
+sections below:** the four flows from `design/BRIEFS.md` shipped — WF10 web
+first-run + Preferences, WF11 web account deletion + export, F10 mobile
+deletion + export, WF12 admin console — plus a mobile preferences editor and
+audit logging on admin flag writes (see "WF10–WF12 + F10"). Before that: the
+web tree was rebuilt against the replaced web design file (w6a–w9e), Swiggy
+moved to Dynamic Client Registration, and dark-mode contrast was fixed on both
+trees. Anything below that frames "Phase 10" as the most recent work is
+HISTORICAL — the index directly below is the current picture.
 
 ## Goal
 
@@ -32,85 +32,81 @@ the consolidated index directly below.
 Everything still to execute, most-blocking first. Each line points at the
 section with the detail; this list is a map, not the territory. When you finish
 something, update BOTH this index and the section it points to.
+**Refreshed 2026-10-08** — items closed since the last refresh are listed at
+the end so nobody re-opens them.
 
-**A. Hard blockers — nothing ships past these, and they are all yours (no code)**
-1. **Vercel env vars — VERIFIED against the live projects 2026-09-24**, not
-   assumed. The web project has 13 vars set (Supabase ×3,
-   `GOOGLE_GENERATIVE_AI_API_KEY`, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, VAPID ×3,
-   Twilio ×4, `CRON_SECRET`). **Only the five payment vars actually block:**
+**A. Hard blockers — all yours, no code**
+1. **Payment env vars** — the ONLY missing Vercel vars that block anything:
    `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `STRIPE_SECRET_KEY`,
-   `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_PRICE_ID`. Everything else on the site
-   works without them. → "Blocked on you" §1. **The admin vars are NOT
-   blockers** (seed a role instead) and `SWIGGY_CLIENT_ID` is obsolete (DCR).
-2. **Supabase redirect URL** — add `com.cravecreate.app://auth/callback`. →
-   "Blocked on you" §3. One minute; de-risks the highest-risk unverified path.
-3. **Native toolchain + accounts** — toolchain is DONE for both platforms: iOS
-   runs as a local DEV build in the Simulator, and Android's debug APK builds
-   (JDK 17+21, Android SDK, `@capacitor/android`). **Still needed:** Apple +
-   Play accounts, and running Android visually (emulator/device). → `MOBILE_SETUP.md`
-   (the full ordered checklist). **Pin the Vercel alias FIRST — it is the only
-   irreversible step, and every DISTRIBUTABLE build must regenerate `ios/` and
-   `android/` against it (the current local ones are git-ignored localhost
-   throwaways).**
-4. **Google Maps key** — HTTP-referrer-restricted, falls back on mobile. →
-   "Blocked on you" §5.
+   `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_PRICE_ID`. Without them checkout cannot
+   run; the rest of the site works. Other web vars were verified set on
+   2026-09-24. → "Blocked on you" §1.
+2. **Seed an admin** — `user_profiles.role = 'admin'` for your account (SQL in
+   "Blocked on you" §1). No env var; do NOT set `NEXT_PUBLIC_ADMIN_EMAIL` (it
+   would publish your email in the client bundle). Also unblocks item 10.
+3. **Supabase redirect URL** — add `com.cravecreate.app://auth/callback`.
+   Native sign-in cannot work without it. → "Blocked on you" §3.
+4. **Native accounts + builds** — toolchain is DONE (iOS runs as a dev build in
+   the Simulator; Android's debug APK builds). Still needed: Apple + Play
+   accounts, and running Android on an emulator/device. **Pin the Vercel alias
+   FIRST** — the only irreversible step; every distributable build must
+   regenerate `ios/` and `android/` against it. → `MOBILE_SETUP.md`.
+5. **Google Maps key** — HTTP-referrer-restricted to the web domain, so maps
+   fall back on mobile and localhost. Cloud Console fix. → "Blocked on you" §5.
+6. **The old mobile Vercel project** names its Gemini key `GOOGLE_AI_API_KEY`;
+   code reads `GOOGLE_GENERATIVE_AI_API_KEY`. Only matters if that project
+   still serves `/m` after the merge. → "Blocked on you" §1.
 
-**B. Unbuilt / partial screens (real code work)**
-5. **7e (link accounts) — DONE.** Built as mobile `/m/settings/connections`,
-   which closed the LAST cross-root-layout jump: `/m/profile`'s Swiggy chip used
-   to full-page-load into the web shell. Uses the real swiggy-client and the
-   same feature flags web does. **7f (BYOK key entry) — DONE** (`/m/settings/key`).
-   → 10f row in "Phase status", and the Flow 9 findings.
-6. **6a animated splash** — needs the native shell (blocked on A3). **3a–3d /
-   1i** (restaurant ordering) are out of scope by the design file's own note. →
-   10f row.
-7. ~~**The `/m/paywall` BYOK CTA is a dead end** and **`/m/chat` has no 429
-   handling**~~ — **BOTH FIXED.** The paywall's "Use my own key" CTA now pushes
-   to `/m/settings/key` (was `/m/profile`, which has no key field); `/m/chat`
-   now reads the stored key into the request body and routes a 429 to
-   `/m/settings/key?from=chat` (was silent). → "Two live bugs the audit
-   surfaced".
+**B. Code still to write**
+7. **IAP / RevenueCat** — the one big unbuilt feature. `purchaseStoreProduct`
+   in `lib/billing.ts` is a TODO and `@revenuecat/purchases-capacitor` is not
+   installed, so mobile cannot sell anything (compliant: the paywall collapses
+   to BYOK). Blocked on A4 + store products + a device.
+8. **`ai` v3→v7 SDK upgrade** — deliberately deferred; needs a real account and
+   there is no test suite. → "The remaining 14" under Dependency advisories.
+9. **6a animated splash** — native-shell asset, needs A4. (3a–3d / 1i
+   restaurant ordering are out of scope by the design file's own note.)
 
-**C. Verification gaps (built, not proven)**
-8. **Admin console** — never rendered by anyone; needs an admin identity, and
-   the cheapest is seeding `user_profiles.role = 'admin'` (SQL in "Blocked on
-   you" §1), not an env var.
-9. **`/m/settings/notifications` (7c) + the 7d prompt** — verified signed-OUT
-   only; the push/WhatsApp/test-send paths need a real session. → "What's
-   actually next".
-10. **`/m/log` on hardware** — viewfinder bug fixed and exercised via a
-    synthetic stream; real permission/rear-camera/EXIF/iOS-autoplay still
-    unproven. → the `/m/log` section, which carries the `--experimental-https`
-    recipe.
-11. **Contrast** — **app-level DONE on both trees, both themes, text AND
-    icons** (mobile 21 routes; web's signed-out routes at 1280 and 600px).
-    What is left is only DECISIONS: the landing's forest bands in dark, three
-    brand marks, light burnt text, `.badge-burnt`, lime pills. Signed-in web
-    screens were token-verified in code, not rendered. → "Web tree: dark mode".
-12. **Any real payment**, on any provider. → "What is verified, and what is
-    not" (PR #33 body).
+**C. Built, never proven for real**
+10. **Admin console with a real admin** — verified only via a temporary bypass +
+   mocked API responses (both themes, 375px). The w12i "isn't an admin" card has
+   not been rendered at all. Needs A2. → "Phase 4 — WF12".
+11. **A real account deletion** — never run end-to-end (guards, abort path and
+   UI were verified without deleting anything). Do it once on a throwaway
+   account, ideally with a Stripe test subscription. → "Phase 2 — WF11".
+12. **Saving the data export on a phone** — uses the Web Share API with a
+   download fallback; untested in the native WebView. → "Phase 3 — F10".
+13. **`/m/settings/notifications` (7c) + the 7d prompt** — push, WhatsApp and
+   test-send need a real session.
+14. **`/m/log` on hardware** — permission, rear camera, EXIF, iOS autoplay. →
+   the `/m/log` section (carries the `--experimental-https` recipe).
+15. **Any real payment**, on any provider. Needs A1.
+16. **Signed-in web screens** (chat, settings, home) — contrast verified by
+   reading each ground in code, not by rendering. Needs a session.
 
-**C-bis. Web redesign (w6a–w9e) — DONE, with two named gaps**
-The new design file was implemented across 8 commits: see "The web redesign
-against the NEW design file" below. Two things it could NOT verify and did not
-fake: `NotificationsSection`'s real rows (no session — same wall as A1), and
-anything behind a real ride booking or a real store order, which do not exist.
+**D. Decisions waiting on you**
+- **Light burnt text 3.61:1** (₹₹₹ chip, "Order again?", streak letters,
+  onboarding step circles) — one token (`--text-burnt`, light value), but it
+  changes the designed colour. → "Web tree: dark mode".
+- **Brand marks** — Zomato wordmark on the plum strip 2.44, WhatsApp glyph
+  1.98, both themes. Brand-guideline territory, flagged not recoloured.
+- **The split product name** — "meshi" vs "Crave & Create". → 10d write-up and
+  `MOBILE_SETUP.md` §8.
+- **npm audit at 34 advisories** (was 14) — pre-existing drift, not from this
+  work; triage alongside item 8. → "Dependency advisories".
 
-**C-ter. Three small gaps — DONE**
-`favoriteCuisines` now reaches the prompts (soft signal, `lib/taste-prompt.ts`);
-the sidebar account block is a real menu (`components/web/SidebarAccount.tsx`)
-owning the theme toggle — previously unreachable once signed in — and sign-out.
-
-**D. Content / decisions (cheap, pre-launch)**
-13. ~~**Unverified marketing copy**~~ — **DONE.** Both claims were audited
-    against the codebase and neither survived; see "Landing marketing claims"
-    below.
-14. **The split product name** — "meshi" vs "Crave & Create". → 10d write-up,
-    and `MOBILE_SETUP.md` §8.
-
-**E. Deliberately deferred, its own piece of work**
-15. **The `ai` v3→v7 SDK upgrade** (the remaining 14 npm advisories). → the
-    "remaining 14" dependency section — do it with a real account available.
+**Closed since the last refresh — do not re-open**
+- Web first-run + Settings → Preferences (WF10); web account deletion + data
+  export (WF11); mobile deletion + export (F10) — the App Store
+  account-deletion requirement is now met in code.
+- Admin console restyled to WF12 on real data; flag writes now audit-logged.
+- Mobile preferences editor (`/m/settings/preferences`).
+- Contrast: landing forest bands (both themes), `.badge-burnt` (replaced by
+  `.badge-brown` — do not use `.badge-burnt`), lime-ground text in dark,
+  RestaurantView brand buttons, ApiKeyDialog, error pages.
+- 7e link accounts, 7f BYOK key entry, the paywall BYOK dead end, `/m/chat` 429
+  handling, `favoriteCuisines` in prompts, marketing-copy audit, the web
+  redesign (w6a–w9e), Swiggy DCR + refresh tokens, `/api/places` removal.
 
 ## Where the work lives
 
@@ -279,13 +275,12 @@ update public.user_profiles
 (You must have signed in once so the profile row exists; run it as service
 role — `user_profiles` writes are service-role only.)
 
-**Do NOT set `NEXT_PUBLIC_ADMIN_EMAIL`.** Its only consumer is
-`AccountSection.tsx`, which uses it to show an Admin link — the auth-guard
-comment says plainly it "hides UI but protects nothing". `NEXT_PUBLIC_*` values
-are compiled into the client bundle, so setting it publishes your email address
-to anyone reading source, in exchange for a link you can reach by typing
-`/admin`. The real enforcement is the server: `app/(web)/admin/layout.tsx`
-redirects non-admins, and 9 `/api/admin/*` routes return 403.
+**Do NOT set `NEXT_PUBLIC_ADMIN_EMAIL`.** Nothing reads it any more (WF11
+moved the Account screen's Admin link to the server's `isAdmin`), and
+`NEXT_PUBLIC_*` values are compiled into the client bundle, so setting it would
+only publish your email address. The real enforcement is the server:
+`app/(web)/admin/layout.tsx` sends signed-out users home and shows signed-in
+non-admins a 403 card, and every `/api/admin/*` route returns 403.
 
 **Env changes need a redeploy** to take effect on Vercel, and `NEXT_PUBLIC_*`
 ones are inlined at BUILD time.
@@ -1172,6 +1167,9 @@ temporary, never-committed scratch routes that raise `notFound()` and throw;
 `find app -ipath "*scratch*"` confirms none remain.
 
 ### Flows that exist on mobile but NOT on web
+
+**Both gaps below are CLOSED (WF10 / WF11 / F10, 2026-10-03) — kept for the
+reasoning.**
 
 - **Onboarding / preferences.** Mobile collects location, diet, tastes, goal,
   calories and a streak opt-in across 10 steps. Web has a sign-in modal and
@@ -2623,32 +2621,14 @@ it alters the artboard colour, so it waits for a yes.
 
 ## What's actually next
 
-**CURRENT STATE — what is actually left to IMPLEMENT (code), most-honest first.**
-The web redesign and the small-gap items are done (see the top-of-file note and
-their sections). What genuinely remains as code work:
-
-- **IAP / RevenueCat — the one big unbuilt feature.** `canPurchase` is false,
-  `purchaseStoreProduct` in `lib/billing.ts` is a TODO, and
-  `@revenuecat/purchases-capacitor` is not in the tree. It cannot be verified
-  without configured store products + Apple/Play accounts + a device, so it is
-  BLOCKED, not merely unwritten — the same risk profile as the `ai` upgrade.
-- **`ai` v3→v7 upgrade** — still deferred; needs a real account and there is no
-  test suite. → "The remaining 14".
-- **Contrast decisions only** (app-level code is DONE on both trees): the
-  landing's forest bands in dark (2.85–3.88), Zomato wordmark 2.44 and the
-  WhatsApp glyph 1.98 (both themes). → "Web tree: dark mode".
-- **Contrast decisions (waiting on a yes)** — light burnt text 3.61 (one token),
-  `.badge-burnt` 2.87 dark, lime pills 4.43. Tab bar, mobile pill-secondary and
-  light grey text are DONE. → "Dark-mode mobile".
-- **6a animated splash** — a native-shell asset, verifiable only by a native
-  build/run.
-- ~~**Full dark-mode screen-by-screen review**~~ — **DONE** (2026-09-14): all
-  21 mobile routes and all 10 onboarding steps, both themes, zero app-level
-  fails in dark.
+**SUPERSEDED (2026-10-08): the live to-do list is the consolidated index at
+the top of this file.** In short, the code left is IAP/RevenueCat (item 7), the
+`ai` SDK upgrade (item 8) and the 6a splash (item 9); everything else is a blocker
+(A), an unproven path (C) or a decision (D).
 
 Everything below this line is HISTORICAL context from the Phase 10 era. It is
 still accurate about what it describes, but it is NOT the live to-do list — the
-five bullets above are.
+index at the top of the file is.
 
 **Phase 10 is complete, and the hex debt baseline is at ZERO.** The screens
 that had no web artboard — admin console, `/favorites`, `/arena`, `/settings`
