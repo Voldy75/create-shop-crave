@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth-guard";
+import { auditLog } from "@/lib/audit";
 
 export interface FeatureFlag {
   id: string;
@@ -31,6 +32,7 @@ export async function GET() {
 export async function PATCH(req: Request) {
   const guard = await requireAdmin();
   if (guard instanceof Response) return guard;
+  const { user: actor } = guard;
 
   const body = await req.json().catch(() => null);
   if (!body?.id || typeof body.enabled !== "boolean") {
@@ -38,22 +40,43 @@ export async function PATCH(req: Request) {
   }
 
   const svc = await createServiceClient();
+
+  const { data: before, error: beforeError } = await svc
+    .from("feature_flags")
+    .select("id, enabled, description, updated_at")
+    .eq("id", body.id)
+    .maybeSingle<FeatureFlag>();
+  if (beforeError) {
+    return Response.json({ error: beforeError.message }, { status: 500 });
+  }
+
   const { data, error } = await svc
     .from("feature_flags")
     .update({ enabled: body.enabled, updated_at: new Date().toISOString() })
     .eq("id", body.id)
     .select("id, enabled, description, updated_at")
-    .single();
+    .single<FeatureFlag>();
 
   if (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
+
+  await auditLog({
+    actorUserId: actor.id,
+    action: "flag.update",
+    targetType: "flag",
+    targetId: data.id,
+    before: before ?? null,
+    after: data,
+  });
+
   return Response.json({ flag: data });
 }
 
 export async function POST(req: Request) {
   const guard = await requireAdmin();
   if (guard instanceof Response) return guard;
+  const { user: actor } = guard;
 
   const body = await req.json().catch(() => null);
   if (!body?.id || typeof body.id !== "string") {
@@ -69,7 +92,7 @@ export async function POST(req: Request) {
       description: body.description ?? null,
     })
     .select("id, enabled, description, updated_at")
-    .single();
+    .single<FeatureFlag>();
 
   if (error) {
     if (error.code === "23505") {
@@ -77,5 +100,15 @@ export async function POST(req: Request) {
     }
     return Response.json({ error: error.message }, { status: 500 });
   }
+
+  await auditLog({
+    actorUserId: actor.id,
+    action: "flag.create",
+    targetType: "flag",
+    targetId: data.id,
+    before: null,
+    after: data,
+  });
+
   return Response.json({ flag: data }, { status: 201 });
 }

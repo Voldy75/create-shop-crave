@@ -1420,8 +1420,8 @@ config row open: all pass. There is no horizontal scroll at 375px. Signed-out
 w12i denied card. It uses the same classes, but rendering it needs a
 signed-in non-admin.
 
-**Gaps noticed, not fixed:** `/api/admin/flags` PATCH/POST write no
-`admin_audit_log` row, unlike every other admin write.
+**Audit gap closed:** `/api/admin/flags` PATCH/POST now write
+`admin_audit_log` rows (`flag.update` with before/after, `flag.create`).
 
 ## Dead ends — do not retry
 
