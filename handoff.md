@@ -35,6 +35,14 @@ something, update BOTH this index and the section it points to.
 **Refreshed 2026-10-08** — items closed since the last refresh are listed at
 the end so nobody re-opens them.
 
+**Nothing below is live yet.** All of it sits on `merge/mobile-into-web`
+([PR #33](https://github.com/Voldy75/create-shop-crave/pull/33) — open,
+mergeable, 134 commits ahead of `main` on 2026-10-08). `main` is untouched and
+both Vercel deployments still serve the old code. Merging + the production
+deploy is the release step; only A1 blocks it (checkout), and everything else
+on the site works without payments. Re-check the count with
+`git rev-list --count main..HEAD` rather than trusting this one.
+
 **A. Hard blockers — all yours, no code**
 1. **Payment env vars** — the ONLY missing Vercel vars that block anything:
    `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `STRIPE_SECRET_KEY`,
@@ -89,6 +97,9 @@ the end so nobody re-opens them.
   1.98, both themes. Brand-guideline territory, flagged not recoloured.
 - **The split product name** — "meshi" vs "Crave & Create". → 10d write-up and
   `MOBILE_SETUP.md` §8.
+- **Mobile delete confirmation** — typed DELETE today; F10 drew Google
+  re-auth. Switch only once native sign-in is verified on a device (A3 + A4).
+  → "Phase 3 — F10".
 - **npm audit at 34 advisories** (was 14) — pre-existing drift, not from this
   work; triage alongside item 8. → "Dependency advisories".
 
