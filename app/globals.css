@@ -955,7 +955,12 @@
   --text-forest-2: var(--m-forest-2);
   --text-plum:     var(--m-plum);
   --text-brown:    var(--m-brown);
-  --text-burnt:    var(--m-burnt);
+  /* NOT raw --m-burnt (approved 2026-10-08): as small text #C05F16 measured
+     3.61 on peach, 3.64 on cream-2, 3.97 on cream — under AA wherever it was
+     used (the ₹₹₹ chip, "Order again?", streak letters, onboarding's step
+     circles). Cut 75/25 with the ink, like --text-red: 4.64 peach, 4.67
+     cream-2, 5.10 cream, 5.42 card. Still burnt; backgrounds keep the raw hue. */
+  --text-burnt:    color-mix(in srgb, var(--m-burnt) 75%, var(--m-ink));
   /* NOT raw --m-red: as TEXT, #D9453A measures 4.24 on the card, 3.99 on cream,
      3.66 on cream-2 and ~3.6 on its own 10-12% error tint — under AA on every
      light ground it is actually used on (error banners, sign-out, failed

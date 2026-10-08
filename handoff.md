@@ -85,9 +85,6 @@ the end so nobody re-opens them.
    reading each ground in code, not by rendering. Needs a session.
 
 **D. Decisions waiting on you**
-- **Light burnt text 3.61:1** (₹₹₹ chip, "Order again?", streak letters,
-  onboarding step circles) — one token (`--text-burnt`, light value), but it
-  changes the designed colour. → "Web tree: dark mode".
 - **Brand marks** — Zomato wordmark on the plum strip 2.44, WhatsApp glyph
   1.98, both themes. Brand-guideline territory, flagged not recoloured.
 - **The split product name** — "meshi" vs "Crave & Create". → 10d write-up and
@@ -101,6 +98,8 @@ the end so nobody re-opens them.
   account-deletion requirement is now met in code.
 - Admin console restyled to WF12 on real data; flag writes now audit-logged.
 - Mobile preferences editor (`/m/settings/preferences`).
+- Light burnt text: `--text-burnt` (light) is now burnt cut 75/25 with ink,
+  `#A35315`, in both trees — 3.61 → 4.64 on peach (approved 2026-10-08).
 - Contrast: landing forest bands (both themes), `.badge-burnt` (replaced by
   `.badge-brown` — do not use `.badge-burnt`), lime-ground text in dark,
   RestaurantView brand buttons, ApiKeyDialog, error pages.
@@ -2578,9 +2577,12 @@ the same false claim the earlier audit removed from the stats band. Now
   **5.12 / 7.82**), which needs no design-system override at all. **Do not use
   `.badge-burnt`**; it still fails in both themes wherever it is used.
   Verified: 22 lime/badge elements per theme, zero dark failures.
-- **Light burnt small text 3.61** is the LAST open contrast item (`--text-burnt`
-  on peach/cream: the ₹₹₹ chip, "Order again?", streak M/S, onboarding's step
-  circles). One token — its light value — but it changes the designed colour.
+- ~~**Light burnt small text 3.61**~~ — **FIXED 2026-10-08** (approved). Light
+  `--text-burnt` is now `color-mix(burnt 75%, ink)` = `#A35315` in BOTH
+  `app/globals.css` and `m/mobile.css`, the same pattern as light
+  `--text-red`. Measured on the real pages: "Order again?", ₹₹₹, streak
+  number + M/S + flame, profile "saved" stat — 4.64 light (all on peach, the
+  lowest ground), dark unchanged at 5.80. Backgrounds keep raw `--m-burnt`.
 - **Not rendered:** signed-in web screens (chat, settings, admin, home) and
   text over photos. Their swaps were verified by reading each site's ground in
   code, which is weaker than measuring.

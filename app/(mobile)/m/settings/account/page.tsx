@@ -77,7 +77,7 @@ export default function MobileAccountPage() {
       <div className="hstack" style={{ gap: 14, padding: "6px 2px" }}>
         <span
           aria-hidden
-          style={{ width: 52, height: 52, borderRadius: "50%", background: "var(--m-tint-peach)", display: "flex", alignItems: "center", justifyContent: "center", font: "800 19px var(--m-font-display)", color: "var(--text-burnt)" /* 19px bold = large text (3:1); burnt on peach is 3.61, under the 4.5 an 18px label needs */, flex: "none" }}
+          style={{ width: 52, height: 52, borderRadius: "50%", background: "var(--m-tint-peach)", display: "flex", alignItems: "center", justifyContent: "center", font: "800 19px var(--m-font-display)", color: "var(--text-burnt)" /* 19px bold (large text). Burnt-on-peach was 3.61 before --text-burnt was darkened in light (now 4.64), so this clears AA at any size. */, flex: "none" }}
         >
           {initials(userName, user?.email)}
         </span>
