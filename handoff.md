@@ -1314,9 +1314,19 @@ blocked step as a bottom sheet; `/m/settings/account/delete` (10c confirm,
 **Deviations from the board, all deliberate:**
 - Confirmation is typed DELETE, not Google re-auth (decided 2026-10-03 —
   native OAuth has never run end-to-end). Switch once it is verified.
-- 10a's **"Preferences" row is not built**: mobile has NO screen that edits
-  diet/tastes/goal after onboarding, so it would be a dead link. A real gap —
-  web has Settings → Preferences (WF10); mobile still needs one.
+- 10a's "Preferences" row: originally not built (no mobile editor existed).
+  **Closed 2026-10-08:** `/m/settings/preferences` edits diet, hard no's,
+  cravings, goal and location, saving as you tap. It is reached from 10a's row
+  on Account AND a Profile-tab row. Preferences are on-device, so the editor
+  needs no account. The Profile "Set location" chip goes there now; it used to
+  re-run all of onboarding. It uses the same `lib/preferences.ts` model as web.
+  The chips are onboarding's own lists, now exported from there as `MOBILE_*`,
+  so onboarding and the editor can't drift. Values set elsewhere (web
+  cuisines, typed-in hard no's) show as extra picked chips and survive every
+  save. Verified: extras kept through edits; "avoid" tags added/removed;
+  goal clear writes `"none"`; contrast in both themes; no overflow at 375px.
+  There's no board for this screen; it's composed from onboarding's chips and
+  goal rows.
 - 10e's "Sign in with Google" genuinely signs in (`GoogleSignInButton`, the
   same call onboarding makes). Linking to /m/onboarding would have dropped the
   user at step one under a sign-in label; adding a step deep-link would have

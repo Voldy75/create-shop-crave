@@ -7,6 +7,7 @@ import { useUser } from "@/app/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import { signInWithProvider } from "@/lib/native-auth";
 import { saveNutritionGoals } from "@/lib/storage";
+import { MOBILE_AVOID_OPTIONS, MOBILE_DIET_OPTIONS, MOBILE_TASTE_OPTIONS } from "@/lib/preferences";
 import { defaultGoalsFromProfile } from "@/lib/nutrition";
 import type { WeightGoal } from "@/lib/types";
 import { BoBowl, Carrot, Broccoli, Tomato, Mushroom, Avocado, Pea, Leek } from "@/components/mascots";
@@ -58,17 +59,11 @@ type Step =
 const BAR_STEPS: Step[] = ["location", "diet", "tastes", "goals", "calories", "streak", "signup"];
 const STEPS: Step[] = ["welcome", "meetBo", "apps", ...BAR_STEPS];
 
-const DIET_OPTIONS = [
-  "Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Halal",
-  "Keto", "Nut-free", "Pescatarian", "Low-carb",
-];
-
-const TASTE_OPTIONS = [
-  "Ramen", "Tacos", "Curry", "Pizza", "Sushi", "Salads",
-  "BBQ", "Pho", "Pasta", "Dumplings", "Breakfast all day",
-];
-
-const AVOID_OPTIONS = ["Peanuts", "Shellfish", "Dairy", "Gluten", "Cilantro", "Olives"];
+// Shared with the Preferences editor (/m/settings/preferences) so the two
+// always offer the same chips.
+const DIET_OPTIONS = MOBILE_DIET_OPTIONS;
+const TASTE_OPTIONS = MOBILE_TASTE_OPTIONS;
+const AVOID_OPTIONS = MOBILE_AVOID_OPTIONS;
 
 /** Artboard 7a's three capability rows, each on its own tint. */
 const BO_CAN_DO: { n: string; title: string; body: string; tint: string; ink: string }[] = [

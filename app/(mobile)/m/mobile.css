@@ -457,3 +457,18 @@ a { color: inherit; text-decoration: none; }
    mobile tree does not load Tailwind — without this rule the progress rows'
    "— in progress" status text renders on screen. */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ── Preferences editor (/m/settings/preferences) ──────────────────────────
+   Same chip vocabulary as onboarding: lime when picked, and the hard-no chip
+   in onboarding's peach + red (ported from its inline style to a class). */
+.chip.chip-avoid.is-on{background:var(--m-tint-peach);box-shadow:none;color:var(--text-red)}
+.chip:focus-visible{outline:2.5px solid var(--figure-accent);outline-offset:2px}
+/* Text field boundary at 60% ink, as with .dlbox: the shared .input hairline
+   is under the 3:1 a form control needs (WCAG 1.4.11). */
+.pf-in{flex:1;min-width:0;height:40px;box-sizing:border-box;border:none;outline:none;border-radius:999px;background:var(--m-card);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--m-ink) 60%,transparent);padding:0 16px;font:600 14px var(--m-font-body);color:var(--m-ink)}
+.pf-in::placeholder{color:var(--m-ink-soft)}
+.pf-in:focus{box-shadow:inset 0 0 0 2px var(--figure-accent)}
+.pf-goal{width:100%;text-align:left;border:none;cursor:pointer;font:inherit;color:inherit}
+.pf-goal.is-on{box-shadow:inset 0 0 0 2.5px var(--m-forest)}
+[data-theme="dark"] .pf-goal.is-on{box-shadow:inset 0 0 0 2.5px var(--m-lime)}
+.pf-goal:focus-visible{outline:2.5px solid var(--figure-accent);outline-offset:2px}

@@ -6,10 +6,9 @@
  *
  * Delete is a quiet row at the very bottom, under a divider — never a button.
  *
- * DRAWN BUT NOT BUILT: 10a's "Preferences · Diet, allergies, tastes, goal" row.
- * Mobile has no screen that edits those after onboarding (only the onboarding
- * flow writes them), so the row would be a dead link. Recorded in handoff.md;
- * web has Settings → Preferences (WF10).
+ * 10a's "Preferences · Diet, allergies, tastes, goal" row opens
+ * /m/settings/preferences (also reachable from the Profile tab, since
+ * preferences are on-device and don't need an account).
  *
  * The blocked sheet says the right thing per provider — a Razorpay pass is a
  * one-time purchase whose days are forfeited; a Stripe subscription is
@@ -18,7 +17,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, ChevronRight, Download, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, Download, Salad, Sparkles, Trash2 } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { BoBowl } from "@/components/mascots";
 import { type AccountSummary, fetchAccountSummary, formatDate } from "@/lib/account-client";
@@ -112,6 +111,17 @@ export default function MobileAccountPage() {
             </span>
           </div>
           <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none" }} aria-hidden />
+        </button>
+
+        <button className="row" onClick={() => router.push("/m/settings/preferences")} style={{ width: "100%", textAlign: "left", border: "none" }}>
+          <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--figure-accent)", flex: "none" }} aria-hidden>
+            <Salad width={20} height={20} />
+          </span>
+          <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+            <span className="t-h2">Preferences</span>
+            <span className="t-cap">Diet, allergies, tastes, goal</span>
+          </div>
+          <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none" }} />
         </button>
 
         <button className="row" onClick={() => router.push("/m/settings/data")} style={{ width: "100%", textAlign: "left", border: "none" }}>

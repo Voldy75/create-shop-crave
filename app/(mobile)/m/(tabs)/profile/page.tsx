@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Settings, ChevronRight, LogOut, Sparkles, Heart, MapPin, Utensils, UserCog } from "lucide-react";
+import { Settings, ChevronRight, LogOut, Sparkles, Heart, MapPin, Utensils, UserCog, Salad } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import { getFavorites, getMealLogs } from "@/lib/storage";
@@ -132,7 +132,7 @@ export default function ProfileTab() {
         <button className="chip" onClick={() => router.push("/m/saved")}>
           <Heart width={14} height={14} /> Saved
         </button>
-        <button className="chip" onClick={() => router.push("/m/onboarding")}>
+        <button className="chip" onClick={() => router.push("/m/settings/preferences")}>
           <MapPin width={14} height={14} /> {location ? "Location set" : "Set location"}
         </button>
         <button className="chip" onClick={() => router.push("/m/settings/connections")}>
@@ -174,6 +174,18 @@ export default function ProfileTab() {
             <span className="t-cap">No messages yet — turn on daily nudges in Settings.</span>
           </div>
         )}
+
+        {/* Diet, hard no's, cravings, goal, location — editable after onboarding. */}
+        <button className="row" onClick={() => router.push("/m/settings/preferences")} style={{ width: "100%", textAlign: "left", border: "none" }}>
+          <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--figure-accent)", flex: "none" }} aria-hidden>
+            <Salad width={20} height={20} />
+          </span>
+          <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
+            <span className="t-h2">Preferences</span>
+            <span className="t-cap">Diet, hard no&rsquo;s, cravings, goal</span>
+          </div>
+          <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none" }} />
+        </button>
 
         {/* Plan */}
         <button className="row" onClick={() => router.push("/m/paywall")} style={{ width: "100%", textAlign: "left", border: "none" }}>

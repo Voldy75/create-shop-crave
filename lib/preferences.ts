@@ -65,6 +65,31 @@ export const CUISINE_OPTIONS = [
   "Continental",
 ] as const;
 
+// Mobile's own lists: onboarding (/m/onboarding) and the mobile Preferences
+// editor (/m/settings/preferences) both render these, so what a user picked
+// during onboarding is always shown as a chip when they come back to edit.
+// Its "tastes" are dishes, not cuisines; both land in favoriteCuisines.
+export const MOBILE_DIET_OPTIONS = [
+  "Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Halal",
+  "Keto", "Nut-free", "Pescatarian", "Low-carb",
+] as const;
+
+export const MOBILE_TASTE_OPTIONS = [
+  "Ramen", "Tacos", "Curry", "Pizza", "Sushi", "Salads",
+  "BBQ", "Pho", "Pasta", "Dumplings", "Breakfast all day",
+] as const;
+
+export const MOBILE_AVOID_OPTIONS = ["Peanuts", "Shellfish", "Dairy", "Gluten", "Cilantro", "Olives"] as const;
+
+/** Display label for a stored (often lowercased) value: the option's own
+ *  casing when it is one, otherwise the value with its first letter raised. */
+export function labelFor(value: string, options: readonly string[]): string {
+  const hit = options.find((o) => norm(o) === norm(value));
+  if (hit) return hit;
+  const v = value.trim();
+  return v.charAt(0).toUpperCase() + v.slice(1);
+}
+
 export const GOAL_OPTIONS: { value: WeightGoal; label: string; sub: string }[] = [
   { value: "lose", label: "Lose weight", sub: "Lighter portions, more fibre" },
   { value: "maintain", label: "Maintain weight", sub: "Balanced, no calorie push" },
