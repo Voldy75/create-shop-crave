@@ -41,7 +41,7 @@ web project's production deploy succeeded. Smoke-tested live: `/`, `/m`,
 `/recipes`, and the new `/welcome`, `/m/settings/preferences` and
 `/account-deleted` all return 200; signed-out `/admin` redirects home; the
 admin and account APIs return 401. What the release did NOT turn on: checkout
-(A1), Swiggy (A7), and whatever the separate mobile Vercel project serves (A6).
+(A1), Swiggy (DCR migration now applied; waiting on Swiggy's allowlist), and whatever the separate mobile Vercel project serves (A6).
 
 **A. Hard blockers — all yours, no code**
 1. **Payment env vars** — the ONLY missing Vercel vars that block anything:
@@ -64,13 +64,13 @@ admin and account APIs return 401. What the release did NOT turn on: checkout
 6. **The old mobile Vercel project** names its Gemini key `GOOGLE_AI_API_KEY`;
    code reads `GOOGLE_GENERATIVE_AI_API_KEY`. Only matters if that project
    still serves `/m` after the merge. → "Blocked on you" §1.
-7. **Apply `scripts/sql/mcp-dcr.sql` to production** — checked 2026-10-11: the
-   DCR columns (`mcp_providers.client_id`, `client_id_issued_at`,
-   `registration_path`, `mcp_connections.refresh_token`) do NOT exist there.
-   Harmless today (0 connections, every provider disabled; connection reads
-   fail soft to "not connected"), but Swiggy cannot connect until it runs.
-   Additive and idempotent. Swiggy also still needs to allowlist the redirect
-   URI. → "Swiggy MCP: Dynamic Client Registration".
+7. ~~**Apply `scripts/sql/mcp-dcr.sql` to production**~~ — **DONE 2026-10-11**
+   (Supabase migration `mcp_dcr`). Verified: the four columns exist, Swiggy's
+   `registration_path` is `/auth/register` (client id registers on first
+   connect), and neither `authenticated` nor `anon` can read `refresh_token`.
+   Swiggy stays disabled; what remains is Swiggy allowlisting the redirect URI,
+   then enabling the provider in Admin → MCP providers.
+   → "Swiggy MCP: Dynamic Client Registration".
 
 **B. Code still to write**
 8. **IAP / RevenueCat** — the one big unbuilt feature. `purchaseStoreProduct`
@@ -1078,9 +1078,9 @@ completed end to end. That needs Swiggy to allowlist our redirect URI
 with their team) plus a real session. What IS proven is everything up to the
 authorize redirect: registration, grant support, and the token error contract.
 
-**`scripts/sql/mcp-dcr.sql` must be applied** — additive and idempotent, but
-until it runs, `client_id` / `registration_path` / `refresh_token` do not exist
-and the code falls back to the env var.
+**`scripts/sql/mcp-dcr.sql` is APPLIED to production** (2026-10-11, migration
+`mcp_dcr`). Before that, `client_id` / `registration_path` / `refresh_token` did
+not exist there and the code fell back to the env var.
 
 ## Removed: `/api/places` (2026-09-24)
 
