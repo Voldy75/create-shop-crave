@@ -35,13 +35,13 @@ something, update BOTH this index and the section it points to.
 **Refreshed 2026-10-08** — items closed since the last refresh are listed at
 the end so nobody re-opens them.
 
-**Nothing below is live yet.** All of it sits on `merge/mobile-into-web`
-([PR #33](https://github.com/Voldy75/create-shop-crave/pull/33) — open,
-mergeable, 134 commits ahead of `main` on 2026-10-08). `main` is untouched and
-both Vercel deployments still serve the old code. Merging + the production
-deploy is the release step; only A1 blocks it (checkout), and everything else
-on the site works without payments. Re-check the count with
-`git rev-list --count main..HEAD` rather than trusting this one.
+**Released 2026-10-11.** [PR #33](https://github.com/Voldy75/create-shop-crave/pull/33)
+merged `merge/mobile-into-web` into `main` (merge commit, history kept) and the
+web project's production deploy succeeded. Smoke-tested live: `/`, `/m`,
+`/recipes`, and the new `/welcome`, `/m/settings/preferences` and
+`/account-deleted` all return 200; signed-out `/admin` redirects home; the
+admin and account APIs return 401. What the release did NOT turn on: checkout
+(A1), Swiggy (A7), and whatever the separate mobile Vercel project serves (A6).
 
 **A. Hard blockers — all yours, no code**
 1. **Payment env vars** — the ONLY missing Vercel vars that block anything:
@@ -51,7 +51,7 @@ on the site works without payments. Re-check the count with
    2026-09-24. → "Blocked on you" §1.
 2. **Seed an admin** — `user_profiles.role = 'admin'` for your account (SQL in
    "Blocked on you" §1). No env var; do NOT set `NEXT_PUBLIC_ADMIN_EMAIL` (it
-   would publish your email in the client bundle). Also unblocks item 10.
+   would publish your email in the client bundle). Also unblocks item 11.
 3. **Supabase redirect URL** — add `com.cravecreate.app://auth/callback`.
    Native sign-in cannot work without it. → "Blocked on you" §3.
 4. **Native accounts + builds** — toolchain is DONE (iOS runs as a dev build in
@@ -64,32 +64,39 @@ on the site works without payments. Re-check the count with
 6. **The old mobile Vercel project** names its Gemini key `GOOGLE_AI_API_KEY`;
    code reads `GOOGLE_GENERATIVE_AI_API_KEY`. Only matters if that project
    still serves `/m` after the merge. → "Blocked on you" §1.
+7. **Apply `scripts/sql/mcp-dcr.sql` to production** — checked 2026-10-11: the
+   DCR columns (`mcp_providers.client_id`, `client_id_issued_at`,
+   `registration_path`, `mcp_connections.refresh_token`) do NOT exist there.
+   Harmless today (0 connections, every provider disabled; connection reads
+   fail soft to "not connected"), but Swiggy cannot connect until it runs.
+   Additive and idempotent. Swiggy also still needs to allowlist the redirect
+   URI. → "Swiggy MCP: Dynamic Client Registration".
 
 **B. Code still to write**
-7. **IAP / RevenueCat** — the one big unbuilt feature. `purchaseStoreProduct`
+8. **IAP / RevenueCat** — the one big unbuilt feature. `purchaseStoreProduct`
    in `lib/billing.ts` is a TODO and `@revenuecat/purchases-capacitor` is not
    installed, so mobile cannot sell anything (compliant: the paywall collapses
    to BYOK). Blocked on A4 + store products + a device.
-8. **`ai` v3→v7 SDK upgrade** — deliberately deferred; needs a real account and
+9. **`ai` v3→v7 SDK upgrade** — deliberately deferred; needs a real account and
    there is no test suite. → "The remaining 14" under Dependency advisories.
-9. **6a animated splash** — native-shell asset, needs A4. (3a–3d / 1i
+10. **6a animated splash** — native-shell asset, needs A4. (3a–3d / 1i
    restaurant ordering are out of scope by the design file's own note.)
 
 **C. Built, never proven for real**
-10. **Admin console with a real admin** — verified only via a temporary bypass +
+11. **Admin console with a real admin** — verified only via a temporary bypass +
    mocked API responses (both themes, 375px). The w12i "isn't an admin" card has
    not been rendered at all. Needs A2. → "Phase 4 — WF12".
-11. **A real account deletion** — never run end-to-end (guards, abort path and
+12. **A real account deletion** — never run end-to-end (guards, abort path and
    UI were verified without deleting anything). Do it once on a throwaway
    account, ideally with a Stripe test subscription. → "Phase 2 — WF11".
-12. **Saving the data export on a phone** — uses the Web Share API with a
+13. **Saving the data export on a phone** — uses the Web Share API with a
    download fallback; untested in the native WebView. → "Phase 3 — F10".
-13. **`/m/settings/notifications` (7c) + the 7d prompt** — push, WhatsApp and
+14. **`/m/settings/notifications` (7c) + the 7d prompt** — push, WhatsApp and
    test-send need a real session.
-14. **`/m/log` on hardware** — permission, rear camera, EXIF, iOS autoplay. →
+15. **`/m/log` on hardware** — permission, rear camera, EXIF, iOS autoplay. →
    the `/m/log` section (carries the `--experimental-https` recipe).
-15. **Any real payment**, on any provider. Needs A1.
-16. **Signed-in web screens** (chat, settings, home) — contrast verified by
+16. **Any real payment**, on any provider. Needs A1.
+17. **Signed-in web screens** (chat, settings, home) — contrast verified by
    reading each ground in code, not by rendering. Needs a session.
 
 **D. Decisions waiting on you**
@@ -101,7 +108,7 @@ on the site works without payments. Re-check the count with
   re-auth. Switch only once native sign-in is verified on a device (A3 + A4).
   → "Phase 3 — F10".
 - **npm audit at 34 advisories** (was 14) — pre-existing drift, not from this
-  work; triage alongside item 8. → "Dependency advisories".
+  work; triage alongside item 9. → "Dependency advisories".
 
 **Closed since the last refresh — do not re-open**
 - Web first-run + Settings → Preferences (WF10); web account deletion + data
@@ -120,24 +127,21 @@ on the site works without payments. Re-check the count with
 
 ## Where the work lives
 
-All of it is on **`merge/mobile-into-web`**, and every commit is **pushed** —
-the branch tracks `origin/merge/mobile-into-web` and is kept in sync after each
-piece of work. `main` is untouched at `ac8a8cc`, and both deployments still
-serve the old code.
+**`main`.** The `merge/mobile-into-web` branch was merged via PR #33 on
+2026-10-11 and the web project deploys production from `main`. New work: branch
+from `main` (or commit straight to it for docs, when asked).
 
 **Do not trust a SHA written in this file.** Two earlier versions of this
 paragraph pinned one, both went stale within a few commits, and one of them
 said "unpushed" long after the branch had been pushed — which cost a session
-re-deriving the actual state. The invariant is what matters (branch in sync,
-`main` untouched); for the specifics, run:
+re-deriving the actual state. For the specifics, run:
 
 ```bash
-git status -sb && git rev-list --left-right --count origin/merge/mobile-into-web...HEAD
+git status -sb && git log --oneline -5 origin/main
 ```
 
-**"Pushed" is not "shipped."** Nothing here reaches a user until Phase 5 merges
-to `main`. The branch existing on the remote only means it is backed up and
-reviewable.
+**"Merged" is not "working."** Shipping put the code live; payments, Swiggy
+and native builds still need the blockers in the index.
 
 **There IS an open PR, [#33](https://github.com/Voldy75/create-shop-crave/pull/33),
 and it is now marked READY FOR REVIEW.** It was a draft for most of its life —
@@ -2635,8 +2639,8 @@ it alters the artboard colour, so it waits for a yes.
 ## What's actually next
 
 **SUPERSEDED (2026-10-08): the live to-do list is the consolidated index at
-the top of this file.** In short, the code left is IAP/RevenueCat (item 7), the
-`ai` SDK upgrade (item 8) and the 6a splash (item 9); everything else is a blocker
+the top of this file.** In short, the code left is IAP/RevenueCat (item 8), the
+`ai` SDK upgrade (item 9) and the 6a splash (item 10); everything else is a blocker
 (A), an unproven path (C) or a decision (D).
 
 Everything below this line is HISTORICAL context from the Phase 10 era. It is
