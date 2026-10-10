@@ -1,15 +1,12 @@
 import Razorpay from "razorpay";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth-guard";
 
 const PRO_AMOUNT_INR = 74900; // ₹749 in paise
 
 export async function POST() {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireUser();
+  if (guard instanceof Response) return guard;
+  const { user } = guard;
 
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;

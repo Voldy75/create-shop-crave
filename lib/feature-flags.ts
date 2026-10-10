@@ -13,7 +13,9 @@ let fetchPromise: Promise<Record<string, boolean>> | null = null;
 async function loadFlags(): Promise<Record<string, boolean>> {
   if (cachedFlags) return cachedFlags;
   if (fetchPromise) return fetchPromise;
-  fetchPromise = fetch("/api/admin/flags")
+  // Public, anon-client, RLS-governed read. NOT /api/admin/flags, which is now
+  // admin-only for every verb.
+  fetchPromise = fetch("/api/flags")
     .then((r) => r.json())
     .then((data) => {
       const map: Record<string, boolean> = {};

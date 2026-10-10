@@ -1,0 +1,37 @@
+name: Design tokens
+
+# DESIGN.md: "CI should fail on new #rrggbb / rgba() literals in app/** and
+# components/**, with an allowlist for the cases already enumerated in
+# DESIGN.md." This is that check — Phase 10e.
+#
+# scripts/check-hex.mjs does the actual work. Two escape hatches, both
+# explained in that file's header:
+#   - a genuinely allowlisted literal (mascot art, Razorpay's theme.color,
+#     Google Maps style JSON, partner brand colours, SVG data-URIs) gets an
+#     inline `// hex-ok: <why>` or `// hex-ok-start` / `// hex-ok-end` marker.
+#   - pre-existing debt in a screen nobody has converted to meshi yet
+#     (currently: admin, favorites, arena, settings, and a few shared
+#     components — see scripts/hex-baseline.json) doesn't fail the build, but
+#     the baseline is a ratchet: it should only shrink as screens convert,
+#     never grow. Regenerating it to silence a genuinely new violation defeats
+#     the point of this workflow.
+on:
+  pull_request:
+    paths:
+      - "app/**/*.ts"
+      - "app/**/*.tsx"
+      - "components/**/*.ts"
+      - "components/**/*.tsx"
+      - "scripts/check-hex.mjs"
+      - "scripts/hex-baseline.json"
+      - ".github/workflows/design-tokens.yml"
+
+jobs:
+  check-hex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/check-hex.mjs

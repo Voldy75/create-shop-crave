@@ -21,6 +21,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { composeNudge, type CoachLog, type CoachGoals } from "@/lib/coach-insights";
 import { sendPush } from "@/lib/web-push";
 import { sendWhatsApp } from "@/lib/twilio";
+import { sendNativePush } from "@/lib/native-push";
 import type { PushSubscriptionJSON } from "@/lib/types";
 
 export const maxDuration = 300; // Hobby plan allows up to 300s
@@ -33,6 +34,8 @@ interface SubRow {
   whatsapp_status: string;
   phone_e164: string | null;
   last_inbound_at: string | null;
+  native_push_enabled: boolean;
+  native_push_token: string | null;
 }
 
 interface GoalsRow {
@@ -55,7 +58,7 @@ interface LogRow {
 
 interface RunSummary {
   processed: number;
-  sent: { web_push: number; whatsapp: number };
+  sent: { web_push: number; whatsapp: number; native_push: number };
   skipped: number;
   errors: number;
   details?: Array<{ user_id: string; channel: string; status: string; reason?: string }>;
@@ -137,7 +140,7 @@ async function handle(req: Request) {
   const dryRun = new URL(req.url).searchParams.get("dry") === "1";
   const summary: RunSummary = {
     processed: 0,
-    sent: { web_push: 0, whatsapp: 0 },
+    sent: { web_push: 0, whatsapp: 0, native_push: 0 },
     skipped: 0,
     errors: 0,
     details: [],
@@ -148,8 +151,8 @@ async function handle(req: Request) {
   // 1. Fetch all subscribers with at least one channel on.
   const { data: subs, error: subErr } = await service
     .from("notification_subscriptions")
-    .select("user_id, web_push_enabled, web_push_subscription, whatsapp_enabled, whatsapp_status, phone_e164, last_inbound_at")
-    .or("web_push_enabled.eq.true,whatsapp_enabled.eq.true");
+    .select("user_id, web_push_enabled, web_push_subscription, whatsapp_enabled, whatsapp_status, phone_e164, last_inbound_at, native_push_enabled, native_push_token")
+    .or("web_push_enabled.eq.true,whatsapp_enabled.eq.true,native_push_enabled.eq.true");
   if (subErr) {
     return Response.json({ error: "subs_lookup_failed", message: subErr.message }, { status: 500 });
   }
@@ -226,6 +229,39 @@ async function handle(req: Request) {
         });
         if (result.ok) summary.sent.web_push++;
         else summary.errors++;
+      }
+    }
+
+    if (subRaw.native_push_enabled && subRaw.native_push_token && !alreadySent.has("native_push")) {
+      if (dryRun) {
+        summary.details?.push({ user_id: subRaw.user_id, channel: "native_push", status: "would_send" });
+      } else {
+        const result = await sendNativePush(subRaw.native_push_token, {
+          title: nudge.title,
+          body: nudge.body,
+          url: "/m/plan",
+        });
+        if (result.notConfigured) {
+          // Firebase env not set — skip native delivery without logging noise.
+          summary.skipped++;
+          summary.details?.push({ user_id: subRaw.user_id, channel: "native_push", status: "skipped", reason: "fcm_not_configured" });
+        } else {
+          if (result.gone) {
+            await service
+              .from("notification_subscriptions")
+              .update({ native_push_enabled: false, native_push_token: null })
+              .eq("user_id", subRaw.user_id);
+          }
+          await service.from("notification_log").insert({
+            user_id: subRaw.user_id,
+            channel: "native_push",
+            status: result.ok ? "sent" : "failed",
+            error: result.ok ? null : `status=${result.status} ${result.error ?? ""}`.slice(0, 200),
+            payload: nudge,
+          });
+          if (result.ok) summary.sent.native_push++;
+          else summary.errors++;
+        }
       }
     }
 
