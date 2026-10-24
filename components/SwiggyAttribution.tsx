@@ -2,33 +2,37 @@
  * "Powered by Swiggy / Instamart / Dineout" — Swiggy's REQUIRED attribution
  * for anything powered by Swiggy MCP (docs: Operate → Brand guidelines).
  *
- * Their rules, which this component encodes so call sites cannot drift:
- *   - the service's own square logo, then the exact phrase, together;
- *   - one badge per service — never a merged "Powered by Swiggy" for groceries;
- *   - logo ≥ 24px (32 standard), text ≥ 14px (16 standard), 8px gap and 8px
- *     clear space, logo at full opacity and original colours;
- *   - text contrast ≥ 4.5:1 — --m-ink on the app's grounds clears it in both
- *     themes;
- *   - with live text beside it, the logo is decorative so the phrase is read
- *     once.
- * The logos are Swiggy's published artwork, loaded from their brand-asset URLs
- * rather than copied, so the original files are always what renders.
+ * Built to Swiggy's OWN badge, measured from the badge previews on their
+ * brand-guidelines page (2026-10-24), not approximated:
+ *   - the service's 512×512 SQUARE logo at 32px, corner radius 20%;
+ *   - "Powered by " + the service name in bold, 16px, 8px gap, 8px padding;
+ *   - on its own solid backing with 8px corners — white with navy text in
+ *     light, near-black with off-white text in dark (tokens in
+ *     design/meshi-a11y.css). The backing is what keeps it readable on a
+ *     tinted or busy card ("solid backing on a busy surface").
  *
- * Plain inline styles on tokens: used in BOTH root layouts, and a class from
- * one tree's stylesheet does not exist in the other.
+ * FIRST VERSION BUG: it used /builders/brand-logos/*.png, which are 344×142
+ * WORDMARKS, squeezed into a 24px square — the logo rendered distorted. The
+ * square logos below are Swiggy's own files, copied into public/brand/swiggy/
+ * because their URLs on Swiggy's site are content-hashed and change on every
+ * Swiggy deploy.
+ *
+ * Accessibility per the guidelines: the logo is decorative (alt="") because
+ * the live text beside it already says the phrase, so it is read once.
+ * Plain inline styles: used in BOTH root layouts, where a class from one
+ * tree's stylesheet does not exist in the other.
  */
 
 export type SwiggyService = "food" | "instamart" | "dineout";
 
-const META: Record<SwiggyService, { logo: string; phrase: string }> = {
-  food: { logo: "https://mcp.swiggy.com/builders/brand-logos/swiggy-food.png", phrase: "Powered by Swiggy" },
-  instamart: { logo: "https://mcp.swiggy.com/builders/brand-logos/swiggy-instamart.png", phrase: "Powered by Instamart" },
-  dineout: { logo: "https://mcp.swiggy.com/builders/brand-logos/swiggy-dineout.png", phrase: "Powered by Dineout" },
+const META: Record<SwiggyService, { logo: string; name: string }> = {
+  food: { logo: "/brand/swiggy/swiggy-square.jpg", name: "Swiggy" },
+  instamart: { logo: "/brand/swiggy/instamart-square.jpg", name: "Instamart" },
+  dineout: { logo: "/brand/swiggy/dineout-square.jpg", name: "Dineout" },
 };
 
-export function SwiggyAttribution({ service, compact = false }: { service: SwiggyService; compact?: boolean }) {
-  const { logo, phrase } = META[service];
-  const size = compact ? 24 : 32;
+export function SwiggyAttribution({ service }: { service: SwiggyService }) {
+  const { logo, name } = META[service];
   return (
     <span
       style={{
@@ -36,15 +40,19 @@ export function SwiggyAttribution({ service, compact = false }: { service: Swigg
         alignItems: "center",
         gap: 8,
         padding: 8,
-        font: `700 ${compact ? 14 : 16}px var(--m-font-body)`,
-        color: "var(--m-ink)",
+        borderRadius: 8,
+        background: "var(--swiggy-badge-bg)",
+        color: "var(--swiggy-badge-ink)",
+        font: "400 16px/1.35 var(--m-font-body)",
         whiteSpace: "nowrap",
         flex: "none",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- Swiggy's own artwork, served by Swiggy, at a fixed small size */}
-      <img src={logo} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: size * 0.2, flex: "none" }} />
-      {phrase}
+      {/* eslint-disable-next-line @next/next/no-img-element -- Swiggy's own square artwork at its fixed badge size */}
+      <img src={logo} alt="" width={32} height={32} style={{ width: 32, height: 32, borderRadius: "20%", flex: "none" }} />
+      <span>
+        Powered by <strong style={{ fontWeight: 700 }} translate="no">{name}</strong>
+      </span>
     </span>
   );
 }
@@ -72,9 +80,9 @@ export function AgentAttribution({ invocations }: { invocations?: ReadonlyArray<
   }
   if (seen.length === 0) return null;
   return (
-    <span style={{ display: "flex", flexWrap: "wrap", gap: 4, marginLeft: -8 }}>
+    <span style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {seen.map((s) => (
-        <SwiggyAttribution key={s} service={s} compact />
+        <SwiggyAttribution key={s} service={s} />
       ))}
     </span>
   );

@@ -6,6 +6,7 @@ import { activeProviders } from "@/lib/mcp/registry";
 import { connectProvider, closeAll, toolAllowed, type OpenServer } from "@/lib/mcp/client";
 import { callbackUrlFor } from "@/lib/mcp/oauth";
 import { ensureFreshConnection } from "@/lib/mcp/connections";
+import { sanitizeToolSchema } from "@/lib/mcp/schema";
 
 export const maxDuration = 60;
 
@@ -191,9 +192,11 @@ export async function POST(req: Request) {
         const isDestructive = Boolean(DESTRUCTIVE[t.name]);
         aiTools[namespaced] = tool({
           description: `[${serviceKey}] ${t.description ?? ""}`.slice(0, 1024),
-          // Pass the MCP tool's raw JSON Schema directly via the AI SDK helper.
+          // Swiggy's raw schemas use JSON Schema features Gemini rejects
+          // (type arrays, a top-level anyOf) and ONE bad tool fails the whole
+          // request — see lib/mcp/schema.ts. Swiggy validates real arguments.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          parameters: jsonSchema((t.inputSchema ?? { type: "object" }) as any),
+          parameters: jsonSchema(sanitizeToolSchema(t.inputSchema) as any),
           execute: async (rawArgs: unknown) => {
             const args = (rawArgs ?? {}) as Record<string, unknown>;
             const confirmed = args._confirmed === true;
@@ -259,6 +262,7 @@ export async function POST(req: Request) {
     }
   } catch (err) {
     await closeAll(open);
+    console.error("agent: tool discovery failed:", err instanceof Error ? err.message.slice(0, 300) : err);
     return Response.json(
       { error: "tool_discovery_failed", message: err instanceof Error ? err.message.slice(0, 200) : "unknown" },
       { status: 502 },
@@ -282,8 +286,11 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     await closeAll(open);
+    // Logged: this branch used to return 500 silently, which hid the Gemini
+    // schema rejection behind an empty log line.
+    console.error("agent: model call failed:", err instanceof Error ? err.message.slice(0, 300) : err);
     return Response.json(
-      { error: "agent_failed", message: err instanceof Error ? err.message.slice(0, 200) : "unknown" },
+      { error: "agent_failed", message: "Bo couldn't reach the AI model just now. Please try again in a moment." },
       { status: 500 },
     );
   }

@@ -113,7 +113,7 @@ export default function BuyPlatform() {
         {/* Swiggy's required attribution for an MCP-powered order (Brand
             guidelines → "Order: alongside the cart and checkout summary"). */}
         <div style={{ alignSelf: "center", marginTop: -6 }}>
-          <SwiggyAttribution service="instamart" compact />
+          <SwiggyAttribution service="instamart" />
         </div>
         {/* The artboard's card offers only the agent. The plain Instamart link
             stays as the route for anyone who has not connected Swiggy (or
