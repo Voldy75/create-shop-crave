@@ -36,6 +36,12 @@ something, update BOTH this index and the section it points to.
 items closed since the last refresh are listed at the end so nobody re-opens
 them.
 
+**Bo as an autonomous agent — in progress on `feat/bo-agent` (2026-10-25).**
+Plan: `~/.claude/plans/hidden-booping-naur.md`. Every phase is a PR into
+`feat/bo-agent`, never `main`; `main` and production are untouched until one
+owner-approved final merge. See "Bo agent (feat/bo-agent)" near the end for
+the dev database, the data model and what is left.
+
 **Re-check 2026-10-24 (no code changed since 2026-10-11):** production Vercel
 has Supabase ×3, `GOOGLE_GENERATIVE_AI_API_KEY` and the Maps key — still none
 of the five payment vars (A1). Supabase: 6 users, **0 admins** (A2 not done),
@@ -1613,6 +1619,54 @@ logos are vendored in `public/brand/swiggy/` because Swiggy serves them from
 content-hashed URLs that change on every Swiggy deploy.
 Swiggy's go-live checklist also asks for a staged rollout and an incident
 contact (email + Slack) shared with builders@swiggy.in.
+
+## Bo agent (feat/bo-agent)
+
+**Dev database.** Free Supabase project `crave-and-create-dev`
+(`kbcbmszyrzzlnvaprvvf`, ap-south-1) — the owner declined paid Supabase
+branching. Production's 21 recorded migrations were replayed under the same
+names, plus `dev_parity_with_production` for the objects production gained
+outside migrations (`swiggy_tokens.client_id/refresh_token`, comment-only
+differences in the two quota RPCs). Verified: a fingerprint of every public
+column, function body + ACL, policy, trigger (incl. `auth.users`
+→ `handle_new_user`), grant, column grant, index and RLS switch hashes
+identically on both projects (1,733 objects). Config rows copied (flags,
+plans, prices, app_config, MCP providers/servers); **no user data**. The
+`client_id` cache is left null so dev registers its own DCR client.
+Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
+`bo_agent_tasks_and_metering`. To run the app against dev, put dev's URL,
+anon key and **service-role key** (Dashboard → Settings → API; never commit
+it) in an env file; `.env.local` points at production.
+
+**Slices.**
+1. SDK upgrade 3 → 7 — branch `bo/p1-sdk-upgrade`, PR #38.
+2. Data foundations — branch `bo/p1-data-foundations`:
+   - `scripts/sql/food-profile.sql`: `user_food_profile` (the row IS the
+     consent: it cannot exist without `consent_version` and
+     `age_confirmed = true`), `consent_events` ledger. Owners read/delete
+     via RLS; writes only through `app/api/bo/*` (service role).
+   - `scripts/sql/agent-tasks.sql`: `agent_tasks` (90-day `expires_at`),
+     `agent_task_events`, `usage_tasks`, RPCs
+     `check_and_increment_task_usage` (same semantics as the fixed chat RPC),
+     `agent_task_record_steps` (scoped by user — a forged task id is refused),
+     `purge_expired_agent_tasks`; flag `bo_agent` (off) and
+     `app_config['bo.limits']` (3 tasks/day, 24 steps/task, 8 steps/turn).
+     A plan overrides tasks/day with `features.bo_tasks_daily` (null =
+     unlimited), editable in Admin → Plans.
+   - `lib/bo/food-profile.ts`, `lib/bo/tasks.ts`, `lib/bo/guard.ts`;
+     `GET|PUT /api/bo/profile`, `POST /api/bo/consent` (404 while the flag
+     is off); `/api/cron/bo-retention` daily 21:00 UTC (Bearer CRON_SECRET
+     only — no `?token=` since it deletes). Export now includes the Bo
+     tables; account deletion already cascades them.
+   - Task quota fails CLOSED (tasks can place orders); chat still fails open.
+3. Next: consent notice UI (web + mobile) and write-through from
+   `lib/preferences.ts` when consented; then Phase 2 (payment hand-off spike
+   first).
+
+**Before the final merge to `main`:** apply `food-profile.sql` and
+`agent-tasks.sql` to production, final notice text and retention reviewed
+against the DPDP Rules, and the Swiggy DPA / processing-region question
+answered (plan, "DPDP compliance").
 
 ## Dead ends — do not retry
 

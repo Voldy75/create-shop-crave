@@ -10,11 +10,12 @@ import type { UserStatus } from "@/lib/limits";
  * check to ~20 routes by hand guarantees missing one, and one missed route
  * means "banned" means nothing.
  *
- * Three routes deliberately do NOT use these guards, because they are
+ * Four routes deliberately do NOT use these guards, because they are
  * authenticated by signature rather than by session and must stay that way:
  *   app/api/subscribe/stripe/webhook   -- Stripe signature
  *   app/api/notifications/whatsapp/webhook -- Twilio X-Twilio-Signature
  *   app/api/cron/daily-nudge           -- CRON_SECRET
+ *   app/api/cron/bo-retention          -- CRON_SECRET
  *
  * Usage:
  *   const guard = await requireUser();
