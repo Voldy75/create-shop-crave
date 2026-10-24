@@ -181,6 +181,9 @@ export function setWeightGoal(goal: WeightGoal | null): void {
   } catch {
     return;
   }
+  // Picked up by lib/bo/consent-client (Bo's server profile, consented users
+  // only). An event rather than an import: that module imports this one.
+  window.dispatchEvent(new Event("crave:prefs-changed"));
   if (!goal) return;
   const current = getNutritionGoals();
   if (!current) return;

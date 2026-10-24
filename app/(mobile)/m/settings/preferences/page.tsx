@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, MapPin, Plus } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { Avocado, Broccoli, Pea } from "@/components/mascots";
+import { BoMemoryCard } from "@/components/bo/BoMemoryCard";
 import {
   MOBILE_AVOID_OPTIONS,
   MOBILE_DIET_OPTIONS,
@@ -143,6 +144,9 @@ export default function MobilePreferencesPage() {
         </div>
       ) : (
         <>
+          {/* Renders nothing unless bo_agent is on and the user is signed in. */}
+          <BoMemoryCard />
+
           <Section title="Diet" sub="Bo only suggests food that fits.">
             <ChipSet
               options={MOBILE_DIET_OPTIONS}

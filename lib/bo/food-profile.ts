@@ -17,9 +17,9 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import type { WeightGoal } from "@/lib/types";
+import { BO_NOTICE_VERSION } from "@/lib/bo/notice";
 
-/** Bump when the notice text changes; users on an older version are asked again. */
-export const BO_NOTICE_VERSION = "2026-10-25";
+export { BO_NOTICE_VERSION };
 
 export type ConsentPurpose = "bo_profile" | "bo_nudges";
 export type Platform = "web" | "ios" | "android";
