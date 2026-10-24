@@ -1,7 +1,9 @@
 "use client";
 
 import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useChat } from "ai/react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import { chatErrorText, messageText } from "@/lib/ai-messages";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
 import { getWeightGoal } from "@/lib/preferences";
@@ -216,23 +218,33 @@ function ChatPageInner() {
   const initialQuery = useMemo(() => searchParams?.get("q") ?? "", []); // eslint-disable-line react-hooks/exhaustive-deps
   const chatApi = agentMode ? "/api/agent" : "/api/chat";
 
-  const { messages, input, handleInputChange, handleSubmit, setInput, setMessages, isLoading, reload, append } = useChat({
-    api: chatApi,
-    body: buildBody(),
-    onResponse: (response) => {
-      if (response.status === 401) { router.replace("/"); return; }
-      if (response.status === 429) {
-        setShowUpgradeDialog(true);
-        return;
-      }
-      if (response.status === 412) {
-        // /api/agent emits 412 when the user's Swiggy token is missing/expired.
-        setError("Your Swiggy connection isn't active. Reconnect in Settings → Notifications.");
-        return;
-      }
-      if (!byok) setUsageCount((prev) => Math.min(prev + 1, DAILY_LIMIT));
-      setError(null);
-    },
+  // AI SDK 7: input is ours; the current body (context, BYOK) is passed with
+  // each send so changes apply immediately; and the old onResponse status
+  // handling lives in a fetch wrapper because useChat no longer exposes the
+  // Response.
+  const [input, setInput] = useState("");
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: chatApi,
+        fetch: async (url, init) => {
+          const response = await fetch(url, init);
+          if (response.status === 401) router.replace("/");
+          else if (response.ok) {
+            // A BYOK request carries the key in its body; only free-tier
+            // requests count against the daily badge.
+            const usedOwnKey = typeof init?.body === "string" && init.body.includes('"apiKey"');
+            if (!usedOwnKey) setUsageCount((prev) => Math.min(prev + 1, DAILY_LIMIT));
+            setError(null);
+          }
+          return response;
+        },
+      }),
+    [chatApi, router]
+  );
+
+  const chat = useChat({
+    transport,
     onError: (err) => {
       const msg = err.message || "";
       if (msg.includes("rate_limit") || msg.includes("Daily limit") || msg.includes("429")) {
@@ -241,20 +253,12 @@ function ChatPageInner() {
         setByokError(`Your ${byok?.provider || "API"} key is invalid or has insufficient quota.`);
         setShowApiKeyDialog(true);
       } else {
-        // The SDK's error message is the response body; our routes send
-        // {error, message} JSON. Show that message (e.g. "Connect your Swiggy
-        // account…") instead of flattening every failure to a generic line.
-        let serverMessage: string | null = null;
-        try {
-          const parsed = JSON.parse(msg);
-          if (parsed && typeof parsed.message === "string") serverMessage = parsed.message;
-        } catch {
-          // not JSON — fall through to the generic copy
-        }
-        setError(serverMessage ?? "Something went wrong. Please try again.");
+        setError(chatErrorText(msg));
       }
     },
   });
+  const { messages, setMessages, status, sendMessage, regenerate } = chat;
+  const isLoading = status === "submitted" || status === "streaming";
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -277,7 +281,7 @@ function ChatPageInner() {
     if (isLoading || messages.length === 0) return;
     const saved = saveConversation({
       id: threadId,
-      messages: messages.map((m) => ({ id: m.id, role: m.role, content: m.content })),
+      messages: messages.map((m) => ({ id: m.id, role: m.role, content: messageText(m) })),
       agentMode,
     });
     /* eslint-disable react-hooks/set-state-in-effect */
@@ -295,8 +299,8 @@ function ChatPageInner() {
     autoFiredRef.current = true;
     // Strip the query params from the URL so a refresh doesn't re-send.
     window.history.replaceState({}, "", "/chat" + (agentMode ? "?agent=1" : ""));
-    append({ role: "user", content: initialQuery });
-  }, [hydrated, user, initialQuery, agentMode, append]);
+    void sendMessage({ text: initialQuery }, { body: buildBody() });
+  }, [hydrated, user, initialQuery, agentMode, sendMessage, buildBody]);
 
   const handleBYOKSave = (provider: Provider, apiKey: string) => {
     saveBYOK(provider, apiKey);
@@ -308,8 +312,12 @@ function ChatPageInner() {
   };
 
   const handleChatSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    setPendingMessage(input);
-    handleSubmit(e);
+    e.preventDefault();
+    const text = input.trim();
+    if (!text || isLoading) return;
+    setPendingMessage(text);
+    setInput("");
+    void sendMessage({ text }, { body: buildBody() });
   };
 
   const handleSuggestionClick = (s: string) => setInput(s);
@@ -317,7 +325,15 @@ function ChatPageInner() {
   /* ── Conversation rail handlers ── */
   const openThread = (c: Conversation) => {
     setThreadId(c.id);
-    setMessages(c.messages.map((m) => ({ id: m.id, role: m.role as "user" | "assistant", content: m.content })));
+    // Saved threads are plain text (lib/conversation-history); rebuild them
+    // as AI SDK 7 UIMessages with a single text part.
+    setMessages(
+      c.messages.map((m): UIMessage => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        parts: [{ type: "text", text: m.content }],
+      }))
+    );
     setError(null);
     // A restored thread's artifacts belong to that thread, so the rail resets
     // rather than keeping the previous conversation's recipe on screen.
@@ -376,7 +392,7 @@ function ChatPageInner() {
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i];
       if (m.role === "user") continue;
-      const { data } = parseContent(m.content);
+      const { data } = parseContent(messageText(m));
       if (data?.recipe || data?.restaurantSuggestion) return { messageId: m.id, ...data };
     }
     return null;
@@ -513,8 +529,8 @@ function ChatPageInner() {
               const isUser = m.role === "user";
               const isStreamingMessage = !isUser && isLoading && index === messages.length - 1;
               const { data, text, isIncomplete } = !isUser
-                ? parseContent(m.content, isStreamingMessage)
-                : { data: null, text: m.content, isIncomplete: false };
+                ? parseContent(messageText(m), isStreamingMessage)
+                : { data: null, text: messageText(m), isIncomplete: false };
 
               return (
                 <motion.div
@@ -554,7 +570,7 @@ function ChatPageInner() {
                               <span className="t-cap">Preparing suggestions…</span>
                             </div>
                           )}
-                          {!isUser && <AgentAttribution invocations={m.toolInvocations} />}
+                          {!isUser && <AgentAttribution parts={m.parts} />}
                         </div>
                       </div>
                     </div>
@@ -602,7 +618,7 @@ function ChatPageInner() {
 
                   {!isUser && !isLoading && index === messages.length - 1 && (
                     <div className="mx-auto w-full max-w-3xl">
-                      <button onClick={() => reload()} className="ml-9 flex items-center gap-1.5 t-cap" style={{ background: "none", border: "none" }} aria-label="Regenerate last response">
+                      <button onClick={() => void regenerate({ body: buildBody() })} className="ml-9 flex items-center gap-1.5 t-cap" style={{ background: "none", border: "none" }} aria-label="Regenerate last response">
                         <RotateCcw width={12} height={12} />
                         Regenerate
                       </button>
@@ -664,7 +680,7 @@ function ChatPageInner() {
             <form onSubmit={handleChatSubmit} className="input" style={{ height: 58, padding: "0 6px 0 20px" }}>
               <input
                 value={input}
-                onChange={handleInputChange}
+                onChange={(e) => setInput(e.target.value)}
                 placeholder={agentMode ? "Order groceries, food, or book a table…" : "Message Bo — recipes, groceries, plans…"}
                 className="grow"
                 style={{ background: "none", border: "none", padding: 0, font: "inherit", color: "inherit", minWidth: 0 }}

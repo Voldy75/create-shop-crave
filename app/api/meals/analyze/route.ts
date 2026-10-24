@@ -1,4 +1,4 @@
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementPhotoUsage } from "@/lib/photo-quota";
@@ -113,19 +113,19 @@ export async function POST(req: Request) {
               text: `Estimate the nutrition for the meal shown.${body.mealType ? ` Meal type: ${body.mealType}.` : ""}`,
             },
             {
-              type: "image" as const,
-              image: stripDataUrl(body.imageBase64),
-              mimeType: "image/jpeg",
+              type: "file" as const,
+              data: stripDataUrl(body.imageBase64),
+              mediaType: "image/jpeg",
             },
           ]
         : `Estimate the nutrition for: "${body.name.trim()}".${
             body.mealType ? ` Meal type: ${body.mealType}.` : ""
           }`;
 
-    const { object } = await generateObject({
+    const { output: object } = await generateText({
       model,
-      schema: NutritionSchema,
-      system: SYSTEM_PROMPT,
+      output: Output.object({ schema: NutritionSchema }),
+      instructions: SYSTEM_PROMPT,
       messages: [
         {
           role: "user",

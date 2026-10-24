@@ -72,10 +72,13 @@ export function serviceForTool(toolName: string): SwiggyService | null {
  * reply that touched no Swiggy tool. Swiggy wants attribution "in agent
  * responses", not only in a footer, so this sits under each reply.
  */
-export function AgentAttribution({ invocations }: { invocations?: ReadonlyArray<{ toolName: string }> }) {
+export function AgentAttribution({ parts }: { parts?: ReadonlyArray<{ type: string; toolName?: string }> }) {
+  // AI SDK 7 message parts: a tool call is `tool-<name>` (static tools) or
+  // `dynamic-tool` carrying `toolName`.
   const seen: SwiggyService[] = [];
-  for (const inv of invocations ?? []) {
-    const s = serviceForTool(inv.toolName);
+  for (const p of parts ?? []) {
+    const name = p.type === "dynamic-tool" ? p.toolName : p.type.startsWith("tool-") ? p.type.slice(5) : null;
+    const s = name ? serviceForTool(name) : null;
     if (s && !seen.includes(s)) seen.push(s);
   }
   if (seen.length === 0) return null;
