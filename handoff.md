@@ -78,9 +78,9 @@ admin and account APIs return 401. What the release did NOT turn on: checkout
    (Supabase migration `mcp_dcr`). Verified: the four columns exist, Swiggy's
    `registration_path` is `/auth/register` (client id registers on first
    connect), and neither `authenticated` nor `anon` can read `refresh_token`.
-   **Allowlisting confirmed 2026-10-24** (Swiggy's check-redirect-uri says
-   `whitelisted: true` for our callback). What remains: ship
-   `feat/swiggy-launch`, then enable `mcp_swiggy` + `mcp_providers.swiggy`.
+   **Allowlisting confirmed 2026-10-24**, and **Swiggy is LIVE** (PR #34
+   merged, `mcp_swiggy` + `mcp_providers.swiggy` ON). Remaining: one real
+   connect + test order with a real account.
    → "Swiggy-only launch, paywall off, PII masking".
 
 **B. Code still to write**
@@ -1535,8 +1535,13 @@ order (needs a signed-in user's phone + OTP); flags switched back ON in the
 browser (blocked from writing production flags for a test — logic-tested
 instead).
 
-**To go live:** merge, then turn Swiggy on — `mcp_swiggy` flag AND
-`mcp_providers.enabled` for `swiggy` — then connect once with a real account.
+**LIVE 2026-10-24.** Merged as PR #34 (`a55df40`); production deploy
+succeeded; then `mcp_swiggy` and `mcp_providers.swiggy.enabled` were switched
+ON (all three servers enabled). Checked on production after: billing returns
+`canPurchase: false`, the mobile OAuth return path is live, the Swiggy routes
+answer 401 signed-out (not 5xx), and Swiggy still reports our callback as
+whitelisted. **Still to do:** connect once with a real Swiggy account (phone +
+OTP) and place a small test order.
 Swiggy's go-live checklist also asks for a staged rollout and an incident
 contact (email + Slack) shared with builders@swiggy.in.
 
