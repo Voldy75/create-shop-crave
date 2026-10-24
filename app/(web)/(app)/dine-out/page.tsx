@@ -64,6 +64,7 @@ import { Car, List, MapIcon, Navigation, Sparkles, Utensils } from "lucide-react
 import { AppTopbar } from "@/components/web/AppTopbar";
 import { MeshiMap, pinTone, type MeshiMapPin } from "@/components/web/MeshiMap";
 import { useUser } from "@/app/context/UserContext";
+import { usePartners } from "@/lib/feature-flags";
 import { getActiveRestaurants } from "@/lib/mobile-handoff";
 import { MascotFor } from "@/components/mascots";
 import {
@@ -72,6 +73,7 @@ import {
   buildSwiggyOrderLink,
   buildUberDeepLink,
   buildZomatoOrderLink,
+  buildDineoutLink,
 } from "@/lib/deeplinks";
 import { restaurantImage, haversineKm, etaMinutes, formatDistance, ratingNumber } from "@/lib/restaurants";
 import type { Restaurant, RestaurantSuggestion } from "@/lib/types";
@@ -287,6 +289,7 @@ function PlaceCard({
   onOpen: () => void;
   location: { lat: number; lng: number } | null;
 }) {
+  const partners = usePartners();
   const hasCoords = typeof r.lat === "number" && typeof r.lng === "number";
   const km = location && hasCoords ? haversineKm(location, { lat: r.lat as number, lng: r.lng as number }) : null;
   const img = restaurantImage(index);
@@ -332,7 +335,7 @@ function PlaceCard({
               <a className="dchip mp-dir" href={buildGoogleMapsDirectionsLink(location, { lat: r.lat as number, lng: r.lng as number })} target="_blank" rel="noopener noreferrer">
                 <Navigation width={14} height={14} aria-hidden /> Directions{km !== null ? ` · ${etaMinutes(km)}` : ""}
               </a>
-              <a className="dchip mp-uber" href={buildUberDeepLink(location, { lat: r.lat as number, lng: r.lng as number }, r.name)} target="_blank" rel="noopener noreferrer">
+              <a className="dchip mp-uber" href={buildUberDeepLink(location, { lat: r.lat as number, lng: r.lng as number }, r.name, r.area)} target="_blank" rel="noopener noreferrer">
                 <Car width={14} height={14} aria-hidden /> Uber
               </a>
               <a className="dchip mp-ola" href={buildOlaDeepLink(location, { lat: r.lat as number, lng: r.lng as number }, r.name)} target="_blank" rel="noopener noreferrer">
@@ -351,10 +354,27 @@ function PlaceCard({
           )}
         </div>
 
+        {/* Dining in = Swiggy Dineout. The link opens Dineout's table listing
+            (it has no per-restaurant URL we can build); booking THIS place goes
+            through Bo and the Dineout MCP. */}
+        <div className="hstack" style={{ gap: 7, flexWrap: "wrap", marginTop: 11 }}>
+          <span className="t-micro" style={{ width: "100%" }}>Dine in</span>
+          <a className="dchip mp-swiggy" href={buildDineoutLink()} target="_blank" rel="noopener noreferrer">Find a table on Dineout</a>
+          <Link
+            className="dchip"
+            href={`/chat?agent=1&q=${encodeURIComponent(`Book a table on Dineout at ${r.name}${r.area ? `, ${r.area}` : ""}. Show me the available slots first.`)}`}
+            style={{ background: "var(--m-cream-2)", color: "var(--m-ink)", textDecoration: "none" }}
+          >
+            Ask Bo to book
+          </Link>
+        </div>
+
         <div className="hstack" style={{ gap: 7, flexWrap: "wrap", marginTop: 11 }}>
           <span className="t-micro" style={{ width: "100%" }}>Order in</span>
           <a className="dchip mp-swiggy" href={buildSwiggyOrderLink(dish ?? r.name, r.lat, r.lng)} target="_blank" rel="noopener noreferrer">Swiggy</a>
-          <a className="dchip mp-zomato" href={buildZomatoOrderLink(dish ?? r.name, r.area)} target="_blank" rel="noopener noreferrer">Zomato</a>
+          {partners.zomato && (
+            <a className="dchip mp-zomato" href={buildZomatoOrderLink(dish ?? r.name, r.area)} target="_blank" rel="noopener noreferrer">Zomato</a>
+          )}
         </div>
       </div>
     </div>

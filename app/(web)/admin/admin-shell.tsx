@@ -1,5 +1,7 @@
 "use client";
 
+import { maskEmail } from "@/lib/pii";
+
 /**
  * WF12 admin chrome: the forest side nav + the per-page top bar.
  *
@@ -73,7 +75,7 @@ export function AdminShell({
           {email && (
             <div className="ad-acct">
               <span className="ad-av" aria-hidden>{initials(email)}</span>
-              <span className="ad-em" title={email}>{email}</span>
+              <span className="ad-em">{maskEmail(email)}</span>
             </div>
           )}
         </nav>
@@ -137,7 +139,7 @@ export function AdminDenied({ email }: { email: string | null }) {
             <span style={{ font: "800 17px var(--m-font-display)", color: "var(--m-ink)" }}>This account isn’t an admin</span>
           </div>
           <span style={{ font: "500 13px/1.5 var(--m-font-body)", color: "var(--m-ink-soft)" }}>
-            You’re signed in as <b style={{ color: "var(--m-ink)" }}>{email ?? "this account"}</b>. The admin console is only
+            You’re signed in as <b style={{ color: "var(--m-ink)" }}>{email ? maskEmail(email) : "this account"}</b>. The admin console is only
             available to accounts an existing admin has made an admin.
           </span>
           <div className="hstack" style={{ gap: 8, paddingTop: 4, flexWrap: "wrap" }}>

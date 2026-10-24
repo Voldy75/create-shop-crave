@@ -6,6 +6,7 @@ import { ShoppingCart, Plus, X, ChefHat, ExternalLink, Bell, Sparkles } from "lu
 import { getMealPlan, getMealLogs, saveMealPlan, MEAL_PLAN_EVENT, type WeekPlan, type MealSlot } from "@/lib/storage";
 import { loggingStreak } from "@/lib/nutrition";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
+import { usePartners } from "@/lib/feature-flags";
 import { PlannerTabs, type PlannerTab } from "@/components/planner/PlannerTabs";
 import { TrackerView } from "@/components/planner/TrackerView";
 import { CoachPanel } from "@/components/planner/CoachPanel";
@@ -187,6 +188,7 @@ function PlanView({
     onRemoveMeal,
     onFillFromCoach,
 }: PlanViewProps) {
+    const partners = usePartners();
     const allDishes = DAYS.flatMap((day) =>
         MEALS.map((meal) => plan[day]?.[meal]?.dish).filter(Boolean) as string[]
     );
@@ -356,9 +358,9 @@ function PlanView({
                                 <span className="t-h2 grow">{dish}</span>
                                 <div className="hstack" style={{ gap: 8, flexWrap: "wrap" }}>
                                     {/* hex-ok-start: partner brand colours — allowlisted in DESIGN.md. */}
-                                    <DeepLinkPill href={buildBlinkitLink(dish + " ingredients")} bg="#f8d800" label="Blinkit" />
                                     <DeepLinkPill href={buildSwiggyInstamartLink(dish + " ingredients")} bg="#fc8019" label="Instamart" />
-                                    <DeepLinkPill href={buildInstacartLink(dish + " ingredients")} bg="#43b02a" label="Instacart" />
+                                    {partners.blinkit && <DeepLinkPill href={buildBlinkitLink(dish + " ingredients")} bg="#f8d800" label="Blinkit" />}
+                                    {partners.instacart && <DeepLinkPill href={buildInstacartLink(dish + " ingredients")} bg="#43b02a" label="Instacart" />}
                                     {/* hex-ok-end */}
                                 </div>
                             </div>

@@ -1,3 +1,4 @@
+import { getServerPartners } from "@/lib/feature-flags-server";
 import Razorpay from "razorpay";
 import { requireUser } from "@/lib/auth-guard";
 
@@ -6,6 +7,10 @@ const PRO_AMOUNT_INR = 74900; // ₹749 in paise
 export async function POST() {
   const guard = await requireUser();
   if (guard instanceof Response) return guard;
+  // Paywall switched off (pro_upgrade flag, lib/partners.ts): no checkout.
+  if (!(await getServerPartners()).paywall) {
+    return Response.json({ error: "Upgrades are not available right now" }, { status: 403 });
+  }
   const { user } = guard;
 
   const keyId = process.env.RAZORPAY_KEY_ID;

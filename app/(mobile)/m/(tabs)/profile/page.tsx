@@ -4,10 +4,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Settings, ChevronRight, LogOut, Sparkles, Heart, MapPin, Utensils, UserCog, Salad } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
+import { usePartners } from "@/lib/feature-flags";
 import { createClient } from "@/lib/supabase/client";
 import { getFavorites, getMealLogs } from "@/lib/storage";
 import { loggingStreak } from "@/lib/nutrition";
 import { Tomato, Carrot, Broccoli, Pineapple } from "@/components/mascots";
+import { maskEmail } from "@/lib/pii";
+
 
 /**
  * Profile — built to the Flow 7 artboard (1n), which puts the INBOX on this
@@ -47,6 +50,7 @@ function rel(iso: string): string {
 export default function ProfileTab() {
   const router = useRouter();
   const { user, userName, location, signOut, hydrated } = useUser();
+  const partners = usePartners();
   const supabase = createClient();
 
   const [mealsLogged, setMealsLogged] = useState(0);
@@ -100,7 +104,7 @@ export default function ProfileTab() {
         </span>
         <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
           <span className="t-h1" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</span>
-          <span className="t-cap">{subtitle || user?.email || "Not signed in"}</span>
+          <span className="t-cap">{subtitle || maskEmail(user?.email) || "Not signed in"}</span>
         </div>
         <button className="icon-btn" onClick={() => router.push("/m/settings/notifications")} aria-label="Settings">
           <Settings width={20} height={20} />
@@ -187,7 +191,8 @@ export default function ProfileTab() {
           <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none" }} />
         </button>
 
-        {/* Plan */}
+        {/* Plan — only while the paywall is on (pro_upgrade flag, lib/partners.ts). */}
+        {partners.paywall && (
         <button className="row" onClick={() => router.push("/m/paywall")} style={{ width: "100%", textAlign: "left", border: "none" }}>
           <span className="icon-btn tint-lav" style={{ boxShadow: "none", color: "var(--text-plum)", flex: "none" }}>
             <Sparkles width={20} height={20} />
@@ -198,6 +203,7 @@ export default function ProfileTab() {
           </div>
           <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none" }} />
         </button>
+        )}
 
         {/* F10 10a — Profile → Account (data export, deletion). */}
         {user && (

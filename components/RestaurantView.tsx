@@ -13,6 +13,7 @@ import {
     buildZomatoOrderLink,
 } from "@/lib/deeplinks";
 import { ShareButton } from "@/components/ShareButton";
+import { usePartners } from "@/lib/feature-flags";
 import { MeshiMap } from "@/components/web/MeshiMap";
 import { setActiveRestaurants } from "@/lib/mobile-handoff";
 import {
@@ -174,6 +175,7 @@ function RestaurantCard({
     onSelect: (stableId: number) => void;
     cardRef?: (el: HTMLElement | null) => void;
 }) {
+    const partners = usePartners();
     
     const hasCoords = typeof restaurant.lat === "number" && typeof restaurant.lng === "number";
     const dropoff: Coords | null = hasCoords
@@ -184,14 +186,19 @@ function RestaurantCard({
 
     // Build action URLs
     const directionsUrl = userLocation && dropoff ? buildGoogleMapsDirectionsLink(userLocation, dropoff) : null;
-    const uberUrl = userLocation && dropoff ? buildUberDeepLink(userLocation, dropoff, restaurant.name) : null;
+    // Uber needs only the destination: without our location it uses the
+    // phone's GPS for pickup (pickup=my_location, lib/deeplinks).
+    const uberUrl = dropoff ? buildUberDeepLink(userLocation, dropoff, restaurant.name, restaurant.area) : null;
     const olaUrl = userLocation && dropoff ? buildOlaDeepLink(userLocation, dropoff, restaurant.name) : null;
     const swiggySearchUrl = dishName
         ? buildSwiggyOrderLink(dishName, userLocation?.lat, userLocation?.lng)
         : restaurant.swiggyUrl || null;
-    const zomatoSearchUrl = dishName
-        ? buildZomatoOrderLink(dishName)
-        : restaurant.zomatoUrl || null;
+    // Zomato only while its partner flag is on (lib/partners.ts).
+    const zomatoSearchUrl = !partners.zomato
+        ? null
+        : dishName
+          ? buildZomatoOrderLink(dishName)
+          : restaurant.zomatoUrl || null;
 
     const hasGoThere = Boolean(directionsUrl || uberUrl || olaUrl);
     const hasOrderIn = Boolean(swiggySearchUrl || zomatoSearchUrl);
@@ -505,6 +512,7 @@ function RestaurantMap({
 // ---------- Main component ----------
 
 export function RestaurantView({ data }: RestaurantViewProps) {
+    const partners = usePartners();
     const router = useRouter();
     const { location } = useUser();
     const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
@@ -801,15 +809,17 @@ export function RestaurantView({ data }: RestaurantViewProps) {
                         >
                             Open Swiggy <ExternalLink className="w-3 h-3" />
                         </a>
-                        <a
-                            href={buildZomatoOrderLink(data.dishName)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 brand-pill transition-colors"
-                            style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "980px", background: BRAND.zomato.bg, color: BRAND.zomato.ink }}
-                        >
-                            Open Zomato <ExternalLink className="w-3 h-3" />
-                        </a>
+                        {partners.zomato && (
+                            <a
+                                href={buildZomatoOrderLink(data.dishName)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 brand-pill transition-colors"
+                                style={{ fontSize: "12px", fontWeight: 600, padding: "8px 16px", borderRadius: "980px", background: BRAND.zomato.bg, color: BRAND.zomato.ink }}
+                            >
+                                Open Zomato <ExternalLink className="w-3 h-3" />
+                            </a>
+                        )}
                     </div>
                 )}
             </div>

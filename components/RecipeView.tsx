@@ -10,6 +10,8 @@ import { ShareButton } from "@/components/ShareButton";
 import { AddToPlanDialog } from "@/components/planner/AddToPlanDialog";
 import { setPendingMealLog } from "@/lib/storage";
 import { setActiveRecipe, setBuyList } from "@/lib/mobile-handoff";
+import { usePartners } from "@/lib/feature-flags";
+import { groceryOffered } from "@/lib/partners";
 import { parseNumeric } from "@/lib/nutrition";
 import { foodImage } from "@/lib/food-images";
 import { mascotComponentFor, tileTint } from "@/lib/ingredient-mascot";
@@ -46,9 +48,11 @@ function getLinksForIngredient(ing: Ingredient): ShoppingLink[] {
 
 // hex-ok-start: brand colours for grocery partners — allowlisted in DESIGN.md,
 // not app-palette tokens.
+// Instamart first: it is the launch store and the default. Blinkit and
+// Instacart only appear when their partner_* flag is on (lib/partners.ts).
 const STORE_OPTIONS = [
-    { id: "blinkit", name: "Blinkit", color: "#f8d800", buildLink: buildBlinkitLink },
     { id: "swiggy_instamart", name: "Swiggy Instamart", color: "#fc8019", buildLink: buildSwiggyInstamartLink },
+    { id: "blinkit", name: "Blinkit", color: "#f8d800", buildLink: buildBlinkitLink },
     { id: "instacart", name: "Instacart", color: "#43b02a", buildLink: buildInstacartLink },
 ];
 // hex-ok-end
@@ -69,7 +73,10 @@ function difficultyLabel(steps: number): string {
 
 export function RecipeView({ data }: RecipeViewProps) {
     const router = useRouter();
-    const [selectedStore, setSelectedStore] = useState(STORE_OPTIONS[0]);
+    const partners = usePartners();
+    const stores = STORE_OPTIONS.filter((st) => groceryOffered(partners, st.id));
+    const [selectedStoreId, setSelectedStoreId] = useState(STORE_OPTIONS[0].id);
+    const selectedStore = stores.find((st) => st.id === selectedStoreId) ?? stores[0];
     const [showStoreDropdown, setShowStoreDropdown] = useState(false);
     const [planDialogOpen, setPlanDialogOpen] = useState(false);
 
@@ -209,7 +216,12 @@ export function RecipeView({ data }: RecipeViewProps) {
 
                         <div className="hstack" style={{ gap: 8 }}>
                             <div style={{ position: "relative" }}>
-                                <button onClick={() => setShowStoreDropdown(!showStoreDropdown)} className="chip" style={{ cursor: "pointer" }}>
+                                <button
+                                    onClick={() => stores.length > 1 && setShowStoreDropdown(!showStoreDropdown)}
+                                    className="chip"
+                                    style={{ cursor: stores.length > 1 ? "pointer" : "default" }}
+                                    aria-haspopup={stores.length > 1 ? "listbox" : undefined}
+                                >
                                     <span
                                         className="hstack"
                                         style={{
@@ -221,14 +233,14 @@ export function RecipeView({ data }: RecipeViewProps) {
                                         {selectedStore.name[0]}
                                     </span>
                                     {selectedStore.name}
-                                    <ChevronDown width={14} height={14} style={{ color: "var(--m-ink-soft)" }} />
+                                    {stores.length > 1 && <ChevronDown width={14} height={14} style={{ color: "var(--m-ink-soft)" }} />}
                                 </button>
-                                {showStoreDropdown && (
+                                {showStoreDropdown && stores.length > 1 && (
                                     <div className="card" style={{ position: "absolute", right: 0, marginTop: 8, zIndex: 20, minWidth: 190, padding: 6, overflow: "hidden" }}>
-                                        {STORE_OPTIONS.map((store) => (
+                                        {stores.map((store) => (
                                             <button
                                                 key={store.id}
-                                                onClick={() => { setSelectedStore(store); setShowStoreDropdown(false); }}
+                                                onClick={() => { setSelectedStoreId(store.id); setShowStoreDropdown(false); }}
                                                 className="hstack"
                                                 style={{
                                                     width: "100%", padding: "8px 10px", borderRadius: 10, border: "none",

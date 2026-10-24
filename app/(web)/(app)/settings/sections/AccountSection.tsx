@@ -1,5 +1,7 @@
 "use client";
 
+import { maskEmail } from "@/lib/pii";
+
 /**
  * Settings → Account, built to w11a (with w11f's export states inline).
  *
@@ -31,6 +33,7 @@ import { BoBowl } from "@/components/mascots";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { DeleteAccountFlow } from "@/components/web/DeleteAccountFlow";
 import { saveBYOK } from "@/lib/byok";
+import { usePartners } from "@/lib/feature-flags";
 import {
   type AccountSummary,
   type ExportFile,
@@ -56,6 +59,7 @@ export function AccountSection() {
   const [exp, setExp] = useState<ExportState>({ kind: "idle" });
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const partners = usePartners();
 
   const load = () => fetchAccountSummary().then(setSummary);
   useEffect(() => {
@@ -103,9 +107,9 @@ export function AccountSection() {
           {initials(userName, user?.email)}
         </span>
         <div className="vstack grow" style={{ gap: 3, minWidth: 0 }}>
-          <span className="t-d2" style={{ fontSize: 19 }}>{userName || user?.email?.split("@")[0] || "You"}</span>
+          <span className="t-d2" style={{ fontSize: 19 }}>{userName || "You"}</span>
           <span className="t-cap" style={{ overflowWrap: "anywhere" }}>
-            {[user?.email, provider && `signed in with ${provider}`].filter(Boolean).join(" · ")}
+            {[maskEmail(user?.email), provider && `signed in with ${provider}`].filter(Boolean).join(" · ")}
           </span>
         </div>
       </div>
@@ -138,9 +142,11 @@ export function AccountSection() {
                   : `${summary.chatDailyLimit} Bo chat${summary.chatDailyLimit === 1 ? "" : "s"} a day`}
             </span>
           </div>
-          <button type="button" className="chip" onClick={() => setShowUpgrade(true)}>
-            See meshi+ pass
-          </button>
+          {partners.paywall && (
+            <button type="button" className="chip" onClick={() => setShowUpgrade(true)}>
+              See meshi+ pass
+            </button>
+          )}
         </div>
       )}
 

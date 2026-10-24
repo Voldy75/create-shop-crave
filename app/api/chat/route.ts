@@ -3,10 +3,25 @@ import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementUsage } from "@/lib/rate-limit";
 import { getModel, getServerModel, type Provider } from "@/lib/providers";
 import { tastesLine, goalLine } from "@/lib/taste-prompt";
+import { getServerPartners } from "@/lib/feature-flags-server";
+import type { Partners } from "@/lib/partners";
+
+/** Only the partners that are switched on reach the prompt (lib/partners.ts),
+ *  so Bo never generates — or talks up — a store the app no longer offers. */
+function groceryLinkLines(p: Partners): { lines: string; names: string } {
+  const all = [
+    { on: true, name: "Swiggy Instamart", line: `{ "platform": "swiggy_instamart", "label": "Swiggy Instamart", "url": "https://www.swiggy.com/instamart/search?custom_back=true&query=ITEM_NAME" }` },
+    { on: p.blinkit, name: "Blinkit", line: `{ "platform": "blinkit", "label": "Blinkit", "url": "https://blinkit.com/s/?q=ITEM_NAME" }` },
+    { on: p.instacart, name: "Instacart", line: `{ "platform": "instacart", "label": "Instacart", "url": "https://www.instacart.com/store/search/ITEM_NAME" }` },
+  ].filter((x) => x.on);
+  return { lines: all.map((x) => `          ${x.line}`).join(",\n"), names: all.map((x) => x.name).join(", ") };
+}
 
 export const maxDuration = 30;
 
-const systemPrompt = (userName: string, location: string, dietaryPrefs: string, tastes: string, goal: string) => `
+const systemPrompt = (userName: string, location: string, dietaryPrefs: string, tastes: string, goal: string, partners: Partners) => {
+  const grocery = groceryLinkLines(partners);
+  return `
 You are a helpful AI food companion. Your goal is to help the user decide what to eat based on their input (Dish Type) and optional Occasion.
 
 User Context:
@@ -34,9 +49,7 @@ The JSON structure should be:
         "quantity": "e.g. 200g",
         "price": "₹XX",
         "links": [
-          { "platform": "blinkit", "label": "Blinkit", "url": "https://blinkit.com/s/?q=ITEM_NAME" },
-          { "platform": "swiggy_instamart", "label": "Swiggy Instamart", "url": "https://www.swiggy.com/instamart/search?custom_back=true&query=ITEM_NAME" },
-          { "platform": "instacart", "label": "Instacart", "url": "https://www.instacart.com/store/search/ITEM_NAME" }
+${grocery.lines}
         ]
       }
     ],
@@ -61,8 +74,7 @@ The JSON structure should be:
         "cuisine": "Italian",
         "lat": 28.6139,
         "lng": 77.2090,
-        "zomatoUrl": "https://www.zomato.com/...",
-        "swiggyUrl": "https://www.swiggy.com/..."
+${partners.zomato ? `        "zomatoUrl": "https://www.zomato.com/...",\n` : ""}        "swiggyUrl": "https://www.swiggy.com/..."
       }
     ]
   }
@@ -73,14 +85,16 @@ IMPORTANT RULES:
 - If the user's input is vague, ask for clarification (type: "clarification").
 - PREFER returning "both" (recipe AND restaurant suggestions) for most food queries. Only return "recipe" alone if the user explicitly says they want to cook at home. Only return "restaurant" alone if the user explicitly says they want to eat out or find restaurants.
 - Default to "both" whenever a dish or cuisine is mentioned without specifying cook vs. eat out.
-- For "ingredients", simulate realistic prices in INR. For EACH ingredient, generate a "links" array with ALL THREE platforms (Blinkit, Swiggy Instamart, Instacart) using the URL templates shown above. Replace ITEM_NAME with the URL-encoded ingredient name.
+- For "ingredients", simulate realistic prices in INR. For EACH ingredient, generate a "links" array with exactly these platforms (${grocery.names}) using the URL templates shown above. Replace ITEM_NAME with the URL-encoded ingredient name.
 - For "restaurants", suggest 3-5 popular real restaurants in the user's city (if known from their coordinates) or general famous chains. Include approximate lat/lng coordinates for each restaurant. Include the cuisine type.
-- Generate search URLs for Zomato and Swiggy for each restaurant.
+- Generate a Swiggy search URL${partners.zomato ? " and a Zomato search URL" : ""} for each restaurant.
+- The services this app offers are: Swiggy for food delivery, Swiggy Instamart for groceries, Swiggy Dineout for booking a table, and Uber/Ola for rides${partners.zomato ? ", plus Zomato" : ""}${partners.blinkit ? ", Blinkit" : ""}${partners.instacart ? ", Instacart" : ""}. Never recommend or mention any other ordering, grocery or reservation service. For eating out, say the user can find or book a table on Swiggy Dineout.
 - Include "dishName" in restaurantSuggestion so the app can build delivery order links.
 - Include nutritionEstimate with approximate per-serving values.
 - Include prepTime, servings, and dietaryTags for every recipe.
 - Keep the conversational part friendly and engaging.
 `;
+};
 
 export async function POST(req: Request) {
   // Strip apiKey from body BEFORE any error handling to prevent log exposure
@@ -149,7 +163,7 @@ export async function POST(req: Request) {
     );
     const result = await streamText({
       model,
-      system: systemPrompt(userName, locationStr, dietaryPrefs, tastes, goal),
+      system: systemPrompt(userName, locationStr, dietaryPrefs, tastes, goal, await getServerPartners()),
       messages: safeMessages,
     });
 

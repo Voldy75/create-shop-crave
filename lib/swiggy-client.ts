@@ -17,14 +17,21 @@ export async function getSwiggyStatus(): Promise<SwiggyStatus | null> {
   return (await res.json()) as SwiggyStatus;
 }
 
-export async function startSwiggyAuth(): Promise<{ ok: boolean; reason?: string }> {
-  const res = await fetch("/api/swiggy/auth/start", { method: "POST" });
+/** `surface` decides where the OAuth callback lands afterwards: the web
+ *  settings screen, or the mobile Connections screen. */
+export async function startSwiggyAuth(surface: "web" | "mobile" = "web"): Promise<{ ok: boolean; reason?: string }> {
+  const res = await fetch("/api/swiggy/auth/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ surface }),
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.authorizeUrl) {
     return { ok: false, reason: data.message || data.error || "auth_start_failed" };
   }
   // Hand the user off to Swiggy. The callback lands at /api/swiggy/auth/callback
-  // → 303 redirect back to /settings/notifications with ?connected=1 or ?error=...
+  // → 303 redirect back to /settings/notifications (web) or
+  // /m/settings/connections (mobile) with ?connected=1 or ?error=...
   window.location.href = data.authorizeUrl;
   return { ok: true };
 }

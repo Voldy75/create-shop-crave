@@ -16,6 +16,7 @@ import {
   type BillingOptions,
 } from "@/lib/billing";
 import { BoBowl, Mushroom, Beet } from "@/components/mascots";
+import { usePartners } from "@/lib/feature-flags";
 
 /**
  * Paywall — built to the Flow 7 artboard (1o).
@@ -46,6 +47,13 @@ import { BoBowl, Mushroom, Beet } from "@/components/mascots";
 
 export default function MobilePaywall() {
   const router = useRouter();
+  const { paywall, loading: flagsLoading } = usePartners();
+  // Paywall switched off (pro_upgrade flag, lib/partners.ts): this route still
+  // exists for old links and the native shell, but it forwards to key entry —
+  // the one way past the daily limit that is offered right now.
+  useEffect(() => {
+    if (!flagsLoading && !paywall) router.replace("/m/settings/key");
+  }, [flagsLoading, paywall, router]);
   const [options, setOptions] = useState<BillingOptions | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -91,6 +99,9 @@ export default function MobilePaywall() {
     const result = await restorePurchases();
     setNote(result.status === "ok" || result.status === "redirect" ? "Purchases restored." : result.message);
   };
+
+  // Never flash prices while deciding whether the paywall exists at all.
+  if (flagsLoading || !paywall) return null;
 
   return (
     <div className="paywall-shell vstack" style={{ padding: "calc(env(safe-area-inset-top, 12px) + 8px) 24px calc(34px + env(safe-area-inset-bottom, 0px))", gap: 14 }}>

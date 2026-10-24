@@ -26,3 +26,12 @@ insert into public.feature_flags (id, enabled, description) values
   ('meal_planner',  true,  'Meal planner / nutrition tracker'),
   ('pro_upgrade',   true,  'Pro subscription upgrade flow')
 on conflict (id) do nothing;
+
+-- Partner switches (lib/partners.ts). Swiggy, Instamart, Dineout, Uber and Ola
+-- are the launch set and are not flag-gated; these three can be turned back on
+-- from Admin -> Flags with no deploy. Seeded OFF (launch decision 2026-10-24).
+insert into public.feature_flags (id, enabled, description) values
+  ('partner_zomato',    false, 'Show Zomato links (food delivery + dining out)'),
+  ('partner_blinkit',   false, 'Show Blinkit grocery links'),
+  ('partner_instacart', false, 'Show Instacart grocery links and its Connections row')
+on conflict (id) do nothing;

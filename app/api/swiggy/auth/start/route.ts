@@ -22,6 +22,7 @@ export const maxDuration = 10;
 export async function POST(req: Request) {
   const guard = await requireUser();
   if (guard instanceof Response) return guard;
+  const { surface } = ((await req.json().catch(() => ({}))) ?? {}) as { surface?: string };
 
   const provider = await getProvider("swiggy");
   if (!provider || !provider.authorizeBase) {
@@ -71,5 +72,8 @@ export async function POST(req: Request) {
   // Both cookies are required at /callback to complete the flow.
   headers.append("Set-Cookie", `swiggy_pkce_verifier=${verifier}; ${cookieAttrs}`);
   headers.append("Set-Cookie", `swiggy_pkce_state=${state}; ${cookieAttrs}`);
+  // Where to land after the round trip. Only the two known values are ever
+  // written, so the callback's redirect target stays a fixed allowlist.
+  headers.append("Set-Cookie", `swiggy_return=${surface === "mobile" ? "mobile" : "web"}; ${cookieAttrs}`);
   return new Response(JSON.stringify({ authorizeUrl }), { status: 200, headers });
 }

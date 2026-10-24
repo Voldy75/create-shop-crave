@@ -12,6 +12,10 @@ import { Section } from "@/components/cc/section";
 import { Chip } from "@/components/cc/chip";
 import { BoBowl, Carrot, Broccoli, Tomato, Mushroom } from "@/components/mascots";
 import { foodImage } from "@/lib/food-images";
+import { usePartners } from "@/lib/feature-flags";
+import { maskEmail } from "@/lib/pii";
+
+
 
 /**
  * Partner brands in the hero's "plugs into" row. These hexes are the
@@ -54,14 +58,14 @@ const FEATURES = [
   },
   {
     title: "Shop in one tap",
-    desc: "Bo turns any recipe into a Swiggy Instamart or Instacart cart, then checks out.",
+    desc: "Bo turns any recipe into a Swiggy Instamart cart, then checks out.",
     icon: ShoppingCart,
     tint: "var(--m-tint-green)",
     ink: "var(--figure-accent)",
   },
   {
     title: "Find & dine out",
-    desc: "Best tables nearby on a live map, with Zomato links and an Uber pre-filled.",
+    desc: "Best tables nearby on a live map — book on Swiggy Dineout, with an Uber pre-filled.",
     icon: MapPin,
     tint: "var(--m-tint-peach)",
     ink: "var(--text-burnt)",
@@ -85,7 +89,7 @@ const DEMO_MESSAGES = [
   { role: "user", text: "I’m craving butter chicken but want to cook it at home. Something rich and creamy." },
   { role: "ai", text: "Here’s a restaurant-style Butter Chicken recipe — rich, creamy, and ready in 45 minutes." },
   { role: "recipe", name: "Butter Chicken (Murgh Makhani)", meta: "45 min · 4 servings · 520 cal", tags: ["Gluten-Free", "High Protein"] },
-  { role: "ai", text: "I’ve also found 3 restaurants near you serving butter chicken, with Zomato links and ride booking." },
+  { role: "ai", text: "I’ve also found 3 restaurants near you serving butter chicken — order on Swiggy, book a table on Dineout, or grab a ride." },
 ];
 
 /*
@@ -107,14 +111,18 @@ const STATS = [
   { value: "1-tap", label: "Grocery checkout", desc: "Bo carts & orders for you" },
 ];
 
+/** The free-tier answer depends on whether the paywall is on (pro_upgrade). */
+const FAQ_FREE_ANSWER = "Yes — 2 free Bo requests a day. Bring your own key from Google, OpenAI or Anthropic for unlimited chats, still free.";
+const FAQ_FREE_ANSWER_PAYWALL = "Yes — 2 free Bo requests a day. Go meshi+ for unlimited chats, or bring your own key from Google, OpenAI or Anthropic and keep it free.";
+
 const FAQS = [
   {
     q: "Is meshi free to use?",
-    a: "Yes — 2 free Bo requests a day. Go meshi+ for unlimited chats, or bring your own key from Google, OpenAI or Anthropic and keep it free.",
+    a: FAQ_FREE_ANSWER,
   },
   {
     q: "Which cities and countries does this work in?",
-    a: "The recipe generator works worldwide. Restaurant finding and ingredient delivery work best in India (Blinkit, Swiggy, Zomato, Ola) and the US (Instacart, Uber). We’re expanding to more platforms.",
+    a: "The recipe generator works worldwide. Food delivery, groceries and table booking run on Swiggy, Swiggy Instamart and Swiggy Dineout, so those work in India — with Uber and Ola for rides.",
   },
   {
     q: "How does Bo know what I want?",
@@ -152,18 +160,19 @@ const PLATFORM_MARKS = [
  * users and has never shipped a native binary, so any such number would be
  * fiction of exactly the kind the testimonials already were. These are
  * capability facts instead:
- *   platforms → lib/deeplinks.ts (Blinkit, Swiggy Instamart, Zomato,
- *               Instacart, Uber, Ola)
+ *   services  → the Swiggy launch set (lib/partners.ts): Swiggy, Instamart,
+ *               Dineout, plus Uber and Ola rides (lib/deeplinks.ts). Zomato,
+ *               Blinkit and Instacart are switched off by flag.
  *   models    → lib/providers.ts (gemini, openai, anthropic — THREE, and no
  *               Grok; the forest stats band above claimed four and named
  *               Grok, which is supported nowhere in the codebase)
- *   countries → the deeplink targets: India and the U.S.
+ *   reach     → Swiggy, Instamart and Dineout operate in India.
  *   free tier → plans.chat_daily_limit = 2, seeded in admin-console.sql
  */
 const AT_A_GLANCE = [
-  { value: "6 platforms", label: "connected", desc: "Swiggy, Zomato, Blinkit, Instacart, Uber & Ola" },
+  { value: "5 services", label: "connected", desc: "Swiggy, Instamart, Dineout, Uber & Ola" },
   { value: "3 AI models", label: "one buddy", desc: "Gemini, GPT-4o and Claude — or bring your own key" },
-  { value: "2 countries", label: "for grocery & dining", desc: "India and the U.S., with recipes worldwide" },
+  { value: "India-first", label: "for grocery & dining", desc: "Delivery, groceries and tables across India — recipes worldwide" },
   { value: "Free to start", label: "no card needed", desc: "2 Bo requests a day, every day" },
 ];
 
@@ -174,7 +183,15 @@ const AT_A_GLANCE = [
    unreachable. Removed rather than left as dead code — they are in git if the
    long-form section ever comes back. */
 
+
+/** Partners that can be switched off (lib/partners.ts). Everything else on
+ *  the landing is the Swiggy launch set and always shows. */
+const SWITCHABLE: Record<string, "zomato" | "blinkit" | "instacart"> = { Zomato: "zomato", Blinkit: "blinkit", Instacart: "instacart" };
+
 export default function LandingPage() {
+  const partners = usePartners();
+  const shown = (name: string) => !SWITCHABLE[name] || partners[SWITCHABLE[name]];
+  const faqs = FAQS.map((f) => (f.a === FAQ_FREE_ANSWER && partners.paywall ? { ...f, a: FAQ_FREE_ANSWER_PAYWALL } : f));
   const {
     user,
     hydrated,
@@ -324,7 +341,7 @@ export default function LandingPage() {
               <div className="flex flex-col items-center gap-2.5 pt-2 md:items-start">
                 <span className="t-micro">Plugs into what you already use</span>
                 <div className="flex flex-wrap justify-center gap-2 md:justify-start">
-                  {INTEGRATIONS.map(({ name, letter, brand, ink }) => (
+                  {INTEGRATIONS.filter((i) => shown(i.name)).map(({ name, letter, brand, ink }) => (
                     <span key={name} className="chip gap-2">
                       <span
                         className="flex h-[22px] w-[22px] items-center justify-center rounded-[7px] text-[11px] font-extrabold"
@@ -354,7 +371,7 @@ export default function LandingPage() {
                       {(user.user_metadata?.full_name || user.email || "U")[0].toUpperCase()}
                     </div>
                     <div className="min-w-0 text-left">
-                      <p className="truncate text-[14px] font-semibold text-[var(--m-ink)]">{user.user_metadata?.full_name || user.email}</p>
+                      <p className="truncate text-[14px] font-semibold text-[var(--m-ink)]">{user.user_metadata?.full_name || maskEmail(user.email)}</p>
                       <p className="text-[12px] text-[var(--m-ink-soft)]">Signed in</p>
                     </div>
                   </div>
@@ -725,7 +742,7 @@ export default function LandingPage() {
               artboard's treatment. These hexes are brand identity and are on
               DESIGN.md's allowlist. */}
           <div className="flex flex-wrap items-center justify-center gap-3.5">
-            {PLATFORM_MARKS.map(({ name, brand }, i) => (
+            {PLATFORM_MARKS.filter((m) => shown(m.name)).map(({ name, brand }, i) => (
               <Fragment key={name}>
                 {i > 0 && (
                   <span className="h-[5px] w-[5px] rounded-full bg-[var(--band-border-strong)]" aria-hidden="true" />
@@ -745,7 +762,7 @@ export default function LandingPage() {
       {/* ── FAQ — Light band ── */}
       <Section tone="cream" eyebrow="FAQ" headline="Common questions." className="[&>div]:max-w-[680px]">
         <div>
-          {FAQS.map((faq, i) => (
+          {faqs.map((faq, i) => (
             <div
               key={i}
               className="border-b border-[var(--m-ink-faint)]"

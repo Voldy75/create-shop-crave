@@ -15,6 +15,15 @@ import {
   type BillingOptions,
 } from "@/lib/billing";
 import { BoBowl, Mushroom, Beet } from "@/components/mascots";
+import { usePartners } from "@/lib/feature-flags";
+
+/** Local time of the next UTC midnight — when lib/rate-limit's daily count
+ *  resets (it keys usage by the UTC date). 5:30 AM in India. */
+function resetTimeLabel(): string {
+  const n = new Date();
+  const next = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1));
+  return next.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
 
 interface UpgradeDialogProps {
   onProActivated: () => void;
@@ -74,9 +83,14 @@ declare global {
 const RAZORPAY_THEME = "#1E5A34"; // hex-ok: third-party iframe, no CSS var support
 
 export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDialogProps) {
+  // Paywall off (pro_upgrade flag, lib/partners.ts): no plans, no prices, no
+  // checkout — this becomes the "daily limit reached" dialog, whose only way
+  // forward today is the user's own key. Off until flags load (fail closed).
+  const { paywall } = usePartners();
   const [options, setOptions] = useState<BillingOptions | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [mode, setMode] = useState<"plans" | "byok">("plans");
+  const [modeChoice, setMode] = useState<"plans" | "byok">("plans");
+  const mode = paywall ? modeChoice : "byok";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [byokProvider, setByokProvider] = useState<Provider>("gemini");
@@ -84,12 +98,13 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
   const [byokError, setByokError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!paywall) return;
     void fetchBillingOptions().then((o) => {
       setOptions(o);
       const first = offersFor(o)[0];
       if (first) setSelected(`${first.plan_id}-${first.interval}`);
     });
-  }, []);
+  }, [paywall]);
 
   // Until options load, assume nothing is purchasable. Showing a price and
   // withdrawing it a moment later is worse than showing it a beat late.
@@ -212,26 +227,39 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
               <Beet width={46} height={46} className="mm-idle-beet" />
             </span>
           </div>
-          <span className="on-plum" style={{ font: "800 27px/1.05 var(--m-font-display)" }}>
-            Feed Bo,<br />unlock everything
-          </span>
-          <span className="t-body on-plum-dim">
-            meshi+ turns Bo into your full-time chef, dietitian and hype squad.
-          </span>
-          <div className="vstack" style={{ gap: 12, marginTop: 6 }}>
-            {PLAN_FEATURES.map((f) => (
-              <div key={f} className="hstack" style={{ gap: 10 }}>
-                <Check width={18} height={18} style={{ color: "var(--m-lime)", flex: "none" }} />
-                <span className="t-body on-plum">{f}</span>
+          {paywall ? (
+            <>
+              <span className="on-plum" style={{ font: "800 27px/1.05 var(--m-font-display)" }}>
+                Feed Bo,<br />unlock everything
+              </span>
+              <span className="t-body on-plum-dim">
+                meshi+ turns Bo into your full-time chef, dietitian and hype squad.
+              </span>
+              <div className="vstack" style={{ gap: 12, marginTop: 6 }}>
+                {PLAN_FEATURES.map((f) => (
+                  <div key={f} className="hstack" style={{ gap: 10 }}>
+                    <Check width={18} height={18} style={{ color: "var(--m-lime)", flex: "none" }} />
+                    <span className="t-body on-plum">{f}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <>
+              <span className="on-plum" style={{ font: "800 27px/1.05 var(--m-font-display)" }}>
+                That&rsquo;s today&rsquo;s<br />free chats
+              </span>
+              <span className="t-body on-plum-dim">
+                Bo is back at {resetTimeLabel()}. Want to keep cooking now? Plug in your own AI key.
+              </span>
+            </>
+          )}
         </div>
 
         {/* ── Plan picker ── */}
         <div className="vstack grow" style={{ padding: 28, gap: 13, minWidth: 0 }}>
           <div className="hstack" style={{ justifyContent: "space-between" }}>
-            <span className="t-d2">{mode === "plans" ? "Choose your plan" : "Use your own key"}</span>
+            <span className="t-d2">{mode === "plans" ? "Choose your plan" : paywall ? "Use your own key" : "Keep going with your own key"}</span>
             <button onClick={onClose} className="icon-btn" aria-label="Close">
               <X width={18} height={18} />
             </button>
@@ -377,7 +405,7 @@ export function UpgradeDialog({ onProActivated, onBYOKSave, onClose }: UpgradeDi
                 Use this key
               </button>
 
-              {offers.length > 0 && (
+              {paywall && offers.length > 0 && (
                 <button
                   onClick={() => setMode("plans")}
                   className="wlink"

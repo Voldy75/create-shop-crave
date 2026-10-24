@@ -9,12 +9,14 @@ import RestaurantMap, { type MapPin } from "@/components/mobile/RestaurantMap";
 import { CarrotRating } from "@/components/mobile/CarrotRating";
 import { Carrot } from "@/components/mascots";
 import { useUser } from "@/app/context/UserContext";
+import { usePartners } from "@/lib/feature-flags";
 import {
   buildGoogleMapsDirectionsLink,
   buildUberDeepLink,
   buildOlaDeepLink,
   buildSwiggyOrderLink,
   buildZomatoOrderLink,
+  buildDineoutLink,
 } from "@/lib/deeplinks";
 import type { RestaurantSuggestion } from "@/lib/types";
 
@@ -89,6 +91,7 @@ function travelEstimate(km: number): { drive: number; walk: number } {
 export default function MobileRestaurants() {
   const router = useRouter();
   const { location } = useUser();
+  const partners = usePartners();
   const [sugg, setSugg] = useState<RestaurantSuggestion | null>(null);
   const [active, setActive] = useState(1);
   const [filters, setFilters] = useState<string[]>(["Open now"]);
@@ -117,10 +120,11 @@ export default function MobileRestaurants() {
     hasCoords && location
       ? buildGoogleMapsDirectionsLink(location, { lat: selected.lat!, lng: selected.lng! })
       : `https://www.google.com/maps/search/${encodeURIComponent(selected?.name ?? "")}`;
-  const uberHref =
-    hasCoords && location
-      ? buildUberDeepLink(location, { lat: selected.lat!, lng: selected.lng! }, selected.name)
-      : "https://m.uber.com/";
+  // Uber needs only the destination: without our location it uses the phone's
+  // GPS for pickup (pickup=my_location, lib/deeplinks).
+  const uberHref = hasCoords
+    ? buildUberDeepLink(location, { lat: selected.lat!, lng: selected.lng! }, selected.name, selected.area)
+    : "https://m.uber.com/";
   const olaHref =
     hasCoords && location
       ? buildOlaDeepLink(location, { lat: selected.lat!, lng: selected.lng! }, selected.name)
@@ -279,10 +283,12 @@ export default function MobileRestaurants() {
                 </>
               ) : (
                 <>
-                  <a className="pill-secondary pill-sm" style={{ flex: 1 }} href={zomatoHref} target="_blank" rel="noopener noreferrer">
-                    Zomato
-                    <ExternalLink width={12} height={12} />
-                  </a>
+                  {partners.zomato && (
+                    <a className="pill-secondary pill-sm" style={{ flex: 1 }} href={zomatoHref} target="_blank" rel="noopener noreferrer">
+                      Zomato
+                      <ExternalLink width={12} height={12} />
+                    </a>
+                  )}
                   <button className="pill-tonal pill-sm" style={{ flex: 1 }} onClick={() => setMode("go")}>
                     <Navigation width={14} height={14} />
                     Go there
@@ -290,6 +296,29 @@ export default function MobileRestaurants() {
                 </>
               )}
             </div>
+
+            {/* Dining in = Swiggy Dineout. The link opens Dineout's table
+                listing (it has no per-restaurant URL we can build); booking
+                THIS restaurant goes through Bo and the Dineout MCP. */}
+            {mode === "go" && (
+              <div className="hstack" style={{ gap: 6 }}>
+                <a className="pill-secondary pill-sm" style={{ flex: 1 }} href={buildDineoutLink()} target="_blank" rel="noopener noreferrer">
+                  Find a table on Dineout
+                  <ExternalLink width={12} height={12} />
+                </a>
+                <button
+                  className="pill-tonal pill-sm"
+                  style={{ flex: 1 }}
+                  onClick={() =>
+                    router.push(
+                      `/m/chat?agent=1&q=${encodeURIComponent(`Book a table on Dineout at ${selected.name}${selected.area ? `, ${selected.area}` : ""}. Show me the available slots first.`)}`,
+                    )
+                  }
+                >
+                  Ask Bo to book
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

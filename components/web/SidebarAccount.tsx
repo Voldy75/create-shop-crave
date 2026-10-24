@@ -1,5 +1,7 @@
 "use client";
 
+import { maskEmail } from "@/lib/pii";
+
 /**
  * SidebarAccount — the sidebar's account block, now a real menu.
  *
@@ -109,7 +111,7 @@ export function SidebarAccount() {
             {name}
           </span>
           <span className="t-cap" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {user?.email ?? "Not signed in"}
+            {user?.email ? maskEmail(user.email) : "Not signed in"}
           </span>
         </span>
       </button>

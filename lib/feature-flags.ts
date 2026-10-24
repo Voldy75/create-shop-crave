@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { partnersFrom, type Partners } from "@/lib/partners";
 
 export interface FeatureFlag {
   id: string;
@@ -57,4 +58,10 @@ export function useFeatureFlags(): {
 export function useFlag(id: string): boolean {
   const { isEnabled } = useFeatureFlags();
   return isEnabled(id);
+}
+
+/** The partner / paywall switches (lib/partners.ts). Off until flags load. */
+export function usePartners(): Partners & { loading: boolean } {
+  const { flags, loading } = useFeatureFlags();
+  return { ...partnersFrom(flags), loading };
 }

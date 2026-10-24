@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerPartners } from "@/lib/feature-flags-server";
 
 export const maxDuration = 5;
 
@@ -25,6 +26,12 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const requested = url.searchParams.get("platform") ?? "web";
   const platform = PLATFORMS.has(requested) ? requested : "web";
+
+  // Paywall switched off (pro_upgrade flag): nothing is for sale. Same shape
+  // as "no provider ready", so every client already falls back to BYOK.
+  if (!(await getServerPartners()).paywall) {
+    return Response.json({ platform, providers: [], readyProviders: [], canPurchase: false, plans: [], prices: [] });
+  }
 
   const supabase = await createServiceClient();
 

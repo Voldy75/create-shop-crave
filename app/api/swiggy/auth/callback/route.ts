@@ -11,6 +11,7 @@ export const maxDuration = 10;
  * Receives ?code=<auth-code>&state=<csrf-token> from the provider's authorize
  * endpoint. Verifies state, swaps code for access_token, persists into
  * mcp_connections (service role), and redirects to /settings/notifications
+ * (web) or /m/settings/connections (mobile, per the swiggy_return cookie)
  * with a status flag for the UI.
  *
  * Errors redirect rather than returning JSON — the user got here from a
@@ -24,10 +25,10 @@ export async function GET(req: Request) {
 
   // The provider can bounce back with ?error=access_denied if the user cancels.
   if (error) {
-    return redirectToSettings(`error=${encodeURIComponent(error)}`);
+    return redirectToSettings(req, `error=${encodeURIComponent(error)}`);
   }
   if (!code || !state) {
-    return redirectToSettings("error=missing_params");
+    return redirectToSettings(req, "error=missing_params");
   }
 
   // Look up the PKCE verifier + state we stashed in /auth/start.
@@ -35,15 +36,15 @@ export async function GET(req: Request) {
   const verifier = cookies["swiggy_pkce_verifier"];
   const expectedState = cookies["swiggy_pkce_state"];
   if (!verifier || !expectedState) {
-    return redirectToSettings("error=missing_session");
+    return redirectToSettings(req, "error=missing_session");
   }
   if (state !== expectedState) {
-    return redirectToSettings("error=state_mismatch");
+    return redirectToSettings(req, "error=state_mismatch");
   }
 
   const provider = await getProvider("swiggy");
   if (!provider) {
-    return redirectToSettings("error=not_configured");
+    return redirectToSettings(req, "error=not_configured");
   }
   // Same resolution chain as /auth/start. In practice this hits the cached id
   // that start just registered; it re-registers only if that cache write lost.
@@ -52,10 +53,10 @@ export async function GET(req: Request) {
   try {
     clientId = await resolveClientId(provider, redirectUri);
   } catch {
-    return redirectToSettings("error=registration_failed");
+    return redirectToSettings(req, "error=registration_failed");
   }
   if (!clientId) {
-    return redirectToSettings("error=not_configured");
+    return redirectToSettings(req, "error=not_configured");
   }
 
   // Auth the user — we attribute the token to whoever's signed in right now.
@@ -65,7 +66,7 @@ export async function GET(req: Request) {
     error: authError,
   } = await supabase.auth.getUser();
   if (authError || !user) {
-    return redirectToSettings("error=not_signed_in");
+    return redirectToSettings(req, "error=not_signed_in");
   }
 
   try {
@@ -85,10 +86,10 @@ export async function GET(req: Request) {
   } catch (e) {
     const reason = e instanceof McpOAuthError ? e.code : "exchange_failed";
     console.error("swiggy callback:", reason, e instanceof Error ? e.message.slice(0, 200) : "");
-    return redirectToSettings(`error=${encodeURIComponent(reason)}`);
+    return redirectToSettings(req, `error=${encodeURIComponent(reason)}`);
   }
 
-  return redirectToSettings("connected=1");
+  return redirectToSettings(req, "connected=1");
 }
 
 /**
@@ -96,12 +97,19 @@ export async function GET(req: Request) {
  * leaving them behind on the error paths (as this previously did) means a
  * stale verifier/state pair lingers for the full 10-minute TTL.
  */
-function redirectToSettings(query: string): Response {
-  const target = `/settings/notifications?${query}`;
+function redirectToSettings(req: Request, query: string): Response {
+  // Send the user back to the app they started in: /auth/start stamps
+  // swiggy_return=mobile for the /m Connections screen. Anything else
+  // (missing, tampered) falls back to the web settings path — never to a
+  // caller-supplied URL, so this cannot become an open redirect.
+  const surface = parseCookies(req.headers.get("cookie") || "")["swiggy_return"];
+  const target =
+    surface === "mobile" ? `/m/settings/connections?${query}` : `/settings/notifications?${query}`;
   const headers = new Headers({ Location: target });
   const clear = "Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0";
   headers.append("Set-Cookie", `swiggy_pkce_verifier=; ${clear}`);
   headers.append("Set-Cookie", `swiggy_pkce_state=; ${clear}`);
+  headers.append("Set-Cookie", `swiggy_return=; ${clear}`);
   return new Response(null, { status: 303, headers });
 }
 
