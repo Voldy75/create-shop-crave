@@ -32,8 +32,18 @@ the consolidated index directly below.
 Everything still to execute, most-blocking first. Each line points at the
 section with the detail; this list is a map, not the territory. When you finish
 something, update BOTH this index and the section it points to.
-**Refreshed 2026-10-08** — items closed since the last refresh are listed at
-the end so nobody re-opens them.
+**Refreshed 2026-10-08; re-verified against live systems 2026-10-24** —
+items closed since the last refresh are listed at the end so nobody re-opens
+them.
+
+**Re-check 2026-10-24 (no code changed since 2026-10-11):** production Vercel
+has Supabase ×3, `GOOGLE_GENERATIVE_AI_API_KEY` and the Maps key — still none
+of the five payment vars (A1). Supabase: 6 users, **0 admins** (A2 not done),
+0 MCP connections, Swiggy disabled with no client id yet, 0 active
+subscriptions, no admin actions logged. Live site: `/`, `/welcome`,
+`/m/settings/preferences`, `/api/flags` all 200; latest `main` deploy
+succeeded. So every blocker below is still open exactly as written, except
+npm audit, which grew (see D).
 
 **Released 2026-10-11.** [PR #33](https://github.com/Voldy75/create-shop-crave/pull/33)
 merged `merge/mobile-into-web` into `main` (merge commit, history kept) and the
@@ -107,8 +117,11 @@ admin and account APIs return 401. What the release did NOT turn on: checkout
 - **Mobile delete confirmation** — typed DELETE today; F10 drew Google
   re-auth. Switch only once native sign-in is verified on a device (A3 + A4).
   → "Phase 3 — F10".
-- **npm audit at 34 advisories** (was 14) — pre-existing drift, not from this
-  work; triage alongside item 9. → "Dependency advisories".
+- **npm audit at 40 advisories** on 2026-10-24 (4 critical, 26 high,
+  7 moderate, 3 low) — up from 34 on 2026-10-03 and 14 before that, with NO
+  dependency change in between: these are newly published advisories against
+  what is already installed. Now worth a dedicated triage pass (start with the
+  4 critical) rather than waiting for item 9. → "Dependency advisories".
 
 **Closed since the last refresh — do not re-open**
 - Web first-run + Settings → Preferences (WF10); web account deletion + data
