@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { Bookmark, Check, ChefHat, Flame, Minus, Plus, ShoppingBag } from "lucide-react";
 import { AppTopbar } from "@/components/web/AppTopbar";
 import { ShareButton } from "@/components/ShareButton";
+import { SpotifyNudge } from "@/components/SpotifyNudge";
 import { resolveRecipeBySlug } from "@/lib/recipe-slug";
 import { saveFavorite, removeFavorite, getFavorites } from "@/lib/storage";
 import { setActiveRecipe, setBuyList } from "@/lib/mobile-handoff";
@@ -343,6 +344,8 @@ export default function CookPage({ params }: { params: Promise<{ slug: string }>
           )}
 
           <div className="grow" />
+
+          <SpotifyNudge dishName={recipe.name} />
 
           <div className="card tint-peach hstack" style={{ boxShadow: "none", padding: 15, gap: 11 }}>
             <ChefHat width={24} height={24} style={{ color: "var(--text-burnt)", flex: "none", animation: "mm-bob 3.3s ease-in-out infinite" }} aria-hidden />

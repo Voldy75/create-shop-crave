@@ -1537,6 +1537,18 @@ RestaurantView, the landing page, and the chat system prompt.
   when we don't have the user's location (the Uber app uses GPS), plus
   `dropoff[formatted_address]` (skipped when the "area" is really a distance).
 
+**Spotify — "Cook with a soundtrack" link (built 2026-10-24, user chose the
+link option):** `components/SpotifyNudge.tsx` in the web cooking view
+(`/recipes/[slug]/cook`, rail) and the mobile recipe Steps. A plain link to a
+Spotify playlist search (`buildSpotifyCookingLink` in `lib/deeplinks.ts`), with
+a mood guessed from the dish name (`cookingMood`: Bollywood / Italian dinner /
+Latin / Lo-fi / Cooking). No Spotify account connection and no Spotify logo —
+the name appears as text only, so no brand assets are used. Behind the new
+`partner_spotify` flag, **ON in production** (inserted 2026-10-24). Also
+evaluated and ruled out: `backstage.spotify.com`'s MCP is Spotify Portal for
+Backstage — a developer-portal product (software catalog, Soundcheck,
+Scaffolder) on your own Portal instance, with no music access at all.
+
 **Spotify / Uber MCP — evaluated, NOT usable by us (2026-10-24):**
 - No Spotify integration exists in this codebase.
 - Spotify's MCP (`mcp-gateway-external-pilot.spotify.net`) is an official

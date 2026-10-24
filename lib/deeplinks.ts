@@ -165,3 +165,36 @@ export function buildZomatoOrderLink(dish: string, area?: string): string {
   });
   return `${base}?${params.toString()}`;
 }
+
+// --- Music while cooking (Spotify) ---
+
+/**
+ * A mood for the cooking playlist, guessed from the dish name. Deliberately a
+ * short keyword list: it only picks the search words, and anything unmatched
+ * falls back to a plain "cooking" search, which is always a sensible result.
+ */
+export function cookingMood(dishName: string): { query: string; label: string } {
+  const n = dishName.toLowerCase();
+  const has = (words: string[]) => words.some((w) => n.includes(w));
+  if (has(["curry", "masala", "biryani", "paneer", "dal", "tikka", "pulao", "chole", "rajma", "korma", "makhani", "tandoori", "sambar", "dosa", "idli", "raita", "sabzi", "paratha", "khichdi", "butter chicken", "aloo", "gobi", "palak", "naan", "kofta", "vindaloo", "kadai", "bhaji", "upma", "poha", "halwa", "kheer"]))
+    return { query: "bollywood cooking", label: "Bollywood" };
+  if (has(["pasta", "risotto", "pizza", "lasagna", "gnocchi", "pesto", "carbonara", "bruschetta"]))
+    return { query: "italian dinner", label: "Italian dinner" };
+  if (has(["taco", "burrito", "enchilada", "quesadilla", "nachos", "salsa", "fajita"]))
+    return { query: "latin cooking", label: "Latin" };
+  if (has(["ramen", "sushi", "pho", "noodle", "dumpling", "stir fry", "stir-fry", "teriyaki", "kimchi", "fried rice"]))
+    return { query: "lofi cooking", label: "Lo-fi" };
+  return { query: "cooking", label: "Cooking" };
+}
+
+/**
+ * Spotify playlist search for the dish's mood. A plain link — no Spotify
+ * account connection, no API, no approval needed: open.spotify.com opens the
+ * Spotify app when it is installed (universal / app links) and the web player
+ * otherwise. Checked 2026-10-24: /search/<q>/playlists returns the player.
+ * (Spotify's own MCP is an approved-clients pilot, and its Web API keeps new
+ * apps to a few named test users — see handoff.md.)
+ */
+export function buildSpotifyCookingLink(dishName: string): string {
+  return `https://open.spotify.com/search/${encodeURIComponent(cookingMood(dishName).query)}/playlists`;
+}

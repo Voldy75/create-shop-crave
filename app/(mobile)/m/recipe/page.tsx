@@ -1,5 +1,7 @@
 "use client";
 
+import { SpotifyNudge } from "@/components/SpotifyNudge";
+
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Heart, MapPin } from "lucide-react";
@@ -330,6 +332,7 @@ export default function MobileRecipe() {
         {recipe.instructions.length > 0 && (
           <div className="vstack" id="recipe-steps" style={{ gap: 10 }}>
             <span className="t-h1">Steps</span>
+            <SpotifyNudge dishName={recipe.name} />
             {steps.map((s, i) => (
               <div key={i} className="row" style={{ padding: "12px 14px", alignItems: "flex-start" }}>
                 <span
