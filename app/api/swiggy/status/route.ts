@@ -19,7 +19,13 @@ export async function GET() {
   const { user } = guard;
 
   const provider = await getProvider("swiggy");
-  const configured = Boolean(provider && clientIdFor(provider));
+  // Configured = switched on AND able to get a client id: an env var, a
+  // cached Dynamic Client Registration id, or a registration path to get one.
+  // It used to check only the env var, so DCR (no env var) read as "not
+  // configured" and the chat banner told users ordering would fail.
+  const configured = Boolean(
+    provider && provider.enabled && (clientIdFor(provider) || provider.clientId || provider.registrationPath)
+  );
 
   const token = await getConnection(user.id, "swiggy");
   if (!token) {

@@ -80,6 +80,7 @@ function ChatInner() {
   // Without this the request failed silently and nothing happened on screen.
   const onCapReached = () => router.push("/m/settings/key?from=chat");
 
+  const [chatError, setChatError] = useState<string | null>(null);
   const { messages, input, handleInputChange, handleSubmit, append, isLoading } = useChat({
     api: agentMode ? "/api/agent" : "/api/chat",
     body: {
@@ -94,7 +95,20 @@ function ChatInner() {
     },
     onError: (err) => {
       const msg = err.message || "";
-      if (msg.includes("Daily limit") || msg.includes("rate_limit") || msg.includes("429")) onCapReached();
+      if (msg.includes("Daily limit") || msg.includes("rate_limit") || msg.includes("429")) {
+        onCapReached();
+        return;
+      }
+      // Every other failure used to be silent. Our routes send {error,
+      // message} JSON as the body, which the SDK puts in err.message.
+      let serverMessage: string | null = null;
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed && typeof parsed.message === "string") serverMessage = parsed.message;
+      } catch {
+        // not JSON
+      }
+      setChatError(serverMessage ?? "Something went wrong. Please try again.");
     },
   });
 
@@ -226,6 +240,15 @@ function ChatInner() {
             </div>
           );
         })}
+
+        {chatError && !isLoading && (
+          <div className="card hstack" role="alert" style={{ padding: "10px 14px", gap: 10, marginBottom: 14, boxShadow: "none", background: "color-mix(in srgb, var(--m-red) 10%, var(--m-card))" }}>
+            <span className="t-cap grow" style={{ color: "var(--text-red)" }}>{chatError}</span>
+            <button className="t-cap" onClick={() => setChatError(null)} style={{ background: "none", border: "none", color: "var(--m-ink)", fontWeight: 700 }}>
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {isLoading && (
           <div className="hstack" style={{ gap: 8, alignItems: "flex-end", marginBottom: 14 }}>

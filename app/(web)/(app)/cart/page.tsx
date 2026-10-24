@@ -344,7 +344,7 @@ function CartPageInner() {
           {/* Swiggy's required attribution for an MCP-powered order (Brand
               guidelines → "Order: alongside the cart and checkout summary"). */}
           <div style={{ display: "flex", justifyContent: "center", marginTop: 6 }}>
-            <SwiggyAttribution service="instamart" compact />
+            <SwiggyAttribution service="instamart" />
           </div>
           {/* The plain link stays for anyone who has not connected Swiggy (or
               whose session lapsed) — in-app ordering needs a connected account. */}

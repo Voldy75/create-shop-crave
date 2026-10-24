@@ -1564,9 +1564,41 @@ ON (all three servers enabled). Checked on production after: billing returns
 answer 401 signed-out (not 5xx), and Swiggy still reports our callback as
 whitelisted. **First real connect attempt failed** — not Swiggy: the
 service-role client bug above (fixed in PR #35, deployed 2026-10-24 13:37 UTC).
-**Still to do:** retry the connect with a real Swiggy account (phone + OTP),
-confirm a row lands in `mcp_connections` and `mcp_providers.client_id` gets
-cached, then place a small test order.
+**Connect then WORKED** (2026-10-24 13:49 UTC: a `mcp_connections` row with a
+refresh token; `mcp_providers.client_id` cached as `swiggy-mcp`). **The first
+order attempt then failed** — `/api/agent` returned a silent 500. Reproduced
+with Swiggy's live `tools/list` (read-only): **Gemini rejects Swiggy's raw tool
+schemas** — `type: ["string","number"]` in `update_food_cart` and a top-level
+requirement-only `anyOf` in `search_restaurants` / `search_menu` /
+`get_restaurant_menu` — and one bad tool fails the whole request. Fixed by
+`lib/mcp/schema.ts` (`sanitizeToolSchema`), which reduces schemas to a widely
+supported subset and folds dropped rules into descriptions (Swiggy still
+validates real arguments). Verified with all 44 tools: cart / biryani /
+Dineout prompts all work, and the cart prompt calls `swiggy_im__get_cart`.
+Same PR: the agent's catch blocks now LOG (that 500 was silent); the chat
+banner's "Swiggy agent isn't configured — admin needs credentials" was
+false (the status route only counted the env var, not DCR); web and mobile
+chat now show the server's error message instead of "Something went wrong"
+(mobile showed nothing at all); and the badge was rebuilt to Swiggy's official
+spec (below).
+**Open:** (1) old `@ai-sdk/google` 0.0.52 throws "Type validation failed" when
+Gemini returns a candidate with no content parts — seen once in 8 test
+prompts (a contrived "say hi in one word"), none on real ordering prompts;
+the real fix is the AI SDK upgrade (item 9). (2) **The server Gemini key hit
+"You exceeded your current quota" during testing** — check its tier in
+Google AI Studio; on the free tier real users will hit it. (3) The agent
+counts against the free chat limit (2/day): a free user gets at most 2 agent
+turns a day, and the failed attempt above spent one. (4) Still to do: a small
+real order.
+
+**Badge fix (2026-10-24):** the first badge used `/builders/brand-logos/*.png`,
+which are 344×142 WORDMARKS — squeezed into a square they rendered distorted.
+Rebuilt to Swiggy's own badge as measured from their brand page: the 512×512
+square logo at 32px (radius 20%), "Powered by **Name**" 16px, 8px gap and
+padding, on a solid backing with 8px corners — white/navy in light,
+#161616/off-white in dark (tokens in `design/meshi-a11y.css`). The square
+logos are vendored in `public/brand/swiggy/` because Swiggy serves them from
+content-hashed URLs that change on every Swiggy deploy.
 Swiggy's go-live checklist also asks for a staged rollout and an incident
 contact (email + Slack) shared with builders@swiggy.in.
 

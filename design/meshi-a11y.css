@@ -52,3 +52,19 @@
 [data-theme="dark"] :is(.pill-lime, .chip-active, .chip-tag, .xbtn-l, .ing-add, .ob-ta.is-on) {
   color: color-mix(in srgb, var(--m-forest-2) 80%, var(--m-cream));
 }
+
+/* ---------- Partner attribution: Swiggy "Powered by" badge ----------
+   Swiggy's OFFICIAL badge colours, read from the badge previews on
+   https://mcp.swiggy.com/builders/docs/operate/brand-guidelines/ (2026-10-24):
+   light = navy text on a white backing, dark = off-white on near-black. They
+   are the partner's identity, not meshi's palette, so they flip with OUR theme
+   only to pick Swiggy's matching light/dark badge. Used by
+   components/SwiggyAttribution.tsx in both root layouts. */
+:root {
+  --swiggy-badge-bg:  #FFFFFF;
+  --swiggy-badge-ink: #0A2540;
+}
+[data-theme="dark"] {
+  --swiggy-badge-bg:  #161616;
+  --swiggy-badge-ink: #F6F9FC;
+}

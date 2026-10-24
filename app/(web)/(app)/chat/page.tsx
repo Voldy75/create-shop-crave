@@ -241,7 +241,17 @@ function ChatPageInner() {
         setByokError(`Your ${byok?.provider || "API"} key is invalid or has insufficient quota.`);
         setShowApiKeyDialog(true);
       } else {
-        setError("Something went wrong. Please try again.");
+        // The SDK's error message is the response body; our routes send
+        // {error, message} JSON. Show that message (e.g. "Connect your Swiggy
+        // account…") instead of flattening every failure to a generic line.
+        let serverMessage: string | null = null;
+        try {
+          const parsed = JSON.parse(msg);
+          if (parsed && typeof parsed.message === "string") serverMessage = parsed.message;
+        } catch {
+          // not JSON — fall through to the generic copy
+        }
+        setError(serverMessage ?? "Something went wrong. Please try again.");
       }
     },
   });
