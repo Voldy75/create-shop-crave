@@ -11,6 +11,7 @@
  *   partner_zomato     Zomato links (food delivery + dining out)
  *   partner_blinkit    Blinkit grocery links
  *   partner_instacart  Instacart grocery links (and its Connections row)
+ *   partner_spotify    "Cook with a soundtrack" Spotify link (cooking views)
  *   pro_upgrade        the paywall: every upgrade / buy-a-pass surface
  *
  * Swiggy, Instamart, Dineout, Uber and Ola are NOT flag-gated here — they are
@@ -27,6 +28,7 @@ export const PARTNER_FLAGS = {
   zomato: "partner_zomato",
   blinkit: "partner_blinkit",
   instacart: "partner_instacart",
+  spotify: "partner_spotify",
   paywall: "pro_upgrade",
 } as const;
 
@@ -34,6 +36,8 @@ export interface Partners {
   zomato: boolean;
   blinkit: boolean;
   instacart: boolean;
+  /** "Cook with a soundtrack" — a Spotify playlist link in the cooking views. */
+  spotify: boolean;
   /** The meshi+ paywall: upgrade prompts, the /m/paywall screen, checkout. */
   paywall: boolean;
 }
@@ -44,6 +48,7 @@ export function partnersFrom(flags: Record<string, boolean>): Partners {
     zomato: flags[PARTNER_FLAGS.zomato] === true,
     blinkit: flags[PARTNER_FLAGS.blinkit] === true,
     instacart: flags[PARTNER_FLAGS.instacart] === true,
+    spotify: flags[PARTNER_FLAGS.spotify] === true,
     paywall: flags[PARTNER_FLAGS.paywall] === true,
   };
 }
@@ -60,4 +65,4 @@ export function groceryOffered(p: Partners, platform: string): boolean {
 }
 
 /** Everything off — the server-side and pre-load default. */
-export const LAUNCH_DEFAULTS: Partners = { zomato: false, blinkit: false, instacart: false, paywall: false };
+export const LAUNCH_DEFAULTS: Partners = { zomato: false, blinkit: false, instacart: false, spotify: false, paywall: false };

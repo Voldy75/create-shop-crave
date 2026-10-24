@@ -35,3 +35,9 @@ insert into public.feature_flags (id, enabled, description) values
   ('partner_blinkit',   false, 'Show Blinkit grocery links'),
   ('partner_instacart', false, 'Show Instacart grocery links and its Connections row')
 on conflict (id) do nothing;
+
+-- "Cook with a soundtrack": a Spotify playlist link in the cooking views.
+-- A plain outbound link (no Spotify account connection). Seeded ON (2026-10-24).
+insert into public.feature_flags (id, enabled, description) values
+  ('partner_spotify', true, 'Show the Cook-with-a-soundtrack Spotify link in cooking views')
+on conflict (id) do nothing;
