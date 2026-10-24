@@ -1,5 +1,7 @@
 "use client";
 
+import { maskEmail } from "@/lib/pii";
+
 /**
  * Account deletion — web, built to WF11 (w11b blocked, w11c confirm,
  * w11d in progress; w11e is app/(web)/account-deleted).
@@ -212,7 +214,7 @@ export function DeleteAccountFlow({
               </span>
               <div className="vstack grow" style={{ gap: 3 }}>
                 <span className="t-d2" id="del-title" style={{ fontSize: 21 }}>Delete your account permanently</span>
-                <span className="t-cap">{summary?.email}</span>
+                <span className="t-cap">{maskEmail(summary?.email)}</span>
               </div>
             </div>
             <span className="t-body">

@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { signInWithProvider } from "@/lib/native-auth";
 import { saveNutritionGoals } from "@/lib/storage";
 import { MOBILE_AVOID_OPTIONS, MOBILE_DIET_OPTIONS, MOBILE_TASTE_OPTIONS } from "@/lib/preferences";
+import { usePartners } from "@/lib/feature-flags";
 import { defaultGoalsFromProfile } from "@/lib/nutrition";
 import type { WeightGoal } from "@/lib/types";
 import { BoBowl, Carrot, Broccoli, Tomato, Mushroom, Avocado, Pea, Leek } from "@/components/mascots";
@@ -168,6 +169,7 @@ export default function Onboarding() {
   const router = useRouter();
   const supabase = createClient();
   const { requestLocation, isLoadingLocation, setDietaryPreferences, setFavoriteCuisines } = useUser();
+  const partners = usePartners();
 
   const [step, setStep] = useState<Step>("welcome");
   const [diet, setDiet] = useState<string[]>([]);
@@ -421,7 +423,9 @@ export default function Onboarding() {
         </div>
 
         <div className="vstack" style={{ gap: 8, marginTop: 14 }}>
-          {PARTNERS.map(({ key, label, sub, bg, fg, short }) => (
+          {/* Swiggy is the launch partner; the others appear only while their
+              partner flag is on (lib/partners.ts). */}
+          {PARTNERS.filter((p) => p.key === "swiggy" || (p.key === "zomato" ? partners.zomato : p.key === "instacart" ? partners.instacart : false)).map(({ key, label, sub, bg, fg, short }) => (
             <div key={key} className="row" style={{ padding: "12px 14px" }}>
               <span
                 style={{

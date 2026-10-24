@@ -17,20 +17,37 @@ export const maxDuration = 60;
  * useChat hook can consume it.
  *
  * Guardrails:
- *   - Destructive tools (place_food_order, checkout, book_table) return
- *     {requiresConfirmation: true, ...} on the FIRST call. The model is
- *     instructed to surface the proposed action to the user and only
- *     re-invoke with `_confirmed: true` after explicit user yes.
- *   - place_food_order / checkout: defensive ₹1000 cap check (Swiggy
- *     Builders Club v1 limit).
- *   - COD-only messaging baked into the system prompt.
+ *   - Destructive tools (place_food_order, checkout, book_table,
+ *     cancel_booking) return {requiresConfirmation: true, ...} on the FIRST
+ *     call. The model is instructed to surface the proposed action to the
+ *     user and only re-invoke with `_confirmed: true` after explicit user yes.
+ *   - place_food_order: defensive ₹1000 cap check (Swiggy's Food cap for
+ *     Builders Club orders; the docs set no cap on Instamart or Dineout).
+ *   - Payments follow Swiggy's HEADLESS flow (docs: "Pay with UPI end-to-end"
+ *     → Non-UI clients): we cannot render their payment widgets, so the model
+ *     lists get_payment_options as text, shares the UPI bridgeUrl, and checks
+ *     status once per user turn. maxDuration is 60s and check_payment_status
+ *     is a ~19s long-poll, so the poll loop is NOT run inside one request.
+ *
+ * Re-checked against https://mcp.swiggy.com/builders/docs/ on 2026-10-24:
+ * endpoints (/food, /im, /dineout), OAuth 2.1 + PKCE + DCR, refresh grant,
+ * scopes, and the production redirect allowlist (check-redirect-uri reports
+ * our callback as whitelisted).
  */
 
 const DESTRUCTIVE: Record<string, string> = {
   place_food_order: "Place a Swiggy food delivery order",
   checkout: "Place an Instamart grocery order",
-  book_table: "Confirm a DineOut table reservation",
+  book_table: "Confirm a Dineout table reservation",
+  cancel_booking: "Cancel a Dineout table reservation",
 };
+
+/**
+ * Swiggy's Food cart cap for Builders Club orders (docs: Changelog → v1.0
+ * known limitations, "Food cart cap ₹1000 for Builders Club origin orders").
+ * Food only — Instamart and Dineout carry no such cap in the docs.
+ */
+const FOOD_CART_CAP = 1000;
 
 // Tools we'll never expose — administrative or noisy.
 const SKIP_TOOLS = new Set(["report_error"]);
@@ -44,7 +61,7 @@ const SYSTEM_PROMPT = `You are the Crave & Create concierge. The user has connec
 Tool names are always "<provider>_<service>__<tool>". Use the exact name as given
 to you — never guess a prefix.
 
-Use them when the user wants to order, shop, or book. Otherwise reply conversationally.
+Use them when the user wants to order, shop, or book a table. Otherwise reply conversationally.
 
 Hard rules:
 1. Always start food/grocery flows with get_addresses (the correct prefixed variant) to pick a delivery address.
@@ -52,9 +69,17 @@ Hard rules:
    - On the FIRST invocation the tool will return {requiresConfirmation: true, summary}.
    - You MUST surface the summary clearly to the user and ask them yes/no.
    - Only after the user explicitly confirms in their next message, call the SAME tool again with the same arguments plus _confirmed: true.
-3. Swiggy MCP v1 limits: orders capped at ₹1000, COD only, no refresh tokens (the connection may expire — surface that gently if a tool call fails with 401-like behavior).
-4. Never invent restaurant IDs, item IDs, or addresses. Always discover them via the relevant search tool.
-5. After placing an order, you can track it with the relevant track_* / get_*_orders tool — poll no faster than every 10 seconds.
+3. Swiggy Food orders through this app are capped at ₹1000 per cart. Instamart and Dineout have no such cap.
+4. Paying (Food, Instamart, paid Dineout deals) — you cannot show Swiggy's payment widgets, so use the text flow:
+   a. Call the server's get_payment_options and list the methods it returns in plain text (UPI apps / scan-to-pay, Swiggy Money when offered, Cash when offered). Never offer a method it did not return.
+   b. After the user has confirmed the order (rule 2), place it with the method they picked: paymentMethod "Cash", or paymentMethod "UPI" with the intentApp id they chose (or generateUPIQR: true for scan-to-pay).
+   c. For UPI the response carries data.bridgeUrl — give the user that link ("open this to pay in your UPI app or scan the QR"), and ask them to tell you when they have paid. Do not invent a link.
+   d. When they say they paid, call check_payment_status ONCE with the ids from the order response (Food also needs addressId, lat, lng). On success, call confirm_order only if the order is not already confirmed. On failed: offer to try again with get_payment_options. On cart_changed: ask them to review the cart. On cancelled or refund-initiated: tell them, do not retry.
+   e. Never call a place-order tool twice for the same cart. If a place-order call fails or times out, check get_food_orders / get_orders / get_booking_status first to see whether it went through.
+5. Never invent restaurant IDs, item IDs, slots, or addresses. Always discover them via the relevant search tool.
+6. After placing an order, you can track it with the relevant track_* / get_*_orders / get_booking_status tool — poll no faster than every 10 seconds.
+7. If a tool returns swiggy_reconnect_required, tell the user their Swiggy connection needs renewing in Settings → Connections. If it returns rate_limited, tell them Swiggy is busy and to try again in a minute.
+8. When you show results, carts or confirmations, say which Swiggy service they come from (Swiggy for food, Instamart for groceries, Dineout for tables).
 
 If you cannot do something with the available tools, say so plainly. Don't fabricate.`;
 
@@ -109,7 +134,7 @@ export async function POST(req: Request) {
         error: "swiggy_reconnect_required",
         message: sawExpired
           ? "Your Swiggy session expired and could not be renewed. Reconnect to keep ordering."
-          : "Connect your Swiggy account in Settings → Notifications first.",
+          : "Connect your Swiggy account in Settings → Connections first.",
       },
       { status: 412 },
     );
@@ -185,8 +210,8 @@ export async function POST(req: Request) {
                 action: t.name,
                 summary: `${DESTRUCTIVE[t.name]} — surface the relevant details (items, total, address, slot) to the user and ask them to confirm before I proceed.`,
                 proposedArgs: cleanArgs,
-                limits: t.name === "place_food_order" || t.name === "checkout"
-                  ? "Swiggy v1 Builders Club: ₹1000 cap, COD only."
+                limits: t.name === "place_food_order"
+                  ? `Swiggy Food orders from this app are capped at ₹${FOOD_CART_CAP}.`
                   : undefined,
               };
             }
@@ -194,19 +219,18 @@ export async function POST(req: Request) {
             // ₹1000 defensive cap: bail out cheaply if model has somehow built a
             // huge cart and is about to place. The model should already have
             // shown total to the user, but this is a belt-and-suspenders.
-            if ((t.name === "place_food_order" || t.name === "checkout") && confirmed) {
+            if (t.name === "place_food_order" && confirmed) {
               try {
-                const cartTool = t.name === "place_food_order" ? "get_food_cart" : "get_cart";
-                const cartResult = await client.callTool({ name: cartTool, arguments: {} });
+                const cartResult = await client.callTool({ name: "get_food_cart", arguments: {} });
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const cart = cartResult.structuredContent as any;
                 const total = cart?.data?.total ?? cart?.data?.bill?.totalToPay ?? 0;
-                if (typeof total === "number" && total > 1000) {
+                if (typeof total === "number" && total > FOOD_CART_CAP) {
                   return {
                     aborted: true,
-                    reason: "exceeds_₹1000_cap",
+                    reason: `exceeds_₹${FOOD_CART_CAP}_cap`,
                     total,
-                    note: "Swiggy v1 Builders Club caps orders at ₹1000. Ask the user to remove items.",
+                    note: `Swiggy caps Food orders from this app at ₹${FOOD_CART_CAP}. Ask the user to remove items.`,
                   };
                 }
               } catch {
@@ -219,11 +243,13 @@ export async function POST(req: Request) {
               return result.structuredContent ?? result.content ?? result;
             } catch (err) {
               const msg = err instanceof Error ? err.message.slice(0, 200) : "tool_error";
-              // Treat anything that smells like 401/expired as reconnect_required so
-              // the user can repair the channel.
-              const looksAuth = /401|unauth|expired|invalid_token/i.test(msg);
+              // Swiggy signals auth failure as HTTP 401 or JSON-RPC -32001, and a
+              // revoked session as 419 (docs: Authenticate → Troubleshooting).
+              // Rate limiting is 429 / JSON-RPC -32000 (docs: Ship to production).
+              const looksAuth = /401|419|-32001|unauth|expired|invalid_token|revoked/i.test(msg);
+              const looksRateLimited = /429|-32000|too many requests|rate.?limit/i.test(msg);
               return {
-                error: looksAuth ? "swiggy_reconnect_required" : "tool_error",
+                error: looksAuth ? "swiggy_reconnect_required" : looksRateLimited ? "rate_limited" : "tool_error",
                 message: msg,
               };
             }

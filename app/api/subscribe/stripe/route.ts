@@ -1,9 +1,14 @@
+import { getServerPartners } from "@/lib/feature-flags-server";
 import Stripe from "stripe";
 import { requireUser } from "@/lib/auth-guard";
 
 export async function POST() {
   const guard = await requireUser();
   if (guard instanceof Response) return guard;
+  // Paywall switched off (pro_upgrade flag, lib/partners.ts): no checkout.
+  if (!(await getServerPartners()).paywall) {
+    return Response.json({ error: "Upgrades are not available right now" }, { status: 403 });
+  }
   const { user } = guard;
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;

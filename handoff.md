@@ -32,8 +32,18 @@ the consolidated index directly below.
 Everything still to execute, most-blocking first. Each line points at the
 section with the detail; this list is a map, not the territory. When you finish
 something, update BOTH this index and the section it points to.
-**Refreshed 2026-10-08** — items closed since the last refresh are listed at
-the end so nobody re-opens them.
+**Refreshed 2026-10-08; re-verified against live systems 2026-10-24** —
+items closed since the last refresh are listed at the end so nobody re-opens
+them.
+
+**Re-check 2026-10-24 (no code changed since 2026-10-11):** production Vercel
+has Supabase ×3, `GOOGLE_GENERATIVE_AI_API_KEY` and the Maps key — still none
+of the five payment vars (A1). Supabase: 6 users, **0 admins** (A2 not done),
+0 MCP connections, Swiggy disabled with no client id yet, 0 active
+subscriptions, no admin actions logged. Live site: `/`, `/welcome`,
+`/m/settings/preferences`, `/api/flags` all 200; latest `main` deploy
+succeeded. So every blocker below is still open exactly as written, except
+npm audit, which grew (see D).
 
 **Released 2026-10-11.** [PR #33](https://github.com/Voldy75/create-shop-crave/pull/33)
 merged `merge/mobile-into-web` into `main` (merge commit, history kept) and the
@@ -68,9 +78,10 @@ admin and account APIs return 401. What the release did NOT turn on: checkout
    (Supabase migration `mcp_dcr`). Verified: the four columns exist, Swiggy's
    `registration_path` is `/auth/register` (client id registers on first
    connect), and neither `authenticated` nor `anon` can read `refresh_token`.
-   Swiggy stays disabled; what remains is Swiggy allowlisting the redirect URI,
-   then enabling the provider in Admin → MCP providers.
-   → "Swiggy MCP: Dynamic Client Registration".
+   **Allowlisting confirmed 2026-10-24** (Swiggy's check-redirect-uri says
+   `whitelisted: true` for our callback). What remains: ship
+   `feat/swiggy-launch`, then enable `mcp_swiggy` + `mcp_providers.swiggy`.
+   → "Swiggy-only launch, paywall off, PII masking".
 
 **B. Code still to write**
 8. **IAP / RevenueCat** — the one big unbuilt feature. `purchaseStoreProduct`
@@ -107,10 +118,17 @@ admin and account APIs return 401. What the release did NOT turn on: checkout
 - **Mobile delete confirmation** — typed DELETE today; F10 drew Google
   re-auth. Switch only once native sign-in is verified on a device (A3 + A4).
   → "Phase 3 — F10".
-- **npm audit at 34 advisories** (was 14) — pre-existing drift, not from this
-  work; triage alongside item 9. → "Dependency advisories".
+- **npm audit at 40 advisories** on 2026-10-24 (4 critical, 26 high,
+  7 moderate, 3 low) — up from 34 on 2026-10-03 and 14 before that, with NO
+  dependency change in between: these are newly published advisories against
+  what is already installed. Now worth a dedicated triage pass (start with the
+  4 critical) rather than waiting for item 9. → "Dependency advisories".
 
 **Closed since the last refresh — do not re-open**
+- 2026-10-24 (branch `feat/swiggy-launch`): Swiggy-only partner set, paywall
+  off behind flags, PII masked on screen, Swiggy agent aligned with the latest
+  docs + required attribution, mobile OAuth return fixed. Spotify and Uber MCP
+  evaluated and ruled out.
 - Web first-run + Settings → Preferences (WF10); web account deletion + data
   export (WF11); mobile deletion + export (F10) — the App Store
   account-deletion requirement is now met in code.
@@ -1435,9 +1453,97 @@ signed-in non-admin.
 **Audit gap closed:** `/api/admin/flags` PATCH/POST now write
 `admin_audit_log` rows (`flag.update` with before/after, `flag.create`).
 
+## Swiggy-only launch, paywall off, PII masking (2026-10-24, branch `feat/swiggy-launch`)
+
+**Decisions (user, 2026-10-24):**
+- **Swiggy only.** Food delivery = Swiggy, groceries = Swiggy Instamart, dining in
+  = Swiggy Dineout. Zomato, Blinkit and Instacart are OFF. Uber and Ola stay.
+- **Paywall off, limits kept.** Every upgrade / buy-a-pass surface is hidden;
+  free users keep 2 Bo chats + 3 photo scans a day. At the cap the dialog says
+  so ("Bo is back at <local time of next UTC midnight>") and offers only BYOK.
+- **PII masked on screen.** Emails and names show as `v•••@gmail.com` /
+  `V••• P•••` in the admin console and wherever someone could see another
+  person's details; the signed-in user's own email is masked too. Display
+  only — search, sign-in, export and APIs still use real values.
+
+**How the switch-off works — flags, not deletion (`lib/partners.ts`).**
+`partner_zomato`, `partner_blinkit`, `partner_instacart` (new) and `pro_upgrade`
+(existing) gate every surface. Admin → Flags turns any of them back on with no
+deploy. Fail closed: a flag missing or not yet loaded reads as off. Surfaces
+filter at render time, so recipes saved with Blinkit links respect the switch
+too. Server side, `lib/feature-flags-server.ts` (60s cache) makes the chat
+prompt, `/api/billing/options` and both `/api/subscribe/*` routes obey the same
+switches. **Production flags were set on 2026-10-24** (three partner flags
+inserted OFF, `pro_upgrade` OFF) — harmless for the code on `main`, which reads
+none of them; they take effect when this branch ships.
+Surfaces covered: RecipeView, /cart, /planner, chat store hand-offs, the
+chat's Go Pro card, UpgradeDialog, Settings → Account, mobile /m/buy/platform,
+/m/restaurants, /m/paywall (forwards to /m/settings/key), Profile + Account
+plan rows, onboarding partners, both Connections screens, web /dine-out,
+RestaurantView, the landing page, and the chat system prompt.
+
+**Swiggy MCP — re-checked against https://mcp.swiggy.com/builders/docs/:**
+- **Our production redirect URI IS allowlisted** — measured via Swiggy's own
+  `GET /auth/check-redirect-uri` (what their login page calls): our callback →
+  `whitelisted: true`; an unknown URL → `false`. Endpoints (`/food`, `/im`,
+  `/dineout`), OAuth 2.1 + PKCE + DCR, scopes and the refresh grant all match.
+- Agent fixes: the ₹1000 cap now applies to **Food only** (the docs list it for
+  Food; the code also capped Instamart); "COD only" replaced by Swiggy's
+  **headless payment flow** (`get_payment_options` → place with Cash/UPI →
+  share `data.bridgeUrl` → `check_payment_status` once per user turn →
+  `confirm_order`); auth failures now also match JSON-RPC `-32001` and `419`,
+  rate limits `429`/`-32000`; `cancel_booking` needs confirmation; the "not
+  connected" message points at Settings → Connections.
+- **Required attribution** ("Powered by Swiggy / Instamart / Dineout" + the
+  square logo, `components/SwiggyAttribution.tsx`, logos loaded from Swiggy's
+  brand-asset URLs): under every agent reply, per service actually used
+  (from `message.toolInvocations`), and on both Instamart order entry points.
+  Measured 12.1:1 light / 11.4:1 dark at Swiggy's compact minimum.
+  **Gap:** threads restored from history drop `toolInvocations`, so restored
+  agent replies show no badge.
+- **Mobile OAuth return fixed:** the callback always redirected to the web
+  settings page, so connecting from `/m/settings/connections` dropped mobile
+  users into the web UI. `/auth/start` now stamps a `swiggy_return` cookie
+  (only `mobile`/`web` ever written; anything else falls back to web — no
+  open redirect) and mobile lands back on its Connections screen with the
+  outcome shown.
+- **Dining in = Dineout.** Dineout has no search URL to pre-fill and its
+  per-restaurant pages need Swiggy's own ids, so the link opens the Dineout
+  listing ("Find a table on Dineout") and "Ask Bo to book" hands the
+  restaurant to the agent (Dineout MCP: search → slots → `book_table`).
+- **Uber link** now always carries the destination: `pickup=my_location`
+  when we don't have the user's location (the Uber app uses GPS), plus
+  `dropoff[formatted_address]` (skipped when the "area" is really a distance).
+
+**Spotify / Uber MCP — evaluated, NOT usable by us (2026-10-24):**
+- No Spotify integration exists in this codebase.
+- Spotify's MCP (`mcp-gateway-external-pilot.spotify.net`) is an official
+  *pilot* connector listed for Claude; no Dynamic Client Registration, so only
+  clients Spotify approves can use it.
+- Uber's MCP (`mcp.uber.com/claude/rides-3p/mcp`) refuses unauthenticated
+  calls (403), needs a partner-only `3p.rides.mcp` scope, has no DCR, and is
+  US-only, estimates-only (booking hands off to the Uber app).
+
+**Verified (local dev against production data, flags as above):** landing,
+/cart, /dine-out, /m/restaurants, /m/buy/platform show no Zomato / Blinkit /
+Instacart / meshi+; /m/paywall forwards to key entry; billing options return
+`canPurchase: false`; the callback lands mobile/web correctly and rejects a
+tampered return value; admin screens show no raw email or name; the switch
+logic passes both directions. **Not verified:** the no-paywall UpgradeDialog
+(only reachable at the real daily cap, signed in); a real Swiggy connect and
+order (needs a signed-in user's phone + OTP); flags switched back ON in the
+browser (blocked from writing production flags for a test — logic-tested
+instead).
+
+**To go live:** merge, then turn Swiggy on — `mcp_swiggy` flag AND
+`mcp_providers.enabled` for `swiggy` — then connect once with a real account.
+Swiggy's go-live checklist also asks for a staged rollout and an incident
+contact (email + Slack) shared with builders@swiggy.in.
+
 ## Dead ends — do not retry
 
-1. **Swiggy MCP OAuth from a web origin.** Gated to an allowlist of AI clients;
+1. **[RESOLVED 2026-10-24 — our callback is allowlisted; see "Swiggy-only
+   launch"]** **Swiggy MCP OAuth from a web origin.** Gated to an allowlist of AI clients;
    a custom origin gets "Oops, Vercel isn't whitelisted yet". The Phase 8
    registry makes the SYSTEM provider-agnostic but cannot make a third party
    accept us. **AMENDED — read "Swiggy MCP: Dynamic Client Registration" below

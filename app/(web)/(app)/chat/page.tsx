@@ -13,6 +13,8 @@ import { RestaurantView } from "@/components/RestaurantView";
 import { SwiggyExpiryBanner } from "@/components/SwiggyExpiryBanner";
 import { ApiKeyDialog } from "@/components/ApiKeyDialog";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
+import { usePartners } from "@/lib/feature-flags";
+import { AgentAttribution } from "@/components/SwiggyAttribution";
 import { BoBowl } from "@/components/mascots";
 import { motion, AnimatePresence } from "framer-motion";
 import { PROVIDERS, type Provider } from "@/lib/providers";
@@ -138,6 +140,7 @@ interface ParsedChatData {
 
 function ChatPageInner() {
   const { user, userName, location, dietaryPreferences, favoriteCuisines, hydrated } = useUser();
+  const partners = usePartners();
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -541,6 +544,7 @@ function ChatPageInner() {
                               <span className="t-cap">Preparing suggestions…</span>
                             </div>
                           )}
+                          {!isUser && <AgentAttribution invocations={m.toolInvocations} />}
                         </div>
                       </div>
                     </div>
@@ -724,7 +728,7 @@ function ChatPageInner() {
                     you already have.
                   </span>
                   <div className="vstack" style={{ gap: 7 }}>
-                    {STORE_HANDOFFS.map((store) => (
+                    {STORE_HANDOFFS.filter((st) => st.id === "instamart" || (st.id === "blinkit" ? partners.blinkit : partners.instacart)).map((store) => (
                       <button
                         key={store.id}
                         className="xstore"
@@ -784,7 +788,7 @@ function ChatPageInner() {
 
           <div className="grow" />
 
-          {!isPro && (
+          {!isPro && partners.paywall && (
             <div className="card tint-lav vstack" style={{ boxShadow: "none", padding: 16, gap: 10 }}>
               <div className="hstack" style={{ gap: 10 }}>
                 <Sparkles width={20} height={20} style={{ color: "var(--text-plum)" }} />

@@ -54,23 +54,39 @@ export function buildInstacartLink(item: string): string {
 
 // --- Ride Booking Links ---
 
+/**
+ * Uber universal link with the destination pre-filled.
+ *
+ * `pickup` is optional: without the user's location we send
+ * `pickup=my_location`, which tells the Uber app to use the phone's GPS, so
+ * the rider still lands on a booking screen with the restaurant as the drop
+ * instead of a blank app. `dropoffAddress`, when known, is shown by Uber
+ * under the nickname so the rider can confirm the right branch.
+ */
 export function buildUberDeepLink(
-  pickup: Coordinates,
+  pickup: Coordinates | null | undefined,
   dropoff: Coordinates,
-  dropoffName: string
+  dropoffName: string,
+  dropoffAddress?: string
 ): string {
-  const params = new URLSearchParams({
-    action: "setPickup",
-    "pickup[latitude]": String(pickup.lat),
-    "pickup[longitude]": String(pickup.lng),
-    "pickup[nickname]": "My Location",
-    "dropoff[latitude]": String(dropoff.lat),
-    "dropoff[longitude]": String(dropoff.lng),
-    "dropoff[nickname]": dropoffName,
-    ...UTM,
-    utm_content: "ride",
-    ...(AFFILIATE_IDS.uber ? { client_id: AFFILIATE_IDS.uber } : {}),
-  });
+  const params = new URLSearchParams({ action: "setPickup" });
+  if (pickup) {
+    params.set("pickup[latitude]", String(pickup.lat));
+    params.set("pickup[longitude]", String(pickup.lng));
+    params.set("pickup[nickname]", "My Location");
+  } else {
+    params.set("pickup", "my_location");
+  }
+  params.set("dropoff[latitude]", String(dropoff.lat));
+  params.set("dropoff[longitude]", String(dropoff.lng));
+  params.set("dropoff[nickname]", dropoffName);
+  // Some sources put a distance ("1.2 km") in the area field — never send
+  // that to Uber as an address.
+  if (dropoffAddress && !/^\s*[\d.]+\s*(km|m|mi)\b/i.test(dropoffAddress)) {
+    params.set("dropoff[formatted_address]", dropoffAddress);
+  }
+  for (const [k, v] of Object.entries({ ...UTM, utm_content: "ride" })) params.set(k, v);
+  if (AFFILIATE_IDS.uber) params.set("client_id", AFFILIATE_IDS.uber);
   return `https://m.uber.com/ul/?${params.toString()}`;
 }
 
@@ -119,6 +135,22 @@ export function buildSwiggyOrderLink(
     params.set("lng", String(lng));
   }
   return `https://www.swiggy.com/search?${params.toString()}`;
+}
+
+// --- Dining Out (Swiggy Dineout) ---
+
+/**
+ * Swiggy Dineout's table-booking listing. Checked by hand 2026-10-24: Dineout
+ * has no search URL to pre-fill (typing a name on the page does not change the
+ * URL), and a specific restaurant's page needs Swiggy's own restaurant id,
+ * which only the Dineout MCP returns. So this opens the listing for the
+ * user's area (Swiggy picks it from their location) and the UI says "find a
+ * table", never "book <name>". Booking a specific table goes through Bo
+ * (Dineout MCP: search → get_available_slots → book_table).
+ */
+export function buildDineoutLink(): string {
+  const params = new URLSearchParams({ ...UTM, utm_content: "dineout" });
+  return `https://www.swiggy.com/dineout?${params.toString()}`;
 }
 
 export function buildZomatoOrderLink(dish: string, area?: string): string {

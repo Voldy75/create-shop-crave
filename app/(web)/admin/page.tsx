@@ -1,5 +1,7 @@
 "use client";
 
+import { maskEmail } from "@/lib/pii";
+
 /**
  * Admin → Dashboard, built to w12a (loading: w12g).
  *
@@ -238,7 +240,7 @@ export default function AdminDashboard() {
                           <td>
                             <div className="hstack" style={{ gap: 9 }}>
                               <span className="ad-av-sm" aria-hidden>{(u.email?.[0] ?? "?").toUpperCase()}</span>
-                              <span style={{ overflowWrap: "anywhere" }}>{u.email}</span>
+                              <span style={{ overflowWrap: "anywhere" }}>{maskEmail(u.email)}</span>
                             </div>
                           </td>
                           <td>

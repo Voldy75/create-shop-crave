@@ -19,8 +19,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronRight, Download, Salad, Sparkles, Trash2 } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
+import { usePartners } from "@/lib/feature-flags";
 import { BoBowl } from "@/components/mascots";
 import { type AccountSummary, fetchAccountSummary, formatDate } from "@/lib/account-client";
+import { maskEmail } from "@/lib/pii";
+
 
 const shell: React.CSSProperties = {
   minHeight: "100dvh",
@@ -40,6 +43,8 @@ export default function MobileAccountPage() {
   const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [ack, setAck] = useState(false);
+  const partners = usePartners();
+  const PlanRow = partners.paywall ? "button" : "div";
 
   useEffect(() => {
     if (hydrated && !user) router.replace("/m/profile");
@@ -82,15 +87,21 @@ export default function MobileAccountPage() {
           {initials(userName, user?.email)}
         </span>
         <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
-          <span className="t-h1">{userName || user?.email?.split("@")[0] || "You"}</span>
+          <span className="t-h1">{userName || "You"}</span>
           <span className="t-cap" style={{ overflowWrap: "anywhere" }}>
-            {[user?.email, provider].filter(Boolean).join(" · ")}
+            {[maskEmail(user?.email), provider].filter(Boolean).join(" · ")}
           </span>
         </div>
       </div>
 
       <div className="vstack" style={{ gap: 10 }}>
-        <button className="row" onClick={() => router.push("/m/paywall")} style={{ width: "100%", textAlign: "left", border: "none" }}>
+        {/* Plan status always shows; it only links to the paywall while the
+            paywall is on (pro_upgrade flag, lib/partners.ts). */}
+        <PlanRow
+          className="row"
+          {...(partners.paywall ? { type: "button" as const, onClick: () => router.push("/m/paywall") } : {})}
+          style={{ width: "100%", textAlign: "left", border: "none" }}
+        >
           <span className="icon-btn tint-lav" style={{ boxShadow: "none", color: "var(--text-plum)", flex: "none" }} aria-hidden>
             <Sparkles width={20} height={20} />
           </span>
@@ -110,8 +121,8 @@ export default function MobileAccountPage() {
                     : `${summary.chatDailyLimit} Bo chat${summary.chatDailyLimit === 1 ? "" : "s"} a day`}
             </span>
           </div>
-          <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none" }} aria-hidden />
-        </button>
+          {partners.paywall && <ChevronRight width={18} height={18} style={{ color: "var(--m-ink-soft)", flex: "none" }} aria-hidden />}
+        </PlanRow>
 
         <button className="row" onClick={() => router.push("/m/settings/preferences")} style={{ width: "100%", textAlign: "left", border: "none" }}>
           <span className="icon-btn tint-green" style={{ boxShadow: "none", color: "var(--figure-accent)", flex: "none" }} aria-hidden>

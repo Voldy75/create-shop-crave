@@ -6,6 +6,9 @@ import { ArrowLeft, ChevronRight, Sparkles } from "lucide-react";
 import { getActiveRecipe, getBuyList } from "@/lib/mobile-handoff";
 import { parseNumeric } from "@/lib/nutrition";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
+import { usePartners } from "@/lib/feature-flags";
+import { SwiggyAttribution } from "@/components/SwiggyAttribution";
+import { groceryOffered } from "@/lib/partners";
 import { BoBowl, Carrot } from "@/components/mascots";
 import type { Ingredient } from "@/lib/types";
 
@@ -30,6 +33,7 @@ export default function BuyPlatform() {
   const [items, setItems] = useState<Ingredient[]>([]);
   const [recipeName, setRecipeName] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const partners = usePartners();
 
   useEffect(() => {
     const list = getBuyList();
@@ -51,10 +55,11 @@ export default function BuyPlatform() {
     .map((i) => `${i.item}${i.quantity ? ` (${i.quantity})` : ""}`)
     .join(", ")}. Use my saved address.`;
 
+  // Other stores only when their partner_* flag is on (lib/partners.ts).
   const deeplinks = [
     { id: "blinkit", name: "Blinkit", eta: "~10 min · opens Blinkit search", letter: "B", tint: "tint-green", ink: "var(--figure-accent)", href: buildBlinkitLink(query) },
     { id: "instacart", name: "Instacart", eta: "~2 hrs · opens Instacart search", letter: "I", tint: "tint-lav", ink: "var(--text-plum)", href: buildInstacartLink(query) },
-  ];
+  ].filter((p) => groceryOffered(partners, p.id));
 
   if (!hydrated) return <div style={{ minHeight: "100dvh", background: "var(--m-cream)" }} />;
 
@@ -105,11 +110,14 @@ export default function BuyPlatform() {
         >
           Order via meshi
         </button>
-        {/* The artboard's card offers only the agent. But Swiggy's MCP OAuth
-            gates to an allowlist of AI clients and rejects our origin (Dead End
-            1 in handoff.md), so the agent path can fail for reasons the user
-            cannot fix. Without this fallback there would be no way to reach
-            Instamart at all. */}
+        {/* Swiggy's required attribution for an MCP-powered order (Brand
+            guidelines → "Order: alongside the cart and checkout summary"). */}
+        <div style={{ alignSelf: "center", marginTop: -6 }}>
+          <SwiggyAttribution service="instamart" compact />
+        </div>
+        {/* The artboard's card offers only the agent. The plain Instamart link
+            stays as the route for anyone who has not connected Swiggy (or
+            whose session lapsed) — ordering in-app needs a connected account. */}
         <a
           href={buildSwiggyInstamartLink(query)}
           target="_blank"
@@ -142,7 +150,7 @@ export default function BuyPlatform() {
 
       <div className="toast tint-peach" style={{ boxShadow: "none" }}>
         <Carrot width={30} height={30} style={{ flex: "none" }} />
-        <span>Deeplinks open the platform with your list pre-searched.</span>
+        <span>{deeplinks.length ? "Deeplinks open the platform with your list pre-searched." : "Opening Instamart yourself pre-searches your list."}</span>
       </div>
     </div>
   );

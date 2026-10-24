@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Utensils, ShoppingCart, ExternalLink, Loader2, AlertCircle, Check } from "lucide-react";
 import { getSwiggyStatus, startSwiggyAuth, disconnectSwiggy, type SwiggyStatus } from "@/lib/swiggy-client";
-import { useFeatureFlags } from "@/lib/feature-flags";
+import { useFeatureFlags, usePartners } from "@/lib/feature-flags";
 import { BoBowl } from "@/components/mascots";
 
 /**
@@ -18,19 +18,15 @@ import { BoBowl } from "@/components/mascots";
  *
  * WHAT IS REAL vs NOT, and it matters:
  *  - Swiggy status/connect/disconnect ARE the real flow (lib/swiggy-client →
- *    /api/swiggy/*). BUT the OAuth itself is Dead End 1 — Swiggy's MCP gateway
- *    rejects our web origin — so "Connect" starts a round trip that can fail
- *    upstream for reasons the user cannot fix. The copy does not promise it
- *    will succeed.
- *  - Instacart / Zomato are DISABLED placeholders gated on their feature flags,
- *    exactly as web's ConnectionsSection shows them. No public MCP endpoint is
- *    known for either, so they read "Coming soon" until an admin flips the flag.
+ *    /api/swiggy/*). Swiggy confirmed our production redirect URI is
+ *    allowlisted (checked 2026-10-24 via their check-redirect-uri endpoint).
+ *  - Instacart / Zomato rows are hidden unless their partner flags are on
+ *    (lib/partners.ts); with the flag on they still read "Coming soon" until
+ *    an admin also enables their MCP flag.
  *
- * ONE PRE-EXISTING QUIRK, documented not fixed here: the OAuth callback
- * (app/api/swiggy/auth/callback) redirects to `/settings/notifications` — a
- * hardcoded WEB path — so a completed connect lands back on web settings, not
- * here. Changing that server redirect is out of scope for a UI screen, and the
- * flow is blocked upstream regardless.
+ * The OAuth round trip returns HERE (?connected=1 or ?error=…): the start
+ * call passes surface "mobile", which the callback reads from a cookie. It
+ * used to land on the web settings screen.
  */
 
 interface Provider {
@@ -49,6 +45,7 @@ const EXTRA_PROVIDERS: Provider[] = [
 export default function MobileConnectionsPage() {
   const router = useRouter();
   const { isEnabled, loading: flagsLoading } = useFeatureFlags();
+  const partners = usePartners();
 
   const [swiggy, setSwiggy] = useState<SwiggyStatus | null>(null);
   const [swiggyLoaded, setSwiggyLoaded] = useState(false);
@@ -67,10 +64,18 @@ export default function MobileConnectionsPage() {
 
   useEffect(() => {
     let cancelled = false;
+    // The OAuth callback lands here with ?connected=1 or ?error=<code>.
+    // Read it once, then clean the URL so a refresh doesn't repeat the note.
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get("connected") === "1" ? "connected" : params.get("error");
+    if (outcome) window.history.replaceState({}, "", "/m/settings/connections");
     getSwiggyStatus().then((status) => {
       if (cancelled) return;
       setSwiggy(status);
       setSwiggyLoaded(true);
+      if (outcome === "connected") setNote("Swiggy connected. Bo can now order food, groceries and book tables for you.");
+      else if (outcome === "access_denied") setNote("Swiggy connection cancelled.");
+      else if (outcome) setNote("Couldn't connect Swiggy. Please try again.");
     });
     return () => { cancelled = true; };
   }, []);
@@ -78,12 +83,12 @@ export default function MobileConnectionsPage() {
   const connect = async () => {
     setBusy(true);
     setNote(null);
-    const result = await startSwiggyAuth();
+    const result = await startSwiggyAuth("mobile");
     // On success the browser has already navigated to Swiggy; we only reach the
     // next line on failure.
     if (!result.ok) {
       setBusy(false);
-      setNote("Couldn't start the Swiggy connection. It may not be available for this app yet.");
+      setNote(result.reason ? `Couldn't start the Swiggy connection: ${result.reason}` : "Couldn't start the Swiggy connection. Please try again.");
     }
   };
 
@@ -167,7 +172,8 @@ export default function MobileConnectionsPage() {
       )}
 
       {/* ── Placeholders, flag-gated exactly like web ── */}
-      {EXTRA_PROVIDERS.map((p) => {
+      {/* Switched-off partners (lib/partners.ts) are hidden, not teased. */}
+      {EXTRA_PROVIDERS.filter((p) => (p.id === "instacart" ? partners.instacart : partners.zomato)).map((p) => {
         const enabled = !flagsLoading && isEnabled(p.flagId);
         const Icon = p.icon;
         return (

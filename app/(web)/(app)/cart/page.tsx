@@ -8,6 +8,8 @@ import { parseNumeric } from "@/lib/nutrition";
 import { looksPantry } from "@/lib/pantry";
 import { mascotComponentFor, tileTint } from "@/lib/ingredient-mascot";
 import { buildBlinkitLink, buildSwiggyInstamartLink, buildInstacartLink } from "@/lib/deeplinks";
+import { usePartners } from "@/lib/feature-flags";
+import { SwiggyAttribution } from "@/components/SwiggyAttribution";
 import { BoBowl, MascotFor } from "@/components/mascots";
 import {
   listGroceryRuns,
@@ -41,7 +43,7 @@ import type { Ingredient } from "@/lib/types";
  *     rows are INCLUDE / EXCLUDE instead — which is also the real interaction,
  *     since the useful question is "do I already own this?".
  *   - **No address, ETA, or fees.** Addresses exist only inside the Swiggy MCP
- *     agent (`get_addresses`), which Dead End 1 says rejects our web origin.
+ *     agent (`get_addresses`), which needs the user's connected Swiggy account.
  *     `deliveryFee` and any tipping concept appear nowhere in the codebase.
  *     The rail therefore shows a subtotal only, labelled as an estimate.
  *   - **No order placement or tracking from web.** There is no orders table and
@@ -81,6 +83,7 @@ function CartPageInner() {
      chat's "Send to Blinkit" lands with Blinkit already picked out instead of
      making the user find it again. */
   const preferredStore = params.get("store");
+  const partners = usePartners();
 
   useEffect(() => {
     // sessionStorage read after mount — cannot run during SSR. Same handoff the
@@ -338,8 +341,13 @@ function CartPageInner() {
           <button className="pill-primary" style={{ width: "100%", marginTop: 12 }} onClick={askBo} disabled={selected.length === 0}>
             Ask Bo to order
           </button>
-          {/* Swiggy's MCP OAuth can reject this origin (Dead End 1) for reasons
-              the user cannot fix. Without this there is no route to Instamart. */}
+          {/* Swiggy's required attribution for an MCP-powered order (Brand
+              guidelines → "Order: alongside the cart and checkout summary"). */}
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 6 }}>
+            <SwiggyAttribution service="instamart" compact />
+          </div>
+          {/* The plain link stays for anyone who has not connected Swiggy (or
+              whose session lapsed) — in-app ordering needs a connected account. */}
           <a
             href={buildSwiggyInstamartLink(query)}
             target="_blank"
@@ -352,20 +360,27 @@ function CartPageInner() {
           </a>
         </div>
 
-        <div className="vstack" style={{ gap: 8 }}>
-          <StoreLink
-            label="Blinkit"
-            href={buildBlinkitLink(query)}
-            onSend={() => record("blinkit")}
-            highlight={preferredStore === "blinkit"}
-          />
-          <StoreLink
-            label="Instacart"
-            href={buildInstacartLink(query)}
-            onSend={() => record("instacart")}
-            highlight={preferredStore === "instacart"}
-          />
-        </div>
+        {/* Other stores only when their partner_* flag is on (lib/partners.ts). */}
+        {(partners.blinkit || partners.instacart) && (
+          <div className="vstack" style={{ gap: 8 }}>
+            {partners.blinkit && (
+              <StoreLink
+                label="Blinkit"
+                href={buildBlinkitLink(query)}
+                onSend={() => record("blinkit")}
+                highlight={preferredStore === "blinkit"}
+              />
+            )}
+            {partners.instacart && (
+              <StoreLink
+                label="Instacart"
+                href={buildInstacartLink(query)}
+                onSend={() => record("instacart")}
+                highlight={preferredStore === "instacart"}
+              />
+            )}
+          </div>
+        )}
 
         <div className="grow" />
       </aside>

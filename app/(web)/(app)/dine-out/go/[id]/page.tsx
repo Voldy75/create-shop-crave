@@ -154,7 +154,7 @@ export default function GoTherePage({ params }: { params: Promise<{ id: string }
 
               {location && drop ? (
                 <div className="vstack" style={{ gap: 9 }}>
-                  <a className="rideo" href={buildUberDeepLink(location, drop, restaurant.name)} target="_blank" rel="noopener noreferrer">
+                  <a className="rideo" href={buildUberDeepLink(location, drop, restaurant.name, restaurant.area)} target="_blank" rel="noopener noreferrer">
                     <span className="go-brand mp-uber" aria-hidden><Car width={17} height={17} /></span>
                     <span className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
                       <span className="t-h2" style={{ fontSize: 15 }}>Uber</span>

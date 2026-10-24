@@ -1,5 +1,7 @@
 "use client";
 
+import { partnersFrom } from "@/lib/partners";
+
 import React from "react";
 import { Loader2, ExternalLink } from "lucide-react";
 
@@ -46,6 +48,7 @@ export function ConnectionsSection({
   flags: Record<string, boolean>;
   flagsLoading: boolean;
 }) {
+  const partners = partnersFrom(flags);
   if (flagsLoading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -89,7 +92,9 @@ export function ConnectionsSection({
         </p>
       </div>
 
-      {SERVICES.map((svc) => {
+      {/* Instacart / Zomato rows only exist while their partner flag is on
+          (lib/partners.ts) — switched-off partners are hidden, not teased. */}
+      {SERVICES.filter((svc) => svc.id === "swiggy" || (svc.id === "instacart" ? partners.instacart : svc.id === "zomato" ? partners.zomato : false)).map((svc) => {
         const enabled = flags[svc.flagId] ?? false;
         return (
           <div

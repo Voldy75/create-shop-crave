@@ -1,5 +1,7 @@
 "use client";
 
+import { maskEmail, maskedPerson } from "@/lib/pii";
+
 /**
  * User detail drawer, built to w12b's right-hand panel.
  *
@@ -158,9 +160,9 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
           </span>
           <div className="vstack grow" style={{ gap: 1, minWidth: 0 }}>
             <span style={{ font: "800 15px var(--m-font-display)", overflowWrap: "anywhere" }}>
-              {current.display_name || current.email?.split("@")[0] || "—"}
+              {maskedPerson(current.display_name, current.email)}
             </span>
-            <span className="ad-cap" style={{ overflowWrap: "anywhere" }}>{current.email ?? "no email"}</span>
+            <span className="ad-cap" style={{ overflowWrap: "anywhere" }}>{current.email ? maskEmail(current.email) : "no email"}</span>
           </div>
           <span className={`ad-pill ${pill.cls}`}>{pill.label}</span>
         </div>
@@ -318,7 +320,7 @@ export function UserDrawer({ user, plans, onClose, onUpdated }: UserDrawerProps)
               {actions.map((a) => (
                 <li key={a.id} className="ad-cap" style={{ overflowWrap: "anywhere" }}>
                   {new Date(a.created_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })} · {describe(a)}
-                  {a.actor ? ` · ${a.actor}` : ""}
+                  {a.actor ? ` · ${maskEmail(a.actor)}` : ""}
                 </li>
               ))}
             </ul>

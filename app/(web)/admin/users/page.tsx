@@ -1,5 +1,7 @@
 "use client";
 
+import { maskEmail, maskedPerson } from "@/lib/pii";
+
 /**
  * Admin → Users, built to w12b (empty state: w12h).
  *
@@ -216,8 +218,8 @@ export default function UsersPage() {
                             <div className="hstack" style={{ gap: 9 }}>
                               <span className="ad-av-sm" aria-hidden>{userInitials(u)}</span>
                               <div className="vstack" style={{ gap: 0, minWidth: 0 }}>
-                                <span style={{ fontWeight: 700 }}>{u.display_name || u.email?.split("@")[0] || "—"}</span>
-                                <span className="ad-cap">{u.email ?? u.user_id}</span>
+                                <span style={{ fontWeight: 700 }}>{maskedPerson(u.display_name, u.email)}</span>
+                                <span className="ad-cap">{u.email ? maskEmail(u.email) : u.user_id}</span>
                               </div>
                             </div>
                           </td>

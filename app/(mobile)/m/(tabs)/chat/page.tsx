@@ -12,6 +12,8 @@ import { foodImage } from "@/lib/food-images";
 import { BoBowl } from "@/components/mascots";
 import { CarrotRating } from "@/components/mobile/CarrotRating";
 import type { ChatResponse, RecipeData, RestaurantSuggestion } from "@/lib/types";
+import { AgentAttribution } from "@/components/SwiggyAttribution";
+
 
 /**
  * Chat with Bo — built to the Flow 3 "Chat with Bo (AI)" artboard (1e).
@@ -219,6 +221,7 @@ function ChatInner() {
                   <div className="card t-body" style={{ padding: "12px 16px", borderBottomLeftRadius: 6 }}>{text}</div>
                 ) : null}
                 {data?.restaurantSuggestion?.restaurants?.length ? <RestaurantsCard sugg={data.restaurantSuggestion} onMap={onOpenRestaurants} /> : null}
+                <AgentAttribution invocations={m.toolInvocations} />
               </div>
             </div>
           );
