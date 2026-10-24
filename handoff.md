@@ -125,6 +125,8 @@ admin and account APIs return 401. What the release did NOT turn on: checkout
   4 critical) rather than waiting for item 9. → "Dependency advisories".
 
 **Closed since the last refresh — do not re-open**
+- 2026-10-24: service-role client fixed to never carry the user session
+  (PR #35) — unblocks Swiggy connect, admin APIs, account deletion, quotas.
 - 2026-10-24 (branch `feat/swiggy-launch`): Swiggy-only partner set, paywall
   off behind flags, PII masked on screen, Swiggy agent aligned with the latest
   docs + required attribution, mobile OAuth return fixed. Spotify and Uber MCP
@@ -444,6 +446,26 @@ available so chat, the Swiggy agent, coach and photo analysis can each be
 exercised after the upgrade.
 
 ## Bugs found and fixed (all were live)
+
+- **The "service-role" client ran as the signed-in user (fixed 2026-10-24,
+  PR #35, `9bdabc5`).** `createServiceClient()` in `lib/supabase/server.ts` was
+  built with `@supabase/ssr`'s `createServerClient` plus the request cookies.
+  With a signed-in session, supabase-js sent THAT user's access token, so
+  every "service" query ran as `authenticated`, not `service_role`. Found when
+  the first real Swiggy connect failed: Swiggy's OAuth and token exchange
+  succeeded, then `persistConnection` hit "permission denied for table
+  mcp_connections". The same fault affected every signed-in path using this
+  client — the admin APIs (admin RPCs are revoked from `authenticated`),
+  account deletion (`auth.admin.deleteUser` needs the service key), audit
+  logging, the MCP token store, and quotas: logs just before the fix also
+  show `is_pro_user` "permission denied" in `resolveLimits` and the pro check,
+  so plan/limit resolution was failing for signed-in users. Fix: a plain
+  `@supabase/supabase-js` client with the service key and no session
+  handling. Verified read-only against production with the new client
+  (select on `mcp_connections` incl. `refresh_token`, `auth.admin.listUsers`,
+  `rpc admin_total_users` — all refused to `authenticated`); no production
+  errors logged after the deploy. **Lesson: signed-out verification cannot
+  catch this — every earlier check of these paths ran without a session.**
 
 - **The chat daily limit never blocked anyone.** `check_and_increment_usage`
   capped `count` at the limit then tested `v_count <= p_limit`; once count
@@ -1540,8 +1562,11 @@ succeeded; then `mcp_swiggy` and `mcp_providers.swiggy.enabled` were switched
 ON (all three servers enabled). Checked on production after: billing returns
 `canPurchase: false`, the mobile OAuth return path is live, the Swiggy routes
 answer 401 signed-out (not 5xx), and Swiggy still reports our callback as
-whitelisted. **Still to do:** connect once with a real Swiggy account (phone +
-OTP) and place a small test order.
+whitelisted. **First real connect attempt failed** — not Swiggy: the
+service-role client bug above (fixed in PR #35, deployed 2026-10-24 13:37 UTC).
+**Still to do:** retry the connect with a real Swiggy account (phone + OTP),
+confirm a row lands in `mcp_connections` and `mcp_providers.client_id` gets
+cached, then place a small test order.
 Swiggy's go-live checklist also asks for a staged rollout and an incident
 contact (email + Slack) shared with builders@swiggy.in.
 
