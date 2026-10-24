@@ -6,8 +6,9 @@
  * auth.users with ON DELETE CASCADE (verified across scripts/sql/*.sql, ten
  * references). So removing the auth user removes every server row in one
  * transaction — meal logs, goals, usage, notification subscriptions, MCP
- * connections, the profile, the subscription row. There are no user files in
- * Supabase Storage.
+ * connections, the profile, the subscription row, and Bo's food profile,
+ * consent ledger, tasks, task events and task usage (scripts/sql/food-profile.sql,
+ * agent-tasks.sql). There are no user files in Supabase Storage.
  *
  * WHAT IT CANNOT REACH. Saved recipes, the meal plan, diet preferences, tastes
  * and the weight goal live in localStorage. The client clears them on the

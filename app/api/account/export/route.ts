@@ -63,7 +63,7 @@ export async function POST(req: Request) {
 
   const sb = await createServiceClient();
   const uid = user.id;
-  const [profile, mealLogs, goals, notif, notifLog, conns, subs, usage, usagePhoto] = await Promise.all([
+  const [profile, mealLogs, goals, notif, notifLog, conns, subs, usage, usagePhoto, foodProfile, consents, tasks, taskEvents, usageTasks] = await Promise.all([
     sb.from("user_profiles")
       .select("email, display_name, plan_id, first_seen_platform, last_seen_platform, last_seen_at, created_at")
       .eq("user_id", uid)
@@ -82,6 +82,16 @@ export async function POST(req: Request) {
     sb.from("pro_subscriptions").select("provider, status, current_period_end, created_at").eq("user_id", uid).maybeSingle(),
     sb.from("usage").select("usage_date, count").eq("user_id", uid).order("usage_date", { ascending: true }),
     sb.from("usage_photo").select("usage_date, count").eq("user_id", uid).order("usage_date", { ascending: true }),
+    // Bo (scripts/sql/food-profile.sql, agent-tasks.sql). Empty for users who
+    // never opted in.
+    sb.from("user_food_profile")
+      .select("diets, allergies, tastes, goal, household_size, budget_band, swiggy_address_id, quiet_hours_start, quiet_hours_end, timezone, consent_version, consented_at, nudges_consented_at, updated_at")
+      .eq("user_id", uid)
+      .maybeSingle(),
+    sb.from("consent_events").select("purpose, action, notice_version, platform, created_at").eq("user_id", uid).order("created_at", { ascending: true }),
+    sb.from("agent_tasks").select("id, intent, mode, status, plan, created_at, updated_at, expires_at").eq("user_id", uid).order("created_at", { ascending: true }),
+    sb.from("agent_task_events").select("task_id, kind, tool, summary, data, created_at").eq("user_id", uid).order("id", { ascending: true }),
+    sb.from("usage_tasks").select("usage_date, count").eq("user_id", uid).order("usage_date", { ascending: true }),
   ]);
 
   const logs = (mealLogs.data ?? []) as Row[];
@@ -100,7 +110,9 @@ export async function POST(req: Request) {
     "  notifications.json      which channels are on, and the delivery log",
     "  connections.json        connected store accounts (no access tokens)",
     "  subscription.json       your meshi+ status",
-    "  usage.json              daily Bo request counts",
+    "  usage.json              daily Bo request and task counts",
+    "  bo_profile.json         Bo's food profile and your consent history",
+    "  bo_tasks.json           what you asked Bo to do, and each task's timeline",
     "",
     "FROM THIS BROWSER",
     "  this_device.json        saved recipes, meal plan, diet, allergies, tastes",
@@ -122,7 +134,16 @@ export async function POST(req: Request) {
     "notifications.json": json({ settings: notif.data ?? null, log: notifLog.data ?? [] }),
     "connections.json": json(conns.data ?? []),
     "subscription.json": json(subs.data ?? null),
-    "usage.json": json({ chat: usage.data ?? [], photo: usagePhoto.data ?? [] }),
+    "usage.json": json({ chat: usage.data ?? [], photo: usagePhoto.data ?? [], tasks: usageTasks.data ?? [] }),
+    "bo_profile.json": json({ profile: foodProfile.data ?? null, consents: consents.data ?? [] }),
+    "bo_tasks.json": json(
+      ((tasks.data ?? []) as Row[]).map((t) => ({
+        ...t,
+        events: ((taskEvents.data ?? []) as Row[])
+          .filter((e) => e.task_id === t.id)
+          .map((e) => ({ kind: e.kind, tool: e.tool, summary: e.summary, data: e.data, created_at: e.created_at })),
+      }))
+    ),
     "this_device.json": json(local),
     // FavoriteItem is { id, type, data, savedAt } — the name lives on data.
     "saved_recipes.csv": strToU8(
