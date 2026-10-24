@@ -1,4 +1,5 @@
-import { streamText, tool, jsonSchema } from "ai";
+import { streamText, tool, jsonSchema, isStepCount, toUIMessageStream, createUIMessageStreamResponse } from "ai";
+import { toModelMessages } from "@/lib/ai-messages";
 import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementUsage } from "@/lib/rate-limit";
 import { getModel, getServerModel, type Provider } from "@/lib/providers";
@@ -85,7 +86,8 @@ Hard rules:
 If you cannot do something with the available tools, say so plainly. Don't fabricate.`;
 
 interface AgentRequest {
-  messages: Array<{ role: "user" | "assistant" | "system"; content: string }>;
+  /** UIMessages from AI SDK 7 clients (or the legacy {role, content} shape). */
+  messages: unknown[];
   provider?: Provider;
   apiKey?: string;
 }
@@ -196,7 +198,7 @@ export async function POST(req: Request) {
           // (type arrays, a top-level anyOf) and ONE bad tool fails the whole
           // request — see lib/mcp/schema.ts. Swiggy validates real arguments.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          parameters: jsonSchema(sanitizeToolSchema(t.inputSchema) as any),
+          inputSchema: jsonSchema(sanitizeToolSchema(t.inputSchema) as any),
           execute: async (rawArgs: unknown) => {
             const args = (rawArgs ?? {}) as Record<string, unknown>;
             const confirmed = args._confirmed === true;
@@ -269,18 +271,25 @@ export async function POST(req: Request) {
     );
   }
 
-  // Build the streamed response, closing MCP clients in onFinish so in-flight
+  // Build the streamed response, closing MCP clients in onEnd so in-flight
   // tool calls aren't truncated.
   let result;
   try {
-    result = await streamText({
+    result = streamText({
       model,
-      system: SYSTEM_PROMPT,
-      messages: body.messages.filter((m) => m.role === "user" || m.role === "assistant"),
+      instructions: SYSTEM_PROMPT,
+      messages: await toModelMessages(body.messages),
       tools: aiTools,
       toolChoice: "auto",
-      maxToolRoundtrips: 6, // allow chains like address → search → menu → cart → place
-      onFinish: async () => {
+      // 7 steps = up to 6 tool round trips, same budget as before the AI SDK 7
+      // upgrade (address → search → menu → cart → place).
+      stopWhen: isStepCount(7),
+      // Since AI SDK 4 the call returns immediately and model errors arrive in
+      // the stream, not as a throw — log them here or they are silent again.
+      onError: ({ error }) => {
+        console.error("agent: model stream failed:", error instanceof Error ? error.message.slice(0, 300) : error);
+      },
+      onEnd: async () => {
         await closeAll(open);
       },
     });
@@ -295,8 +304,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const response = result.toDataStreamResponse();
-  if (usedBYOK) response.headers.set("X-Usage-BYOK", "true");
-  response.headers.set("X-Swiggy-Tools", String(Object.keys(aiTools).length));
-  return response;
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({
+      stream: result.stream,
+      onError: () => "Bo couldn't reach the AI model just now. Please try again in a moment.",
+    }),
+    headers: {
+      ...(usedBYOK ? { "X-Usage-BYOK": "true" } : {}),
+      "X-Swiggy-Tools": String(Object.keys(aiTools).length),
+    },
+  });
 }

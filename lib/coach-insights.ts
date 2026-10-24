@@ -10,7 +10,7 @@
  */
 
 import { z } from "zod";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { getServerModel } from "@/lib/providers";
 import { tastesLine } from "@/lib/taste-prompt";
 
@@ -195,13 +195,13 @@ Write one nudge for tonight. If user logged 0 meals today, prompt them to log. I
 export async function composeNudge(args: PromptArgs): Promise<Nudge | null> {
   try {
     const { system, prompt } = buildNudgePrompt(args);
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model: getServerModel(),
-      schema: NudgeResponse,
-      system,
+      output: Output.object({ schema: NudgeResponse }),
+      instructions: system,
       prompt,
     });
-    return object;
+    return output;
   } catch (err) {
     console.error("composeNudge:", err instanceof Error ? err.message.slice(0, 200) : err);
     return null;

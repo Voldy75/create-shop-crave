@@ -1,7 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { useChat } from "ai/react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { chatErrorText, messageText } from "@/lib/ai-messages";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Camera, ArrowUp } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
@@ -81,36 +83,43 @@ function ChatInner() {
   const onCapReached = () => router.push("/m/settings/key?from=chat");
 
   const [chatError, setChatError] = useState<string | null>(null);
-  const { messages, input, handleInputChange, handleSubmit, append, isLoading } = useChat({
-    api: agentMode ? "/api/agent" : "/api/chat",
-    body: {
-      userContext: { userName, location, dietaryPreferences, favoriteCuisines, weightGoal: getWeightGoal() },
-      ...(byok ? { provider: byok.provider, apiKey: byok.apiKey } : {}),
-    },
-    onResponse: (res) => {
-      // Only the free cap (429) routes to key entry. A BYOK key that is invalid
-      // comes back 400 and is left to the generic failure path rather than
-      // sending the user in a loop to a screen where their key already sits.
-      if (res.status === 429) onCapReached();
-    },
+  // AI SDK 7: the current body is passed with each send — byok loads after
+  // mount, so a body fixed at first render would miss it.
+  const [input, setInput] = useState("");
+  const buildBody = () => ({
+    userContext: { userName, location, dietaryPreferences, favoriteCuisines, weightGoal: getWeightGoal() },
+    ...(byok ? { provider: byok.provider, apiKey: byok.apiKey } : {}),
+  });
+  const transport = useMemo(() => new DefaultChatTransport({ api: agentMode ? "/api/agent" : "/api/chat" }), [agentMode]);
+  // Only the free cap (429) routes to key entry (detected from the error
+  // body below). A BYOK key that is invalid comes back 400 and is left to the
+  // generic failure path rather than sending the user in a loop to a screen
+  // where their key already sits.
+  const { messages, sendMessage, status } = useChat({
+    transport,
     onError: (err) => {
       const msg = err.message || "";
       if (msg.includes("Daily limit") || msg.includes("rate_limit") || msg.includes("429")) {
         onCapReached();
         return;
       }
-      // Every other failure used to be silent. Our routes send {error,
-      // message} JSON as the body, which the SDK puts in err.message.
-      let serverMessage: string | null = null;
-      try {
-        const parsed = JSON.parse(msg);
-        if (parsed && typeof parsed.message === "string") serverMessage = parsed.message;
-      } catch {
-        // not JSON
-      }
-      setChatError(serverMessage ?? "Something went wrong. Please try again.");
+      // Every other failure used to be silent; show the server's message.
+      setChatError(chatErrorText(msg));
     },
   });
+  const isLoading = status === "submitted" || status === "streaming";
+  const send = (text: string) => {
+    const t = text.trim();
+    if (!t) return;
+    setChatError(null);
+    void sendMessage({ text: t }, { body: buildBody() });
+  };
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isLoading) return;
+    send(input);
+    setInput("");
+  };
 
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -120,8 +129,8 @@ function ChatInner() {
     if (fired.current || !seed) return;
     fired.current = true;
     window.history.replaceState({}, "", agentMode ? "/m/chat?agent=1" : "/m/chat");
-    append({ role: "user", content: seed });
-  }, [seed, agentMode, append]);
+    void sendMessage({ text: seed }, { body: buildBody() });
+  }, [seed, agentMode]); // eslint-disable-line react-hooks/exhaustive-deps -- fires once per seed
 
   const onOpenRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/recipe"); };
   const onBuyRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/buy"); };
@@ -195,7 +204,7 @@ function ChatInner() {
             </p>
             <div className="hstack" style={{ gap: 8, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
               {SUGGESTIONS.map((s) => (
-                <button key={s} className="chip" onClick={() => append({ role: "user", content: s })}>{s}</button>
+                <button key={s} className="chip" onClick={() => send(s)}>{s}</button>
               ))}
             </div>
           </div>
@@ -215,12 +224,12 @@ function ChatInner() {
                     padding: "12px 16px",
                   }}
                 >
-                  {m.content}
+                  {messageText(m)}
                 </div>
               </div>
             );
           }
-          const { text, data } = extractResponse(m.content);
+          const { text, data } = extractResponse(messageText(m));
           return (
             /* Bo tucks against the bottom-left of his own bubble stack. */
             <div key={m.id} className="hstack" style={{ gap: 8, alignItems: "flex-end", marginBottom: 14 }}>
@@ -235,7 +244,7 @@ function ChatInner() {
                   <div className="card t-body" style={{ padding: "12px 16px", borderBottomLeftRadius: 6 }}>{text}</div>
                 ) : null}
                 {data?.restaurantSuggestion?.restaurants?.length ? <RestaurantsCard sugg={data.restaurantSuggestion} onMap={onOpenRestaurants} /> : null}
-                <AgentAttribution invocations={m.toolInvocations} />
+                <AgentAttribution parts={m.parts} />
               </div>
             </div>
           );
@@ -282,7 +291,7 @@ function ChatInner() {
         <div className="input">
           <input
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder={agentMode ? "Order groceries, food, or book a table…" : "Ask Bo anything edible…"}
             style={{ flex: 1, minWidth: 0, background: "none", border: "none", padding: 0, font: "inherit", color: "inherit" }}
           />
