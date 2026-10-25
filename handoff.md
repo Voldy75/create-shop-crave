@@ -39,8 +39,11 @@ them.
 **Bo as an autonomous agent — in progress on `feat/bo-agent` (2026-10-25).**
 Plan: `~/.claude/plans/hidden-booping-naur.md`. Every phase is a PR into
 `feat/bo-agent`, never `main`; `main` and production are untouched until one
-owner-approved final merge. See "Bo agent (feat/bo-agent)" near the end for
-the dev database, the data model and what is left.
+owner-approved final merge. Phase 1 (#38–#40) and Phase 2 server + Approval
+card (#41, #42) are merged into `feat/bo-agent`; the signed-in check against
+the dev database is half done, waiting for the Gemini free quota to reset.
+See "Bo agent (feat/bo-agent)" near the end for the dev database, running
+locally against it, and what is left.
 
 **Re-check 2026-10-24 (no code changed since 2026-10-11):** production Vercel
 has Supabase ×3, `GOOGLE_GENERATIVE_AI_API_KEY` and the Maps key — still none
@@ -1634,9 +1637,32 @@ identically on both projects (1,733 objects). Config rows copied (flags,
 plans, prices, app_config, MCP providers/servers); **no user data**. The
 `client_id` cache is left null so dev registers its own DCR client.
 Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
-`bo_agent_tasks_and_metering`. To run the app against dev, put dev's URL,
-anon key and **service-role key** (Dashboard → Settings → API; never commit
-it) in an env file; `.env.local` points at production.
+`bo_agent_tasks_and_metering`. **`bo_agent` is ON in dev only**
+(2026-10-25); production has no `bo_agent` row at all (Bo SQL not applied).
+
+**Running locally against dev (set up 2026-10-25).**
+- `.env.development.local` (gitignored by `.env*`) holds dev's
+  `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY` (Dashboard → Settings → API Keys) and
+  `BO_APPROVAL_SECRET` (`openssl rand -hex 32`). `next dev` reads it BEFORE
+  `.env.local`, so the dev server uses dev while `.env.local` (production)
+  is untouched; `next build` and Vercel never read it. Restart the dev server
+  after changing it. Gemini still comes from `.env.local`.
+- **Trap:** TextEdit saves rich text — the first attempt became
+  `.env.development.local.rtf`, Next ignored it and the app silently stayed
+  on PRODUCTION (sign-in and Swiggy reconnect went there; checked: no new
+  production users or tokens). Format → Make Plain Text first. Quick check
+  that the server is on dev: `/api/flags` lists `bo_agent` (production has
+  no such row) and `POST /api/bo` answers 401, not 404.
+- **Dev sign-in is email magic link only.** Google/GitHub are not configured
+  on the dev project ("Unsupported provider: provider is not enabled"); the
+  web landing's email option works with Site URL `http://localhost:3000`.
+  Mobile onboarding is Google-only, so sign in on web. Supabase's built-in
+  mailer allows only a few emails per hour.
+- Swiggy connections live in **`mcp_connections`** (`provider_id =
+  'swiggy'`), not the legacy `swiggy_tokens` — check there.
+- The owner's dev account exists, with Swiggy connected (fresh token +
+  refresh) and Bo's memory on. The agent's Browser pane is signed in too.
 
 **Slices.**
 1. SDK upgrade 3 → 7 — branch `bo/p1-sdk-upgrade`, PR #38.
@@ -1718,8 +1744,8 @@ it) in an env file; `.env.local` points at production.
      modules: approval before checkout, Swiggy's bill on the card, ETA-only
      change still places, quantity change → cart_changed, forged input and
      missing secret → nothing placed, request recorded once.
-   - Next: the client Approval card (web + mobile).
-6. Approval card — branch `bo/p2-approval-card`. With `bo_agent` on, the
+   - Merged: PR #41.
+6. Approval card — branch `bo/p2-approval-card`, merged as PR #42. With `bo_agent` on, the
    existing agent entry (`/chat?agent=1`, `/m/chat?agent=1`) talks to
    `/api/bo`; off, it is the old `/api/agent` untouched.
    - `lib/bo/agent-client.ts`: transport that keeps the task id from
@@ -1735,6 +1761,32 @@ it) in an env file; `.env.local` points at production.
      Change → `approved: false`, one Swiggy badge, AA in light (min 5.45)
      and dark (min 6.15). **Web not seen in a browser** (needs a session);
      same component, tsc + build only.
+7. **Signed-in check against dev — STARTED, blocked on Gemini quota
+   (2026-10-25).** Web `/chat?agent=1` in the Browser pane, request: "Check
+   out my current Instamart cart exactly as it is — don't add, remove or
+   change anything. Use my preselected address and cash on delivery."
+   - Passed: consent grant + profile PUT 200; `/api/bo` 200; one task
+     created and counted once; intent stored (consent on); Instamart
+     `get_addresses` ran ok and was logged; on the model failure the steps
+     were still recorded and the chat showed "Bo couldn't reach the AI
+     model"; Regenerate continued the SAME task (no second task charged).
+   - Blocked: `gemini-2.5-flash` on the free-tier key in `.env.local` —
+     "You exceeded your current quota", including the first call of a retry
+     70 s later, so the DAILY free quota is spent. Resets at midnight Pacific
+     (12:30 IST); usage at https://ai.dev/rate-limit. Owner chose to wait.
+   - **Resume:** same request (a new chat = 1 more task; 1 of 3 used today
+     before the reset). Expect get_cart → get_payment_options → checkout →
+     Approval card with Swiggy's real bill. Check the task row, the
+     `approval_requested` event with a fingerprint, then tap **Change —
+     never Place order** and confirm `approval_rejected`. If Bo tries to
+     edit the cart instead, stop and tell the owner. Then look at the web
+     card (first time signed in).
+   - Owner's Instamart cart still holds Tata Salt 1 kg from the spike; it is
+     the cart this check uses, and nothing may be ordered.
+8. Idea, not started: Bo sends all ~40 Swiggy tool definitions on every
+   model call. Offering only the tools of the service in play (Food,
+   Instamart or Dineout) via `activeTools` would cut input tokens a lot —
+   cheaper and gentler on rate limits.
 
 **Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
 production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`
