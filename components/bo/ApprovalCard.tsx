@@ -38,7 +38,7 @@ export interface ApprovalPart {
   approval?: { id: string; requestReason?: string; approved?: boolean };
 }
 
-type Respond = (r: { id: string; approved: boolean; reason?: string }) => unknown;
+export type Respond = (r: { id: string; approved: boolean; reason?: string }) => unknown;
 
 const UPI_APPS: [RegExp, string][] = [
   [/gpay|google/i, "Google Pay"],
@@ -188,52 +188,5 @@ export function ApprovalCard({ part, respond, busy }: { part: ApprovalPart; resp
         )
       )}
     </section>
-  );
-}
-
-type Segment = { kind: "text"; text: string } | { kind: "approval"; part: ApprovalPart };
-
-/**
- * A Bo reply in the order it happened: text, the card, then what Bo said
- * after the user's tap ("Complete the payment in your UPI app…"). Joining
- * all the text into one bubble would put that follow-up ABOVE the card it is
- * about. Adjacent text parts merge into one bubble.
- */
-export function boSegments(parts?: ReadonlyArray<ApprovalPart & { text?: string }>): Segment[] {
-  const out: Segment[] = [];
-  for (const p of parts ?? []) {
-    if (p.type === "text" && typeof p.text === "string") {
-      const prev = out[out.length - 1];
-      if (prev?.kind === "text") prev.text += p.text;
-      else out.push({ kind: "text", text: p.text });
-    } else if (isApprovalPart(p)) {
-      out.push({ kind: "approval", part: p });
-    }
-  }
-  return out.filter((s) => s.kind === "approval" || s.text.trim());
-}
-
-/** Renders a Bo reply's segments; each tree supplies its own text bubble. */
-export function BoReply({
-  parts,
-  respond,
-  busy,
-  renderText,
-}: {
-  parts?: ReadonlyArray<ApprovalPart & { text?: string }>;
-  respond: Respond;
-  busy: boolean;
-  renderText: (text: string, key: string) => React.ReactNode;
-}) {
-  return (
-    <>
-      {boSegments(parts).map((s, i) =>
-        s.kind === "text" ? (
-          renderText(s.text.trim(), `t${i}`)
-        ) : (
-          <ApprovalCard key={s.part.toolCallId ?? s.part.approval!.id} part={s.part} respond={respond} busy={busy} />
-        )
-      )}
-    </>
   );
 }
