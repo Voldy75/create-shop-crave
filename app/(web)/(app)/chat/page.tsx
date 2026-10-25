@@ -15,8 +15,10 @@ import { RestaurantView } from "@/components/RestaurantView";
 import { SwiggyExpiryBanner } from "@/components/SwiggyExpiryBanner";
 import { ApiKeyDialog } from "@/components/ApiKeyDialog";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
-import { usePartners } from "@/lib/feature-flags";
+import { useFeatureFlags, usePartners } from "@/lib/feature-flags";
 import { AgentAttribution } from "@/components/SwiggyAttribution";
+import { BoReply } from "@/components/bo/ApprovalCard";
+import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
 import { BoBowl } from "@/components/mascots";
 import { motion, AnimatePresence } from "framer-motion";
 import { PROVIDERS, type Provider } from "@/lib/providers";
@@ -216,16 +218,26 @@ function ChatPageInner() {
   // Capture once at mount — switching modes mid-session requires a new navigation.
   const agentMode = useMemo(() => searchParams?.get("agent") === "1", []); // eslint-disable-line react-hooks/exhaustive-deps
   const initialQuery = useMemo(() => searchParams?.get("q") ?? "", []); // eslint-disable-line react-hooks/exhaustive-deps
-  const chatApi = agentMode ? "/api/agent" : "/api/chat";
+  // Agent mode runs on Bo (/api/bo, signed Approval cards) when bo_agent is
+  // on; otherwise on the original /api/agent. Decided once flags have loaded.
+  const flags = useFeatureFlags();
+  const boMode = agentMode && flags.isEnabled("bo_agent");
+  const chatApi = boMode ? "/api/bo" : agentMode ? "/api/agent" : "/api/chat";
 
   // AI SDK 7: input is ours; the current body (context, BYOK) is passed with
   // each send so changes apply immediately; and the old onResponse status
   // handling lives in a fetch wrapper because useChat no longer exposes the
   // Response.
   const [input, setInput] = useState("");
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
+  const conn = useMemo(() => {
+    if (boMode) {
+      // Bo tasks have their own quota (lib/bo/tasks), so the chat badge is untouched.
+      return createBoTransport((response) => {
+        if (response.status === 401) router.replace("/");
+        else if (response.ok) setError(null);
+      });
+    }
+    const transport = new DefaultChatTransport({
         api: chatApi,
         fetch: async (url, init) => {
           const response = await fetch(url, init);
@@ -239,12 +251,15 @@ function ChatPageInner() {
           }
           return response;
         },
-      }),
-    [chatApi, router]
-  );
+      });
+    return { transport, resetTask: () => {} };
+  }, [boMode, chatApi, router]);
+  const { transport } = conn;
 
   const chat = useChat({
     transport,
+    // After the user answers an Approval card, continue the task on its own.
+    sendAutomaticallyWhen: boMode ? sendAfterApproval : undefined,
     onError: (err) => {
       const msg = err.message || "";
       if (msg.includes("rate_limit") || msg.includes("Daily limit") || msg.includes("429")) {
@@ -257,7 +272,7 @@ function ChatPageInner() {
       }
     },
   });
-  const { messages, setMessages, status, sendMessage, regenerate } = chat;
+  const { messages, setMessages, status, sendMessage, regenerate, addToolApprovalResponse } = chat;
   const isLoading = status === "submitted" || status === "streaming";
 
   useEffect(() => {
@@ -296,11 +311,13 @@ function ChatPageInner() {
     if (autoFiredRef.current) return;
     if (!hydrated || !user) return;
     if (!initialQuery) return;
+    // Wait for flags so an agent hand-off goes to the right route.
+    if (agentMode && flags.loading) return;
     autoFiredRef.current = true;
     // Strip the query params from the URL so a refresh doesn't re-send.
     window.history.replaceState({}, "", "/chat" + (agentMode ? "?agent=1" : ""));
     void sendMessage({ text: initialQuery }, { body: buildBody() });
-  }, [hydrated, user, initialQuery, agentMode, sendMessage, buildBody]);
+  }, [hydrated, user, initialQuery, agentMode, flags.loading, sendMessage, buildBody]);
 
   const handleBYOKSave = (provider: Provider, apiKey: string) => {
     saveBYOK(provider, apiKey);
@@ -325,6 +342,7 @@ function ChatPageInner() {
   /* ── Conversation rail handlers ── */
   const openThread = (c: Conversation) => {
     setThreadId(c.id);
+    conn.resetTask();
     // Saved threads are plain text (lib/conversation-history); rebuild them
     // as AI SDK 7 UIMessages with a single text part.
     setMessages(
@@ -350,6 +368,7 @@ function ChatPageInner() {
   };
 
   const startNewThread = () => {
+    conn.resetTask();
     setMessages([]);
     setError(null);
     setThreadId(`c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
@@ -542,7 +561,7 @@ function ChatPageInner() {
                   className="w-full space-y-3"
                   style={{ scrollMarginTop: 90 }}
                 >
-                  {(text || (isIncomplete && isStreamingMessage)) && (
+                  {!(boMode && !isUser) && (text || (isIncomplete && isStreamingMessage)) && (
                     <div className={`mx-auto w-full max-w-3xl flex ${isUser ? "justify-end" : "justify-start"}`}>
                       <div className={`flex gap-3 ${isUser ? "flex-row-reverse max-w-[92%] md:max-w-[78%]" : "w-full"}`}>
                         {!isUser && (
@@ -571,6 +590,33 @@ function ChatPageInner() {
                             </div>
                           )}
                           {!isUser && <AgentAttribution parts={m.parts} />}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bo replies render in order — text, Approval card, follow-up —
+                      so what Bo says after a tap sits below the card it is about. */}
+                  {!isUser && boMode && (
+                    <div className="mx-auto w-full max-w-3xl flex justify-start">
+                      <div className="flex gap-3 w-full">
+                        <span
+                          style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--m-tint-green)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}
+                        >
+                          <BoBowl width={28} height={28} />
+                        </span>
+                        <div className="flex-1 min-w-0" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          <BoReply
+                            parts={m.parts}
+                            respond={addToolApprovalResponse}
+                            busy={isLoading}
+                            renderText={(t, key) => (
+                              <div key={key} className="card" style={{ padding: "13px 17px", borderBottomLeftRadius: 6 }}>
+                                <p className="t-body" style={{ whiteSpace: "pre-wrap" }}>{t}</p>
+                              </div>
+                            )}
+                          />
+                          <AgentAttribution parts={m.parts} />
                         </div>
                       </div>
                     </div>

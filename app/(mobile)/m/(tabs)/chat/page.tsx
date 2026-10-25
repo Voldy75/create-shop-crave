@@ -15,6 +15,9 @@ import { BoBowl } from "@/components/mascots";
 import { CarrotRating } from "@/components/mobile/CarrotRating";
 import type { ChatResponse, RecipeData, RestaurantSuggestion } from "@/lib/types";
 import { AgentAttribution } from "@/components/SwiggyAttribution";
+import { BoReply } from "@/components/bo/ApprovalCard";
+import { useFeatureFlags } from "@/lib/feature-flags";
+import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
 
 
 /**
@@ -90,15 +93,29 @@ function ChatInner() {
     userContext: { userName, location, dietaryPreferences, favoriteCuisines, weightGoal: getWeightGoal() },
     ...(byok ? { provider: byok.provider, apiKey: byok.apiKey } : {}),
   });
-  const transport = useMemo(() => new DefaultChatTransport({ api: agentMode ? "/api/agent" : "/api/chat" }), [agentMode]);
+  // Agent mode runs on Bo (/api/bo, signed Approval cards) when bo_agent is
+  // on; otherwise on the original /api/agent. Same rule as web chat.
+  const flags = useFeatureFlags();
+  const boMode = agentMode && flags.isEnabled("bo_agent");
+  const transport = useMemo(
+    () => (boMode ? createBoTransport().transport : new DefaultChatTransport({ api: agentMode ? "/api/agent" : "/api/chat" })),
+    [agentMode, boMode]
+  );
   // Only the free cap (429) routes to key entry (detected from the error
   // body below). A BYOK key that is invalid comes back 400 and is left to the
   // generic failure path rather than sending the user in a loop to a screen
   // where their key already sits.
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, addToolApprovalResponse } = useChat({
     transport,
+    // After the user answers an Approval card, continue the task on its own.
+    sendAutomaticallyWhen: boMode ? sendAfterApproval : undefined,
     onError: (err) => {
       const msg = err.message || "";
+      // Bo's 429 is its own task limit, not the chat cap: a key does not lift it.
+      if (boMode) {
+        setChatError(chatErrorText(msg));
+        return;
+      }
       if (msg.includes("Daily limit") || msg.includes("rate_limit") || msg.includes("429")) {
         onCapReached();
         return;
@@ -127,10 +144,12 @@ function ChatInner() {
   const fired = useRef(false);
   useEffect(() => {
     if (fired.current || !seed) return;
+    // Wait for flags so an agent hand-off goes to the right route.
+    if (agentMode && flags.loading) return;
     fired.current = true;
     window.history.replaceState({}, "", agentMode ? "/m/chat?agent=1" : "/m/chat");
     void sendMessage({ text: seed }, { body: buildBody() });
-  }, [seed, agentMode]); // eslint-disable-line react-hooks/exhaustive-deps -- fires once per seed
+  }, [seed, agentMode, flags.loading]); // eslint-disable-line react-hooks/exhaustive-deps -- fires once per seed
 
   const onOpenRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/recipe"); };
   const onBuyRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/buy"); };
@@ -238,12 +257,21 @@ function ChatInner() {
                 {/* The artboard keeps Bo's line and his recipe suggestion in ONE
                     bubble, so the card reads as a single utterance. Only split
                     them when there is no recipe to carry. */}
-                {data?.recipe ? (
+                {boMode ? (
+                  <BoReply
+                    parts={m.parts}
+                    respond={addToolApprovalResponse}
+                    busy={isLoading}
+                    renderText={(t, key) => (
+                      <div key={key} className="card t-body" style={{ padding: "12px 16px", borderBottomLeftRadius: 6, whiteSpace: "pre-wrap" }}>{t}</div>
+                    )}
+                  />
+                ) : data?.recipe ? (
                   <RecipeCard recipe={data.recipe} text={text} onOpen={onOpenRecipe} onBuy={onBuyRecipe} />
                 ) : text ? (
                   <div className="card t-body" style={{ padding: "12px 16px", borderBottomLeftRadius: 6 }}>{text}</div>
                 ) : null}
-                {data?.restaurantSuggestion?.restaurants?.length ? <RestaurantsCard sugg={data.restaurantSuggestion} onMap={onOpenRestaurants} /> : null}
+                {!boMode && data?.restaurantSuggestion?.restaurants?.length ? <RestaurantsCard sugg={data.restaurantSuggestion} onMap={onOpenRestaurants} /> : null}
                 <AgentAttribution parts={m.parts} />
               </div>
             </div>

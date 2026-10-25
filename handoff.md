@@ -1719,6 +1719,22 @@ it) in an env file; `.env.local` points at production.
      change still places, quantity change → cart_changed, forged input and
      missing secret → nothing placed, request recorded once.
    - Next: the client Approval card (web + mobile).
+6. Approval card — branch `bo/p2-approval-card`. With `bo_agent` on, the
+   existing agent entry (`/chat?agent=1`, `/m/chat?agent=1`) talks to
+   `/api/bo`; off, it is the old `/api/agent` untouched.
+   - `lib/bo/agent-client.ts`: transport that keeps the task id from
+     `X-Bo-Task-Id` and sends it on every turn (also the automatic resend
+     after a tap, `sendAutomaticallyWhen`); a new thread starts a new task.
+   - `components/bo/ApprovalCard.tsx`: Swiggy's bill text, payment method in
+     words, "Bo never sees your payment details", cancellation note (customer
+     care / Dineout app), Place order / Change. States: approved, not placed,
+     waiting for UPI payment, cart changed. `BoReply` renders a Bo message in
+     part order so a follow-up sits BELOW the card. meshi-b classes only.
+   - Verified on mobile against a mocked `/api/flags` + `/api/bo` stream:
+     card renders, tap → resend with the task id and the signed approval,
+     Change → `approved: false`, one Swiggy badge, AA in light (min 5.45)
+     and dark (min 6.15). **Web not seen in a browser** (needs a session);
+     same component, tsc + build only.
 
 **Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
 production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`
