@@ -1673,9 +1673,55 @@ it) in an env file; `.env.local` points at production.
    goal sync, nudges, withdraw → no further sync, stale notice → no sync until
    re-consent; AA contrast in light and dark. **Not yet seen signed in on the
    web Settings page** (it redirects without a session).
-4. Next: Phase 2 (payment hand-off spike first).
+4. Phase 2 spike (2026-10-25, owner's own Swiggy account, scripts kept
+   out of the repo). Findings that shaped the agent:
+   - Swiggy tool responses are **text** (markdown with "(ID: …)" ids and ₹
+     amounts), not JSON — `/api/agent`'s ₹1,000 cap reads
+     `structuredContent.data.total` and so never fires. Tools carry
+     `annotations.readOnlyHint`.
+   - UPI is live for the account (8 UPI apps, Cash, Swiggy Money). UPI flow:
+     place → `PENDING_PAYMENT` → user pays in their UPI app →
+     `check_payment_status` once per user turn → `confirm_order` on success or
+     timeout, never on FAILED / refund. Owner placed one real order end to end
+     and saw it in the Swiggy app; payment hand-off was then skipped by the
+     owner as proven.
+   - Swiggy's tool docs now say **no cart-value limit** for any method; Bo
+     does not apply the old ₹1,000 Food cap (Swiggy refuses with a reason if
+     an order is not allowed).
+   - **No cancel tool**: Food/Instamart cancellation is Swiggy customer care
+     (080-67466729); Dineout bookings are cancelled in the Swiggy Dineout app.
+   - Leftover: Tata Salt 1 kg in the owner's Instamart cart (owner to remove).
+5. Phase 2 server — branch `bo/p2-agent`: `POST /api/bo` (flag-gated, no BYOK).
+   - `lib/bo/policy.ts`: per-`<service>.<tool>` decision. Orders/bookings
+     (`place_food_order`, `checkout`, `book_table`, Dineout `create_cart`)
+     need the user's tap; cart edits + `confirm_order` run; address
+     create/delete and `report_error` are never offered; any OTHER tool runs
+     only if Swiggy marks it read-only, else it needs a tap.
+   - `lib/bo/swiggy-tools.ts`: AI SDK 7 `toolApproval` +
+     `experimental_toolApprovalSecret` (`BO_APPROVAL_SECRET`, ≥32 chars;
+     unset = Bo cannot order or book at all). The approval reason is JSON
+     `{action, service, summary}` where summary is Swiggy's own cart text.
+     A fingerprint of the money parts of the cart (₹ amounts, ids,
+     quantities) is stored on the FIRST approval request
+     (`approval_requested` event) and re-checked on a fresh cart right before
+     placing — mismatch = `cart_changed`, nothing ordered. Trap: the SDK
+     calls `toolApproval` again on the answer turn, so the request is
+     recorded once and the first one wins.
+   - `lib/bo/messages.ts` converts messages without
+     `ignoreIncompleteToolCalls` (which would drop the approved call) and
+     drops only stale unanswered approvals. `lib/bo/prompt.ts` adds the food
+     profile only under a current consent; without consent the task row
+     stores an empty intent (metering + approvals only).
+   - One task per first request (quota), `X-Bo-Task-Id` header → client
+     sends `taskId` back; per-turn and per-task step caps.
+   - Verified with a mock model + fake Swiggy server against the real
+     modules: approval before checkout, Swiggy's bill on the card, ETA-only
+     change still places, quantity change → cart_changed, forged input and
+     missing secret → nothing placed, request recorded once.
+   - Next: the client Approval card (web + mobile).
 
-**Before the final merge to `main`:** set `NEXT_PUBLIC_GRIEVANCE_EMAIL`
+**Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
+production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`
 (the notice has no grievance contact without it — DPDP requires one); apply `food-profile.sql` and
 `agent-tasks.sql` to production, final notice text and retention reviewed
 against the DPDP Rules, and the Swiggy DPA / processing-region question
