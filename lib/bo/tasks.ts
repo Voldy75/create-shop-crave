@@ -241,3 +241,31 @@ export async function addTaskEvent(
   });
   if (error) console.error(`bo[${logId(userId)}] event ${kind} failed:`, error.message);
 }
+
+/**
+ * Bo's FIRST approval request for this tool call on this task — with the cart
+ * fingerprint the user saw on the card, when there is a cart — or null if
+ * there was none (or the task is not the user's). First, not latest: the SDK
+ * runs toolApproval again on the turn that carries the user's answer.
+ */
+export async function findApprovalRequest(
+  userId: string,
+  taskId: string,
+  toolCallId: string
+): Promise<{ fingerprint: string | null } | null> {
+  const sb = await createServiceClient();
+  const { data, error } = await sb
+    .from("agent_task_events")
+    .select("data")
+    .eq("task_id", taskId)
+    .eq("user_id", userId)
+    .eq("kind", "approval_requested")
+    .eq("data->>toolCallId", toolCallId)
+    .order("id", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`approval read failed: ${error.message}`);
+  if (!data) return null;
+  const fp = (data.data as { fingerprint?: unknown } | null)?.fingerprint;
+  return { fingerprint: typeof fp === "string" ? fp : null };
+}
