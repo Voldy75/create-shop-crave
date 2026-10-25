@@ -17,7 +17,7 @@ import { ApiKeyDialog } from "@/components/ApiKeyDialog";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { useFeatureFlags, usePartners } from "@/lib/feature-flags";
 import { AgentAttribution } from "@/components/SwiggyAttribution";
-import { BoReply } from "@/components/bo/ApprovalCard";
+import { BoReply, boIsShowingWork } from "@/components/bo/BoReply";
 import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
 import { BoBowl } from "@/components/mascots";
 import { motion, AnimatePresence } from "framer-motion";
@@ -610,6 +610,7 @@ function ChatPageInner() {
                             parts={m.parts}
                             respond={addToolApprovalResponse}
                             busy={isLoading}
+                            active={isStreamingMessage}
                             renderText={(t, key) => (
                               <div key={key} className="card" style={{ padding: "13px 17px", borderBottomLeftRadius: 6 }}>
                                 <p className="t-body" style={{ whiteSpace: "pre-wrap" }}>{t}</p>
@@ -675,7 +676,7 @@ function ChatPageInner() {
             })}
           </AnimatePresence>
 
-          {isLoading && (
+          {isLoading && !(boMode && messages.at(-1)?.role === "assistant" && boIsShowingWork(messages.at(-1)?.parts)) && (
             <div className="mx-auto w-full max-w-3xl flex justify-start gap-3">
               <BoBowl width={40} height={40} style={{ flex: "none", animation: "mm-bob 2.4s ease-in-out infinite" }} />
               <div className="card tint-green" style={{ boxShadow: "none", padding: "16px 18px", borderBottomLeftRadius: 6, display: "flex", gap: 6 }}>

@@ -15,7 +15,7 @@ import { BoBowl } from "@/components/mascots";
 import { CarrotRating } from "@/components/mobile/CarrotRating";
 import type { ChatResponse, RecipeData, RestaurantSuggestion } from "@/lib/types";
 import { AgentAttribution } from "@/components/SwiggyAttribution";
-import { BoReply } from "@/components/bo/ApprovalCard";
+import { BoReply, boIsShowingWork } from "@/components/bo/BoReply";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
 
@@ -229,7 +229,7 @@ function ChatInner() {
           </div>
         )}
 
-        {messages.map((m) => {
+        {messages.map((m, i) => {
           if (m.role === "user") {
             return (
               <div key={m.id} style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
@@ -262,6 +262,7 @@ function ChatInner() {
                     parts={m.parts}
                     respond={addToolApprovalResponse}
                     busy={isLoading}
+                    active={isLoading && i === messages.length - 1}
                     renderText={(t, key) => (
                       <div key={key} className="card t-body" style={{ padding: "12px 16px", borderBottomLeftRadius: 6, whiteSpace: "pre-wrap" }}>{t}</div>
                     )}
@@ -287,7 +288,7 @@ function ChatInner() {
           </div>
         )}
 
-        {isLoading && (
+        {isLoading && !(boMode && messages.at(-1)?.role === "assistant" && boIsShowingWork(messages.at(-1)?.parts)) && (
           <div className="hstack" style={{ gap: 8, alignItems: "flex-end", marginBottom: 14 }}>
             <BoBowl width={36} height={36} style={{ flex: "none", animation: "mm-bob 2.4s ease-in-out infinite" }} />
             <div

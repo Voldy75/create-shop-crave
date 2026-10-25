@@ -1787,6 +1787,26 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
    model call. Offering only the tools of the service in play (Food,
    Instamart or Dineout) via `activeTools` would cut input tokens a lot —
    cheaper and gentler on rate limits.
+9. Step trace ("What Bo did") — branch `bo/step-trace`. Owner picked
+   variant B of three sketches (chips row / timeline / one status line).
+   - `components/bo/StepTrace.tsx`: one plain-language line per Swiggy
+     call, built only from the message's tool parts (label table keyed by
+     the bare tool name, search query appended). Done = forest tick,
+     running = pulsing dot (`mm-ring`, off under reduced motion),
+     `rate_limited` / reconnect / tool errors = burnt warning line.
+     Approval tools are left out — their card is the step.
+   - Open while the reply streams (header = the live step, "· step N");
+     folds to "Bo took N steps on Swiggy" when the reply ends or a card is
+     waiting. The user's own tap wins. While a trace is showing, the
+     screen's generic thinking dots are hidden (they would repeat it).
+   - `BoReply` / `boSegments` moved to `components/bo/BoReply.tsx` (no
+     import cycle); the trace sits where Bo's first Swiggy call happened.
+   - Verified on mobile with a mocked `/api/bo` stream paused mid-task:
+     open + live header, retry line amber, dots hidden; after the card
+     arrives it folds, sits above the card, tap toggles; no horizontal
+     scroll at 375px. AA light min 5.42, dark min 6.03 (text and icons).
+     **Web not seen in a browser** (web chat needs its own sign-in); same
+     component, tsc + build only.
 
 **Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
 production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`
