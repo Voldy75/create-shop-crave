@@ -1659,11 +1659,24 @@ it) in an env file; `.env.local` points at production.
      only — no `?token=` since it deletes). Export now includes the Bo
      tables; account deletion already cascades them.
    - Task quota fails CLOSED (tasks can place orders); chat still fails open.
-3. Next: consent notice UI (web + mobile) and write-through from
-   `lib/preferences.ts` when consented; then Phase 2 (payment hand-off spike
-   first).
+3. Consent UI — branch `bo/p1-consent-ui`: `components/bo/BoMemoryCard.tsx`
+   at the top of Preferences on web and mobile (meshi-b classes only, so one
+   component serves both trees). Itemised notice from `lib/bo/notice.ts`
+   (`BO_NOTICE_VERSION` — bump it to re-ask everyone), unticked 18+ box,
+   "Not now" by default, separate nudges switch, withdraw = one confirmation
+   then delete. `lib/bo/consent-client.ts` holds one shared state per tab and
+   mirrors preferences to the server (debounced PUT) only while the user has a
+   current consent; `UserContext` setters and `setWeightGoal` (via the
+   `crave:prefs-changed` event) trigger it. Flag off = one 404 per session,
+   card renders nothing. Verified in the browser against a mocked API (the dev
+   service-role key is not available to the agent): grant body, debounce,
+   goal sync, nudges, withdraw → no further sync, stale notice → no sync until
+   re-consent; AA contrast in light and dark. **Not yet seen signed in on the
+   web Settings page** (it redirects without a session).
+4. Next: Phase 2 (payment hand-off spike first).
 
-**Before the final merge to `main`:** apply `food-profile.sql` and
+**Before the final merge to `main`:** set `NEXT_PUBLIC_GRIEVANCE_EMAIL`
+(the notice has no grievance contact without it — DPDP requires one); apply `food-profile.sql` and
 `agent-tasks.sql` to production, final notice text and retention reviewed
 against the DPDP Rules, and the Swiggy DPA / processing-region question
 answered (plan, "DPDP compliance").

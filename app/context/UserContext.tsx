@@ -5,6 +5,7 @@ import type { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { nativePlatform } from "@/lib/native-bridge";
 import { clearBYOK } from "@/lib/byok";
+import { queueBoProfileSync, resetBoConsent } from "@/lib/bo/consent-client";
 import {
   mergeLogs,
   pullMealLogs,
@@ -142,11 +143,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       // Sync on actual sign-in only — not on every token refresh.
       if (event === "SIGNED_IN" && session?.user) {
+        resetBoConsent(); // a different user may have signed in on this tab
         syncTracker(session.user.id);
         pingPlatform();
       }
       if (event === "SIGNED_OUT") {
         lastSyncedUserId = null;
+        resetBoConsent();
       }
     });
 
@@ -175,6 +178,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window !== "undefined") {
       localStorage.setItem("crave_dietaryPreferences", JSON.stringify(prefs));
     }
+    // Mirrors to Bo's server profile only if this user has opted in.
+    queueBoProfileSync();
   };
 
   const setFavoriteCuisines = (cuisines: string[]) => {
@@ -182,6 +187,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window !== "undefined") {
       localStorage.setItem("crave_favoriteCuisines", JSON.stringify(cuisines));
     }
+    queueBoProfileSync();
   };
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "";
