@@ -6,8 +6,10 @@
  * placing a Swiggy / Instamart order, booking a Dineout table, a paid deal.
  *
  * WHAT IT SHOWS, AND WHY
- *   - Swiggy's own bill text (the approval reason), never a total Bo wrote:
- *     the user approves exactly what Swiggy will charge, fees included.
+ *   - Swiggy's own bill (the approval reason): items, every fee line and
+ *     "To Pay", lifted from Swiggy's cart data — never a total Bo wrote, so
+ *     the user approves exactly what Swiggy will charge. Old/odd carts with
+ *     no structured data fall back to Swiggy's text.
  *   - The payment method Bo will pass, in words ("Cash on delivery", "UPI ·
  *     Google Pay") — payment itself happens in their UPI app or on Swiggy.
  *   - How to cancel AFTER placing, up front: Bo has no cancel tool.
@@ -24,9 +26,10 @@
  */
 
 import { useId } from "react";
-import { Check, ShieldCheck, X } from "lucide-react";
+import { Check, MapPin, ShieldCheck, X } from "lucide-react";
 import { serviceForTool, type SwiggyService } from "@/components/SwiggyAttribution";
 import { parseApprovalReason } from "@/lib/bo/agent-client";
+import type { CartBill } from "@/lib/bo/approval";
 
 export interface ApprovalPart {
   type: string;
@@ -69,6 +72,75 @@ function toolNameOf(p: ApprovalPart): string {
 /** Parts the server paused for the user (a manual approval carries a reason). */
 export function isApprovalPart(p: ApprovalPart): boolean {
   return !!p.approval && p.approval.requestReason !== undefined;
+}
+
+const ROW = { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 } as const;
+const NUM = { fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", flex: "none" } as const;
+const RULE = { border: 0, borderTop: "1px solid var(--m-cream)", margin: "2px 0" } as const;
+
+/** Swiggy's bill as rows: where it goes, what's in it, every fee, To Pay. */
+function Bill({ bill, label }: { bill: CartBill; label: string }) {
+  return (
+    <div
+      className="vstack"
+      style={{ gap: 10, padding: "14px 16px", borderRadius: "var(--m-r-tile)", background: "var(--m-cream-2)", maxHeight: 420, overflowY: "auto" }}
+      tabIndex={0}
+      role="group"
+      aria-label={label}
+    >
+      {bill.deliverTo && (
+        <div className="hstack t-cap" style={{ gap: 6 }}>
+          <MapPin width={14} height={14} aria-hidden style={{ flex: "none", color: "var(--figure-accent)" }} />
+          <span>Deliver to {bill.deliverTo}</span>
+        </div>
+      )}
+      <ul className="vstack" style={{ listStyle: "none", margin: 0, padding: 0, gap: 10 }}>
+        {bill.items.map((it, i) => (
+          <li key={i} style={ROW}>
+            <span className="vstack" style={{ gap: 2, minWidth: 0 }}>
+              <span className="t-body" style={{ fontSize: 14, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                {it.name}
+              </span>
+              <span className="t-cap">
+                {[it.variant, `Qty ${it.qty}`].filter(Boolean).join(" · ")}
+                {!it.available && <span style={{ color: "var(--text-burnt)" }}> · Out of stock</span>}
+              </span>
+            </span>
+            {it.price && (
+              <span className="vstack" style={{ ...NUM, alignItems: "flex-end", gap: 2 }}>
+                <span className="t-body" style={{ fontSize: 14 }}>{it.price}</span>
+                {it.mrp && (
+                  <s className="t-cap">{it.mrp}</s>
+                )}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+      {bill.lines.length > 0 && (
+        <>
+          <hr style={RULE} />
+          <dl className="vstack" style={{ margin: 0, gap: 6 }}>
+            {bill.lines.map((l, i) => (
+              <div key={i} className="t-cap" style={ROW}>
+                <dt>{l.label}</dt>
+                <dd style={{ ...NUM, margin: 0 }}>{l.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </>
+      )}
+      {bill.toPay && (
+        <>
+          <hr style={RULE} />
+          <div style={ROW}>
+            <span className="t-h2">{bill.toPay.label}</span>
+            <span className="t-h2" style={{ ...NUM, fontSize: 20 }}>{bill.toPay.value}</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 const SERVICE_KEY: Record<string, SwiggyService> = { food: "food", im: "instamart", dineout: "dineout" };
@@ -118,7 +190,9 @@ export function ApprovalCard({ part, respond, busy }: { part: ApprovalPart; resp
         {waiting && <span className="badge badge-forest" style={{ flex: "none" }}>Needs your OK</span>}
       </div>
 
-      {reason.summary && (
+      {reason.bill ? (
+        <Bill bill={reason.bill} label={booking ? "Booking details from Dineout" : "Bill from Swiggy"} />
+      ) : reason.summary && (
         <div
           className="t-body"
           style={{
@@ -170,7 +244,13 @@ export function ApprovalCard({ part, respond, busy }: { part: ApprovalPart; resp
             type="button"
             className="pill-secondary pill-sm"
             disabled={busy}
-            onClick={() => void respond({ id: approval.id, approved: false, reason: "The user wants to change something." })}
+            onClick={() =>
+              void respond({
+                id: approval.id,
+                approved: false,
+                reason: "The user tapped Change on the Approval card. Nothing was placed and nothing failed — ask what they want to change.",
+              })
+            }
           >
             <X width={16} height={16} aria-hidden />
             Change

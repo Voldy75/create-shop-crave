@@ -1761,7 +1761,7 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
      Change → `approved: false`, one Swiggy badge, AA in light (min 5.45)
      and dark (min 6.15). **Web not seen in a browser** (needs a session);
      same component, tsc + build only.
-7. **Signed-in check against dev — STARTED, blocked on Gemini quota
+7. **Signed-in check against dev — superseded by item 10 (done 2026-10-28). Was blocked on Gemini quota
    (2026-10-25).** Web `/chat?agent=1` in the Browser pane, request: "Check
    out my current Instamart cart exactly as it is — don't add, remove or
    change anything. Use my preselected address and cash on delivery."
@@ -1806,7 +1806,37 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
      arrives it folds, sits above the card, tap toggles; no horizontal
      scroll at 375px. AA light min 5.42, dark min 6.03 (text and icons).
      **Web not seen in a browser** (web chat needs its own sign-in); same
-     component, tsc + build only.
+     component, tsc + build only. Merged: PR #44.
+10. Signed-in check DONE (2026-10-28, web, dev) + Approval card bill fix —
+    branch `bo/approval-bill`.
+    - Found by the live run: Swiggy's cart reply is model instructions +
+      JSON (also in `structuredContent`). The card showed it raw — the
+      user's phone and coordinates, cut at 1,200 chars before the total.
+      Now `cartBill()` (lib/bo/approval.ts) lifts items, fee lines, To Pay
+      and "Work · B17, Mumbai" from the JSON; the card renders rows. Only
+      the Instamart shape is measured; Food uses the same tolerant fallbacks.
+      No structured bill and no ₹ in the cleaned text → approval DENIED
+      (never ask to approve a bill the user can't see).
+    - Fingerprint is taken over the bill when there is one (names,
+      quantities, every amount), else over the text as before.
+    - Change tap: Bo used to call it "something went wrong"; the denial
+      reason and prompt now say it's the user's choice. The rejection event
+      names the tool, and the task goes back to `planning`.
+    - Prompt: the card IS the "explicit confirmation" Swiggy's tool
+      descriptions ask for — Bo was asking "Is that correct?" in text,
+      then lost the thread on "Yes". A named payment method is used as is.
+    - Verified live (Instamart, 1 × Tata Salt, ₹94, cash): card shows the
+      bill, AA light 4.7 / dark 6.68, `approval_requested` with a 32-char
+      fingerprint, Change → `approval_rejected` (im.checkout) → planning,
+      nothing placed. Dev tasks used: 4.
+    - Swiggy's MCP cart is NOT the cart you see in the Swiggy app: an item
+      added in the app never showed up for Bo (twice). Items Bo adds via
+      `update_cart` do.
+    - **Owner's Instamart cart holds 1 × Tata Salt 1 kg (Work)** from this
+      check — Bo added it with the owner's OK. Nothing was ordered.
+11. Web sign-in race — `UserContext` set `hydrated` before reading the
+    session, so `/chat` bounced signed-in users to `/`. Fixed in PR #45
+    (into feat/bo-agent). **The same bug is live on `main`.**
 
 **Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
 production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`

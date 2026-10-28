@@ -25,7 +25,7 @@ import type { OpenServer } from "@/lib/mcp/client";
 import { toolAllowed } from "@/lib/mcp/client";
 import { sanitizeToolSchema } from "@/lib/mcp/schema";
 import { decide, PLACES_ORDER, type ToolDecision } from "@/lib/bo/policy";
-import { bookingSummary, cartFingerprint, cartLooksEmpty, cartSummary, resultText } from "@/lib/bo/approval";
+import { bookingSummary, cartBill, cartFingerprint, cartJson, cartLooksEmpty, cartSummary, resultText, type CartBill } from "@/lib/bo/approval";
 import { addTaskEvent, findApprovalRequest, logId, updateTask, type TaskMode } from "@/lib/bo/tasks";
 
 /** The cart each order tool places, per Swiggy service. */
@@ -43,7 +43,9 @@ interface ToolMeta {
 export interface ApprovalReason {
   action: string;
   service: string;
+  /** Fallback text, used only when there is no structured bill. */
   summary: string;
+  bill?: CartBill;
 }
 
 export interface BoToolContext {
@@ -61,10 +63,11 @@ function errorResult(err: unknown) {
   return { error: auth ? "swiggy_reconnect_required" : busy ? "rate_limited" : "tool_error", message: msg };
 }
 
-async function readCart(meta: ToolMeta): Promise<string> {
+async function readCart(meta: ToolMeta): Promise<{ text: string; bill: CartBill | null }> {
   const name = CART_TOOL[meta.service];
   const r = await meta.open.client.callTool({ name, arguments: {} });
-  return resultText(r);
+  const text = resultText(r);
+  return { text, bill: cartBill(cartJson(r, text)) };
 }
 
 export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
@@ -100,7 +103,8 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
               if (!approved) return { aborted: true, reason: "not_approved" };
               let now: string;
               try {
-                now = cartFingerprint(await readCart(m));
+                const cart = await readCart(m);
+                now = cartFingerprint(cart.text, cart.bill);
               } catch (err) {
                 return errorResult(err);
               }
@@ -167,19 +171,22 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
     }
 
     let summary = "";
+    let bill: CartBill | null = null;
     let fingerprint: string | null = null;
 
     if (PLACES_ORDER.has(key)) {
       let text: string;
       try {
-        text = await readCart(m);
+        ({ text, bill } = await readCart(m));
       } catch (err) {
         console.error(`bo[${logId(ctx.userId)}] cart read for approval failed:`, err instanceof Error ? err.message.slice(0, 200) : err);
         return { type: "denied", reason: "Could not read the Swiggy cart to show it to the user. Try again." };
       }
-      if (cartLooksEmpty(text)) return { type: "denied", reason: "The Swiggy cart is empty. Add items first." };
-      summary = cartSummary(text);
-      fingerprint = cartFingerprint(text);
+      if (cartLooksEmpty(text, bill)) return { type: "denied", reason: "The Swiggy cart is empty. Add items first." };
+      summary = bill ? "" : cartSummary(text);
+      // Never ask for approval of a bill the user cannot see.
+      if (!bill && !/₹\s?\d/.test(summary)) return { type: "denied", reason: "Could not read Swiggy's bill to show it to the user. Try again." };
+      fingerprint = cartFingerprint(text, bill);
     } else if (key === "dineout.book_table") {
       summary = bookingSummary(args);
     }
@@ -194,7 +201,7 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
       ...(MODE_FOR[m.service] ? { mode: MODE_FOR[m.service] } : {}),
     }).catch(() => {});
 
-    const reason: ApprovalReason = { action: m.decision.action, service: m.service, summary };
+    const reason: ApprovalReason = { action: m.decision.action, service: m.service, summary, ...(bill ? { bill } : {}) };
     return { type: "user-approval", reason: JSON.stringify(reason) };
   };
 
