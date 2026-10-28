@@ -19,6 +19,8 @@ import { useFeatureFlags, usePartners } from "@/lib/feature-flags";
 import { AgentAttribution } from "@/components/SwiggyAttribution";
 import { BoReply, boIsShowingWork } from "@/components/bo/BoReply";
 import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
+import { useBoAgentMode } from "@/lib/bo/agent-mode";
+import { AgentIntro, AgentSwitch } from "@/components/bo/AgentSwitch";
 import { BoBowl } from "@/components/mascots";
 import { motion, AnimatePresence } from "framer-motion";
 import { PROVIDERS, type Provider } from "@/lib/providers";
@@ -215,13 +217,17 @@ function ChatPageInner() {
   );
 
   const searchParams = useSearchParams();
-  // Capture once at mount — switching modes mid-session requires a new navigation.
-  const agentMode = useMemo(() => searchParams?.get("agent") === "1", []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Captured once at mount; the "Bo can order" switch takes over from here.
+  const urlAgent = useMemo(() => searchParams?.get("agent") === "1", []); // eslint-disable-line react-hooks/exhaustive-deps
   const initialQuery = useMemo(() => searchParams?.get("q") ?? "", []); // eslint-disable-line react-hooks/exhaustive-deps
   // Agent mode runs on Bo (/api/bo, signed Approval cards) when bo_agent is
-  // on; otherwise on the original /api/agent. Decided once flags have loaded.
+  // on — then the user picks it with the switch under the message box.
+  // Without the flag only ?agent=1 applies, on the original /api/agent.
   const flags = useFeatureFlags();
-  const boMode = agentMode && flags.isEnabled("bo_agent");
+  const boAvailable = !flags.loading && flags.isEnabled("bo_agent");
+  const agentPref = useBoAgentMode(urlAgent, boAvailable);
+  const agentMode = agentPref.on;
+  const boMode = agentMode && boAvailable;
   const chatApi = boMode ? "/api/bo" : agentMode ? "/api/agent" : "/api/chat";
 
   // AI SDK 7: input is ours; the current body (context, BYOK) is passed with
@@ -311,13 +317,14 @@ function ChatPageInner() {
     if (autoFiredRef.current) return;
     if (!hydrated || !user) return;
     if (!initialQuery) return;
-    // Wait for flags so an agent hand-off goes to the right route.
-    if (agentMode && flags.loading) return;
+    // Wait for flags: they decide the route, and whether the saved
+    // "Bo can order" choice applies.
+    if (flags.loading) return;
     autoFiredRef.current = true;
     // Strip the query params from the URL so a refresh doesn't re-send.
-    window.history.replaceState({}, "", "/chat" + (agentMode ? "?agent=1" : ""));
+    window.history.replaceState({}, "", "/chat" + (urlAgent ? "?agent=1" : ""));
     void sendMessage({ text: initialQuery }, { body: buildBody() });
-  }, [hydrated, user, initialQuery, agentMode, flags.loading, sendMessage, buildBody]);
+  }, [hydrated, user, initialQuery, urlAgent, flags.loading, sendMessage, buildBody]);
 
   const handleBYOKSave = (provider: Provider, apiKey: string) => {
     saveBYOK(provider, apiKey);
@@ -374,6 +381,13 @@ function ChatPageInner() {
     setThreadId(`c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
     setRailOpen(false);
     setRailFocus(null);
+  };
+
+  /** The "Bo can order" switch. A thread belongs to one mode — Bo's task and
+      Approval cards mean nothing to plain chat — so flipping it starts fresh. */
+  const setAgentMode = (next: boolean) => {
+    if (messages.length > 0) startNewThread();
+    agentPref.set(next);
   };
 
   /** A quick action under a Bo answer — this is what opens the rail (item 2). */
@@ -463,7 +477,7 @@ function ChatPageInner() {
 
           {agentMode && (
             <span className="chip-tag chip" style={{ background: "var(--m-tint-peach)", color: "var(--text-burnt)" }}>
-              Swiggy agent
+              {boMode ? "Your food agent" : "Swiggy agent"}
             </span>
           )}
 
@@ -513,7 +527,11 @@ function ChatPageInner() {
           )}
 
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-[55vh] text-center space-y-7 px-2">
+            <div className="flex flex-col items-center justify-center min-h-[55vh] text-center space-y-7 px-2">
+              {/* First time on: what agent mode means, in the greeting's place. */}
+              {boMode && !agentPref.introSeen ? (
+                <AgentIntro onDismiss={agentPref.markIntroSeen} />
+              ) : (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -523,9 +541,12 @@ function ChatPageInner() {
                 <BoBowl width={56} height={56} style={{ margin: "0 auto" }} />
                 <h2 className="t-d1">{timeAwareGreeting(userName)}</h2>
                 <p className="t-body-soft" style={{ maxWidth: 380, margin: "0 auto" }}>
-                  I&apos;ll find you the perfect recipe or restaurant based on your mood.
+                  {boMode
+                    ? "I’m your food agent now. Tell me what you feel like — I’ll cook it, order it or book it, and check with you before anything is ordered."
+                    : "I’ll find you the perfect recipe or restaurant based on your mood."}
                 </p>
               </motion.div>
+              )}
 
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
@@ -728,7 +749,7 @@ function ChatPageInner() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={agentMode ? "Order groceries, food, or book a table…" : "Message Bo — recipes, groceries, plans…"}
+                placeholder={boMode ? "What do you feel like eating? Bo handles the rest…" : agentMode ? "Order groceries, food, or book a table…" : "Message Bo — recipes, groceries, plans…"}
                 className="grow"
                 style={{ background: "none", border: "none", padding: 0, font: "inherit", color: "inherit", minWidth: 0 }}
                 disabled={isLoading}
@@ -744,6 +765,9 @@ function ChatPageInner() {
                 <ArrowUp width={18} height={18} />
               </button>
             </form>
+            {boAvailable && (
+              <AgentSwitch on={agentMode} onChange={setAgentMode} connectHref="/settings" disabled={isLoading} />
+            )}
           </div>
         </div>
       </div>

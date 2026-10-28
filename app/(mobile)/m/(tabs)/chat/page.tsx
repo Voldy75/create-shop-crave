@@ -18,6 +18,8 @@ import { AgentAttribution } from "@/components/SwiggyAttribution";
 import { BoReply, boIsShowingWork } from "@/components/bo/BoReply";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
+import { useBoAgentMode } from "@/lib/bo/agent-mode";
+import { AgentIntro, AgentSwitch } from "@/components/bo/AgentSwitch";
 
 
 /**
@@ -70,7 +72,7 @@ function ChatInner() {
   const params = useSearchParams();
   const { userName, location, dietaryPreferences, favoriteCuisines } = useUser();
 
-  const agentMode = useMemo(() => params?.get("agent") === "1", []); // eslint-disable-line react-hooks/exhaustive-deps
+  const urlAgent = useMemo(() => params?.get("agent") === "1", []); // eslint-disable-line react-hooks/exhaustive-deps
   const seed = useMemo(() => params?.get("q") ?? "", []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // A key entered here — or on web — lifts the free daily cap. Read once at
@@ -94,9 +96,14 @@ function ChatInner() {
     ...(byok ? { provider: byok.provider, apiKey: byok.apiKey } : {}),
   });
   // Agent mode runs on Bo (/api/bo, signed Approval cards) when bo_agent is
-  // on; otherwise on the original /api/agent. Same rule as web chat.
+  // on — picked with the "Bo can order" switch under the composer. Without
+  // the flag only ?agent=1 applies, on the original /api/agent. Same rule as
+  // web chat.
   const flags = useFeatureFlags();
-  const boMode = agentMode && flags.isEnabled("bo_agent");
+  const boAvailable = !flags.loading && flags.isEnabled("bo_agent");
+  const agentPref = useBoAgentMode(urlAgent, boAvailable);
+  const agentMode = agentPref.on;
+  const boMode = agentMode && boAvailable;
   const transport = useMemo(
     () => (boMode ? createBoTransport().transport : new DefaultChatTransport({ api: agentMode ? "/api/agent" : "/api/chat" })),
     [agentMode, boMode]
@@ -105,7 +112,7 @@ function ChatInner() {
   // body below). A BYOK key that is invalid comes back 400 and is left to the
   // generic failure path rather than sending the user in a loop to a screen
   // where their key already sits.
-  const { messages, sendMessage, status, addToolApprovalResponse } = useChat({
+  const { messages, setMessages, sendMessage, status, addToolApprovalResponse } = useChat({
     transport,
     // After the user answers an Approval card, continue the task on its own.
     sendAutomaticallyWhen: boMode ? sendAfterApproval : undefined,
@@ -144,18 +151,30 @@ function ChatInner() {
   const fired = useRef(false);
   useEffect(() => {
     if (fired.current || !seed) return;
-    // Wait for flags so an agent hand-off goes to the right route.
-    if (agentMode && flags.loading) return;
+    // Wait for flags: they decide the route, and whether the saved
+    // "Bo can order" choice applies.
+    if (flags.loading) return;
     fired.current = true;
-    window.history.replaceState({}, "", agentMode ? "/m/chat?agent=1" : "/m/chat");
+    window.history.replaceState({}, "", urlAgent ? "/m/chat?agent=1" : "/m/chat");
     void sendMessage({ text: seed }, { body: buildBody() });
-  }, [seed, agentMode, flags.loading]); // eslint-disable-line react-hooks/exhaustive-deps -- fires once per seed
+  }, [seed, urlAgent, flags.loading]); // eslint-disable-line react-hooks/exhaustive-deps -- fires once per seed
 
   const onOpenRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/recipe"); };
   const onBuyRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/buy"); };
   const onOpenRestaurants = (s: RestaurantSuggestion) => { setActiveRestaurants(s); router.push("/m/restaurants"); };
 
   const empty = messages.length === 0;
+
+  // A thread belongs to one mode — Bo's task and Approval cards mean nothing
+  // to plain chat — so flipping the switch starts fresh (the transport swaps
+  // with boMode, which gives Bo a new task too).
+  const setAgentMode = (next: boolean) => {
+    if (!empty) {
+      setMessages([]);
+      setChatError(null);
+    }
+    agentPref.set(next);
+  };
 
   return (
     /* The artboard pins the conversation between the header and the tab bar
@@ -198,7 +217,7 @@ function ChatInner() {
           <BoBowl width={32} height={32} />
         </span>
         <span className="vstack grow" style={{ gap: 0 }}>
-          <span className="t-h2">Bo{agentMode ? " · order" : ""}</span>
+          <span className="t-h2">Bo{boMode ? " · your food agent" : agentMode ? " · order" : ""}</span>
           <span className="t-cap" style={{ color: "var(--figure-accent)" }}>
             {isLoading ? STATUS_BUSY : STATUS_IDLE}
           </span>
@@ -215,12 +234,21 @@ function ChatInner() {
       {/* Conversation */}
       <div className="scroll" style={{ flex: 1, padding: "16px 20px 12px" }}>
         {empty && (
-          <div className="vstack" style={{ alignItems: "center", textAlign: "center", gap: 14, paddingTop: "14vh" }}>
-            <BoBowl width={72} height={72} style={{ animation: "mm-bob 2.4s ease-in-out infinite" }} />
-            <h1 className="t-d2">What are you craving?</h1>
-            <p className="t-body-soft" style={{ maxWidth: 270 }}>
-              A recipe with shopping links, the best nearby spots, or have Bo order it.
-            </p>
+          <div className="vstack" style={{ alignItems: "center", textAlign: "center", gap: 14, paddingTop: boMode && !agentPref.introSeen ? 8 : "14vh" }}>
+            {/* First time on: what agent mode means, in the greeting's place. */}
+            {boMode && !agentPref.introSeen ? (
+              <AgentIntro onDismiss={agentPref.markIntroSeen} />
+            ) : (
+              <>
+                <BoBowl width={72} height={72} style={{ animation: "mm-bob 2.4s ease-in-out infinite" }} />
+                <h1 className="t-d2">What are you craving?</h1>
+                <p className="t-body-soft" style={{ maxWidth: 270 }}>
+                  {boMode
+                    ? "I’m your food agent now — I’ll cook it, order it or book it, and check with you before anything is ordered."
+                    : "A recipe with shopping links, the best nearby spots, or have Bo order it."}
+                </p>
+              </>
+            )}
             <div className="hstack" style={{ gap: 8, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
               {SUGGESTIONS.map((s) => (
                 <button key={s} className="chip" onClick={() => send(s)}>{s}</button>
@@ -316,12 +344,12 @@ function ChatInner() {
       </div>
 
       {/* Composer */}
-      <form onSubmit={handleSubmit} style={{ padding: "0 20px 14px", flex: "none" }}>
+      <form onSubmit={handleSubmit} style={{ padding: boAvailable ? "0 20px 26px" : "0 20px 14px", flex: "none" }}>
         <div className="input">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={agentMode ? "Order groceries, food, or book a table…" : "Ask Bo anything edible…"}
+            placeholder={boMode ? "What do you feel like eating?" : agentMode ? "Order groceries, food, or book a table…" : "Ask Bo anything edible…"}
             style={{ flex: 1, minWidth: 0, background: "none", border: "none", padding: 0, font: "inherit", color: "inherit" }}
           />
           <button
@@ -352,6 +380,9 @@ function ChatInner() {
             <ArrowUp width={18} height={18} />
           </button>
         </div>
+        {boAvailable && (
+          <AgentSwitch on={agentMode} onChange={setAgentMode} connectHref="/m/settings/connections" disabled={isLoading} />
+        )}
       </form>
     </div>
   );

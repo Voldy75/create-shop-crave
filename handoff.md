@@ -1837,6 +1837,21 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
 11. Web sign-in race — `UserContext` set `hydrated` before reading the
     session, so `/chat` bounced signed-in users to `/`. Fixed in PR #45
     (into feat/bo-agent). **The same bug is live on `main`.**
+13. "Bo can order on Swiggy" switch — under the message box on web and
+    mobile chat, only when `bo_agent` is on. Replaces `?agent=1` as the way
+    in (the link still works: it turns the switch on for that visit). The
+    choice is remembered per device (`lib/bo/agent-mode.ts`, localStorage —
+    a convenience, not a permission; the server gates are unchanged).
+    Turning it on checks the Swiggy connection first and points to Connect
+    if missing. First time on, `AgentIntro` takes the greeting's place:
+    "Bo is now your food agent" — decides cook/order/dine, fills the
+    Swiggy cart, nothing ordered or booked until you tap, you pay on
+    Swiggy/UPI. While on: chip "Your food agent" (web), header
+    "Bo · your food agent" (mobile), agent subtitle and placeholder.
+    Flipping it mid-chat starts a new chat (a thread belongs to one mode).
+    Verified on dev: on/off, intro + Got it, new chat on flip (mocked
+    /api/bo), 375px with no horizontal scroll; contrast light/dark — label
+    11.4/13.9, hint 5.1/7.5, track 7.6/3.7, knob on track 8.0/3.07.
 
 **Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
 production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`
