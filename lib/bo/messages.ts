@@ -37,13 +37,18 @@ export function lastUserText(raw: unknown): string {
  * Tool call ids the user just rejected on an Approval card, for the task
  * timeline. Only the last message: earlier answers were logged on their turn.
  */
-export function rejectedApprovals(raw: unknown): string[] {
+export function rejectedApprovals(raw: unknown): { toolCallId: string; tool: string | null }[] {
   if (!Array.isArray(raw) || raw.length === 0) return [];
   const last = raw[raw.length - 1] as { role?: unknown; parts?: unknown };
   if (last?.role !== "assistant" || !Array.isArray(last.parts)) return [];
-  return (last.parts as Array<Part & { toolCallId?: string; approval?: { approved?: boolean } }>)
+  return (last.parts as Array<Part & { toolCallId?: string; toolName?: string; approval?: { approved?: boolean } }>)
     .filter((p) => p.state === "approval-responded" && p.approval?.approved === false && !!p.toolCallId)
-    .map((p) => p.toolCallId as string);
+    .map((p) => {
+      // "tool-swiggy_im__checkout" → "im.checkout", the key events use.
+      const full = p.type === "dynamic-tool" ? p.toolName ?? "" : p.type.startsWith("tool-") ? p.type.slice(5) : "";
+      const m = full.match(/^swiggy_(\w+?)__(\w+)$/);
+      return { toolCallId: p.toolCallId as string, tool: m ? `${m[1]}.${m[2]}` : null };
+    });
 }
 
 export async function boModelMessages(raw: unknown): Promise<ModelMessage[]> {

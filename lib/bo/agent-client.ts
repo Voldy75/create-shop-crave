@@ -56,7 +56,13 @@ export function parseApprovalReason(raw: string | undefined): ApprovalReason {
   try {
     const v = JSON.parse(raw ?? "") as Partial<ApprovalReason>;
     if (v && typeof v.action === "string") {
-      return { action: v.action, service: typeof v.service === "string" ? v.service : "", summary: typeof v.summary === "string" ? v.summary : "" };
+      const bill = v.bill && Array.isArray(v.bill.items) && v.bill.items.length && Array.isArray(v.bill.lines) ? v.bill : undefined;
+      return {
+        action: v.action,
+        service: typeof v.service === "string" ? v.service : "",
+        summary: typeof v.summary === "string" ? v.summary : "",
+        ...(bill ? { bill } : {}),
+      };
     }
   } catch {
     /* plain text */

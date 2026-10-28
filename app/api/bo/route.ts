@@ -7,7 +7,7 @@ import { callbackUrlFor } from "@/lib/mcp/oauth";
 import { ensureFreshConnection } from "@/lib/mcp/connections";
 import { readJsonObject, requireBoUser } from "@/lib/bo/guard";
 import { getFoodProfile, type FoodProfile } from "@/lib/bo/food-profile";
-import { addTaskEvent, createTask, getTask, logId, recordTaskSteps, resolveBoLimits, type BoLimits } from "@/lib/bo/tasks";
+import { addTaskEvent, createTask, getTask, logId, recordTaskSteps, resolveBoLimits, updateTask, type BoLimits } from "@/lib/bo/tasks";
 import { boModelMessages, lastUserText, rejectedApprovals } from "@/lib/bo/messages";
 import { boInstructions } from "@/lib/bo/prompt";
 import { buildBoTools } from "@/lib/bo/swiggy-tools";
@@ -125,9 +125,12 @@ export async function POST(req: Request) {
   }
   const turnSteps = Math.min(limits.maxStepsPerTurn, limits.maxStepsPerTask - stepsSoFar);
 
-  for (const id of rejectedApprovals(body.messages)) {
-    await addTaskEvent(user.id, taskId, "approval_rejected", { data: { toolCallId: id } });
+  const rejected = rejectedApprovals(body.messages);
+  for (const r of rejected) {
+    await addTaskEvent(user.id, taskId, "approval_rejected", { tool: r.tool ?? undefined, data: { toolCallId: r.toolCallId } });
   }
+  // A "Change" tap hands the task back to Bo; it is no longer waiting on the user.
+  if (rejected.length) await updateTask(user.id, taskId, { status: "planning" }).catch(() => {});
 
   const open: OpenServer[] = (await Promise.all(connected.map((c) => connectProvider(c.providerId, c.accessToken)))).flat();
   if (open.length === 0) {
