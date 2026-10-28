@@ -126,14 +126,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }).catch(() => {});
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        syncTracker(session.user.id);
-        pingPlatform();
-      }
-    });
+    // `hydrated` means "we know whether someone is signed in". It flips only
+    // once the stored session has been read: flipping it earlier let pages
+    // that redirect signed-out users (`hydrated && !user`) bounce a
+    // signed-in user to "/" whenever reading the session took a moment.
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          syncTracker(session.user.id);
+          pingPlatform();
+        }
+      })
+      .catch(() => {})
+      .finally(() => setHydrated(true));
 
     const {
       data: { subscription },
@@ -157,8 +165,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window !== "undefined") {
       localStorage.removeItem("crave_userName");
     }
-
-    setHydrated(true);
 
     return () => subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
