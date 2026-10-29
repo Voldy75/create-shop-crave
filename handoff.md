@@ -1918,6 +1918,23 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       session had expired, so web /chat was not rendered; same component):
       card, all three buttons, AA light/dark (lowest 5.45 / 6.15).
       Not live-tested against Gemini (quota).
+16. Task status card — branch `bo/task-card`. A strip pinned to the top
+    of a Bo chat (web and mobile): kind of task, progress, and one line of
+    what is happening or what the user must do.
+    - Stages: order/grocery Finding → Cart → Your OK → Payment → Placed;
+      table Finding → Slot → Your OK → Booked; cook Finding → Recipe.
+    - Read from the thread (lib/bo/task-status.ts `boTaskStatus`) — tool
+      calls, the Approval card's state and bill (To Pay), PENDING_PAYMENT,
+      check_payment_status, confirm_order, tracking. No server call, no
+      polling; Phase 3's durable follow-through will reach it as messages.
+      Reads after the order (payment options, past orders) never move it
+      back. "Your turn" badge when the user must act (approve, change,
+      pay). Hidden in plain chat.
+    - Verified: 16 synthetic threads (search, cart, approval, Change,
+      approved, pending payment, paid + confirmed, cash, cart_changed,
+      rate-limited, table booked, cook, cook → groceries, no regress) and
+      on dev /m/chat with a mocked stream (sticky strip; Change → "You
+      asked for changes"); AA light/dark (lowest 5.45 / 4.95 badge).
 
 **Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
 production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`
