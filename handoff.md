@@ -1837,6 +1837,30 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
 11. Web sign-in race — `UserContext` set `hydrated` before reading the
     session, so `/chat` bounced signed-in users to `/`. Fixed in PR #45
     (into feat/bo-agent). **The same bug is live on `main`.**
+12. Food + Dineout live checks (2026-10-28) — branch `bo/food-cart-and-auth`.
+    - Food got as far as: search → menu → `update_food_cart` (1 × Idli
+      Sambhar, owner's OK) → `get_food_cart`, then Gemini's free quota ran
+      out (twice, after a 70 s wait too — daily quota). Dineout not run.
+    - Found with a read-only dev call instead: **`get_food_cart` REQUIRES
+      `addressId`**. The approval check read it with `{}` → every Food
+      order would have been denied. Now passes the order's `addressId`.
+    - Food's cart lives only in `structuredContent` (`data.items`,
+      `data.pricing` {item_total, delivery_charge, taxes_and_charges,
+      to_pay}, `data.restaurant.deliverySubtitle` "ETA to Name: address").
+      `cartBill` reads it; unknown pricing fields are still shown; the
+      name is dropped from the address. Text fallback = Swiggy's item and
+      total lines.
+    - `requireUser` (lib/auth-guard.ts, shared by every route, also on
+      `main`) answered 401 when Supabase Auth was unreachable
+      (ECONNRESET) → the web chat signed the user out of the page. Now
+      503 "try again".
+    - **Owner's Swiggy Food cart holds 1 × Idli Sambhar (₹248 with fees,
+      Work).** Nothing ordered.
+    - Dev `bo.limits.tasks_daily` was raised to 6 for this run and set back
+      to 3.
+    - **To finish:** Food card + Change, then a free Dineout booking card +
+      Change, once Gemini's quota resets. Gemini's free quota is the
+      bottleneck for live testing — see item 8 (`activeTools`).
 13. "Bo can order on Swiggy" switch — under the message box on web and
     mobile chat, only when `bo_agent` is on. Replaces `?agent=1` as the way
     in (the link still works: it turns the switch on for that visit). The

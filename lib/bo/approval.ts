@@ -73,14 +73,29 @@ const titleCase = (v: string) => v.charAt(0).toUpperCase() + v.slice(1).toLowerC
  * Instamart shape has been measured; Food carts are read with the same
  * fallbacks. null when there are no items — the card then uses `summary`.
  */
-export function cartBill(cart: Record<string, unknown> | null): CartBill | null {
-  if (!cart) return null;
+// Food's `pricing` object: field → label, in bill order. Unknown numeric
+// fields are still shown, so a new Swiggy fee is never hidden.
+const FOOD_PRICING: [string, string][] = [
+  ["item_total", "Item total"],
+  ["packing_charges", "Packing charges"],
+  ["delivery_charge", "Delivery fee"],
+  ["platform_fee", "Platform fee"],
+  ["taxes_and_charges", "Taxes and charges"],
+  ["coupon_discount", "Coupon discount"],
+  ["discount", "Discount"],
+];
+const money = (n: number) => `₹${Number.isInteger(n) ? n : n.toFixed(2)}`;
+
+export function cartBill(input: Record<string, unknown> | null): CartBill | null {
+  if (!input) return null;
+  // Food wraps the cart in `data`; Instamart does not.
+  const cart = input.data && typeof input.data === "object" && !Array.isArray(input.data) ? (input.data as Record<string, unknown>) : input;
   const rawItems = Array.isArray(cart.items) ? cart.items : Array.isArray(cart.cartItems) ? cart.cartItems : [];
   const items = rawItems
     .filter((i): i is Record<string, unknown> => !!i && typeof i === "object")
     .map((i) => {
       const qty = Number(i.quantity ?? i.qty ?? 1);
-      const price = rupees(pick(i, ["discountedFinalPrice", "finalPrice", "totalPrice", "offerPrice", "price", "total"]));
+      const price = rupees(pick(i, ["discountedFinalPrice", "final_price", "finalPrice", "totalPrice", "offerPrice", "price", "total"]));
       const mrp = rupees(pick(i, ["mrp"]));
       return {
         name: pick(i, ["itemName", "name", "displayName", "title"]) ?? "Item",
@@ -88,24 +103,48 @@ export function cartBill(cart: Record<string, unknown> | null): CartBill | null 
         qty: Number.isFinite(qty) && qty > 0 ? qty : 1,
         price,
         mrp: mrp && mrp !== price ? mrp : undefined,
-        available: i.isInStockAndAvailable !== false && i.inStock !== false,
+        available: i.isInStockAndAvailable !== false && i.inStock !== false && i.in_stock !== 0,
       };
     });
   if (!items.length) return null;
 
   const bd = (cart.billBreakdown ?? cart.bill ?? {}) as Record<string, unknown>;
-  const lines = (Array.isArray(bd.lineItems) ? bd.lineItems : [])
+  let lines = (Array.isArray(bd.lineItems) ? bd.lineItems : [])
     .filter((l): l is Record<string, unknown> => !!l && typeof l === "object")
     .map((l) => ({ label: str(l.label) ?? "", value: rupees(str(l.value)) ?? "" }))
     .filter((l) => l.label && l.value);
+  const pricing = (cart.pricing && typeof cart.pricing === "object" ? cart.pricing : null) as Record<string, unknown> | null;
+  if (!lines.length && pricing) {
+    const known = new Set([...FOOD_PRICING.map(([k]) => k), "to_pay", "delivery_charge_strikeoff"]);
+    const extra = Object.keys(pricing)
+      .filter((k) => !known.has(k))
+      .map((k): [string, string] => [k, titleCase(k.replace(/_/g, " "))]);
+    lines = [...FOOD_PRICING, ...extra]
+      .filter(([k]) => typeof pricing[k] === "number" && pricing[k] !== 0)
+      .map(([k, label]) => {
+        const n = pricing[k] as number;
+        const off = /discount/.test(k) && n > 0 ? -n : n;
+        return { label, value: off < 0 ? `−${money(-off)}` : money(off) };
+      });
+  }
   const tp = (bd.toPay ?? null) as Record<string, unknown> | null;
-  const total = rupees(str(tp?.value)) ?? rupees(pick(cart, ["cartTotalAmount", "toPay", "total"]));
+  const total =
+    rupees(str(tp?.value)) ??
+    (typeof pricing?.to_pay === "number" ? money(pricing.to_pay) : undefined) ??
+    rupees(pick(cart, ["cartTotalAmount", "toPay", "total"]));
   const toPay = total ? { label: str(tp?.label) ?? "To Pay", value: total } : null;
 
   const addr = (cart.selectedAddressDetails ?? cart.address ?? null) as Record<string, unknown> | null;
   const label = addr ? str(addr.annotation) ?? str(addr.category) : undefined;
   const where = addr ? [str(addr.area), str(addr.city)].filter(Boolean).join(", ") : "";
-  const deliverTo = label || where ? [label && titleCase(label), where].filter(Boolean).join(" · ") : null;
+  let deliverTo = label || where ? [label && titleCase(label), where].filter(Boolean).join(" · ") : null;
+  if (!deliverTo) {
+    // Food: "40-45 mins to <Name>: <address>". Keep the ETA and address,
+    // drop the name; the user approves where it goes, as Swiggy asks.
+    const sub = str((cart.restaurant as Record<string, unknown> | undefined)?.deliverySubtitle);
+    const m = sub?.match(/^(.*?)\s+to\s+(?:[^:]{1,60}:\s*)?(.+)$/);
+    if (m) deliverTo = `${m[2].replace(/,\s*India\.?(\s*\(.*\))?$/, "").trim()} · ${m[1]}`;
+  }
 
   return { items, lines, toPay, deliverTo };
 }

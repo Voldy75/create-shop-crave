@@ -63,9 +63,13 @@ function errorResult(err: unknown) {
   return { error: auth ? "swiggy_reconnect_required" : busy ? "rate_limited" : "tool_error", message: msg };
 }
 
-async function readCart(meta: ToolMeta): Promise<{ text: string; bill: CartBill | null }> {
+/** The live cart. Food's get_food_cart REQUIRES the delivery addressId (it
+ *  prices delivery from it) — the same one the order tool was called with;
+ *  Instamart's get_cart takes no arguments. */
+async function readCart(meta: ToolMeta, orderArgs: Record<string, unknown>): Promise<{ text: string; bill: CartBill | null }> {
   const name = CART_TOOL[meta.service];
-  const r = await meta.open.client.callTool({ name, arguments: {} });
+  const args = meta.service === "food" && typeof orderArgs.addressId === "string" ? { addressId: orderArgs.addressId } : {};
+  const r = await meta.open.client.callTool({ name, arguments: args });
   const text = resultText(r);
   return { text, bill: cartBill(cartJson(r, text)) };
 }
@@ -103,7 +107,7 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
               if (!approved) return { aborted: true, reason: "not_approved" };
               let now: string;
               try {
-                const cart = await readCart(m);
+                const cart = await readCart(m, args);
                 now = cartFingerprint(cart.text, cart.bill);
               } catch (err) {
                 return errorResult(err);
@@ -177,7 +181,7 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
     if (PLACES_ORDER.has(key)) {
       let text: string;
       try {
-        ({ text, bill } = await readCart(m));
+        ({ text, bill } = await readCart(m, args));
       } catch (err) {
         console.error(`bo[${logId(ctx.userId)}] cart read for approval failed:`, err instanceof Error ? err.message.slice(0, 200) : err);
         return { type: "denied", reason: "Could not read the Swiggy cart to show it to the user. Try again." };
