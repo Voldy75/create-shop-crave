@@ -11,6 +11,7 @@ import { addTaskEvent, createTask, getTask, logId, recordTaskSteps, resolveBoLim
 import { boModelMessages, lastUserText, rejectedApprovals, lastToolName } from "@/lib/bo/messages";
 import { boInstructions } from "@/lib/bo/prompt";
 import { buildBoTools } from "@/lib/bo/swiggy-tools";
+import { buildCookTools, SHOW_RECIPE } from "@/lib/bo/cook-tools";
 
 export const maxDuration = 60;
 
@@ -165,20 +166,25 @@ export async function POST(req: Request) {
   // (lib/bo/swiggy-tools.ts activeToolNames): it carries over from earlier
   // turns and follows Bo's latest tool call within this one.
   let focus = built.serviceOf(lastToolName(body.messages) ?? "");
+  // "Cook it yourself" is always on offer next to the Swiggy tools.
+  // Typed as a plain record like the Swiggy set (tool names are only known at runtime).
+  const tools: typeof built.tools = { ...built.tools, ...buildCookTools({ userId: user.id, taskId }) };
+  const active = () => [...built.activeToolNames(focus), SHOW_RECIPE];
   let result;
   try {
     result = streamText({
       model: getServerModel(),
       instructions: boInstructions(foodProfile),
       messages: await boModelMessages(body.messages),
-      tools: built.tools,
+      tools,
       toolChoice: "auto",
-      activeTools: built.activeToolNames(focus),
+      activeTools: active(),
       prepareStep: ({ steps }) => {
         for (const c of steps.at(-1)?.toolCalls ?? []) focus = built.serviceOf(c.toolName) ?? focus;
-        return { activeTools: built.activeToolNames(focus) };
+        return { activeTools: active() };
       },
-      toolApproval: built.toolApproval,
+      // The recipe card moves no money: it never needs the user's approval.
+      toolApproval: (o) => (o.toolCall.toolName === SHOW_RECIPE ? undefined : built.toolApproval(o)),
       // Without a secret toolApproval denies every approval tool, so the SDK
       // never issues an approval that could not be verified.
       ...(secret ? { experimental_toolApprovalSecret: secret } : {}),
