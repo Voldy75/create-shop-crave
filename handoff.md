@@ -1783,10 +1783,8 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
      card (first time signed in).
    - Owner's Instamart cart still holds Tata Salt 1 kg from the spike; it is
      the cart this check uses, and nothing may be ordered.
-8. Idea, not started: Bo sends all ~40 Swiggy tool definitions on every
-   model call. Offering only the tools of the service in play (Food,
-   Instamart or Dineout) via `activeTools` would cut input tokens a lot —
-   cheaper and gentler on rate limits.
+8. ~~Idea: offer only the service in play via `activeTools`~~ — DONE in
+   item 14 (branch `bo/trim-gemini`).
 9. Step trace ("What Bo did") — branch `bo/step-trace`. Owner picked
    variant B of three sketches (chips row / timeline / one status line).
    - `components/bo/StepTrace.tsx`: one plain-language line per Swiggy
@@ -1860,7 +1858,7 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       to 3.
     - **To finish:** Food card + Change, then a free Dineout booking card +
       Change, once Gemini's quota resets. Gemini's free quota is the
-      bottleneck for live testing — see item 8 (`activeTools`).
+      bottleneck for live testing — see item 14.
 13. "Bo can order on Swiggy" switch — under the message box on web and
     mobile chat, only when `bo_agent` is on. Replaces `?agent=1` as the way
     in (the link still works: it turns the switch on for that visit). The
@@ -1876,6 +1874,31 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
     Verified on dev: on/off, intro + Got it, new chat on flip (mocked
     /api/bo), 375px with no horizontal scroll; contrast light/dark — label
     11.4/13.9, hint 5.1/7.5, track 7.6/3.7, knob on track 8.0/3.07.
+14. Smaller Gemini calls — branch `bo/trim-gemini`. Measured on dev: the
+    40 Swiggy tool definitions are ~62k characters (~15.6k tokens) and were
+    sent on EVERY step; one Instamart `search_products` result was 45k
+    characters and then rode along in every later step and turn.
+    - Tools per step (`activeToolNames`, lib/bo/swiggy-tools.ts): until Bo
+      has used a service, only each service's way in (7 tools: the three
+      searches, `your_go_to_items`, `get_food_orders`, one `get_addresses`).
+      After that, that service's full set plus the others' way in, so it
+      can still switch. The service carries over between turns (last tool
+      in the thread) and follows Bo's latest call inside a turn
+      (`prepareStep`). Approved calls are unaffected: the SDK checks them
+      against the full tool set, and `activeTools` only filters what the
+      model is offered.
+    - Results (`compactToolResult`, lib/bo/trim.ts): anything ≤ 4,000
+      characters is returned exactly as before (carts, orders, payment
+      status — the approval and PENDING_PAYMENT logic depend on those).
+      Bigger results drop images/badges, cap lists at 10 (then 6, then 3)
+      with a "…N more not shown" marker, and drop Swiggy's second copy of
+      the same data. Ceiling 8,000. Live dev: Instamart search 45,222 →
+      6,256 (skuId/spinId/productId kept); restaurant menu 7,899 → 7,239.
+    - Offline check with a scripted model: step 0 offered 7 tools, step 1
+      (after an Instamart search) 17; the 41k result reached the model as
+      ~3.9k.
+    - Not yet live-tested against Gemini (quota) — the next Food/Dineout
+      check is the live test.
 
 **Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
 production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`

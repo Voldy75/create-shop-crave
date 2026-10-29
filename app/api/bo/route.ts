@@ -8,7 +8,7 @@ import { ensureFreshConnection } from "@/lib/mcp/connections";
 import { readJsonObject, requireBoUser } from "@/lib/bo/guard";
 import { getFoodProfile, type FoodProfile } from "@/lib/bo/food-profile";
 import { addTaskEvent, createTask, getTask, logId, recordTaskSteps, resolveBoLimits, updateTask, type BoLimits } from "@/lib/bo/tasks";
-import { boModelMessages, lastUserText, rejectedApprovals } from "@/lib/bo/messages";
+import { boModelMessages, lastUserText, rejectedApprovals, lastToolName } from "@/lib/bo/messages";
 import { boInstructions } from "@/lib/bo/prompt";
 import { buildBoTools } from "@/lib/bo/swiggy-tools";
 
@@ -161,6 +161,10 @@ export async function POST(req: Request) {
     await closeAll(open);
   };
   const secret = approvalSecret();
+  // The Swiggy service Bo is working in decides which tools a step sees
+  // (lib/bo/swiggy-tools.ts activeToolNames): it carries over from earlier
+  // turns and follows Bo's latest tool call within this one.
+  let focus = built.serviceOf(lastToolName(body.messages) ?? "");
   let result;
   try {
     result = streamText({
@@ -169,6 +173,11 @@ export async function POST(req: Request) {
       messages: await boModelMessages(body.messages),
       tools: built.tools,
       toolChoice: "auto",
+      activeTools: built.activeToolNames(focus),
+      prepareStep: ({ steps }) => {
+        for (const c of steps.at(-1)?.toolCalls ?? []) focus = built.serviceOf(c.toolName) ?? focus;
+        return { activeTools: built.activeToolNames(focus) };
+      },
       toolApproval: built.toolApproval,
       // Without a secret toolApproval denies every approval tool, so the SDK
       // never issues an approval that could not be verified.

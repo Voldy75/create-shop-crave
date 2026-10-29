@@ -17,7 +17,13 @@
  * Without BO_APPROVAL_SECRET nothing that needs approval can run at all.
  *
  * Swiggy payloads are returned to the model but never stored: events keep
- * the tool name and an outcome, nothing from the response.
+ * the tool name and an outcome, nothing from the response. Big ones are
+ * compacted first (lib/bo/trim.ts).
+ *
+ * WHICH TOOLS A STEP SEES (activeToolNames): all 40 definitions are ~62k
+ * characters, re-sent on every step. A step sees only each service's way in
+ * (ENTRY) until Bo has used a service; from then on, that service's full set
+ * plus the other services' way in, so it can still switch.
  */
 
 import { jsonSchema, tool, type ToolApprovalStatus } from "ai";
@@ -27,10 +33,17 @@ import { sanitizeToolSchema } from "@/lib/mcp/schema";
 import { decide, PLACES_ORDER, type ToolDecision } from "@/lib/bo/policy";
 import { bookingSummary, cartBill, cartFingerprint, cartJson, cartLooksEmpty, cartSummary, resultText, type CartBill } from "@/lib/bo/approval";
 import { addTaskEvent, findApprovalRequest, logId, updateTask, type TaskMode } from "@/lib/bo/tasks";
+import { compactToolResult } from "@/lib/bo/trim";
 
 /** The cart each order tool places, per Swiggy service. */
 const CART_TOOL: Record<string, string> = { food: "get_food_cart", im: "get_cart" };
 const MODE_FOR: Record<string, TaskMode> = { food: "order", im: "grocery", dineout: "dine_in" };
+/** Each service's way in: what a step sees for a service Bo has not used yet. */
+const ENTRY: Record<string, Set<string>> = {
+  food: new Set(["get_addresses", "search_restaurants", "search_menu", "get_food_orders"]),
+  im: new Set(["get_addresses", "search_products", "your_go_to_items"]),
+  dineout: new Set(["search_restaurants_dineout"]),
+};
 
 interface ToolMeta {
   service: string;
@@ -137,7 +150,7 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
             if (!failed && m.bare === "confirm_order") {
               await updateTask(ctx.userId, ctx.taskId, { status: "tracking" }).catch(() => {});
             }
-            return text || r.structuredContent || r.content;
+            return compactToolResult(r);
           } catch (err) {
             await addTaskEvent(ctx.userId, ctx.taskId, "tool_result", { tool: key, summary: "error" });
             return errorResult(err);
@@ -209,5 +222,28 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
     return { type: "user-approval", reason: JSON.stringify(reason) };
   };
 
-  return { tools, toolApproval, count: meta.size };
+  /** The Swiggy service a tool name belongs to ("food" / "im" / "dineout"). */
+  const serviceOf = (toolName: string): string | null => meta.get(toolName)?.service ?? null;
+
+  /** The tools a step sees, given the service Bo is working in (null = none yet). */
+  const activeToolNames = (focus: string | null): string[] => {
+    const names: string[] = [];
+    const sharedSeen = new Set<string>();
+    for (const [name, m] of meta) {
+      if (m.service === focus) {
+        names.push(name);
+        sharedSeen.add(m.bare);
+      }
+    }
+    for (const [name, m] of meta) {
+      if (m.service === focus || !ENTRY[m.service]?.has(m.bare)) continue;
+      // get_addresses is on both Food and Instamart: one copy is enough.
+      if (sharedSeen.has(m.bare)) continue;
+      sharedSeen.add(m.bare);
+      names.push(name);
+    }
+    return names;
+  };
+
+  return { tools, toolApproval, count: meta.size, serviceOf, activeToolNames };
 }

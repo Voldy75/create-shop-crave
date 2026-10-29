@@ -51,6 +51,23 @@ export function rejectedApprovals(raw: unknown): { toolCallId: string; tool: str
     });
 }
 
+/** The most recent tool Bo called in this thread ("swiggy_food__search_menu"),
+ *  so a new turn starts in the service the task is already working in. */
+export function lastToolName(raw: unknown): string | null {
+  if (!Array.isArray(raw)) return null;
+  for (let i = raw.length - 1; i >= 0; i--) {
+    const parts = (raw[i] as { parts?: unknown })?.parts;
+    if (!Array.isArray(parts)) continue;
+    for (let j = parts.length - 1; j >= 0; j--) {
+      const p = parts[j] as { type?: unknown; toolName?: unknown };
+      if (typeof p?.type !== "string") continue;
+      if (p.type === "dynamic-tool" && typeof p.toolName === "string") return p.toolName;
+      if (p.type.startsWith("tool-")) return p.type.slice(5);
+    }
+  }
+  return null;
+}
+
 export async function boModelMessages(raw: unknown): Promise<ModelMessage[]> {
   if (!Array.isArray(raw)) return [];
   const turns = raw
