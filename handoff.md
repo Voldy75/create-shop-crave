@@ -1899,6 +1899,25 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       ~3.9k.
     - Not yet live-tested against Gemini (quota) — the next Food/Dineout
       check is the live test.
+15. "Cook it yourself" — branch `bo/cook`. Bo now picks between cook,
+    order in and a table (prompt: cook fits cooking/recipe/healthy/saving
+    money/time on hand; order in fits hungry-now and late nights).
+    - One internal tool, `meshi_cook__show_recipe` (lib/bo/cook-tools.ts),
+      always offered next to the Swiggy tools. The recipe IS the tool
+      input, so cooking costs no extra model call; execute only logs the
+      step and sets the task mode to `cook`. No approval (no money).
+    - Chat renders the input as `BoRecipeCard` (components/bo): name,
+      why, time / serves / kcal, "You'll need" (8 shown, Show all), step
+      count. Buttons: Start cooking (web /recipes/<slug>/cook, mobile
+      /m/recipe, via setActiveRecipe), Get ingredients (sends "Get the
+      ingredients for X on Instamart" → Bo shops behind the usual Approval
+      card), Add to today's <meal by the clock> (local planner).
+    - "Bo is writing a recipe…" placeholder while the input streams; the
+      step trace leaves the recipe out (the card is the step).
+    - Verified on dev /m/chat with a mocked /api/bo stream (the dev
+      session had expired, so web /chat was not rendered; same component):
+      card, all three buttons, AA light/dark (lowest 5.45 / 6.15).
+      Not live-tested against Gemini (quota).
 
 **Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
 production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`

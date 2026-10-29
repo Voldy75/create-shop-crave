@@ -346,6 +346,18 @@ function ChatPageInner() {
 
   const handleSuggestionClick = (s: string) => setInput(s);
 
+  /** Bo's recipe card: cook on the recipe's own page, or ask Bo for the groceries. */
+  const cookActions = {
+    start: (recipe: RecipeData) => {
+      setActiveRecipe(recipe);
+      router.push(`/recipes/${recipeSlug(recipe.name)}/cook`);
+    },
+    ask: (text: string) => {
+      if (isLoading) return;
+      void sendMessage({ text }, { body: buildBody() });
+    },
+  };
+
   /* ── Conversation rail handlers ── */
   const openThread = (c: Conversation) => {
     setThreadId(c.id);
@@ -632,6 +644,7 @@ function ChatPageInner() {
                             respond={addToolApprovalResponse}
                             busy={isLoading}
                             active={isStreamingMessage}
+                            cook={cookActions}
                             renderText={(t, key) => (
                               <div key={key} className="card" style={{ padding: "13px 17px", borderBottomLeftRadius: 6 }}>
                                 <p className="t-body" style={{ whiteSpace: "pre-wrap" }}>{t}</p>

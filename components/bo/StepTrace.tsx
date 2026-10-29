@@ -75,7 +75,8 @@ function querySuffix(input: unknown): string {
 
 function stepOf(p: ApprovalPart, i: number): Step | null {
   const full = toolNameOf(p);
-  if (!full || isApprovalPart(p) || p.state === "output-denied") return null;
+  // Approval tools and the recipe card are their own step on screen.
+  if (!full || isApprovalPart(p) || p.state === "output-denied" || full.startsWith("meshi_cook__")) return null;
   const service = serviceForTool(full);
   const bare = full.includes("__") ? full.slice(full.indexOf("__") + 2) : full;
   const [doing, did] = LABELS[bare] ?? [`Using ${service ? SERVICE_NAME[service] : "a tool"}`, `Used ${service ? SERVICE_NAME[service] : "a tool"} (${bare.replace(/_/g, " ")})`];

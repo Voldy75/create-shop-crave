@@ -160,6 +160,8 @@ function ChatInner() {
   }, [seed, urlAgent, flags.loading]); // eslint-disable-line react-hooks/exhaustive-deps -- fires once per seed
 
   const onOpenRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/recipe"); };
+  /** Bo's recipe card: the recipe screen, or ask Bo for the groceries. */
+  const cookActions = { start: onOpenRecipe, ask: (text: string) => { if (!isLoading) send(text); } };
   const onBuyRecipe = (r: RecipeData) => { setActiveRecipe(r); router.push("/m/buy"); };
   const onOpenRestaurants = (s: RestaurantSuggestion) => { setActiveRestaurants(s); router.push("/m/restaurants"); };
 
@@ -291,6 +293,7 @@ function ChatInner() {
                     respond={addToolApprovalResponse}
                     busy={isLoading}
                     active={isLoading && i === messages.length - 1}
+                    cook={cookActions}
                     renderText={(t, key) => (
                       <div key={key} className="card t-body" style={{ padding: "12px 16px", borderBottomLeftRadius: 6, whiteSpace: "pre-wrap" }}>{t}</div>
                     )}
