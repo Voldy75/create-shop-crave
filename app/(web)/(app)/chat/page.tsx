@@ -18,6 +18,8 @@ import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { useFeatureFlags, usePartners } from "@/lib/feature-flags";
 import { AgentAttribution } from "@/components/SwiggyAttribution";
 import { BoReply, boIsShowingWork } from "@/components/bo/BoReply";
+import { TaskStatusCard } from "@/components/bo/TaskStatusCard";
+import { boTaskStatus } from "@/lib/bo/task-status";
 import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
 import { useBoAgentMode } from "@/lib/bo/agent-mode";
 import { AgentIntro, AgentSwitch } from "@/components/bo/AgentSwitch";
@@ -280,6 +282,8 @@ function ChatPageInner() {
   });
   const { messages, setMessages, status, sendMessage, regenerate, addToolApprovalResponse } = chat;
   const isLoading = status === "submitted" || status === "streaming";
+  // Where Bo's task stands, read from the thread (null in plain chat).
+  const taskStatus = useMemo(() => (boMode ? boTaskStatus(messages) : null), [boMode, messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -535,6 +539,12 @@ function ChatPageInner() {
           {agentMode && (
             <div className="mx-auto w-full max-w-3xl">
               <SwiggyExpiryBanner />
+            </div>
+          )}
+
+          {taskStatus && (
+            <div className="mx-auto w-full max-w-3xl" style={{ position: "sticky", top: 0, zIndex: 5 }}>
+              <TaskStatusCard status={taskStatus} />
             </div>
           )}
 

@@ -16,6 +16,8 @@ import { CarrotRating } from "@/components/mobile/CarrotRating";
 import type { ChatResponse, RecipeData, RestaurantSuggestion } from "@/lib/types";
 import { AgentAttribution } from "@/components/SwiggyAttribution";
 import { BoReply, boIsShowingWork } from "@/components/bo/BoReply";
+import { TaskStatusCard } from "@/components/bo/TaskStatusCard";
+import { boTaskStatus } from "@/lib/bo/task-status";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
 import { useBoAgentMode } from "@/lib/bo/agent-mode";
@@ -132,6 +134,8 @@ function ChatInner() {
     },
   });
   const isLoading = status === "submitted" || status === "streaming";
+  // Where Bo's task stands, read from the thread (null in plain chat).
+  const taskStatus = useMemo(() => (boMode ? boTaskStatus(messages) : null), [boMode, messages]);
   const send = (text: string) => {
     const t = text.trim();
     if (!t) return;
@@ -235,6 +239,11 @@ function ChatInner() {
 
       {/* Conversation */}
       <div className="scroll" style={{ flex: 1, padding: "16px 20px 12px" }}>
+        {taskStatus && (
+          <div style={{ position: "sticky", top: -16, zIndex: 5, marginBottom: 14 }}>
+            <TaskStatusCard status={taskStatus} />
+          </div>
+        )}
         {empty && (
           <div className="vstack" style={{ alignItems: "center", textAlign: "center", gap: 14, paddingTop: boMode && !agentPref.introSeen ? 8 : "14vh" }}>
             {/* First time on: what agent mode means, in the greeting's place. */}
