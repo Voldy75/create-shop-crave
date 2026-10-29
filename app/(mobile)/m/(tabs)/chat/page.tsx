@@ -17,7 +17,8 @@ import type { ChatResponse, RecipeData, RestaurantSuggestion } from "@/lib/types
 import { AgentAttribution } from "@/components/SwiggyAttribution";
 import { BoReply, boIsShowingWork } from "@/components/bo/BoReply";
 import { TaskStatusCard } from "@/components/bo/TaskStatusCard";
-import { boTaskStatus } from "@/lib/bo/task-status";
+import { awaitingPayment, boTaskStatus } from "@/lib/bo/task-status";
+import { useTaskFollow } from "@/lib/bo/use-task-follow";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
 import { useBoAgentMode } from "@/lib/bo/agent-mode";
@@ -106,9 +107,10 @@ function ChatInner() {
   const agentPref = useBoAgentMode(urlAgent, boAvailable);
   const agentMode = agentPref.on;
   const boMode = agentMode && boAvailable;
+  const boConn = useMemo(() => (boMode ? createBoTransport() : null), [boMode]);
   const transport = useMemo(
-    () => (boMode ? createBoTransport().transport : new DefaultChatTransport({ api: agentMode ? "/api/agent" : "/api/chat" })),
-    [agentMode, boMode]
+    () => boConn?.transport ?? new DefaultChatTransport({ api: agentMode ? "/api/agent" : "/api/chat" }),
+    [agentMode, boConn]
   );
   // Only the free cap (429) routes to key entry (detected from the error
   // body below). A BYOK key that is invalid comes back 400 and is left to the
@@ -135,7 +137,10 @@ function ChatInner() {
   });
   const isLoading = status === "submitted" || status === "streaming";
   // Where Bo's task stands, read from the thread (null in plain chat).
-  const taskStatus = useMemo(() => (boMode ? boTaskStatus(messages) : null), [boMode, messages]);
+  // While a UPI payment is pending the server watches it; poll for the outcome.
+  const baseStatus = useMemo(() => (boMode ? boTaskStatus(messages) : null), [boMode, messages]);
+  const follow = useTaskFollow(boConn?.taskId() ?? null, awaitingPayment(baseStatus));
+  const taskStatus = useMemo(() => (boMode ? boTaskStatus(messages, follow) : null), [boMode, messages, follow]);
   const send = (text: string) => {
     const t = text.trim();
     if (!t) return;

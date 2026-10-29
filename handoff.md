@@ -1935,6 +1935,40 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       rate-limited, table booked, cook, cook → groceries, no regress) and
       on dev /m/chat with a mocked stream (sticky strip; Change → "You
       asked for changes"); AA light/dark (lowest 5.45 / 4.95 badge).
+17. Payment follow-through (Phase 3) — branch `bo/follow-through`. After a
+    UPI order comes back PENDING_PAYMENT, meshi itself watches the payment
+    and confirms the order; the user no longer has to say "I've paid".
+    - lib/bo/follow.ts `watchPayment`: runs in Next `after()` once the
+      turn's stream ends (survives the tab closing). Polls
+      check_payment_status every 8s; confirm_order on the first SUCCESS or
+      at the 5-minute cap (Swiggy's contract, confirm is idempotent); never
+      on FAILED or REFUND. The status is read from the structured status
+      field, not the text — Swiggy's text quotes the words SUCCESS/FAILED in
+      its instructions. Budget = maxDuration (300s) − 20s per invocation.
+    - The watch lives in agent_tasks.plan.payment (paasId, orderId, cart and
+      address ids, lat/lng, amount, startedAt, result). A 30s lease, taken by
+      optimistic concurrency on updated_at (`updatePlanIfUnchanged`), keeps
+      two watchers from double-confirming.
+    - GET /api/bo/tasks/[id]: the page polls it every 10s while the strip
+      says "Payment"; it restarts the watcher if no lease is held (so a task
+      that outlived one function resumes on any device) and returns the
+      outcome. The status strip moves to Placed / Booked or to a warning.
+    - Notifies on the outcome (lib/bo/notify.ts): web push + native push from
+      notification_subscriptions; recorded on the task timeline, NOT
+      notification_log (the daily-nudge cron dedupes on it). No WhatsApp
+      (needs a template).
+    - The next Bo turn gets a PAYMENT line (`paymentLine`) so Bo knows the
+      outcome; the prompt tells Bo not to call check_payment_status /
+      confirm_order itself.
+    - Verified offline only (scripted watcher with fake Swiggy): SUCCESS →
+      confirm + notify; FAILED/REFUND → no confirm; cap → confirm (timeout);
+      lease held → nothing; out of budget → lease released; Instamart args;
+      status parsing ignores instruction text. **Not live-verified** — needs
+      a real UPI order by the owner.
+    - Deferred: periodic tracking pushes (need a cron/workflow); the Approval
+      card's "Waiting for payment" line doesn't change (the strip is
+      authoritative); the strip's own check_payment_status reading (only
+      when Bo calls it manually) still matches on text.
 
 **Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
 production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`
