@@ -158,6 +158,7 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
             });
             let payUrl: string | null = null;
             let pending = false;
+            let paymentKey: string | undefined;
             if (!failed && places) {
               pending = /PENDING_PAYMENT/.test(text + JSON.stringify(r.structuredContent ?? ""));
               if (pending) payUrl = paymentLink(r);
@@ -168,7 +169,10 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
                 status: pending ? "awaiting_payment" : "tracking",
                 ...(watch && task ? { plan: { ...task.plan, payment: watch } } : {}),
               }).catch(() => {});
-              if (watch && task) ctx.onPaymentPending?.();
+              if (watch && task) {
+                paymentKey = watch.startedAt;
+                ctx.onPaymentPending?.();
+              }
             }
             if (!failed && m.bare === "confirm_order") {
               await updateTask(ctx.userId, ctx.taskId, { status: "tracking" }).catch(() => {});
@@ -176,7 +180,7 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
             // An error must not read as success on the card or the status strip.
             if (failed) return { error: compactToolResult(r) };
             // The Approval card's Pay button reads payUrl (structured data doesn't survive compaction).
-            if (pending) return { ...(payUrl ? { payUrl } : {}), orderState: NOT_PLACED_YET, result: compactToolResult(r) };
+            if (pending) return { ...(payUrl ? { payUrl } : {}), ...(paymentKey ? { paymentKey } : {}), orderState: NOT_PLACED_YET, result: compactToolResult(r) };
             return compactToolResult(r);
           } catch (err) {
             await addTaskEvent(ctx.userId, ctx.taskId, "tool_result", { tool: key, summary: "error" });

@@ -2011,6 +2011,12 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       Swiggy reported terminal `failed` after about 38s; no confirm_order,
       card and strip updated, Pay removed. `upiIntentUrl` is a real `upi://`
       string, but we keep Swiggy's page and do not render our own QR.
+    - Pay another way: after a failed payment the card offers it; after a
+      timeout it reads "I didn't pay, pay another way", because they may have
+      paid; no button after a refund. One tap sends Bo that message and Bo
+      fetches get_payment_options, so COD appears when Swiggy returns it. A
+      task can now pay twice, so `paymentKey` (the watch's startedAt) ties the
+      poll and the card to the latest order. The button is not live-verified.
     - **Not verified:** a completed payment through to confirm_order on this
       code; phone browser Pay; native Pay (`openOutside` → @capacitor/browser);
       Food QR; COD. Swiggy's bridge page behaviour for an app-intent order on

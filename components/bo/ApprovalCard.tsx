@@ -26,7 +26,7 @@
  */
 
 import { useId } from "react";
-import { Check, ExternalLink, MapPin, QrCode, ShieldCheck, X } from "lucide-react";
+import { Check, ExternalLink, MapPin, QrCode, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { serviceForTool, type SwiggyService } from "@/components/SwiggyAttribution";
 import { parseApprovalReason } from "@/lib/bo/agent-client";
 import type { CartBill } from "@/lib/bo/approval";
@@ -44,6 +44,14 @@ export interface ApprovalPart {
 }
 
 export type Respond = (r: { id: string; approved: boolean; reason?: string }) => unknown;
+
+/** The chat's view of the payment: the outcome, and which order it belongs to. */
+export interface CardPayment {
+  result?: PaymentOutcome;
+  latestKey: string | null;
+  /** Sends a message to Bo; only set on the conversation's last reply. */
+  ask?: (text: string) => void;
+}
 
 const UPI_APPS: [RegExp, string][] = [
   [/gpay|google/i, "Google Pay"],
@@ -155,15 +163,31 @@ const PAYMENT_ENDED: Record<Exclude<PaymentOutcome, "pending">, { text: string; 
   timeout: { text: "Bo didn’t see your payment in time, so it closed the order. If you paid, check it in the Swiggy app.", tone: "warn" },
 };
 
-export function ApprovalCard({ part, respond, busy, paymentResult }: { part: ApprovalPart; respond: Respond; busy: boolean; paymentResult?: PaymentOutcome }) {
+/**
+ * What the user says to Bo to start over. No button after a refund, and the
+ * words rule out a double payment after a timeout, where they may have paid.
+ */
+const TRY_AGAIN: Partial<Record<PaymentOutcome, { label: string; say: string }>> = {
+  failed: { label: "Pay another way", say: "Pay another way" },
+  timeout: { label: "I didn’t pay, pay another way", say: "I didn’t pay. Pay another way." },
+};
+
+export function ApprovalCard({ part, respond, busy, payment }: { part: ApprovalPart; respond: Respond; busy: boolean; payment?: CardPayment }) {
   const titleId = useId();
   const approval = part.approval!;
   const reason = parseApprovalReason(approval.requestReason);
   const service = SERVICE_KEY[reason.service] ?? serviceForTool(toolNameOf(part));
   const booking = service === "dineout";
   const pay = paymentLabel(part.input);
-  const output = (part.output ?? null) as { aborted?: boolean; reason?: string; error?: string; payUrl?: string } | null;
-  const ended = paymentResult && paymentResult !== "pending" ? PAYMENT_ENDED[paymentResult] : null;
+  const output = (part.output ?? null) as { aborted?: boolean; reason?: string; error?: string; payUrl?: string; paymentKey?: string } | null;
+  const replaced = !!output?.paymentKey && !!payment?.latestKey && output.paymentKey !== payment.latestKey;
+  const paymentResult = replaced ? undefined : payment?.result;
+  const ended = replaced
+    ? { text: "This payment has ended. Your newer order is below.", tone: "warn" as const }
+    : paymentResult && paymentResult !== "pending"
+      ? PAYMENT_ENDED[paymentResult]
+      : null;
+  const tryAgain = paymentResult && payment?.ask ? TRY_AGAIN[paymentResult] : undefined;
   const payUrl = !ended && typeof output?.payUrl === "string" && /^https:\/\//i.test(output.payUrl) ? output.payUrl : null;
   const qr = (part.input as { generateUPIQR?: unknown } | null)?.generateUPIQR === true;
 
@@ -300,6 +324,12 @@ export function ApprovalCard({ part, respond, busy, paymentResult }: { part: App
                 {qr ? <QrCode width={16} height={16} aria-hidden /> : <ExternalLink width={16} height={16} aria-hidden />}
                 {qr ? "Show QR" : "Pay"}{reason.bill?.toPay?.value ? ` ${reason.bill.toPay.value}` : ""}
               </a>
+            )}
+            {tryAgain && (
+              <button type="button" className="pill-primary pill-sm" disabled={busy} onClick={() => payment?.ask?.(tryAgain.say)}>
+                <RefreshCw width={16} height={16} aria-hidden />
+                {tryAgain.label}
+              </button>
             )}
           </div>
         )

@@ -21,6 +21,7 @@ import { BoReply, boIsShowingWork } from "@/components/bo/BoReply";
 import { TaskStatusCard } from "@/components/bo/TaskStatusCard";
 import { awaitingPayment, boTaskStatus } from "@/lib/bo/task-status";
 import { useTaskFollow } from "@/lib/bo/use-task-follow";
+import { latestPaymentKey } from "@/lib/bo/task-status";
 import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
 import { useBoAgentMode } from "@/lib/bo/agent-mode";
 import { AgentIntro, AgentSwitch } from "@/components/bo/AgentSwitch";
@@ -286,7 +287,8 @@ function ChatPageInner() {
   // Where Bo's task stands, read from the thread (null in plain chat).
   // While a UPI payment is pending the server watches it; poll for the outcome.
   const baseStatus = useMemo(() => (boMode ? boTaskStatus(messages) : null), [boMode, messages]);
-  const follow = useTaskFollow(conn?.taskId() ?? null, awaitingPayment(baseStatus));
+  const paymentKey = useMemo(() => latestPaymentKey(messages), [messages]);
+  const follow = useTaskFollow(conn?.taskId() ?? null, awaitingPayment(baseStatus), paymentKey);
   const taskStatus = useMemo(() => (boMode ? boTaskStatus(messages, follow) : null), [boMode, messages, follow]);
 
   useEffect(() => {
@@ -659,7 +661,7 @@ function ChatPageInner() {
                             busy={isLoading}
                             active={isStreamingMessage}
                             cook={cookActions}
-                            paymentResult={follow?.payment?.result}
+                            payment={{ result: follow?.payment?.result, latestKey: paymentKey, ask: index === messages.length - 1 ? cookActions.ask : undefined }}
                             renderText={(t, key) => (
                               <div key={key} className="card" style={{ padding: "13px 17px", borderBottomLeftRadius: 6 }}>
                                 <p className="t-body" style={{ whiteSpace: "pre-wrap" }}>{t}</p>

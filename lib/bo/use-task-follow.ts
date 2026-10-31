@@ -14,14 +14,20 @@ export type PaymentOutcome = "pending" | "success" | "failed" | "refund" | "time
 
 export interface TaskFollow {
   status: string;
-  payment: { result: PaymentOutcome; amount: string | null } | null;
+  payment: { result: PaymentOutcome; amount: string | null; startedAt: string } | null;
 }
 
 const EVERY_MS = 10_000;
 
-export function useTaskFollow(taskId: string | null, waitingOnPayment: boolean): TaskFollow | null {
+/**
+ * `paymentKey` is the latest order's (lib/bo/task-status latestPaymentKey): a
+ * task can pay twice after "Pay another way", and the first outcome must not
+ * stop the poll or end the second payment.
+ */
+export function useTaskFollow(taskId: string | null, waitingOnPayment: boolean, paymentKey?: string | null): TaskFollow | null {
   const [follow, setFollow] = useState<{ taskId: string; data: TaskFollow } | null>(null);
-  const settled = !!follow && follow.taskId === taskId && !!follow.data.payment && follow.data.payment.result !== "pending";
+  const current = follow && follow.taskId === taskId && (!paymentKey || follow.data.payment?.startedAt === paymentKey) ? follow.data : null;
+  const settled = !!current?.payment && current.payment.result !== "pending";
 
   useEffect(() => {
     if (!taskId || !waitingOnPayment || settled) return;
@@ -42,7 +48,7 @@ export function useTaskFollow(taskId: string | null, waitingOnPayment: boolean):
       stop = true;
       clearInterval(timer);
     };
-  }, [taskId, waitingOnPayment, settled]);
+  }, [taskId, waitingOnPayment, settled, paymentKey]);
 
-  return follow && follow.taskId === taskId ? follow.data : null;
+  return current;
 }
