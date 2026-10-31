@@ -1,4 +1,4 @@
-import type { User } from "@supabase/supabase-js";
+import { isAuthRetryableFetchError, type User } from "@supabase/supabase-js";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { UserStatus } from "@/lib/limits";
 
@@ -76,14 +76,28 @@ async function loadProfile(userId: string): Promise<GuardProfile> {
 }
 
 /** 401 without a session; 403 when the account is banned. */
+function authUnavailable(): Response {
+  return Response.json(
+    { error: "auth_unavailable", message: "Couldn't confirm you're signed in just now. Try again in a moment." },
+    { status: 503, headers: { "Retry-After": "5" } }
+  );
+}
+
 export async function requireUser(): Promise<GuardResult | Response> {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  let user: User | null = null;
+  try {
+    const res = await supabase.auth.getUser();
+    // A network failure reaching Supabase Auth is NOT "signed out": answering
+    // 401 made the web chat send a signed-in user to "/" mid-conversation
+    // (seen 2026-10-28, ECONNRESET). Say "try again" instead.
+    if (res.error && (isAuthRetryableFetchError(res.error) || (res.error.status ?? 0) >= 500)) return authUnavailable();
+    user = res.data.user;
+  } catch {
+    return authUnavailable();
+  }
 
-  if (error || !user) {
+  if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
