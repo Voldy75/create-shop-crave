@@ -1,9 +1,9 @@
 /**
  * Where a Bo task stands, read from the conversation itself — the tool calls,
  * the Approval card and Swiggy's answers that are already in the messages.
- * No server call and no polling: the status card (components/bo/
- * TaskStatusCard.tsx) re-renders with the chat. When Phase 3's durable
- * follow-through lands, its updates arrive as messages and land here too.
+ * The status card (components/bo/TaskStatusCard.tsx) re-renders with the
+ * chat. The one server input is the payment outcome: while the strip shows
+ * Payment, lib/bo/use-task-follow.ts polls it and passes it in as `follow`.
  *
  * Stages per kind of task:
  *   order / grocery  Finding → Cart → Your OK → Payment → Placed
