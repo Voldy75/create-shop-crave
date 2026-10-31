@@ -36,6 +36,7 @@ import { addTaskEvent, findApprovalRequest, getTask, logId, updateTask, type Tas
 import { compactToolResult } from "@/lib/bo/trim";
 import { paymentLink, paymentShape, pendingPayment } from "@/lib/bo/follow";
 import type { BoDevice } from "@/lib/bo/prompt";
+import { AFTER_BOOKING } from "@/lib/bo/ride-tools";
 
 const NOT_PLACED_YET = "NOT placed yet: Swiggy is waiting for the user's payment.";
 
@@ -181,7 +182,9 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
             if (failed) return { error: compactToolResult(r) };
             // The Approval card's Pay button reads payUrl (structured data doesn't survive compaction).
             if (pending) return { ...(payUrl ? { payUrl } : {}), ...(paymentKey ? { paymentKey } : {}), orderState: NOT_PLACED_YET, result: compactToolResult(r) };
-            return compactToolResult(r);
+            const result = compactToolResult(r);
+            if (key !== "dineout.book_table") return result;
+            return typeof result === "string" ? `${result}\n\n${AFTER_BOOKING}` : { result, next: AFTER_BOOKING };
           } catch (err) {
             await addTaskEvent(ctx.userId, ctx.taskId, "tool_result", { tool: key, summary: "error" });
             return errorResult(err);

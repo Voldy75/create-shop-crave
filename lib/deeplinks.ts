@@ -61,11 +61,12 @@ export function buildInstacartLink(item: string): string {
  * `pickup=my_location`, which tells the Uber app to use the phone's GPS, so
  * the rider still lands on a booking screen with the restaurant as the drop
  * instead of a blank app. `dropoffAddress`, when known, is shown by Uber
- * under the nickname so the rider can confirm the right branch.
+ * under the nickname so the rider can confirm the right branch. `dropoff` is
+ * null when we only know the place by name and address (Bo's ride card).
  */
 export function buildUberDeepLink(
   pickup: Coordinates | null | undefined,
-  dropoff: Coordinates,
+  dropoff: Coordinates | null,
   dropoffName: string,
   dropoffAddress?: string
 ): string {
@@ -77,8 +78,10 @@ export function buildUberDeepLink(
   } else {
     params.set("pickup", "my_location");
   }
-  params.set("dropoff[latitude]", String(dropoff.lat));
-  params.set("dropoff[longitude]", String(dropoff.lng));
+  if (dropoff) {
+    params.set("dropoff[latitude]", String(dropoff.lat));
+    params.set("dropoff[longitude]", String(dropoff.lng));
+  }
   params.set("dropoff[nickname]", dropoffName);
   // Some sources put a distance ("1.2 km") in the area field — never send
   // that to Uber as an address.
