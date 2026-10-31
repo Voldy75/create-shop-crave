@@ -26,10 +26,12 @@
  */
 
 import { useId } from "react";
-import { Check, MapPin, ShieldCheck, X } from "lucide-react";
+import { Check, ExternalLink, MapPin, QrCode, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { serviceForTool, type SwiggyService } from "@/components/SwiggyAttribution";
 import { parseApprovalReason } from "@/lib/bo/agent-client";
 import type { CartBill } from "@/lib/bo/approval";
+import type { PaymentOutcome } from "@/lib/bo/use-task-follow";
+import { isNative, openOutside } from "@/lib/native-bridge";
 
 export interface ApprovalPart {
   type: string;
@@ -42,6 +44,14 @@ export interface ApprovalPart {
 }
 
 export type Respond = (r: { id: string; approved: boolean; reason?: string }) => unknown;
+
+/** The chat's view of the payment: the outcome, and which order it belongs to. */
+export interface CardPayment {
+  result?: PaymentOutcome;
+  latestKey: string | null;
+  /** Sends a message to Bo; only set on the conversation's last reply. */
+  ask?: (text: string) => void;
+}
 
 const UPI_APPS: [RegExp, string][] = [
   [/gpay|google/i, "Google Pay"],
@@ -58,7 +68,7 @@ function paymentLabel(input: unknown): string | null {
   if (/^(cash|cod)$/i.test(method)) return "Cash on delivery";
   if (/swiggypay/i.test(method)) return "Swiggy Money";
   if (/upi/i.test(method)) {
-    if (a.generateUPIQR === true) return "UPI · scan a QR code";
+    if (a.generateUPIQR === true) return "UPI · QR code";
     const app = typeof a.intentApp === "string" ? UPI_APPS.find(([re]) => re.test(a.intentApp as string))?.[1] : undefined;
     return `UPI · ${app ?? "your UPI app"}`;
   }
@@ -145,14 +155,41 @@ function Bill({ bill, label }: { bill: CartBill; label: string }) {
 
 const SERVICE_KEY: Record<string, SwiggyService> = { food: "food", im: "instamart", dineout: "dineout" };
 
-export function ApprovalCard({ part, respond, busy }: { part: ApprovalPart; respond: Respond; busy: boolean }) {
+/** Once the payment has an outcome the Pay link is dead, so this replaces it. */
+const PAYMENT_ENDED: Record<Exclude<PaymentOutcome, "pending">, { text: string; tone: "ok" | "warn" }> = {
+  success: { text: "Paid. Your order is confirmed.", tone: "ok" },
+  failed: { text: "The payment didn’t go through. Nothing was ordered.", tone: "warn" },
+  refund: { text: "Swiggy started a refund.", tone: "warn" },
+  timeout: { text: "Bo didn’t see your payment in time, so it closed the order. If you paid, check it in the Swiggy app.", tone: "warn" },
+};
+
+/**
+ * What the user says to Bo to start over. No button after a refund, and the
+ * words rule out a double payment after a timeout, where they may have paid.
+ */
+const TRY_AGAIN: Partial<Record<PaymentOutcome, { label: string; say: string }>> = {
+  failed: { label: "Pay another way", say: "Pay another way" },
+  timeout: { label: "I didn’t pay, pay another way", say: "I didn’t pay. Pay another way." },
+};
+
+export function ApprovalCard({ part, respond, busy, payment }: { part: ApprovalPart; respond: Respond; busy: boolean; payment?: CardPayment }) {
   const titleId = useId();
   const approval = part.approval!;
   const reason = parseApprovalReason(approval.requestReason);
   const service = SERVICE_KEY[reason.service] ?? serviceForTool(toolNameOf(part));
   const booking = service === "dineout";
   const pay = paymentLabel(part.input);
-  const output = (part.output ?? null) as { aborted?: boolean; reason?: string; error?: string } | null;
+  const output = (part.output ?? null) as { aborted?: boolean; reason?: string; error?: string; payUrl?: string; paymentKey?: string } | null;
+  const replaced = !!output?.paymentKey && !!payment?.latestKey && output.paymentKey !== payment.latestKey;
+  const paymentResult = replaced ? undefined : payment?.result;
+  const ended = replaced
+    ? { text: "This payment has ended. Your newer order is below.", tone: "warn" as const }
+    : paymentResult && paymentResult !== "pending"
+      ? PAYMENT_ENDED[paymentResult]
+      : null;
+  const tryAgain = paymentResult && payment?.ask ? TRY_AGAIN[paymentResult] : undefined;
+  const payUrl = !ended && typeof output?.payUrl === "string" && /^https:\/\//i.test(output.payUrl) ? output.payUrl : null;
+  const qr = (part.input as { generateUPIQR?: unknown } | null)?.generateUPIQR === true;
 
   let status: { text: string; tone: "ok" | "warn" } | null = null;
   if (part.state === "approval-responded") {
@@ -167,7 +204,11 @@ export function ApprovalCard({ part, respond, busy }: { part: ApprovalPart; resp
     const pending = /PENDING_PAYMENT/.test(typeof part.output === "string" ? part.output : JSON.stringify(part.output ?? ""));
     status =
       pending
-        ? { text: "Waiting for your payment — finish it in your UPI app.", tone: "ok" }
+        ? ended
+          ? ended
+          : payUrl
+          ? { text: qr ? "Waiting for your payment — tap Show QR and scan it with any UPI app." : "Waiting for your payment — tap Pay to finish it in your UPI app.", tone: "ok" }
+          : { text: "Swiggy didn’t send a payment link, so this can’t be paid here. It will close by itself.", tone: "warn" }
         : output?.reason === "cart_changed"
         ? { text: "The cart changed after you approved it, so nothing was ordered. Bo will show the new cart.", tone: "warn" }
         : output?.aborted
@@ -258,13 +299,39 @@ export function ApprovalCard({ part, respond, busy }: { part: ApprovalPart; resp
         </div>
       ) : (
         status && (
-          <span
-            className="t-body"
-            role="status"
-            style={{ fontWeight: 700, color: status.tone === "ok" ? "var(--figure-accent)" : "var(--text-burnt)" }}
-          >
-            {status.text}
-          </span>
+          <div className="vstack" style={{ gap: 10, alignItems: "flex-start" }}>
+            <span
+              className="t-body"
+              role="status"
+              style={{ fontWeight: 700, color: status.tone === "ok" ? "var(--figure-accent)" : "var(--text-burnt)" }}
+            >
+              {status.text}
+            </span>
+            {payUrl && (
+              <a
+                href={payUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pill-primary pill-sm"
+                style={{ textDecoration: "none" }}
+                onClick={(e) => {
+                  // The app's WebView ignores target="_blank".
+                  if (!isNative()) return;
+                  e.preventDefault();
+                  void openOutside(payUrl);
+                }}
+              >
+                {qr ? <QrCode width={16} height={16} aria-hidden /> : <ExternalLink width={16} height={16} aria-hidden />}
+                {qr ? "Show QR" : "Pay"}{reason.bill?.toPay?.value ? ` ${reason.bill.toPay.value}` : ""}
+              </a>
+            )}
+            {tryAgain && (
+              <button type="button" className="pill-primary pill-sm" disabled={busy} onClick={() => payment?.ask?.(tryAgain.say)}>
+                <RefreshCw width={16} height={16} aria-hidden />
+                {tryAgain.label}
+              </button>
+            )}
+          </div>
         )
       )}
     </section>

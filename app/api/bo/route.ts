@@ -9,7 +9,7 @@ import { readJsonObject, requireBoUser } from "@/lib/bo/guard";
 import { getFoodProfile, type FoodProfile } from "@/lib/bo/food-profile";
 import { addTaskEvent, createTask, getTask, logId, recordTaskSteps, resolveBoLimits, updateTask, type BoLimits } from "@/lib/bo/tasks";
 import { boModelMessages, lastUserText, rejectedApprovals, lastToolName } from "@/lib/bo/messages";
-import { boInstructions } from "@/lib/bo/prompt";
+import { boInstructions, deviceLine } from "@/lib/bo/prompt";
 import { buildBoTools } from "@/lib/bo/swiggy-tools";
 import { buildCookTools, SHOW_RECIPE } from "@/lib/bo/cook-tools";
 import { buildRideTools, SHOW_RIDE } from "@/lib/bo/ride-tools";
@@ -61,6 +61,9 @@ export async function POST(req: Request) {
   if (body.taskId !== undefined && body.taskId !== null && !requestedTask) {
     return Response.json({ error: "invalid_task" }, { status: 400 });
   }
+
+  // Only decides which way to pay is offered; the client reports it (lib/bo/device.ts).
+  const device = body.device === "phone" || body.device === "desktop" ? body.device : null;
 
   // Consent decides what Bo may use AND what the task row may keep: without a
   // current consent the profile is not read into the prompt and the intent
@@ -157,6 +160,7 @@ export async function POST(req: Request) {
       userId: user.id,
       taskId,
       approvalSecret: approvalSecret(),
+      device,
       onPaymentPending: () => {
         paymentPending = true;
       },
@@ -200,7 +204,7 @@ export async function POST(req: Request) {
   try {
     result = streamText({
       model: getServerModel(),
-      instructions: [boInstructions(foodProfile), paymentLine(taskPlan)].filter(Boolean).join("\n\n"),
+      instructions: [boInstructions(foodProfile), deviceLine(device), paymentLine(taskPlan)].filter(Boolean).join("\n\n"),
       messages: await boModelMessages(body.messages),
       tools,
       toolChoice: "auto",
