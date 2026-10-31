@@ -100,7 +100,7 @@ export function boTaskStatus(messages: ReadonlyArray<Msg>, follow?: TaskFollow |
     case "refund":
       return { ...s, tone: "warn", label: "Swiggy started a refund", detail: "The order didn’t go through; your money is on its way back." };
     case "timeout":
-      return { ...s, tone: "warn", label: "Payment timed out", detail: "The order wasn’t placed. If money left your account, Swiggy refunds it." };
+      return { ...s, tone: "warn", label: "Payment timed out", detail: "Bo closed the order. If you paid, check it in the Swiggy app." };
   }
 }
 
@@ -149,7 +149,7 @@ function fromMessages(messages: ReadonlyArray<Msg>): BoTaskStatus | null {
         } else if (done && out?.aborted) {
           at(kind, booking ? "Slot" : "Cart", "Nothing was placed", "warn");
         } else if (done && /PENDING_PAYMENT/.test(outText(p))) {
-          at(kind, "Payment", "Waiting for your payment", "you", "Pay in your UPI app, then tell Bo you’ve paid.");
+          at(kind, "Payment", "Waiting for your payment", "you", (p.input as { generateUPIQR?: unknown } | null)?.generateUPIQR === true ? "Tap Show QR on the card and scan it. Bo confirms it by itself." : "Tap Pay on the card. Bo confirms it by itself.");
         } else if (done) {
           if (booking) at(kind, "Booked", "Table booked", "done", "Your booking is with Dineout.");
           else at(kind, "Placed", "Order placed", "done", amount ? `${amount} · Bo can track it for you.` : "Bo can track it for you.");

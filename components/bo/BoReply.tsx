@@ -10,6 +10,7 @@
  * input (lib/bo/cook-tools.ts).
  */
 
+import type { PaymentOutcome } from "@/lib/bo/use-task-follow";
 import { ApprovalCard, isApprovalPart, type ApprovalPart, type Respond } from "@/components/bo/ApprovalCard";
 import { boSteps, StepTrace } from "@/components/bo/StepTrace";
 import { BoRecipeCard, recipeFromInput, type CookActions } from "@/components/bo/BoRecipeCard";
@@ -59,6 +60,7 @@ export function BoReply({
   active,
   renderText,
   cook,
+  paymentResult,
 }: {
   parts?: ReadonlyArray<Part>;
   respond: Respond;
@@ -67,6 +69,8 @@ export function BoReply({
   renderText: (text: string, key: string) => React.ReactNode;
   /** The recipe card's buttons; each tree routes them its own way. */
   cook?: CookActions;
+  /** The server's payment outcome, once the chat has polled one. */
+  paymentResult?: PaymentOutcome;
 }) {
   const waiting = (parts ?? []).some((p) => isApprovalPart(p) && p.state === "approval-requested");
   return (
@@ -79,7 +83,7 @@ export function BoReply({
         ) : s.kind === "recipe" ? (
           <RecipeSegment key={s.part.toolCallId ?? `r${i}`} part={s.part} cook={cook} busy={busy} />
         ) : (
-          <ApprovalCard key={s.part.toolCallId ?? s.part.approval!.id} part={s.part} respond={respond} busy={busy} />
+          <ApprovalCard key={s.part.toolCallId ?? s.part.approval!.id} part={s.part} respond={respond} busy={busy} paymentResult={paymentResult} />
         )
       )}
     </>

@@ -659,6 +659,7 @@ function ChatPageInner() {
                             busy={isLoading}
                             active={isStreamingMessage}
                             cook={cookActions}
+                            paymentResult={follow?.payment?.result}
                             renderText={(t, key) => (
                               <div key={key} className="card" style={{ padding: "13px 17px", borderBottomLeftRadius: 6 }}>
                                 <p className="t-body" style={{ whiteSpace: "pre-wrap" }}>{t}</p>

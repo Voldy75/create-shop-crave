@@ -308,6 +308,7 @@ function ChatInner() {
                     busy={isLoading}
                     active={isLoading && i === messages.length - 1}
                     cook={cookActions}
+                    paymentResult={follow?.payment?.result}
                     renderText={(t, key) => (
                       <div key={key} className="card t-body" style={{ padding: "12px 16px", borderBottomLeftRadius: 6, whiteSpace: "pre-wrap" }}>{t}</div>
                     )}

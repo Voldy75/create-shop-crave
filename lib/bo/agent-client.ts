@@ -17,6 +17,7 @@
 
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses, type UIMessage } from "ai";
 import type { ApprovalReason } from "@/lib/bo/swiggy-tools";
+import { boDevice } from "@/lib/bo/device";
 
 export const sendAfterApproval = lastAssistantMessageIsCompleteWithApprovalResponses;
 
@@ -33,7 +34,7 @@ export function createBoTransport(onResponse?: (res: Response) => void): BoTrans
   const transport = new DefaultChatTransport<UIMessage>({
     api: "/api/bo",
     prepareSendMessagesRequest: ({ messages, body }) => ({
-      body: { ...(body ?? {}), messages, taskId },
+      body: { ...(body ?? {}), messages, taskId, device: boDevice() },
     }),
     fetch: async (url, init) => {
       const res = await fetch(url, init);
