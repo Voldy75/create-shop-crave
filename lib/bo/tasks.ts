@@ -269,3 +269,29 @@ export async function findApprovalRequest(
   const fp = (data.data as { fingerprint?: unknown } | null)?.fingerprint;
   return { fingerprint: typeof fp === "string" ? fp : null };
 }
+
+/**
+ * Write the task's plan only if nobody else wrote the task since `seenAt`
+ * (its updated_at when read) — the payment watcher's lease, so two watchers
+ * (the chat turn's and a status poll's) never check and confirm at once.
+ */
+export async function updatePlanIfUnchanged(
+  userId: string,
+  taskId: string,
+  seenAt: string,
+  plan: Record<string, unknown>,
+  status?: TaskStatus
+): Promise<boolean> {
+  const sb = await createServiceClient();
+  const { data, error } = await sb
+    .from("agent_tasks")
+    .update({ plan, ...(status ? { status } : {}), updated_at: new Date().toISOString() })
+    .eq("id", taskId)
+    .eq("user_id", userId)
+    .eq("updated_at", seenAt)
+    .select("id");
+  if (error) throw new Error(`task update failed: ${error.message}`);
+  const won = (data ?? []).length === 1;
+  if (won && status) await addTaskEvent(userId, taskId, "status", { summary: status });
+  return won;
+}

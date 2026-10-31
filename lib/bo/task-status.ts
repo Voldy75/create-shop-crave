@@ -1,9 +1,9 @@
 /**
  * Where a Bo task stands, read from the conversation itself — the tool calls,
  * the Approval card and Swiggy's answers that are already in the messages.
- * No server call and no polling: the status card (components/bo/
- * TaskStatusCard.tsx) re-renders with the chat. When Phase 3's durable
- * follow-through lands, its updates arrive as messages and land here too.
+ * The status card (components/bo/TaskStatusCard.tsx) re-renders with the
+ * chat. The one server input is the payment outcome: while the strip shows
+ * Payment, lib/bo/use-task-follow.ts polls it and passes it in as `follow`.
  *
  * Stages per kind of task:
  *   order / grocery  Finding → Cart → Your OK → Payment → Placed
@@ -13,6 +13,7 @@
  */
 
 import { parseApprovalReason } from "@/lib/bo/agent-client";
+import type { TaskFollow } from "@/lib/bo/use-task-follow";
 
 export type BoTaskKind = "order" | "grocery" | "dine_in" | "cook";
 export type BoTaskTone = "working" | "you" | "done" | "warn";
@@ -74,8 +75,36 @@ function failed(p: ToolPart): boolean {
   return p.state === "output-error" || !!(o && typeof o === "object" && o.error);
 }
 
-/** null until Bo has used a tool in this conversation (plain chat has no task). */
-export function boTaskStatus(messages: ReadonlyArray<Msg>): BoTaskStatus | null {
+/** Is the task waiting on the user's UPI payment (so the server is watching it)? */
+export function awaitingPayment(s: BoTaskStatus | null): boolean {
+  return !!s && s.stages[s.current] === "Payment" && s.tone === "you";
+}
+
+/**
+ * null until Bo has used a tool in this conversation (plain chat has no
+ * task). `follow` is the server's payment outcome (lib/bo/follow.ts): it
+ * moves a pending payment on without a new message.
+ */
+export function boTaskStatus(messages: ReadonlyArray<Msg>, follow?: TaskFollow | null): BoTaskStatus | null {
+  const s = fromMessages(messages);
+  const result = follow?.payment?.result;
+  if (!s || !awaitingPayment(s) || !result || result === "pending") return s;
+  const amount = follow?.payment?.amount ?? undefined;
+  const stages = s.stages;
+  const at = (stage: string) => Math.max(0, stages.indexOf(stage));
+  switch (result) {
+    case "success":
+      return { ...s, current: at(s.kind === "dine_in" ? "Booked" : "Placed"), tone: "done", label: s.kind === "dine_in" ? "Booking confirmed" : "Order placed", detail: amount ? `${amount} paid · Bo can track it for you.` : "Paid · Bo can track it for you." };
+    case "failed":
+      return { ...s, tone: "warn", label: "The payment didn’t go through", detail: "Nothing was ordered. Ask Bo to pay another way." };
+    case "refund":
+      return { ...s, tone: "warn", label: "Swiggy started a refund", detail: "The order didn’t go through; your money is on its way back." };
+    case "timeout":
+      return { ...s, tone: "warn", label: "Payment timed out", detail: "The order wasn’t placed. If money left your account, Swiggy refunds it." };
+  }
+}
+
+function fromMessages(messages: ReadonlyArray<Msg>): BoTaskStatus | null {
   let s: BoTaskStatus | null = null;
   let amount: string | undefined;
 

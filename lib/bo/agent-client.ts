@@ -24,6 +24,8 @@ export interface BoTransport {
   transport: DefaultChatTransport<UIMessage>;
   /** Start the next message as a NEW task (new conversation). */
   resetTask: () => void;
+  /** The current task's id, once the server has issued one. */
+  taskId: () => string | null;
 }
 
 export function createBoTransport(onResponse?: (res: Response) => void): BoTransport {
@@ -48,6 +50,7 @@ export function createBoTransport(onResponse?: (res: Response) => void): BoTrans
     resetTask: () => {
       taskId = null;
     },
+    taskId: () => taskId,
   };
 }
 

@@ -12,8 +12,13 @@ import { boModelMessages, lastUserText, rejectedApprovals, lastToolName } from "
 import { boInstructions } from "@/lib/bo/prompt";
 import { buildBoTools } from "@/lib/bo/swiggy-tools";
 import { buildCookTools, SHOW_RECIPE } from "@/lib/bo/cook-tools";
+import { paymentLine, watchPayment } from "@/lib/bo/follow";
+import { after } from "next/server";
 
-export const maxDuration = 60;
+// A turn is well under a minute; the rest is for the payment watcher that
+// runs after a UPI order (lib/bo/follow.ts), which stops 20 s before this.
+export const maxDuration = 300;
+const WATCH_BUDGET_MS = (maxDuration - 20) * 1000;
 
 /**
  * Bo, the autonomous food agent (Phase 2). Behind the bo_agent flag: off, this
@@ -92,15 +97,18 @@ export async function POST(req: Request) {
   }
 
   // Task: continue the user's own, or start one (spends quota, fails closed).
+  const startedAt = Date.now();
   let taskId: string;
   let limits: BoLimits;
   let stepsSoFar = 0;
+  let taskPlan: Record<string, unknown> | undefined;
   try {
     if (requestedTask) {
       const task = await getTask(user.id, requestedTask);
       if (!task) return Response.json({ error: "task_not_found" }, { status: 404 });
       taskId = task.id;
       stepsSoFar = task.steps;
+      taskPlan = task.plan;
       limits = await resolveBoLimits(user.id);
     } else {
       const created = await createTask(user.id, foodProfile ? lastUserText(body.messages) : "");
@@ -141,9 +149,17 @@ export async function POST(req: Request) {
     );
   }
 
+  let paymentPending = false;
   let built: Awaited<ReturnType<typeof buildBoTools>>;
   try {
-    built = await buildBoTools(open, { userId: user.id, taskId, approvalSecret: approvalSecret() });
+    built = await buildBoTools(open, {
+      userId: user.id,
+      taskId,
+      approvalSecret: approvalSecret(),
+      onPaymentPending: () => {
+        paymentPending = true;
+      },
+    });
   } catch (err) {
     await closeAll(open);
     console.error(`bo[${logId(user.id)}] tool discovery failed:`, err instanceof Error ? err.message.slice(0, 300) : err);
@@ -155,12 +171,21 @@ export async function POST(req: Request) {
   // Exactly once, from whichever way the turn ends (finish, closed tab, or a
   // stream error such as a forged approval): the spent steps still count.
   let finished = false;
+  let turnEnded: () => void = () => {};
+  const ended = new Promise<void>((r) => (turnEnded = r));
   const finish = async () => {
     if (finished) return;
     finished = true;
     await recordTaskSteps(user.id, taskId, steps, toolCalls, limits.maxStepsPerTask);
     await closeAll(open);
+    turnEnded();
   };
+  // After the response: if this turn left a UPI payment pending, watch it —
+  // this keeps running when the user closes the chat.
+  after(async () => {
+    await ended;
+    if (paymentPending) await watchPayment(user.id, taskId, startedAt + WATCH_BUDGET_MS, (id) => callbackUrlFor(req, id));
+  });
   const secret = approvalSecret();
   // The Swiggy service Bo is working in decides which tools a step sees
   // (lib/bo/swiggy-tools.ts activeToolNames): it carries over from earlier
@@ -174,7 +199,7 @@ export async function POST(req: Request) {
   try {
     result = streamText({
       model: getServerModel(),
-      instructions: boInstructions(foodProfile),
+      instructions: [boInstructions(foodProfile), paymentLine(taskPlan)].filter(Boolean).join("\n\n"),
       messages: await boModelMessages(body.messages),
       tools,
       toolChoice: "auto",
@@ -205,6 +230,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     await closeAll(open);
+    turnEnded();
     console.error(`bo[${logId(user.id)}] model call failed:`, err instanceof Error ? err.message.slice(0, 300) : err);
     return Response.json({ error: "agent_failed", message: FAILED }, { status: 500 });
   }

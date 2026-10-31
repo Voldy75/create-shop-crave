@@ -32,8 +32,9 @@ import { toolAllowed } from "@/lib/mcp/client";
 import { sanitizeToolSchema } from "@/lib/mcp/schema";
 import { decide, PLACES_ORDER, type ToolDecision } from "@/lib/bo/policy";
 import { bookingSummary, cartBill, cartFingerprint, cartJson, cartLooksEmpty, cartSummary, resultText, type CartBill } from "@/lib/bo/approval";
-import { addTaskEvent, findApprovalRequest, logId, updateTask, type TaskMode } from "@/lib/bo/tasks";
+import { addTaskEvent, findApprovalRequest, getTask, logId, updateTask, type TaskMode } from "@/lib/bo/tasks";
 import { compactToolResult } from "@/lib/bo/trim";
+import { pendingPayment } from "@/lib/bo/follow";
 
 /** The cart each order tool places, per Swiggy service. */
 const CART_TOOL: Record<string, string> = { food: "get_food_cart", im: "get_cart" };
@@ -66,6 +67,8 @@ export interface BoToolContext {
   taskId: string;
   /** null = approvals cannot be signed, so approval tools are denied. */
   approvalSecret: string | null;
+  /** Called when an order is waiting on a UPI payment (saved on the task). */
+  onPaymentPending?: () => void;
 }
 
 function errorResult(err: unknown) {
@@ -144,8 +147,15 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
             const failed = (r as { isError?: boolean }).isError === true;
             await addTaskEvent(ctx.userId, ctx.taskId, "tool_result", { tool: key, summary: failed ? "error" : "ok" });
             if (!failed && (PLACES_ORDER.has(key) || key === "dineout.book_table")) {
-              const status = /PENDING_PAYMENT/.test(text) ? "awaiting_payment" : "tracking";
-              await updateTask(ctx.userId, ctx.taskId, { status }).catch(() => {});
+              const pending = /PENDING_PAYMENT/.test(text + JSON.stringify(r.structuredContent ?? ""));
+              // A UPI order: save what the payment watcher needs (lib/bo/follow.ts).
+              const watch = pending ? pendingPayment(m.service, r, text.match(/To Pay[^₹]*(₹\s?[\d,.]+)/i)?.[1]) : null;
+              const task = watch ? await getTask(ctx.userId, ctx.taskId).catch(() => null) : null;
+              await updateTask(ctx.userId, ctx.taskId, {
+                status: pending ? "awaiting_payment" : "tracking",
+                ...(watch && task ? { plan: { ...task.plan, payment: watch } } : {}),
+              }).catch(() => {});
+              if (watch && task) ctx.onPaymentPending?.();
             }
             if (!failed && m.bare === "confirm_order") {
               await updateTask(ctx.userId, ctx.taskId, { status: "tracking" }).catch(() => {});

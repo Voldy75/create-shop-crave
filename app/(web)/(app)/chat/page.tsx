@@ -19,7 +19,8 @@ import { useFeatureFlags, usePartners } from "@/lib/feature-flags";
 import { AgentAttribution } from "@/components/SwiggyAttribution";
 import { BoReply, boIsShowingWork } from "@/components/bo/BoReply";
 import { TaskStatusCard } from "@/components/bo/TaskStatusCard";
-import { boTaskStatus } from "@/lib/bo/task-status";
+import { awaitingPayment, boTaskStatus } from "@/lib/bo/task-status";
+import { useTaskFollow } from "@/lib/bo/use-task-follow";
 import { createBoTransport, sendAfterApproval } from "@/lib/bo/agent-client";
 import { useBoAgentMode } from "@/lib/bo/agent-mode";
 import { AgentIntro, AgentSwitch } from "@/components/bo/AgentSwitch";
@@ -260,7 +261,7 @@ function ChatPageInner() {
           return response;
         },
       });
-    return { transport, resetTask: () => {} };
+    return { transport, resetTask: () => {}, taskId: () => null };
   }, [boMode, chatApi, router]);
   const { transport } = conn;
 
@@ -283,7 +284,10 @@ function ChatPageInner() {
   const { messages, setMessages, status, sendMessage, regenerate, addToolApprovalResponse } = chat;
   const isLoading = status === "submitted" || status === "streaming";
   // Where Bo's task stands, read from the thread (null in plain chat).
-  const taskStatus = useMemo(() => (boMode ? boTaskStatus(messages) : null), [boMode, messages]);
+  // While a UPI payment is pending the server watches it; poll for the outcome.
+  const baseStatus = useMemo(() => (boMode ? boTaskStatus(messages) : null), [boMode, messages]);
+  const follow = useTaskFollow(conn?.taskId() ?? null, awaitingPayment(baseStatus));
+  const taskStatus = useMemo(() => (boMode ? boTaskStatus(messages, follow) : null), [boMode, messages, follow]);
 
   useEffect(() => {
     if (scrollRef.current) {
