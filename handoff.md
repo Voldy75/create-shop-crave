@@ -42,8 +42,10 @@ Plan: `~/.claude/plans/hidden-booping-naur.md`. Every phase is a PR into
 owner-approved final merge. Phases 1 and 2 are merged into `feat/bo-agent`,
 including the Agent/Chat switch (#48), smaller Gemini calls (#49), "cook it
 yourself" (#50) and the task status strip (#51). Phase 3, payment
-follow-through, is merged too (#52) but not yet tried with a real UPI
-payment. See "Bo agent (feat/bo-agent)" near the end
+follow-through, is merged too (#52). The Pay button and device-aware UPI
+(item 18) are committed on `bo/pay-button`, not yet a PR. Real test orders
+reached Swiggy's QR page; a fully paid order has not been run on this code.
+See "Bo agent (feat/bo-agent)" near the end
 for the dev database, running locally against it, and "Where Bo stands" for
 what is left.
 
@@ -1973,18 +1975,68 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       card's "Waiting for payment" line doesn't change (the strip is
       authoritative); the strip's own check_payment_status reading (only
       when Bo calls it manually) still matches on text.
+18. Pay button and device-aware UPI — branch `bo/pay-button`, committed, no PR
+    yet (2026-10-31). Real test 1 (order 252395209900641) stuck because
+    meshi never showed a way to pay.
+    - The Approval card now shows Swiggy's `bridgeUrl`: "Pay ₹…", or "Show QR
+      ₹…" for a QR order. `compactToolResult` drops structured data, so the
+      tool output carries `payUrl` explicitly.
+    - lib/bo/device.ts reports phone / desktop with every turn (Capacitor
+      native → phone; else `userAgentData.mobile`, else user agent; tablets
+      count as desktop). Swiggy's widget does this for itself and its docs
+      say never to ask the user. `deviceLine` tells Bo what to offer.
+      Desktop UPI = `generateUPIQR: true`, no `intentApp`; a desktop order
+      with `intentApp` is refused in `toolApproval`, so Bo must retry as a QR.
+      An app intent cannot open on a computer: that was real test 3.
+    - Payment window is never under 5 minutes. Honouring Swiggy's
+      `maxTimeToPollForInMs` closed the Google Pay order
+      (252404362997606) after 74s; the value it sent then was not logged.
+      The QR order received 300000.
+    - Pending results carry `orderState: NOT placed yet`, and the prompt
+      forbids saying placed on PENDING_PAYMENT (Bo did say it). An error
+      from an order tool now returns `{ error }`, so it can't read as "Order
+      placed". Pay disappears once the payment has an outcome. Timeout copy
+      no longer claims the order wasn't placed, since a late success is
+      reconciled by Swiggy.
+    - The task log now keeps `paymentShape`: keys, status, result, isQrFlow,
+      poll limits, `paymentPresentation`, upi scheme + length and the bridge
+      path. Never ids, links or amounts.
+    - Cards, netbanking and wallets are not in Swiggy's MCP: Bo says so and
+      points to the Swiggy app. Cash on delivery and Swiggy Money are offered
+      when `get_payment_options` returns them.
+    - Live on desktop, Instamart (order 252405556947364, ₹182): QR request
+      accepted (`isQrFlow: true`) despite `place_food_order` saying to leave
+      `generateUPIQR` blank; `bridgeUrl` opens Swiggy's "Scan to pay" page
+      (`mode=qr`) with a working QR. The owner scanned without paying and
+      Swiggy reported terminal `failed` after about 38s; no confirm_order,
+      card and strip updated, Pay removed. `upiIntentUrl` is a real `upi://`
+      string, but we keep Swiggy's page and do not render our own QR.
+    - Pay another way: after a failed payment the card offers it; after a
+      timeout it reads "I didn't pay, pay another way", because they may have
+      paid; no button after a refund. One tap sends Bo that message and Bo
+      fetches get_payment_options, so COD appears when Swiggy returns it. A
+      task can now pay twice, so `paymentKey` (the watch's startedAt) ties the
+      poll and the card to the latest order. The button is not live-verified.
+    - **Not verified:** a completed payment through to confirm_order on this
+      code; phone browser Pay; native Pay (`openOutside` → @capacitor/browser);
+      Food QR; COD. Swiggy's bridge page behaviour for an app-intent order on
+      desktop was not inspected.
 
 **Where Bo stands (2026-10-31).** Merged into `feat/bo-agent`: items 1–17
-(through #52). In order, what is left:
-1. Owner: try the follow-through with a small real Instamart UPI order on
-   `feat/bo-agent`, before the final merge to `main`. Phase 3's plan check (end the request mid-payment; force a retry,
-   no duplicate order) is part of this.
-2. Live checks once Gemini quota allows: Food, Dineout and cook on dev,
+(through #52). Item 18 is committed on `bo/pay-button` but has no PR. In order,
+what is left:
+1. Owner: check orders 252395209900641, 252404362997606 and 252405556947364 in
+   the Swiggy app (none confirmed by Bo) and whether any money left the
+   account. The Work card reads "B17, Mumbai" but the Swiggy app showed B603,
+   Bhoomi Samarth; confirm which address is right.
+2. One real paid order on a phone and one paid QR order on desktop, then open
+   item 18's PR into `feat/bo-agent`. Phase 3's plan check (end the request
+   mid-payment; force a retry, no duplicate order) is part of this. Dev's
+   `tasks_daily` is 3 (it was raised to 10 for testing and restored).
+3. Live checks once Gemini quota allows: Food, Dineout and cook on dev,
    tapping Change only, never Place order or Book.
-3. Owner signs in on dev, to see the web /chat recipe card and status strip;
+4. Owner signs in on dev, to see the web /chat recipe card and status strip;
    both were verified only on /m/chat (the dev session had expired).
-4. Decide whether #45 and #47 (items 11 and 12) should be cherry-picked to
-   `main`; #45's sign-in bug is live there.
 5. The pre-merge list below, and the rollback drill (flip `bo_agent` off on
    a preview; chat and agent must match `main`).
 Optional afterwards: Phase 4 nudges, tracking pushes.

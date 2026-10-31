@@ -34,7 +34,10 @@ import { decide, PLACES_ORDER, type ToolDecision } from "@/lib/bo/policy";
 import { bookingSummary, cartBill, cartFingerprint, cartJson, cartLooksEmpty, cartSummary, resultText, type CartBill } from "@/lib/bo/approval";
 import { addTaskEvent, findApprovalRequest, getTask, logId, updateTask, type TaskMode } from "@/lib/bo/tasks";
 import { compactToolResult } from "@/lib/bo/trim";
-import { pendingPayment } from "@/lib/bo/follow";
+import { paymentLink, paymentShape, pendingPayment } from "@/lib/bo/follow";
+import type { BoDevice } from "@/lib/bo/prompt";
+
+const NOT_PLACED_YET = "NOT placed yet: Swiggy is waiting for the user's payment.";
 
 /** The cart each order tool places, per Swiggy service. */
 const CART_TOOL: Record<string, string> = { food: "get_food_cart", im: "get_cart" };
@@ -67,6 +70,8 @@ export interface BoToolContext {
   taskId: string;
   /** null = approvals cannot be signed, so approval tools are denied. */
   approvalSecret: string | null;
+  /** The device the user is paying from; null when the client didn't say. */
+  device?: BoDevice | null;
   /** Called when an order is waiting on a UPI payment (saved on the task). */
   onPaymentPending?: () => void;
 }
@@ -145,9 +150,18 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
             const r = await m.open.client.callTool({ name: m.bare, arguments: args });
             const text = resultText(r);
             const failed = (r as { isError?: boolean }).isError === true;
-            await addTaskEvent(ctx.userId, ctx.taskId, "tool_result", { tool: key, summary: failed ? "error" : "ok" });
-            if (!failed && (PLACES_ORDER.has(key) || key === "dineout.book_table")) {
-              const pending = /PENDING_PAYMENT/.test(text + JSON.stringify(r.structuredContent ?? ""));
+            const places = PLACES_ORDER.has(key) || key === "dineout.book_table";
+            await addTaskEvent(ctx.userId, ctx.taskId, "tool_result", {
+              tool: key,
+              summary: failed ? "error" : "ok",
+              ...(places ? { data: paymentShape(r) } : {}),
+            });
+            let payUrl: string | null = null;
+            let pending = false;
+            let paymentKey: string | undefined;
+            if (!failed && places) {
+              pending = /PENDING_PAYMENT/.test(text + JSON.stringify(r.structuredContent ?? ""));
+              if (pending) payUrl = paymentLink(r);
               // A UPI order: save what the payment watcher needs (lib/bo/follow.ts).
               const watch = pending ? pendingPayment(m.service, r, text.match(/To Pay[^₹]*(₹\s?[\d,.]+)/i)?.[1]) : null;
               const task = watch ? await getTask(ctx.userId, ctx.taskId).catch(() => null) : null;
@@ -155,11 +169,18 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
                 status: pending ? "awaiting_payment" : "tracking",
                 ...(watch && task ? { plan: { ...task.plan, payment: watch } } : {}),
               }).catch(() => {});
-              if (watch && task) ctx.onPaymentPending?.();
+              if (watch && task) {
+                paymentKey = watch.startedAt;
+                ctx.onPaymentPending?.();
+              }
             }
             if (!failed && m.bare === "confirm_order") {
               await updateTask(ctx.userId, ctx.taskId, { status: "tracking" }).catch(() => {});
             }
+            // An error must not read as success on the card or the status strip.
+            if (failed) return { error: compactToolResult(r) };
+            // The Approval card's Pay button reads payUrl (structured data doesn't survive compaction).
+            if (pending) return { ...(payUrl ? { payUrl } : {}), ...(paymentKey ? { paymentKey } : {}), orderState: NOT_PLACED_YET, result: compactToolResult(r) };
             return compactToolResult(r);
           } catch (err) {
             await addTaskEvent(ctx.userId, ctx.taskId, "tool_result", { tool: key, summary: "error" });
@@ -186,6 +207,11 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
 
     const key = `${m.service}.${m.bare}`;
     const args = (toolCall.input ?? {}) as Record<string, unknown>;
+
+    // A UPI app cannot open on a computer, so the order could never be paid.
+    if (ctx.device === "desktop" && PLACES_ORDER.has(key) && /upi/i.test(String(args.paymentMethod ?? "")) && args.intentApp) {
+      return { type: "denied", reason: "Not the user's choice and not an error: UPI apps cannot open on a computer. Call this tool again with generateUPIQR true and no intentApp." };
+    }
 
     // The SDK calls this again on the turn that carries the user's answer.
     // The request (and the cart fingerprint the user saw) is recorded once;

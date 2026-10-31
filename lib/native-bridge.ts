@@ -47,6 +47,21 @@ export async function captureMealPhoto(): Promise<string | null> {
 }
 
 /**
+ * Open a link outside the app. Native → @capacitor/browser (a WebView ignores
+ * target="_blank"); returns false on web so the link opens normally.
+ */
+export async function openOutside(url: string): Promise<boolean> {
+  if (!isNative()) return false;
+  try {
+    const { Browser } = await import("@capacitor/browser");
+    await Browser.open({ url });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Native share sheet. Native → @capacitor/share; web → Web Share API fallback.
  */
 export async function shareContent(opts: { title?: string; text?: string; url?: string }): Promise<void> {

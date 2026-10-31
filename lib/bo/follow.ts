@@ -50,6 +50,9 @@ export interface PaymentWatch {
   lng?: number;
   /** Swiggy's To Pay, for the notification. */
   amount?: string;
+  /** Swiggy's own poll gap and window, from the place-order response. */
+  pollMs?: number;
+  maxMs?: number;
   startedAt: string;
   leaseUntil?: string;
   result?: PaymentResult;
@@ -110,21 +113,71 @@ export function pendingPayment(service: string, result: unknown, amount?: string
   if (!ids.orderId) return null;
   // check_payment_status needs the payment transaction id.
   if (!ids.paasId) return null;
+  const total = amount ?? (num("cartTotal") ?? num("totalAmount"));
+  const clamp = (v: number | undefined, lo: number, hi: number) => (v ? Math.min(hi, Math.max(lo, v)) : undefined);
   return {
     service,
     orderId: ids.orderId,
     ...ids,
     lat: num("lat") ?? num("latitude"),
     lng: num("lng") ?? num("longitude"),
-    ...(amount ? { amount } : {}),
+    ...(total ? { amount: typeof total === "number" ? `₹${total}` : total } : {}),
+    pollMs: clamp(num("pollingIntervalInMs"), CADENCE_MS, 60_000),
+    // Never under the 5-minute cap: Swiggy's short value closed a real order
+    // after a minute, far too soon to open a UPI app or scan a QR.
+    maxMs: clamp(num("maxTimeToPollForInMs"), CAP_MS, 15 * 60_000),
     startedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Swiggy's payment page for a pending UPI order: `bridgeUrl`, an opaque https
+ * link that shows a QR and an "Open in your UPI app" button. It is the only
+ * way the user can pay, so it goes on the Approval card. Read from the data,
+ * not the message: the scan-QR flow leaves it out of the message.
+ */
+export function paymentLink(result: unknown): string | null {
+  const text = resultText(result);
+  for (const tree of [(result as { structuredContent?: unknown })?.structuredContent, textJson(text)]) {
+    const v = find(tree, "bridgeUrl");
+    if (typeof v === "string" && /^https:\/\//i.test(v.trim())) return v.trim();
+  }
+  return text.match(/bridgeUrl["'*\s:=]+(https:\/\/[^\s"'<>)]+)/i)?.[1] ?? null;
+}
+
+/**
+ * Key names, status and the non-identifying payment fields, never ids, links
+ * or amounts: enough to debug Swiggy's shape from the task log.
+ */
+export function paymentShape(result: unknown): Record<string, unknown> {
+  const text = resultText(result);
+  const tree = (result as { structuredContent?: unknown })?.structuredContent ?? textJson(text);
+  const data = (find(tree, "data") ?? tree) as Record<string, unknown> | null;
+  const status = find(tree, "status");
+  const result_ = find(tree, "result");
+  const presentation = find(tree, "paymentPresentation");
+  const intent = find(tree, "upiIntentUrl");
+  const bridge = find(tree, "bridgeUrl");
+  const number = (k: string) => (typeof find(tree, k) === "number" ? { [k]: find(tree, k) } : {});
+  return {
+    keys: data && typeof data === "object" ? Object.keys(data).slice(0, 30) : [],
+    structured: !!(result as { structuredContent?: unknown })?.structuredContent,
+    ...(typeof status === "string" ? { status: status.slice(0, 40) } : {}),
+    ...(typeof find(tree, "terminal") === "boolean" ? { terminal: find(tree, "terminal") } : {}),
+    ...(typeof result_ === "string" ? { result: result_.slice(0, 40) } : {}),
+    ...(typeof find(tree, "isQrFlow") === "boolean" ? { isQrFlow: find(tree, "isQrFlow") } : {}),
+    ...number("pollingIntervalInMs"),
+    ...number("maxTimeToPollForInMs"),
+    ...(typeof presentation === "string" ? { paymentPresentation: presentation.slice(0, 40) } : presentation && typeof presentation === "object" ? { paymentPresentation: Object.keys(presentation).slice(0, 12) } : {}),
+    ...(typeof intent === "string" ? { upiIntent: { scheme: intent.match(/^[a-z][a-z0-9+.-]*(?=:)/i)?.[0] ?? null, length: intent.length } } : {}),
+    ...(typeof bridge === "string" ? { bridgePath: bridge.match(/^https:\/\/[^/]+\/([^/?#]{0,24})/i)?.[1] ?? null } : {}),
   };
 }
 
 function classify(v: string): PaymentResult | "pending" {
   if (/REFUND/i.test(v)) return "refund";
   if (/^(SUCCESS|SUCCESSFUL|PAID|COMPLETED|CHARGED)$/i.test(v)) return "success";
-  if (/^FAIL(ED|URE)?$/i.test(v)) return "failed";
+  if (/^(FAIL(ED|URE)?|CANCELL?ED|CART[_-]CHANGED)$/i.test(v)) return "failed";
   return "pending";
 }
 
@@ -138,6 +191,12 @@ function classify(v: string): PaymentResult | "pending" {
 export function paymentStatusOf(result: unknown): PaymentResult | "pending" {
   const text = resultText(result);
   for (const tree of [(result as { structuredContent?: unknown })?.structuredContent, textJson(text)]) {
+    // Swiggy's terminal flags outrank the status word, which has no fixed list.
+    if (find(tree, "isTerminalSuccess") === true) return "success";
+    if (find(tree, "isTerminalFailure") === true) {
+      const s = find(tree, "status");
+      return typeof s === "string" && /REFUND/i.test(s) ? "refund" : "failed";
+    }
     for (const key of ["paymentStatus", "status", "state"]) {
       const v = find(tree, key);
       if (typeof v === "string" && v.trim()) return classify(v.trim());
@@ -199,7 +258,7 @@ const MESSAGES: Record<PaymentResult, { title: string; body: (w: PaymentWatch) =
   },
   timeout: {
     title: "Payment timed out",
-    body: () => "Swiggy didn’t receive the payment in time, so the order wasn’t placed. If money left your account, Swiggy refunds it.",
+    body: () => "Bo didn’t see your payment in time, so it closed the order. If you paid, check this order in the Swiggy app.",
     status: "failed",
   },
 };
@@ -209,6 +268,14 @@ const MESSAGES: Record<PaymentResult, { title: string; body: (w: PaymentWatch) =
  * Safe to call from anywhere, any number of times: it returns at once when
  * there is nothing to watch or another watcher holds the lease.
  */
+function confirmedPlaced(result: unknown): boolean {
+  for (const tree of [(result as { structuredContent?: unknown })?.structuredContent, textJson(resultText(result))]) {
+    const v = find(tree, "result");
+    if (typeof v === "string") return /^success$/i.test(v.trim());
+  }
+  return false;
+}
+
 export async function watchPayment(
   userId: string,
   taskId: string,
@@ -253,7 +320,8 @@ export async function watchPayment(
         continue;
       }
 
-      const expired = now - Date.parse(w.startedAt) >= CAP_MS;
+      const cadence = w.pollMs ?? CADENCE_MS;
+      const expired = now - Date.parse(w.startedAt) >= (w.maxMs ?? CAP_MS);
       let result: PaymentResult | "pending";
       try {
         if (expired) {
@@ -261,14 +329,16 @@ export async function watchPayment(
         } else {
           const r = await server.client.callTool({ name: "check_payment_status", arguments: checkArgs(w) });
           result = paymentStatusOf(r);
-          await d.addTaskEvent(userId, taskId, "tool_result", { tool: `${w.service}.check_payment_status`, summary: result });
+          await d.addTaskEvent(userId, taskId, "tool_result", { tool: `${w.service}.check_payment_status`, summary: result, data: paymentShape(r) });
         }
         // SUCCESS finalises; at the cap it tells Swiggy to close the pending order.
         if (result === "success" || result === "timeout") {
           const c = await server.client.callTool({ name: "confirm_order", arguments: confirmArgs(w) });
           const failed = (c as { isError?: boolean }).isError === true;
-          await d.addTaskEvent(userId, taskId, "tool_result", { tool: `${w.service}.confirm_order`, summary: failed ? "error" : "ok" });
+          await d.addTaskEvent(userId, taskId, "tool_result", { tool: `${w.service}.confirm_order`, summary: failed ? "error" : "ok", data: paymentShape(c) });
           if (failed && result === "success") throw new Error("confirm_order failed");
+          // A late payment: at the cap Swiggy can still answer that it went through.
+          if (result === "timeout" && !failed && confirmedPlaced(c)) result = "success";
         }
         errors = 0;
       } catch (err) {
@@ -283,7 +353,7 @@ export async function watchPayment(
       }
 
       if (result === "pending") {
-        await sleep(CADENCE_MS);
+        await sleep(cadence);
         continue;
       }
 
@@ -315,7 +385,7 @@ export function paymentLine(plan: Record<string, unknown> | undefined): string |
     case "refund":
       return `PAYMENT (checked by meshi): Swiggy started a refund for ${id}. The order did not go through. Do not call confirm_order.`;
     case "timeout":
-      return `PAYMENT (checked by meshi): the payment for ${id} timed out after 5 minutes; meshi closed it with confirm_order, so the order was not placed. If the user wants it, start again from the cart.`;
+      return `PAYMENT (checked by meshi): the payment for ${id} timed out; meshi closed it with confirm_order. If the user says they paid, tell them to check the order in the Swiggy app, and do not order again until they have. Otherwise, if they still want it, start again from the cart.`;
     default:
       return `PAYMENT: meshi is watching the UPI payment for ${id} and will confirm the order by itself when it succeeds. Do not call check_payment_status or confirm_order; tell the user it updates on its own.`;
   }

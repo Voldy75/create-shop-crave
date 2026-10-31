@@ -96,12 +96,24 @@ export function boTaskStatus(messages: ReadonlyArray<Msg>, follow?: TaskFollow |
     case "success":
       return { ...s, current: at(s.kind === "dine_in" ? "Booked" : "Placed"), tone: "done", label: s.kind === "dine_in" ? "Booking confirmed" : "Order placed", detail: amount ? `${amount} paid · Bo can track it for you.` : "Paid · Bo can track it for you." };
     case "failed":
-      return { ...s, tone: "warn", label: "The payment didn’t go through", detail: "Nothing was ordered. Ask Bo to pay another way." };
+      return { ...s, tone: "warn", label: "The payment didn’t go through", detail: "Nothing was ordered. Tap Pay another way on the card." };
     case "refund":
       return { ...s, tone: "warn", label: "Swiggy started a refund", detail: "The order didn’t go through; your money is on its way back." };
     case "timeout":
-      return { ...s, tone: "warn", label: "Payment timed out", detail: "The order wasn’t placed. If money left your account, Swiggy refunds it." };
+      return { ...s, tone: "warn", label: "Payment timed out", detail: "Bo closed the order. If you paid, check it in the Swiggy app." };
   }
+}
+
+/** The key of the latest order waiting on (or past) a UPI payment, from its tool output. */
+export function latestPaymentKey(messages: ReadonlyArray<Msg>): string | null {
+  let key: string | null = null;
+  for (const m of messages) {
+    for (const p of m.parts ?? []) {
+      const k = (p.output as { paymentKey?: unknown } | null | undefined)?.paymentKey;
+      if (typeof k === "string") key = k;
+    }
+  }
+  return key;
 }
 
 function fromMessages(messages: ReadonlyArray<Msg>): BoTaskStatus | null {
@@ -149,7 +161,7 @@ function fromMessages(messages: ReadonlyArray<Msg>): BoTaskStatus | null {
         } else if (done && out?.aborted) {
           at(kind, booking ? "Slot" : "Cart", "Nothing was placed", "warn");
         } else if (done && /PENDING_PAYMENT/.test(outText(p))) {
-          at(kind, "Payment", "Waiting for your payment", "you", "Pay in your UPI app, then tell Bo you’ve paid.");
+          at(kind, "Payment", "Waiting for your payment", "you", (p.input as { generateUPIQR?: unknown } | null)?.generateUPIQR === true ? "Tap Show QR on the card and scan it. Bo confirms it by itself." : "Tap Pay on the card. Bo confirms it by itself.");
         } else if (done) {
           if (booking) at(kind, "Booked", "Table booked", "done", "Your booking is with Dineout.");
           else at(kind, "Placed", "Order placed", "done", amount ? `${amount} · Bo can track it for you.` : "Bo can track it for you.");
