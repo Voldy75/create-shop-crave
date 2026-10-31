@@ -42,9 +42,8 @@ Plan: `~/.claude/plans/hidden-booping-naur.md`. Every phase is a PR into
 owner-approved final merge. Phases 1 and 2 are merged into `feat/bo-agent`,
 including the Agent/Chat switch (#48), smaller Gemini calls (#49), "cook it
 yourself" (#50) and the task status strip (#51). Phase 3, payment
-follow-through, is merged too (#52). The Pay button and device-aware UPI
-(item 18) are committed on `bo/pay-button`, not yet a PR. Real test orders
-reached Swiggy's QR page; a fully paid order has not been run on this code.
+follow-through, is merged too (#52). The Pay button, device-aware UPI and Pay another
+way (item 18) are merged too (#55). Real test orders reached Swiggy's QR page; a fully paid order has not been run on this code.
 See "Bo agent (feat/bo-agent)" near the end
 for the dev database, running locally against it, and "Where Bo stands" for
 what is left.
@@ -1975,8 +1974,8 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       card's "Waiting for payment" line doesn't change (the strip is
       authoritative); the strip's own check_payment_status reading (only
       when Bo calls it manually) still matches on text.
-18. Pay button and device-aware UPI — branch `bo/pay-button`, committed, no PR
-    yet (2026-10-31). Real test 1 (order 252395209900641) stuck because
+18. Pay button and device-aware UPI — branch `bo/pay-button`, merged as PR #55
+    (2026-10-31). Real test 1 (order 252395209900641) stuck because
     meshi never showed a way to pay.
     - The Approval card now shows Swiggy's `bridgeUrl`: "Pay ₹…", or "Show QR
       ₹…" for a QR order. `compactToolResult` drops structured data, so the
@@ -2022,15 +2021,14 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       Food QR; COD. Swiggy's bridge page behaviour for an app-intent order on
       desktop was not inspected.
 
-**Where Bo stands (2026-10-31).** Merged into `feat/bo-agent`: items 1–17
-(through #52). Item 18 is committed on `bo/pay-button` but has no PR. In order,
-what is left:
+**Where Bo stands (2026-10-31).** Merged into `feat/bo-agent`: items 1–18
+(through #55). In order, what is left:
 1. Owner: check orders 252395209900641, 252404362997606 and 252405556947364 in
    the Swiggy app (none confirmed by Bo) and whether any money left the
    account. The Work card reads "B17, Mumbai" but the Swiggy app showed B603,
    Bhoomi Samarth; confirm which address is right.
-2. One real paid order on a phone and one paid QR order on desktop, then open
-   item 18's PR into `feat/bo-agent`. Phase 3's plan check (end the request
+2. One real paid order on a phone and one paid QR order on desktop, plus Pay
+   another way on a real failed order and one cash-on-delivery order. Phase 3's plan check (end the request
    mid-payment; force a retry, no duplicate order) is part of this. Dev's
    `tasks_daily` is 3 (it was raised to 10 for testing and restored).
 3. Live checks once Gemini quota allows: Food, Dineout and cook on dev,
