@@ -35,6 +35,7 @@ import { bookingSummary, cartBill, cartFingerprint, cartJson, cartLooksEmpty, ca
 import { addTaskEvent, findApprovalRequest, getTask, logId, updateTask, type TaskMode } from "@/lib/bo/tasks";
 import { compactToolResult } from "@/lib/bo/trim";
 import { pendingPayment } from "@/lib/bo/follow";
+import { AFTER_BOOKING } from "@/lib/bo/ride-tools";
 
 /** The cart each order tool places, per Swiggy service. */
 const CART_TOOL: Record<string, string> = { food: "get_food_cart", im: "get_cart" };
@@ -160,7 +161,9 @@ export async function buildBoTools(open: OpenServer[], ctx: BoToolContext) {
             if (!failed && m.bare === "confirm_order") {
               await updateTask(ctx.userId, ctx.taskId, { status: "tracking" }).catch(() => {});
             }
-            return compactToolResult(r);
+            const result = compactToolResult(r);
+            if (failed || key !== "dineout.book_table") return result;
+            return typeof result === "string" ? `${result}\n\n${AFTER_BOOKING}` : { result, next: AFTER_BOOKING };
           } catch (err) {
             await addTaskEvent(ctx.userId, ctx.taskId, "tool_result", { tool: key, summary: "error" });
             return errorResult(err);
