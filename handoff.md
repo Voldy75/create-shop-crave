@@ -42,8 +42,8 @@ Plan: `~/.claude/plans/hidden-booping-naur.md`. Every phase is a PR into
 owner-approved final merge. Phases 1 and 2 are merged into `feat/bo-agent`,
 including the Agent/Chat switch (#48), smaller Gemini calls (#49), "cook it
 yourself" (#50) and the task status strip (#51). Phase 3, payment
-follow-through, is open as PR #52 (all CI checks green, not merged, not yet
-tried with a real UPI payment). See "Bo agent (feat/bo-agent)" near the end
+follow-through, is merged too (#52) but not yet tried with a real UPI
+payment. See "Bo agent (feat/bo-agent)" near the end
 for the dev database, running locally against it, and "Where Bo stands" for
 what is left.
 
@@ -1938,8 +1938,8 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       rate-limited, table booked, cook, cook → groceries, no regress) and
       on dev /m/chat with a mocked stream (sticky strip; Change → "You
       asked for changes"); AA light/dark (lowest 5.45 / 4.95 badge).
-17. Payment follow-through (Phase 3) — branch `bo/follow-through`, PR #52,
-    **open, awaiting the owner's merge approval**. After a
+17. Payment follow-through (Phase 3) — branch `bo/follow-through`, merged as
+    PR #52 (2026-10-31). After a
     UPI order comes back PENDING_PAYMENT, meshi itself watches the payment
     and confirms the order; the user no longer has to say "I've paid".
     - lib/bo/follow.ts `watchPayment`: runs in Next `after()` once the
@@ -1974,10 +1974,10 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       authoritative); the strip's own check_payment_status reading (only
       when Bo calls it manually) still matches on text.
 
-**Where Bo stands (2026-10-31).** Merged into `feat/bo-agent`: items 1–16
-(through #51). Open: PR #52 (item 17). In order, what is left:
-1. Owner: try #52 with a small real Instamart UPI order, then approve the
-   merge. Phase 3's plan check (end the request mid-payment; force a retry,
+**Where Bo stands (2026-10-31).** Merged into `feat/bo-agent`: items 1–17
+(through #52). In order, what is left:
+1. Owner: try the follow-through with a small real Instamart UPI order on
+   `feat/bo-agent`, before the final merge to `main`. Phase 3's plan check (end the request mid-payment; force a retry,
    no duplicate order) is part of this.
 2. Live checks once Gemini quota allows: Food, Dineout and cook on dev,
    tapping Change only, never Place order or Book.
