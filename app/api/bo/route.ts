@@ -12,6 +12,7 @@ import { boModelMessages, lastUserText, rejectedApprovals, lastToolName } from "
 import { boInstructions, deviceLine } from "@/lib/bo/prompt";
 import { buildBoTools } from "@/lib/bo/swiggy-tools";
 import { buildCookTools, SHOW_RECIPE } from "@/lib/bo/cook-tools";
+import { buildRideTools, SHOW_RIDE } from "@/lib/bo/ride-tools";
 import { paymentLine, watchPayment } from "@/lib/bo/follow";
 import { after } from "next/server";
 
@@ -195,10 +196,10 @@ export async function POST(req: Request) {
   // (lib/bo/swiggy-tools.ts activeToolNames): it carries over from earlier
   // turns and follows Bo's latest tool call within this one.
   let focus = built.serviceOf(lastToolName(body.messages) ?? "");
-  // "Cook it yourself" is always on offer next to the Swiggy tools.
+  // "Cook it yourself" and the ride hand-off are always on offer next to the Swiggy tools.
   // Typed as a plain record like the Swiggy set (tool names are only known at runtime).
-  const tools: typeof built.tools = { ...built.tools, ...buildCookTools({ userId: user.id, taskId }) };
-  const active = () => [...built.activeToolNames(focus), SHOW_RECIPE];
+  const tools: typeof built.tools = { ...built.tools, ...buildCookTools({ userId: user.id, taskId }), ...buildRideTools({ userId: user.id, taskId }) };
+  const active = () => [...built.activeToolNames(focus), SHOW_RECIPE, SHOW_RIDE];
   let result;
   try {
     result = streamText({
@@ -212,8 +213,8 @@ export async function POST(req: Request) {
         for (const c of steps.at(-1)?.toolCalls ?? []) focus = built.serviceOf(c.toolName) ?? focus;
         return { activeTools: active() };
       },
-      // The recipe card moves no money: it never needs the user's approval.
-      toolApproval: (o) => (o.toolCall.toolName === SHOW_RECIPE ? undefined : built.toolApproval(o)),
+      // The recipe and ride cards move no money: they never need the user's approval.
+      toolApproval: (o) => (o.toolCall.toolName === SHOW_RECIPE || o.toolCall.toolName === SHOW_RIDE ? undefined : built.toolApproval(o)),
       // Without a secret toolApproval denies every approval tool, so the SDK
       // never issues an approval that could not be verified.
       ...(secret ? { experimental_toolApprovalSecret: secret } : {}),

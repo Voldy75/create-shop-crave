@@ -44,6 +44,8 @@ including the Agent/Chat switch (#48), smaller Gemini calls (#49), "cook it
 yourself" (#50) and the task status strip (#51). Phase 3, payment
 follow-through, is merged too (#52). The Pay button, device-aware UPI and Pay another
 way (item 18) are merged too (#55). Real test orders reached Swiggy's QR page; a fully paid order has not been run on this code.
+The ride hand-off is on `bo/ride-handoff`: its server tool and card were tested without
+the live route, which still needs one real run.
 See "Bo agent (feat/bo-agent)" near the end
 for the dev database, running locally against it, and "Where Bo stands" for
 what is left.
@@ -1569,6 +1571,35 @@ Scaffolder) on your own Portal instance, with no music access at all.
 - Uber's MCP (`mcp.uber.com/claude/rides-3p/mcp`) refuses unauthenticated
   calls (403), needs a partner-only `3p.rides.mcp` scope, has no DCR, and is
   US-only, estimates-only (booking hands off to the Uber app).
+
+**Uber Ride Request — re-checked on developer.uber.com, 2026-10-31.** Bo keeps
+to a hand-off link (`meshi_ride__show_ride`): the user confirms and pays in Uber.
+- **Access:** the docs say "Access to this API endpoint requires approval from
+  Uber" and point to a Business Development representative; `request` is a
+  privileged scope limited to the app's own developers until Uber grants Full
+  Access. No page says new apps are refused.
+- **India:** no page lists supported countries or mentions India, for the Ride
+  Request API, Guest Rides or estimates. The only coverage line is "more than
+  750 cities". So India is NOT confirmed either way; ask Uber before planning
+  around it.
+- **Guest Rides:** runs through Uber for Business and bills the authorising
+  business organisation, so a third party cannot book on its own payment.
+- **Universal links:** no approval is mentioned, and no page marks `client_id`
+  required. `pickup=my_location` is documented, `dropoff[nickname]` /
+  `dropoff[formatted_address]` are named in the deep-link FAQ, and no page says
+  whether an address alone sets the drop. Checked 2026-10-31:
+  `m.uber.com/ul` passes an address-only link on, with no `client_id`, to
+  Uber's open-app page. **Not yet tried in the Uber app on a phone.**
+- **Why Bo's card may have no coordinates:** nothing in meshi geocodes (the
+  Geocoding API is not enabled on the Maps key, and Places is referrer-locked).
+  The card uses latitude/longitude only when they appear in a tool result of
+  that conversation; otherwise it links by name and address. It is not known
+  yet whether Dineout results carry coordinates. If phones show an empty drop,
+  enable Geocoding on a server-only key and resolve the address in
+  `lib/bo/ride-tools.ts`.
+- **Ola** shows only with both ends as coordinates, the same rule as the web
+  route screen. **No Uber flag exists:** `lib/partners.ts` keeps Uber and Ola in
+  the ungated launch set, so the card is not flag-gated.
 
 **Verified (local dev against production data, flags as above):** landing,
 /cart, /dine-out, /m/restaurants, /m/buy/platform show no Zomato / Blinkit /
