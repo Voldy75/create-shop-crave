@@ -2085,8 +2085,11 @@ Optional afterwards: Phase 4 nudges, tracking pushes.
 
 **Before the final merge to `main`:** ~~set `BO_APPROVAL_SECRET` and
 `NEXT_PUBLIC_GRIEVANCE_EMAIL`~~ — both set in Vercel 2026-11-04 (names and
-environments checked, not values; the secret must be ≥32 chars); apply `food-profile.sql` and
-`agent-tasks.sql` to production, final notice text and retention reviewed
+environments checked, not values; the secret must be ≥32 chars);
+~~apply `food-profile.sql` and `agent-tasks.sql` to production~~ — applied
+2026-11-04 as Supabase migrations `bo_food_profile` and `bo_agent_tasks`
+(verified: 5 tables with RLS, the 3 RPCs service-role only, `bo_agent` off,
+`bo.limits` 3/24/8); final notice text and retention reviewed
 against the DPDP Rules, and the Swiggy DPA / processing-region question
 answered (plan, "DPDP compliance").
 
