@@ -44,8 +44,8 @@ including the Agent/Chat switch (#48), smaller Gemini calls (#49), "cook it
 yourself" (#50) and the task status strip (#51). Phase 3, payment
 follow-through, is merged too (#52). The Pay button, device-aware UPI and Pay another
 way (item 18) are merged too (#55). Real test orders reached Swiggy's QR page; a fully paid order has not been run on this code.
-The ride hand-off is on `bo/ride-handoff`: its server tool and card were tested without
-the live route, which still needs one real run.
+The ride hand-off (item 19) is merged too (#57). Its card was tested without
+the live route; the card after a booking still needs one real run.
 See "Bo agent (feat/bo-agent)" near the end
 for the dev database, running locally against it, and "Where Bo stands" for
 what is left.
@@ -2051,9 +2051,21 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
       code; phone browser Pay; native Pay (`openOutside` → @capacitor/browser);
       Food QR; COD. Swiggy's bridge page behaviour for an app-intent order on
       desktop was not inspected.
+19. Ride hand-off — branch `bo/ride-handoff`, merged as PR #57 (2026-11-04).
+    - `meshi_ride__show_ride` (lib/bo/ride-tools.ts) renders a card
+      (components/bo/BoRideCard.tsx) that opens Uber with the destination
+      filled in; Ola only with both ends as coordinates. The user confirms and
+      pays in Uber; Bo never requests a ride (see "Uber Ride Request").
+    - A successful `book_table` result carries `AFTER_BOOKING`, telling Bo to
+      show the card in the same turn, because a prompt line alone got a text
+      offer instead.
+    - Verified: a direct ride request called the tool with real Gemini; the
+      card on web light and mobile dark at 375px, contrast and Ola gating.
+    - **Not verified:** the card after a real Dineout booking (the reruns hit
+      Gemini's daily quota); the link in the Uber app on a phone.
 
-**Where Bo stands (2026-10-31).** Merged into `feat/bo-agent`: items 1–18
-(through #55). In order, what is left:
+**Where Bo stands (2026-11-04).** Merged into `feat/bo-agent`: items 1–19
+(through #57). In order, what is left:
 1. Owner: check orders 252395209900641, 252404362997606 and 252405556947364 in
    the Swiggy app (none confirmed by Bo) and whether any money left the
    account. The Work card reads "B17, Mumbai" but the Swiggy app showed B603,
@@ -2063,16 +2075,17 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
    mid-payment; force a retry, no duplicate order) is part of this. Dev's
    `tasks_daily` is 3 (it was raised to 10 for testing and restored).
 3. Live checks once Gemini quota allows: Food, Dineout and cook on dev,
-   tapping Change only, never Place order or Book.
+   tapping Change only, never Place order or Book. The ride card after a
+   booking needs one real Dineout booking, by the owner.
 4. Owner signs in on dev, to see the web /chat recipe card and status strip;
    both were verified only on /m/chat (the dev session had expired).
 5. The pre-merge list below, and the rollback drill (flip `bo_agent` off on
    a preview; chat and agent must match `main`).
 Optional afterwards: Phase 4 nudges, tracking pushes.
 
-**Before the final merge to `main`:** set `BO_APPROVAL_SECRET` (Vercel,
-production + preview); set `NEXT_PUBLIC_GRIEVANCE_EMAIL`
-(the notice has no grievance contact without it — DPDP requires one); apply `food-profile.sql` and
+**Before the final merge to `main`:** ~~set `BO_APPROVAL_SECRET` and
+`NEXT_PUBLIC_GRIEVANCE_EMAIL`~~ — both set in Vercel 2026-11-04 (names and
+environments checked, not values; the secret must be ≥32 chars); apply `food-profile.sql` and
 `agent-tasks.sql` to production, final notice text and retention reviewed
 against the DPDP Rules, and the Swiggy DPA / processing-region question
 answered (plan, "DPDP compliance").
