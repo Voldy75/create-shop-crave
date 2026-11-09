@@ -1,10 +1,13 @@
 # Handoff — Crave & Create (web + mobile, unified)
 
-Last updated: 2026-10-31. Written for a session with zero prior context.
+Last updated: 2026-11-09. Written for a session with zero prior context.
 Supersedes the two separate handoffs that lived in the web and mobile repos.
 
 **Latest work (newest first), so a returning reader is not misled by the older
-sections below:** the four flows from `design/BRIEFS.md` shipped — WF10 web
+sections below:** **Bo shipped to production on 2026-11-09** — `feat/bo-agent`
+merged into `main` as PR #60 (merge commit `4bd9608`) with `bo_agent` ON, so
+Bo is live for every user (see "Bo agent" and "Where Bo stands"). Before that:
+the four flows from `design/BRIEFS.md` shipped — WF10 web
 first-run + Preferences, WF11 web account deletion + export, F10 mobile
 deletion + export, WF12 admin console — plus a mobile preferences editor and
 audit logging on admin flag writes (see "WF10–WF12 + F10"). Before that: the
@@ -36,10 +39,15 @@ something, update BOTH this index and the section it points to.
 items closed since the last refresh are listed at the end so nobody re-opens
 them.
 
-**Bo as an autonomous agent — in progress on `feat/bo-agent` (2026-10-31).**
-Plan: `~/.claude/plans/hidden-booping-naur.md`. Every phase is a PR into
-`feat/bo-agent`, never `main`; `main` and production are untouched until one
-owner-approved final merge. Phases 1 and 2 are merged into `feat/bo-agent`,
+**Bo as an autonomous agent — SHIPPED to production 2026-11-09 (#60).**
+Plan: `~/.claude/plans/hidden-booping-naur.md`. `feat/bo-agent` was merged into
+`main` as PR #60 (`4bd9608`), owner's call, with the `bo_agent` flag ON: Bo is
+live for every user. Gates on the merge result: tsc, check:hex and `next build`
+pass; eslint's 23 errors all pre-date it on `main`. Post-deploy: `/`, `/chat`,
+`/m/chat`, `/api/flags` 200, no runtime errors. **Rollback:** `bo_agent` off in
+Admin → Flags hides Bo within ~60s; Vercel instant rollback to the PR #54
+deploy undoes the AI SDK 3 → 7 upgrade too. Bo work from now on branches
+from `main`. History: phases 1 and 2 are merged into `feat/bo-agent`,
 including the Agent/Chat switch (#48), smaller Gemini calls (#49), "cook it
 yourself" (#50) and the task status strip (#51). Phase 3, payment
 follow-through, is merged too (#52). The Pay button, device-aware UPI and Pay another
@@ -2064,11 +2072,17 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
     - **Not verified:** the card after a real Dineout booking (the reruns hit
       Gemini's daily quota); the link in the Uber app on a phone.
 
-**Where Bo stands (2026-11-04).** Merged into `feat/bo-agent`: items 1–19
-(through #57). In order, what is left:
+**Where Bo stands (2026-11-09).** Items 1–19 are in production (#60, merged
+into `main` with `bo_agent` ON). Tested before the merge on the
+`feat/bo-agent` preview, which uses the production database: sign-in (the
+preview URL was added to production Supabase's redirect URLs) and Swiggy,
+connected on the production site because Swiggy allowlists only that
+callback (and localhost), not preview URLs. In order, what is left:
 1. Owner: check orders 252395209900641, 252404362997606 and 252405556947364 in
    the Swiggy app (none confirmed by Bo) and whether any money left the
-   account. The Work card reads "B17, Mumbai" but the Swiggy app showed B603,
+   account. Also the 2026-11-09 preview test order (production task, placed
+   09:35 UTC): payment stayed pending ~5 min, timed out, `confirm_order` was
+   sent and the task marked failed — check it the same way. The Work card reads "B17, Mumbai" but the Swiggy app showed B603,
    Bhoomi Samarth; confirm which address is right.
 2. One real paid order on a phone and one paid QR order on desktop, plus Pay
    another way on a real failed order and one cash-on-delivery order. Phase 3's plan check (end the request
@@ -2079,11 +2093,13 @@ Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
    booking needs one real Dineout booking, by the owner.
 4. Owner signs in on dev, to see the web /chat recipe card and status strip;
    both were verified only on /m/chat (the dev session had expired).
-5. The pre-merge list below, and the rollback drill (flip `bo_agent` off on
-   a preview; chat and agent must match `main`).
+5. The open items of the list below (DPDP review, Swiggy DPA), now
+   post-launch; and the rollback drill was NOT run before the merge.
+6. Production `GOOGLE_GENERATIVE_AI_API_KEY` may be free-tier (20 requests
+   a day for everyone): check it in AI Studio.
 Optional afterwards: Phase 4 nudges, tracking pushes.
 
-**Before the final merge to `main`:** ~~set `BO_APPROVAL_SECRET` and
+**Was "Before the final merge to `main`" (merged 2026-11-09):** ~~set `BO_APPROVAL_SECRET` and
 `NEXT_PUBLIC_GRIEVANCE_EMAIL`~~ — both set in Vercel 2026-11-04 (names and
 environments checked, not values; the secret must be ≥32 chars);
 ~~apply `food-profile.sql` and `agent-tasks.sql` to production~~ — applied
