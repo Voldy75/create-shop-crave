@@ -1,4 +1,5 @@
-import { streamText } from "ai";
+import { streamText, toUIMessageStream, createUIMessageStreamResponse } from "ai";
+import { toModelMessages } from "@/lib/ai-messages";
 import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementUsage } from "@/lib/rate-limit";
 import { getModel, getServerModel, type Provider } from "@/lib/providers";
@@ -157,24 +158,26 @@ export async function POST(req: Request) {
       model = getServerModel();
     }
 
-    // 4. Stream the response
-    const safeMessages = messages.filter(
-      (m: { role: string }) => m.role === "user" || m.role === "assistant"
-    );
-    const result = await streamText({
+    // 4. Stream the response (AI SDK 7 UI message stream). Only user and
+    // assistant turns are forwarded — see lib/ai-messages.
+    const result = streamText({
       model,
-      system: systemPrompt(userName, locationStr, dietaryPrefs, tastes, goal, await getServerPartners()),
-      messages: safeMessages,
+      instructions: systemPrompt(userName, locationStr, dietaryPrefs, tastes, goal, await getServerPartners()),
+      messages: await toModelMessages(messages),
+      // Model errors arrive in the stream (not as a throw) since AI SDK 4.
+      onError: ({ error }) => {
+        console.error("chat: model stream failed:", error instanceof Error ? error.message.slice(0, 300) : error);
+      },
     });
 
-    const response = result.toDataStreamResponse();
-
     // 5. If BYOK, pass usage info in headers so client can update badge
-    if (usedBYOK) {
-      response.headers.set("X-Usage-BYOK", "true");
-    }
-
-    return response;
+    return createUIMessageStreamResponse({
+      stream: toUIMessageStream({
+        stream: result.stream,
+        onError: () => "Bo couldn't reach the AI model just now. Please try again in a moment.",
+      }),
+      headers: usedBYOK ? { "X-Usage-BYOK": "true" } : undefined,
+    });
   } catch (error) {
     // Log without apiKey (already stripped above)
     console.error("Chat API error:", safeBody, error instanceof Error ? error.message : error);

@@ -1,4 +1,4 @@
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementUsage } from "@/lib/rate-limit";
@@ -116,14 +116,14 @@ export async function POST(req: Request) {
     }
 
     const { system, prompt } = buildPrompt(body);
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model,
-      schema: BatchResponse,
-      system,
+      output: Output.object({ schema: BatchResponse }),
+      instructions: system,
       prompt,
     });
 
-    return Response.json({ ...object, byok: usedBYOK });
+    return Response.json({ ...output, byok: usedBYOK });
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : "Unknown error";
     console.error("Ingredients error:", errMsg.slice(0, 200));

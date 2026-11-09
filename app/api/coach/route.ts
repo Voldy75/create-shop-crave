@@ -1,4 +1,4 @@
-import { generateObject, streamObject } from "ai";
+import { generateText, streamText, Output } from "ai";
 import { requireUser, denyIfRestricted } from "@/lib/auth-guard";
 import { checkAndIncrementUsage } from "@/lib/rate-limit";
 import { getModel, getServerModel, type Provider } from "@/lib/providers";
@@ -82,17 +82,22 @@ export async function POST(req: Request) {
       // fully-received line as the current state, so even if a partial is
       // mid-character the client just waits one more chunk.
       const { system, prompt } = buildInsightsPrompt(body);
-      const result = await streamObject({
+      const result = streamText({
         model,
-        schema: InsightsResponse,
-        system,
+        output: Output.object({ schema: InsightsResponse }),
+        instructions: system,
         prompt,
+        // Model errors arrive in the stream since AI SDK 4; without this the
+        // partial stream just ends and the failure is invisible.
+        onError: ({ error }) => {
+          console.error("Coach insights model error:", error instanceof Error ? error.message.slice(0, 300) : error);
+        },
       });
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
         async start(controller) {
           try {
-            for await (const partial of result.partialObjectStream) {
+            for await (const partial of result.partialOutputStream) {
               controller.enqueue(encoder.encode(JSON.stringify(partial) + "\n"));
             }
             // Final marker carrying BYOK flag (clients can ignore if they want).
@@ -122,13 +127,13 @@ export async function POST(req: Request) {
     // confusingly (3 days of meals visible, others empty). Single atomic
     // delivery is the right UX.
     const { system, prompt } = buildDietChartPrompt(body);
-    const { object } = await generateObject({
+    const { output } = await generateText({
       model,
-      schema: DietChartResponse,
-      system,
+      output: Output.object({ schema: DietChartResponse }),
+      instructions: system,
       prompt,
     });
-    return Response.json({ ...object, byok: usedBYOK });
+    return Response.json({ ...output, byok: usedBYOK });
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : "Unknown error";
     console.error("Coach error:", errMsg);

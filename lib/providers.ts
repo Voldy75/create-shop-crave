@@ -1,4 +1,5 @@
-import { google, createGoogleGenerativeAI } from "@ai-sdk/google";
+import { google, createGoogle } from "@ai-sdk/google";
+import type { LanguageModel } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 
@@ -40,11 +41,10 @@ export const PROVIDERS: ProviderInfo[] = [
  * Returns an AI SDK LanguageModel for the given provider + user-supplied API key.
  * Used for BYOK requests (user has exhausted their free daily limit).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getModel(provider: Provider, apiKey: string): any {
+export function getModel(provider: Provider, apiKey: string): LanguageModel {
   switch (provider) {
     case "gemini": {
-      const gemini = createGoogleGenerativeAI({ apiKey });
+      const gemini = createGoogle({ apiKey });
       return gemini("gemini-2.5-flash");
     }
     case "openai": {
@@ -63,7 +63,6 @@ export function getModel(provider: Provider, apiKey: string): any {
 /**
  * Returns the server-side default model using the env API key.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getServerModel(): any {
+export function getServerModel(): LanguageModel {
   return google("gemini-2.5-flash");
 }

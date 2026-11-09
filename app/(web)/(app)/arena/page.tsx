@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useChat } from "ai/react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { messageText } from "@/lib/ai-messages";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
 import { getWeightGoal } from "@/lib/preferences";
@@ -79,7 +81,7 @@ function ModelPanel({ label, modelName, accentColor, messages, isLoading }: Mode
           {messages.map((m, index) => {
             if (m.role === "user") return null;
             const isStreamingMsg = isLoading && index === messages.length - 1;
-            const { data, text, isIncomplete } = parseContent(m.content, isStreamingMsg);
+            const { data, text, isIncomplete } = parseContent(messageText(m), isStreamingMsg);
 
             return (
               <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
@@ -142,26 +144,21 @@ export default function ArenaPage() {
 
   const userContext = { userName, location, dietaryPreferences, favoriteCuisines, weightGoal: getWeightGoal() };
 
-  const leftChat = useChat({
-    api: "/api/chat",
-    body: { userContext },
-    id: "arena-left",
-  });
+  // AI SDK 7: each send carries the current body, so the right-hand
+  // provider/key and the user's context are always current.
+  const leftTransport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
+  const rightTransport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
 
-  const rightChat = useChat({
-    api: "/api/chat",
-    body: {
-      userContext,
-      ...(byok ? { provider: rightProvider, apiKey: byok.apiKey } : {}),
-    },
-    id: "arena-right",
-  });
+  const leftChat = useChat({ id: "arena-left", transport: leftTransport });
+  const rightChat = useChat({ id: "arena-right", transport: rightTransport });
+  const busy = (st: string) => st === "submitted" || st === "streaming";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sharedInput.trim()) return;
-    leftChat.append({ role: "user", content: sharedInput });
-    rightChat.append({ role: "user", content: sharedInput });
+    const text = sharedInput.trim();
+    if (!text) return;
+    void leftChat.sendMessage({ text }, { body: { userContext } });
+    void rightChat.sendMessage({ text }, { body: { userContext, ...(byok ? { provider: rightProvider, apiKey: byok.apiKey } : {}) } });
     setSharedInput("");
   };
 
@@ -170,7 +167,7 @@ export default function ArenaPage() {
     rightChat.setMessages([]);
   };
 
-  const isLoading = leftChat.isLoading || rightChat.isLoading;
+  const isLoading = busy(leftChat.status) || busy(rightChat.status);
 
   if (!hydrated || !proChecked) {
     return (
@@ -288,14 +285,14 @@ export default function ArenaPage() {
           modelName="Gemini 2.5 Flash"
           accentColor="var(--m-forest)"
           messages={leftChat.messages}
-          isLoading={leftChat.isLoading}
+          isLoading={busy(leftChat.status)}
         />
         <ModelPanel
           label="Model B"
           modelName={PROVIDERS.find((p) => p.id === rightProvider)?.label ?? rightProvider}
           accentColor="var(--m-plum)"
           messages={rightChat.messages}
-          isLoading={rightChat.isLoading}
+          isLoading={busy(rightChat.status)}
         />
       </main>
 

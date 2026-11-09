@@ -1,6 +1,6 @@
 # Handoff — Crave & Create (web + mobile, unified)
 
-Last updated: 2026-10-08. Written for a session with zero prior context.
+Last updated: 2026-10-31. Written for a session with zero prior context.
 Supersedes the two separate handoffs that lived in the web and mobile repos.
 
 **Latest work (newest first), so a returning reader is not misled by the older
@@ -35,6 +35,20 @@ something, update BOTH this index and the section it points to.
 **Refreshed 2026-10-08; re-verified against live systems 2026-10-24** —
 items closed since the last refresh are listed at the end so nobody re-opens
 them.
+
+**Bo as an autonomous agent — in progress on `feat/bo-agent` (2026-10-31).**
+Plan: `~/.claude/plans/hidden-booping-naur.md`. Every phase is a PR into
+`feat/bo-agent`, never `main`; `main` and production are untouched until one
+owner-approved final merge. Phases 1 and 2 are merged into `feat/bo-agent`,
+including the Agent/Chat switch (#48), smaller Gemini calls (#49), "cook it
+yourself" (#50) and the task status strip (#51). Phase 3, payment
+follow-through, is merged too (#52). The Pay button, device-aware UPI and Pay another
+way (item 18) are merged too (#55). Real test orders reached Swiggy's QR page; a fully paid order has not been run on this code.
+The ride hand-off (item 19) is merged too (#57). Its card was tested without
+the live route; the card after a booking still needs one real run.
+See "Bo agent (feat/bo-agent)" near the end
+for the dev database, running locally against it, and "Where Bo stands" for
+what is left.
 
 **Re-check 2026-10-24 (no code changed since 2026-10-11):** production Vercel
 has Supabase ×3, `GOOGLE_GENERATIVE_AI_API_KEY` and the Maps key — still none
@@ -1558,6 +1572,35 @@ Scaffolder) on your own Portal instance, with no music access at all.
   calls (403), needs a partner-only `3p.rides.mcp` scope, has no DCR, and is
   US-only, estimates-only (booking hands off to the Uber app).
 
+**Uber Ride Request — re-checked on developer.uber.com, 2026-10-31.** Bo keeps
+to a hand-off link (`meshi_ride__show_ride`): the user confirms and pays in Uber.
+- **Access:** the docs say "Access to this API endpoint requires approval from
+  Uber" and point to a Business Development representative; `request` is a
+  privileged scope limited to the app's own developers until Uber grants Full
+  Access. No page says new apps are refused.
+- **India:** no page lists supported countries or mentions India, for the Ride
+  Request API, Guest Rides or estimates. The only coverage line is "more than
+  750 cities". So India is NOT confirmed either way; ask Uber before planning
+  around it.
+- **Guest Rides:** runs through Uber for Business and bills the authorising
+  business organisation, so a third party cannot book on its own payment.
+- **Universal links:** no approval is mentioned, and no page marks `client_id`
+  required. `pickup=my_location` is documented, `dropoff[nickname]` /
+  `dropoff[formatted_address]` are named in the deep-link FAQ, and no page says
+  whether an address alone sets the drop. Checked 2026-10-31:
+  `m.uber.com/ul` passes an address-only link on, with no `client_id`, to
+  Uber's open-app page. **Not yet tried in the Uber app on a phone.**
+- **Why Bo's card may have no coordinates:** nothing in meshi geocodes (the
+  Geocoding API is not enabled on the Maps key, and Places is referrer-locked).
+  The card uses latitude/longitude only when they appear in a tool result of
+  that conversation; otherwise it links by name and address. It is not known
+  yet whether Dineout results carry coordinates. If phones show an empty drop,
+  enable Geocoding on a server-only key and resolve the address in
+  `lib/bo/ride-tools.ts`.
+- **Ola** shows only with both ends as coordinates, the same rule as the web
+  route screen. **No Uber flag exists:** `lib/partners.ts` keeps Uber and Ola in
+  the ungated launch set, so the card is not flag-gated.
+
 **Verified (local dev against production data, flags as above):** landing,
 /cart, /dine-out, /m/restaurants, /m/buy/platform show no Zomato / Blinkit /
 Instacart / meshi+; /m/paywall forwards to key entry; billing options return
@@ -1613,6 +1656,442 @@ logos are vendored in `public/brand/swiggy/` because Swiggy serves them from
 content-hashed URLs that change on every Swiggy deploy.
 Swiggy's go-live checklist also asks for a staged rollout and an incident
 contact (email + Slack) shared with builders@swiggy.in.
+
+## Bo agent (feat/bo-agent)
+
+**Dev database.** Free Supabase project `crave-and-create-dev`
+(`kbcbmszyrzzlnvaprvvf`, ap-south-1) — the owner declined paid Supabase
+branching. Production's 21 recorded migrations were replayed under the same
+names, plus `dev_parity_with_production` for the objects production gained
+outside migrations (`swiggy_tokens.client_id/refresh_token`, comment-only
+differences in the two quota RPCs). Verified: a fingerprint of every public
+column, function body + ACL, policy, trigger (incl. `auth.users`
+→ `handle_new_user`), grant, column grant, index and RLS switch hashes
+identically on both projects (1,733 objects). Config rows copied (flags,
+plans, prices, app_config, MCP providers/servers); **no user data**. The
+`client_id` cache is left null so dev registers its own DCR client.
+Bo migrations are applied to dev only: `bo_food_profile_and_consent`,
+`bo_agent_tasks_and_metering`. **`bo_agent` is ON in dev only**
+(2026-10-25); production has no `bo_agent` row at all (Bo SQL not applied).
+
+**Running locally against dev (set up 2026-10-25).**
+- `.env.development.local` (gitignored by `.env*`) holds dev's
+  `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY` (Dashboard → Settings → API Keys) and
+  `BO_APPROVAL_SECRET` (`openssl rand -hex 32`). `next dev` reads it BEFORE
+  `.env.local`, so the dev server uses dev while `.env.local` (production)
+  is untouched; `next build` and Vercel never read it. Restart the dev server
+  after changing it. Gemini still comes from `.env.local`.
+- **Trap:** TextEdit saves rich text — the first attempt became
+  `.env.development.local.rtf`, Next ignored it and the app silently stayed
+  on PRODUCTION (sign-in and Swiggy reconnect went there; checked: no new
+  production users or tokens). Format → Make Plain Text first. Quick check
+  that the server is on dev: `/api/flags` lists `bo_agent` (production has
+  no such row) and `POST /api/bo` answers 401, not 404.
+- **Dev sign-in is email magic link only.** Google/GitHub are not configured
+  on the dev project ("Unsupported provider: provider is not enabled"); the
+  web landing's email option works with Site URL `http://localhost:3000`.
+  Mobile onboarding is Google-only, so sign in on web. Supabase's built-in
+  mailer allows only a few emails per hour.
+- Swiggy connections live in **`mcp_connections`** (`provider_id =
+  'swiggy'`), not the legacy `swiggy_tokens` — check there.
+- The owner's dev account exists, with Swiggy connected (fresh token +
+  refresh) and Bo's memory on. The agent's Browser pane is signed in too.
+
+**Slices.**
+1. SDK upgrade 3 → 7 — branch `bo/p1-sdk-upgrade`, PR #38.
+2. Data foundations — branch `bo/p1-data-foundations`:
+   - `scripts/sql/food-profile.sql`: `user_food_profile` (the row IS the
+     consent: it cannot exist without `consent_version` and
+     `age_confirmed = true`), `consent_events` ledger. Owners read/delete
+     via RLS; writes only through `app/api/bo/*` (service role).
+   - `scripts/sql/agent-tasks.sql`: `agent_tasks` (90-day `expires_at`),
+     `agent_task_events`, `usage_tasks`, RPCs
+     `check_and_increment_task_usage` (same semantics as the fixed chat RPC),
+     `agent_task_record_steps` (scoped by user — a forged task id is refused),
+     `purge_expired_agent_tasks`; flag `bo_agent` (off) and
+     `app_config['bo.limits']` (3 tasks/day, 24 steps/task, 8 steps/turn).
+     A plan overrides tasks/day with `features.bo_tasks_daily` (null =
+     unlimited), editable in Admin → Plans.
+   - `lib/bo/food-profile.ts`, `lib/bo/tasks.ts`, `lib/bo/guard.ts`;
+     `GET|PUT /api/bo/profile`, `POST /api/bo/consent` (404 while the flag
+     is off); `/api/cron/bo-retention` daily 21:00 UTC (Bearer CRON_SECRET
+     only — no `?token=` since it deletes). Export now includes the Bo
+     tables; account deletion already cascades them.
+   - Task quota fails CLOSED (tasks can place orders); chat still fails open.
+3. Consent UI — branch `bo/p1-consent-ui`: `components/bo/BoMemoryCard.tsx`
+   at the top of Preferences on web and mobile (meshi-b classes only, so one
+   component serves both trees). Itemised notice from `lib/bo/notice.ts`
+   (`BO_NOTICE_VERSION` — bump it to re-ask everyone), unticked 18+ box,
+   "Not now" by default, separate nudges switch, withdraw = one confirmation
+   then delete. `lib/bo/consent-client.ts` holds one shared state per tab and
+   mirrors preferences to the server (debounced PUT) only while the user has a
+   current consent; `UserContext` setters and `setWeightGoal` (via the
+   `crave:prefs-changed` event) trigger it. Flag off = one 404 per session,
+   card renders nothing. Verified in the browser against a mocked API (the dev
+   service-role key is not available to the agent): grant body, debounce,
+   goal sync, nudges, withdraw → no further sync, stale notice → no sync until
+   re-consent; AA contrast in light and dark. **Not yet seen signed in on the
+   web Settings page** (it redirects without a session).
+4. Phase 2 spike (2026-10-25, owner's own Swiggy account, scripts kept
+   out of the repo). Findings that shaped the agent:
+   - Swiggy tool responses are **text** (markdown with "(ID: …)" ids and ₹
+     amounts), not JSON — `/api/agent`'s ₹1,000 cap reads
+     `structuredContent.data.total` and so never fires. Tools carry
+     `annotations.readOnlyHint`.
+   - UPI is live for the account (8 UPI apps, Cash, Swiggy Money). UPI flow:
+     place → `PENDING_PAYMENT` → user pays in their UPI app →
+     `check_payment_status` once per user turn → `confirm_order` on success or
+     timeout, never on FAILED / refund. Owner placed one real order end to end
+     and saw it in the Swiggy app; payment hand-off was then skipped by the
+     owner as proven.
+   - Swiggy's tool docs now say **no cart-value limit** for any method; Bo
+     does not apply the old ₹1,000 Food cap (Swiggy refuses with a reason if
+     an order is not allowed).
+   - **No cancel tool**: Food/Instamart cancellation is Swiggy customer care
+     (080-67466729); Dineout bookings are cancelled in the Swiggy Dineout app.
+   - Leftover: Tata Salt 1 kg in the owner's Instamart cart (owner to remove).
+5. Phase 2 server — branch `bo/p2-agent`: `POST /api/bo` (flag-gated, no BYOK).
+   - `lib/bo/policy.ts`: per-`<service>.<tool>` decision. Orders/bookings
+     (`place_food_order`, `checkout`, `book_table`, Dineout `create_cart`)
+     need the user's tap; cart edits + `confirm_order` run; address
+     create/delete and `report_error` are never offered; any OTHER tool runs
+     only if Swiggy marks it read-only, else it needs a tap.
+   - `lib/bo/swiggy-tools.ts`: AI SDK 7 `toolApproval` +
+     `experimental_toolApprovalSecret` (`BO_APPROVAL_SECRET`, ≥32 chars;
+     unset = Bo cannot order or book at all). The approval reason is JSON
+     `{action, service, summary}` where summary is Swiggy's own cart text.
+     A fingerprint of the money parts of the cart (₹ amounts, ids,
+     quantities) is stored on the FIRST approval request
+     (`approval_requested` event) and re-checked on a fresh cart right before
+     placing — mismatch = `cart_changed`, nothing ordered. Trap: the SDK
+     calls `toolApproval` again on the answer turn, so the request is
+     recorded once and the first one wins.
+   - `lib/bo/messages.ts` converts messages without
+     `ignoreIncompleteToolCalls` (which would drop the approved call) and
+     drops only stale unanswered approvals. `lib/bo/prompt.ts` adds the food
+     profile only under a current consent; without consent the task row
+     stores an empty intent (metering + approvals only).
+   - One task per first request (quota), `X-Bo-Task-Id` header → client
+     sends `taskId` back; per-turn and per-task step caps.
+   - Verified with a mock model + fake Swiggy server against the real
+     modules: approval before checkout, Swiggy's bill on the card, ETA-only
+     change still places, quantity change → cart_changed, forged input and
+     missing secret → nothing placed, request recorded once.
+   - Merged: PR #41.
+6. Approval card — branch `bo/p2-approval-card`, merged as PR #42. With `bo_agent` on, the
+   existing agent entry (`/chat?agent=1`, `/m/chat?agent=1`) talks to
+   `/api/bo`; off, it is the old `/api/agent` untouched.
+   - `lib/bo/agent-client.ts`: transport that keeps the task id from
+     `X-Bo-Task-Id` and sends it on every turn (also the automatic resend
+     after a tap, `sendAutomaticallyWhen`); a new thread starts a new task.
+   - `components/bo/ApprovalCard.tsx`: Swiggy's bill text, payment method in
+     words, "Bo never sees your payment details", cancellation note (customer
+     care / Dineout app), Place order / Change. States: approved, not placed,
+     waiting for UPI payment, cart changed. `BoReply` renders a Bo message in
+     part order so a follow-up sits BELOW the card. meshi-b classes only.
+   - Verified on mobile against a mocked `/api/flags` + `/api/bo` stream:
+     card renders, tap → resend with the task id and the signed approval,
+     Change → `approved: false`, one Swiggy badge, AA in light (min 5.45)
+     and dark (min 6.15). **Web not seen in a browser** (needs a session);
+     same component, tsc + build only.
+7. **Signed-in check against dev — superseded by item 10 (done 2026-10-28). Was blocked on Gemini quota
+   (2026-10-25).** Web `/chat?agent=1` in the Browser pane, request: "Check
+   out my current Instamart cart exactly as it is — don't add, remove or
+   change anything. Use my preselected address and cash on delivery."
+   - Passed: consent grant + profile PUT 200; `/api/bo` 200; one task
+     created and counted once; intent stored (consent on); Instamart
+     `get_addresses` ran ok and was logged; on the model failure the steps
+     were still recorded and the chat showed "Bo couldn't reach the AI
+     model"; Regenerate continued the SAME task (no second task charged).
+   - Blocked: `gemini-2.5-flash` on the free-tier key in `.env.local` —
+     "You exceeded your current quota", including the first call of a retry
+     70 s later, so the DAILY free quota is spent. Resets at midnight Pacific
+     (12:30 IST); usage at https://ai.dev/rate-limit. Owner chose to wait.
+   - **Resume:** same request (a new chat = 1 more task; 1 of 3 used today
+     before the reset). Expect get_cart → get_payment_options → checkout →
+     Approval card with Swiggy's real bill. Check the task row, the
+     `approval_requested` event with a fingerprint, then tap **Change —
+     never Place order** and confirm `approval_rejected`. If Bo tries to
+     edit the cart instead, stop and tell the owner. Then look at the web
+     card (first time signed in).
+   - Owner's Instamart cart still holds Tata Salt 1 kg from the spike; it is
+     the cart this check uses, and nothing may be ordered.
+8. ~~Idea: offer only the service in play via `activeTools`~~ — DONE in
+   item 14 (branch `bo/trim-gemini`).
+9. Step trace ("What Bo did") — branch `bo/step-trace`. Owner picked
+   variant B of three sketches (chips row / timeline / one status line).
+   - `components/bo/StepTrace.tsx`: one plain-language line per Swiggy
+     call, built only from the message's tool parts (label table keyed by
+     the bare tool name, search query appended). Done = forest tick,
+     running = pulsing dot (`mm-ring`, off under reduced motion),
+     `rate_limited` / reconnect / tool errors = burnt warning line.
+     Approval tools are left out — their card is the step.
+   - Open while the reply streams (header = the live step, "· step N");
+     folds to "Bo took N steps on Swiggy" when the reply ends or a card is
+     waiting. The user's own tap wins. While a trace is showing, the
+     screen's generic thinking dots are hidden (they would repeat it).
+   - `BoReply` / `boSegments` moved to `components/bo/BoReply.tsx` (no
+     import cycle); the trace sits where Bo's first Swiggy call happened.
+   - Verified on mobile with a mocked `/api/bo` stream paused mid-task:
+     open + live header, retry line amber, dots hidden; after the card
+     arrives it folds, sits above the card, tap toggles; no horizontal
+     scroll at 375px. AA light min 5.42, dark min 6.03 (text and icons).
+     **Web not seen in a browser** (web chat needs its own sign-in); same
+     component, tsc + build only. Merged: PR #44.
+10. Signed-in check DONE (2026-10-28, web, dev) + Approval card bill fix —
+    branch `bo/approval-bill`.
+    - Found by the live run: Swiggy's cart reply is model instructions +
+      JSON (also in `structuredContent`). The card showed it raw — the
+      user's phone and coordinates, cut at 1,200 chars before the total.
+      Now `cartBill()` (lib/bo/approval.ts) lifts items, fee lines, To Pay
+      and "Work · B17, Mumbai" from the JSON; the card renders rows. Only
+      the Instamart shape is measured; Food uses the same tolerant fallbacks.
+      No structured bill and no ₹ in the cleaned text → approval DENIED
+      (never ask to approve a bill the user can't see).
+    - Fingerprint is taken over the bill when there is one (names,
+      quantities, every amount), else over the text as before.
+    - Change tap: Bo used to call it "something went wrong"; the denial
+      reason and prompt now say it's the user's choice. The rejection event
+      names the tool, and the task goes back to `planning`.
+    - Prompt: the card IS the "explicit confirmation" Swiggy's tool
+      descriptions ask for — Bo was asking "Is that correct?" in text,
+      then lost the thread on "Yes". A named payment method is used as is.
+    - Verified live (Instamart, 1 × Tata Salt, ₹94, cash): card shows the
+      bill, AA light 4.7 / dark 6.68, `approval_requested` with a 32-char
+      fingerprint, Change → `approval_rejected` (im.checkout) → planning,
+      nothing placed. Dev tasks used: 4.
+    - Swiggy's MCP cart is NOT the cart you see in the Swiggy app: an item
+      added in the app never showed up for Bo (twice). Items Bo adds via
+      `update_cart` do.
+    - **Owner's Instamart cart holds 1 × Tata Salt 1 kg (Work)** from this
+      check — Bo added it with the owner's OK. Nothing was ordered.
+11. Web sign-in race — `UserContext` set `hydrated` before reading the
+    session, so `/chat` bounced signed-in users to `/`. Fixed in PR #45
+    (into feat/bo-agent). **The same bug is live on `main`.**
+12. Food + Dineout live checks (2026-10-28) — branch `bo/food-cart-and-auth`.
+    - Food got as far as: search → menu → `update_food_cart` (1 × Idli
+      Sambhar, owner's OK) → `get_food_cart`, then Gemini's free quota ran
+      out (twice, after a 70 s wait too — daily quota). Dineout not run.
+    - Found with a read-only dev call instead: **`get_food_cart` REQUIRES
+      `addressId`**. The approval check read it with `{}` → every Food
+      order would have been denied. Now passes the order's `addressId`.
+    - Food's cart lives only in `structuredContent` (`data.items`,
+      `data.pricing` {item_total, delivery_charge, taxes_and_charges,
+      to_pay}, `data.restaurant.deliverySubtitle` "ETA to Name: address").
+      `cartBill` reads it; unknown pricing fields are still shown; the
+      name is dropped from the address. Text fallback = Swiggy's item and
+      total lines.
+    - `requireUser` (lib/auth-guard.ts, shared by every route, also on
+      `main`) answered 401 when Supabase Auth was unreachable
+      (ECONNRESET) → the web chat signed the user out of the page. Now
+      503 "try again".
+    - **Owner's Swiggy Food cart holds 1 × Idli Sambhar (₹248 with fees,
+      Work).** Nothing ordered.
+    - Dev `bo.limits.tasks_daily` was raised to 6 for this run and set back
+      to 3.
+    - **To finish:** Food card + Change, then a free Dineout booking card +
+      Change, once Gemini's quota resets. Gemini's free quota is the
+      bottleneck for live testing — see item 14.
+13. "Bo can order on Swiggy" switch — under the message box on web and
+    mobile chat, only when `bo_agent` is on. Replaces `?agent=1` as the way
+    in (the link still works: it turns the switch on for that visit). The
+    choice is remembered per device (`lib/bo/agent-mode.ts`, localStorage —
+    a convenience, not a permission; the server gates are unchanged).
+    Turning it on checks the Swiggy connection first and points to Connect
+    if missing. First time on, `AgentIntro` takes the greeting's place:
+    "Bo is now your food agent" — decides cook/order/dine, fills the
+    Swiggy cart, nothing ordered or booked until you tap, you pay on
+    Swiggy/UPI. While on: chip "Your food agent" (web), header
+    "Bo · your food agent" (mobile), agent subtitle and placeholder.
+    Flipping it mid-chat starts a new chat (a thread belongs to one mode).
+    Verified on dev: on/off, intro + Got it, new chat on flip (mocked
+    /api/bo), 375px with no horizontal scroll; contrast light/dark — label
+    11.4/13.9, hint 5.1/7.5, track 7.6/3.7, knob on track 8.0/3.07.
+14. Smaller Gemini calls — branch `bo/trim-gemini`. Measured on dev: the
+    40 Swiggy tool definitions are ~62k characters (~15.6k tokens) and were
+    sent on EVERY step; one Instamart `search_products` result was 45k
+    characters and then rode along in every later step and turn.
+    - Tools per step (`activeToolNames`, lib/bo/swiggy-tools.ts): until Bo
+      has used a service, only each service's way in (7 tools: the three
+      searches, `your_go_to_items`, `get_food_orders`, one `get_addresses`).
+      After that, that service's full set plus the others' way in, so it
+      can still switch. The service carries over between turns (last tool
+      in the thread) and follows Bo's latest call inside a turn
+      (`prepareStep`). Approved calls are unaffected: the SDK checks them
+      against the full tool set, and `activeTools` only filters what the
+      model is offered.
+    - Results (`compactToolResult`, lib/bo/trim.ts): anything ≤ 4,000
+      characters is returned exactly as before (carts, orders, payment
+      status — the approval and PENDING_PAYMENT logic depend on those).
+      Bigger results drop images/badges, cap lists at 10 (then 6, then 3)
+      with a "…N more not shown" marker, and drop Swiggy's second copy of
+      the same data. Ceiling 8,000. Live dev: Instamart search 45,222 →
+      6,256 (skuId/spinId/productId kept); restaurant menu 7,899 → 7,239.
+    - Offline check with a scripted model: step 0 offered 7 tools, step 1
+      (after an Instamart search) 17; the 41k result reached the model as
+      ~3.9k.
+    - Not yet live-tested against Gemini (quota) — the next Food/Dineout
+      check is the live test.
+15. "Cook it yourself" — branch `bo/cook`. Bo now picks between cook,
+    order in and a table (prompt: cook fits cooking/recipe/healthy/saving
+    money/time on hand; order in fits hungry-now and late nights).
+    - One internal tool, `meshi_cook__show_recipe` (lib/bo/cook-tools.ts),
+      always offered next to the Swiggy tools. The recipe IS the tool
+      input, so cooking costs no extra model call; execute only logs the
+      step and sets the task mode to `cook`. No approval (no money).
+    - Chat renders the input as `BoRecipeCard` (components/bo): name,
+      why, time / serves / kcal, "You'll need" (8 shown, Show all), step
+      count. Buttons: Start cooking (web /recipes/<slug>/cook, mobile
+      /m/recipe, via setActiveRecipe), Get ingredients (sends "Get the
+      ingredients for X on Instamart" → Bo shops behind the usual Approval
+      card), Add to today's <meal by the clock> (local planner).
+    - "Bo is writing a recipe…" placeholder while the input streams; the
+      step trace leaves the recipe out (the card is the step).
+    - Verified on dev /m/chat with a mocked /api/bo stream (the dev
+      session had expired, so web /chat was not rendered; same component):
+      card, all three buttons, AA light/dark (lowest 5.45 / 6.15).
+      Not live-tested against Gemini (quota).
+16. Task status card — branch `bo/task-card`. A strip pinned to the top
+    of a Bo chat (web and mobile): kind of task, progress, and one line of
+    what is happening or what the user must do.
+    - Stages: order/grocery Finding → Cart → Your OK → Payment → Placed;
+      table Finding → Slot → Your OK → Booked; cook Finding → Recipe.
+    - Read from the thread (lib/bo/task-status.ts `boTaskStatus`) — tool
+      calls, the Approval card's state and bill (To Pay), PENDING_PAYMENT,
+      check_payment_status, confirm_order, tracking. No server call, no
+      polling at this stage; item 17 later added a poll, only while the
+      strip shows Payment.
+      Reads after the order (payment options, past orders) never move it
+      back. "Your turn" badge when the user must act (approve, change,
+      pay). Hidden in plain chat.
+    - Verified: 16 synthetic threads (search, cart, approval, Change,
+      approved, pending payment, paid + confirmed, cash, cart_changed,
+      rate-limited, table booked, cook, cook → groceries, no regress) and
+      on dev /m/chat with a mocked stream (sticky strip; Change → "You
+      asked for changes"); AA light/dark (lowest 5.45 / 4.95 badge).
+17. Payment follow-through (Phase 3) — branch `bo/follow-through`, merged as
+    PR #52 (2026-10-31). After a
+    UPI order comes back PENDING_PAYMENT, meshi itself watches the payment
+    and confirms the order; the user no longer has to say "I've paid".
+    - lib/bo/follow.ts `watchPayment`: runs in Next `after()` once the
+      turn's stream ends (survives the tab closing). Polls
+      check_payment_status every 8s; confirm_order on the first SUCCESS or
+      at the 5-minute cap (Swiggy's contract, confirm is idempotent); never
+      on FAILED or REFUND. The status is read from the structured status
+      field, not the text — Swiggy's text quotes the words SUCCESS/FAILED in
+      its instructions. Budget = maxDuration (300s) − 20s per invocation.
+    - The watch lives in agent_tasks.plan.payment (paasId, orderId, cart and
+      address ids, lat/lng, amount, startedAt, result). A 30s lease, taken by
+      optimistic concurrency on updated_at (`updatePlanIfUnchanged`), keeps
+      two watchers from double-confirming.
+    - GET /api/bo/tasks/[id]: the page polls it every 10s while the strip
+      says "Payment"; it restarts the watcher if no lease is held (so a task
+      that outlived one function resumes on any device) and returns the
+      outcome. The status strip moves to Placed / Booked or to a warning.
+    - Notifies on the outcome (lib/bo/notify.ts): web push + native push from
+      notification_subscriptions; recorded on the task timeline, NOT
+      notification_log (the daily-nudge cron dedupes on it). No WhatsApp
+      (needs a template).
+    - The next Bo turn gets a PAYMENT line (`paymentLine`) so Bo knows the
+      outcome; the prompt tells Bo not to call check_payment_status /
+      confirm_order itself.
+    - Verified offline only (scripted watcher with fake Swiggy): SUCCESS →
+      confirm + notify; FAILED/REFUND → no confirm; cap → confirm (timeout);
+      lease held → nothing; out of budget → lease released; Instamart args;
+      status parsing ignores instruction text. **Not live-verified** — needs
+      a real UPI order by the owner.
+    - Deferred: periodic tracking pushes (need a cron/workflow); the Approval
+      card's "Waiting for payment" line doesn't change (the strip is
+      authoritative); the strip's own check_payment_status reading (only
+      when Bo calls it manually) still matches on text.
+18. Pay button and device-aware UPI — branch `bo/pay-button`, merged as PR #55
+    (2026-10-31). Real test 1 (order 252395209900641) stuck because
+    meshi never showed a way to pay.
+    - The Approval card now shows Swiggy's `bridgeUrl`: "Pay ₹…", or "Show QR
+      ₹…" for a QR order. `compactToolResult` drops structured data, so the
+      tool output carries `payUrl` explicitly.
+    - lib/bo/device.ts reports phone / desktop with every turn (Capacitor
+      native → phone; else `userAgentData.mobile`, else user agent; tablets
+      count as desktop). Swiggy's widget does this for itself and its docs
+      say never to ask the user. `deviceLine` tells Bo what to offer.
+      Desktop UPI = `generateUPIQR: true`, no `intentApp`; a desktop order
+      with `intentApp` is refused in `toolApproval`, so Bo must retry as a QR.
+      An app intent cannot open on a computer: that was real test 3.
+    - Payment window is never under 5 minutes. Honouring Swiggy's
+      `maxTimeToPollForInMs` closed the Google Pay order
+      (252404362997606) after 74s; the value it sent then was not logged.
+      The QR order received 300000.
+    - Pending results carry `orderState: NOT placed yet`, and the prompt
+      forbids saying placed on PENDING_PAYMENT (Bo did say it). An error
+      from an order tool now returns `{ error }`, so it can't read as "Order
+      placed". Pay disappears once the payment has an outcome. Timeout copy
+      no longer claims the order wasn't placed, since a late success is
+      reconciled by Swiggy.
+    - The task log now keeps `paymentShape`: keys, status, result, isQrFlow,
+      poll limits, `paymentPresentation`, upi scheme + length and the bridge
+      path. Never ids, links or amounts.
+    - Cards, netbanking and wallets are not in Swiggy's MCP: Bo says so and
+      points to the Swiggy app. Cash on delivery and Swiggy Money are offered
+      when `get_payment_options` returns them.
+    - Live on desktop, Instamart (order 252405556947364, ₹182): QR request
+      accepted (`isQrFlow: true`) despite `place_food_order` saying to leave
+      `generateUPIQR` blank; `bridgeUrl` opens Swiggy's "Scan to pay" page
+      (`mode=qr`) with a working QR. The owner scanned without paying and
+      Swiggy reported terminal `failed` after about 38s; no confirm_order,
+      card and strip updated, Pay removed. `upiIntentUrl` is a real `upi://`
+      string, but we keep Swiggy's page and do not render our own QR.
+    - Pay another way: after a failed payment the card offers it; after a
+      timeout it reads "I didn't pay, pay another way", because they may have
+      paid; no button after a refund. One tap sends Bo that message and Bo
+      fetches get_payment_options, so COD appears when Swiggy returns it. A
+      task can now pay twice, so `paymentKey` (the watch's startedAt) ties the
+      poll and the card to the latest order. The button is not live-verified.
+    - **Not verified:** a completed payment through to confirm_order on this
+      code; phone browser Pay; native Pay (`openOutside` → @capacitor/browser);
+      Food QR; COD. Swiggy's bridge page behaviour for an app-intent order on
+      desktop was not inspected.
+19. Ride hand-off — branch `bo/ride-handoff`, merged as PR #57 (2026-11-04).
+    - `meshi_ride__show_ride` (lib/bo/ride-tools.ts) renders a card
+      (components/bo/BoRideCard.tsx) that opens Uber with the destination
+      filled in; Ola only with both ends as coordinates. The user confirms and
+      pays in Uber; Bo never requests a ride (see "Uber Ride Request").
+    - A successful `book_table` result carries `AFTER_BOOKING`, telling Bo to
+      show the card in the same turn, because a prompt line alone got a text
+      offer instead.
+    - Verified: a direct ride request called the tool with real Gemini; the
+      card on web light and mobile dark at 375px, contrast and Ola gating.
+    - **Not verified:** the card after a real Dineout booking (the reruns hit
+      Gemini's daily quota); the link in the Uber app on a phone.
+
+**Where Bo stands (2026-11-04).** Merged into `feat/bo-agent`: items 1–19
+(through #57). In order, what is left:
+1. Owner: check orders 252395209900641, 252404362997606 and 252405556947364 in
+   the Swiggy app (none confirmed by Bo) and whether any money left the
+   account. The Work card reads "B17, Mumbai" but the Swiggy app showed B603,
+   Bhoomi Samarth; confirm which address is right.
+2. One real paid order on a phone and one paid QR order on desktop, plus Pay
+   another way on a real failed order and one cash-on-delivery order. Phase 3's plan check (end the request
+   mid-payment; force a retry, no duplicate order) is part of this. Dev's
+   `tasks_daily` is 3 (it was raised to 10 for testing and restored).
+3. Live checks once Gemini quota allows: Food, Dineout and cook on dev,
+   tapping Change only, never Place order or Book. The ride card after a
+   booking needs one real Dineout booking, by the owner.
+4. Owner signs in on dev, to see the web /chat recipe card and status strip;
+   both were verified only on /m/chat (the dev session had expired).
+5. The pre-merge list below, and the rollback drill (flip `bo_agent` off on
+   a preview; chat and agent must match `main`).
+Optional afterwards: Phase 4 nudges, tracking pushes.
+
+**Before the final merge to `main`:** ~~set `BO_APPROVAL_SECRET` and
+`NEXT_PUBLIC_GRIEVANCE_EMAIL`~~ — both set in Vercel 2026-11-04 (names and
+environments checked, not values; the secret must be ≥32 chars);
+~~apply `food-profile.sql` and `agent-tasks.sql` to production~~ — applied
+2026-11-04 as Supabase migrations `bo_food_profile` and `bo_agent_tasks`
+(verified: 5 tables with RLS, the 3 RPCs service-role only, `bo_agent` off,
+`bo.limits` 3/24/8); final notice text and retention reviewed
+against the DPDP Rules, and the Swiggy DPA / processing-region question
+answered (plan, "DPDP compliance").
 
 ## Dead ends — do not retry
 

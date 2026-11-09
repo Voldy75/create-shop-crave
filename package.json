@@ -13,10 +13,10 @@
     "assets": "npx --yes @capacitor/assets@latest generate --iconBackgroundColor '#1E5A34' --iconBackgroundColorDark '#1E5A34' --splashBackgroundColor '#FBF6E3' --splashBackgroundColorDark '#241C10'"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^0.0.56",
-    "@ai-sdk/google": "^0.0.52",
-    "@ai-sdk/openai": "^0.0.72",
-    "@ai-sdk/react": "^2.0.109",
+    "@ai-sdk/anthropic": "^4.0.88",
+    "@ai-sdk/google": "^4.0.105",
+    "@ai-sdk/openai": "^4.0.102",
+    "@ai-sdk/react": "^4.0.157",
     "@capacitor/android": "^7.6.8",
     "@capacitor/app": "^7.1.2",
     "@capacitor/browser": "^7.0.5",
@@ -38,7 +38,7 @@
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "@types/web-push": "^3.6.4",
-    "ai": "^3.4.7",
+    "ai": "^7.0.153",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fflate": "^0.8.3",

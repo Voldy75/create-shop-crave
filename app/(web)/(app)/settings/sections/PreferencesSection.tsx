@@ -14,6 +14,7 @@
 
 import { useMemo, useState } from "react";
 import { useUser } from "@/app/context/UserContext";
+import { BoMemoryCard } from "@/components/bo/BoMemoryCard";
 import { AllergyCard, DietCard, GoalPicker, LocationCard, TasteCard } from "@/components/web/PreferenceControls";
 import { getWeightGoal, joinDietary, setWeightGoal, splitDietary } from "@/lib/preferences";
 import type { WeightGoal } from "@/lib/types";
@@ -28,6 +29,8 @@ export function PreferencesSection() {
 
   return (
     <div className="vstack" style={{ gap: 18 }}>
+      {/* Renders nothing unless bo_agent is on and the user is signed in. */}
+      <BoMemoryCard />
       <DietCard diets={diets} onChange={(next) => setDietaryPreferences(joinDietary(next, allergies))} />
       <AllergyCard allergies={allergies} onChange={(next) => setDietaryPreferences(joinDietary(diets, next))} />
       <TasteCard tastes={favoriteCuisines} onChange={setFavoriteCuisines} />
